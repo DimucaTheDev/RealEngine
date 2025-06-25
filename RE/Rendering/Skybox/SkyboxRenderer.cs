@@ -83,6 +83,7 @@ internal class SkyboxRenderer : IRenderable
         GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, 3 * sizeof(float), 0);
         GL.EnableVertexAttribArray(0);
 
-        RenderLayerManager.AddRenderable(Instance, typeof(SkyboxRenderer));
+        RenderLayerManager.AddRenderable(Instance);
+
     }
 }

@@ -1,4 +1,5 @@
 ﻿using OpenTK.Windowing.Common;
+using Serilog;
 
 namespace RE.Core;
 
@@ -43,7 +44,7 @@ internal static class Time
     {
         if (_initialized)
         {
-            Console.WriteLine($"Tried to init {nameof(Time)} again!");
+            Log.Warning($"Tried to init {nameof(Time)} again!");
             return;
         }
 
@@ -79,7 +80,7 @@ internal static class Time
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"[Timer] Exception: {ex}");
+                    Log.Error($"[Timer] Exception: {ex}");
                 }
 
                 _scheduled.RemoveAt(i);

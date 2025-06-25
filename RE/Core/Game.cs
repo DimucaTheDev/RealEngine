@@ -7,41 +7,38 @@ using RE.Rendering;
 using RE.Rendering.Camera;
 using RE.Rendering.Skybox;
 using RE.Rendering.Text;
+using RE.Utils;
+using Serilog;
 using System.Drawing;
-using System.Runtime.InteropServices;
 
 namespace RE.Core;
 
 internal class Game : GameWindow
 {
-    public static double A;
+    private Game(GameWindowSettings gws, NativeWindowSettings nws) : base(gws, nws) { }
 
-    private FreeTypeFont _font;
     private readonly Dictionary<nint, string> _loadedLibs = new();
-
-    public Text renderable;
-
-
-    private Game(GameWindowSettings gws, NativeWindowSettings nws) : base(gws, nws)
-    {
-    }
 
     public static Game Instance { get; private set; }
 
-    [DllImport("kernel32.dll", SetLastError = true)]
-    private static extern IntPtr LoadLibrary(string lpFileName);
-
-    [DllImport("kernel32.dll", SetLastError = true)]
-    private static extern void FreeLibrary(nint handle);
-
     public static void Start()
     {
+        Log.Logger = new LoggerConfiguration()
+            .MinimumLevel.Debug()
+            .Enrich.WithThreadName()
+            .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss.fff} {Level:u3}] [{ThreadName}] {Message:lj}{NewLine}{Exception}")
+            .CreateLogger();
+        Log.Information("Hello, World!");
+
         using var game = new Game(
             new GameWindowSettings { UpdateFrequency = 0 },
             new NativeWindowSettings { Title = "DaRealEngin", ClientSize = new Vector2i(800, 600) });
         Instance = game;
         Thread.CurrentThread.Name = "Render Thread";
+
         game.Run();
+
+        Log.Information("End");
     }
 
     protected override void OnLoad()
@@ -49,9 +46,8 @@ internal class Game : GameWindow
         foreach (var lib in Directory.GetFiles("Dll", "*.dll"))
         {
             nint handle;
-            Console.Write($"Loading DLL \"{lib}\"... ");
-            _loadedLibs.Add(handle = LoadLibrary(lib), lib);
-            Console.WriteLine($"0x{handle:X}");
+            _loadedLibs.Add(handle = WinApi.LoadLibrary(lib), lib);
+            Log.Debug($"Loaded DLL \"{lib}\": 0x{handle:X} ");
         }
 
         UpdateFrame += Time.Update;
@@ -62,11 +58,8 @@ internal class Game : GameWindow
         TextRenderer.Init();
         DebugOverlay.Init();
         SkyboxRenderer.Init();
-        RenderLayerManager.AddRenderable(Camera.l, typeof(RenderLayerManager));
 
-        renderable = new Text("", new Vector2(20, 40), new FreeTypeFont(20, "c:/windows/fonts/arial.ttf"),
-            new Vector4(1));
-        RenderLayerManager.AddRenderable(renderable, typeof(Text));
+        RenderLayerManager.AddRenderable(Camera.l);
 
         base.OnLoad();
     }
@@ -99,8 +92,8 @@ internal class Game : GameWindow
         base.OnUnload();
         foreach (var lib in _loadedLibs)
         {
-            Console.WriteLine($"Unloading library \"{lib.Value}\"");
-            FreeLibrary(lib.Key);
+            Log.Information($"Unloading library \"{lib.Value}\"");
+            WinApi.FreeLibrary(lib.Key);
         }
     }
 }

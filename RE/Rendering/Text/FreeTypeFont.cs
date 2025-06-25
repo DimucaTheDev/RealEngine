@@ -1,5 +1,6 @@
 ﻿using OpenTK.Graphics.OpenGL4;
 using OpenTK.Mathematics;
+using Serilog;
 using SharpFont;
 using System.Runtime.InteropServices;
 
@@ -64,7 +65,7 @@ public class FreeTypeFont
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
+                Log.Error("Error Initializing font!", ex);
             }
 
         // bind default texture

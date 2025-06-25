@@ -1,6 +1,7 @@
-﻿using System.Runtime.CompilerServices;
-using ImGuiNET;
+﻿using ImGuiNET;
 using OpenTK.Graphics.OpenGL4;
+using Serilog;
+using System.Runtime.CompilerServices;
 using ErrorCode = OpenTK.Graphics.OpenGL4.ErrorCode;
 
 namespace RE.Libs.Grille.ImGuiTK;
@@ -93,6 +94,6 @@ public class GLRenderer : IDisposable
 
         ErrorCode error;
         var i = 1;
-        while ((error = GL.GetError()) != ErrorCode.NoError) Console.WriteLine($"{title} ({i++}): {error}");
+        while ((error = GL.GetError()) != ErrorCode.NoError) Log.Error($"{title} ({i++}): {error}");
     }
 }

@@ -16,7 +16,6 @@ public class RenderLayerManager
     public static SortedDictionary<RenderLayer, Dictionary<Type, List<IRenderable>>> Renderables = new();
     public static Dictionary<Type, Action> RenderablesInitActions = new();
 
-
     public static void Init()
     {
         Renderables.Clear();
@@ -24,35 +23,35 @@ public class RenderLayerManager
             Renderables[layer] = new Dictionary<Type, List<IRenderable>>();
     }
 
-    public static void AddRenderable(IRenderable renderable, Type type)
+    public static void AddRenderable<T>(T renderable) where T : IRenderable
     {
         var types = Renderables[renderable.RenderLayer];
-        if (!types.ContainsKey(type))
-            types[type] = new List<IRenderable>();
-        types[type].Add(renderable);
+        if (!types.ContainsKey(typeof(T)))
+            types[typeof(T)] = new List<IRenderable>();
+        types[typeof(T)].Add(renderable);
     }
 
-    public static void RemoveRenderable(IRenderable renderable, Type type)
+    public static void RemoveRenderable<T>(T renderable) where T : IRenderable
     {
-        if (Renderables.TryGetValue(renderable.RenderLayer, out var types) && types.TryGetValue(type, out var list))
+        if (Renderables.TryGetValue(renderable.RenderLayer, out var types) && types.TryGetValue(typeof(T), out var list))
         {
             list.Remove(renderable);
             if (list.Count == 0)
-                types.Remove(type);
+                types.Remove(typeof(T));
         }
     }
 
-    public static void RemoveRenderables(Type type)
+    public static void RemoveRenderables<T>() where T : IRenderable
     {
         foreach (var layer in Renderables.Values)
-            if (layer.ContainsKey(type))
-                layer[type].Clear();
+            if (layer.ContainsKey(typeof(T)))
+                layer[typeof(T)].Clear();
     }
 
-    public static void AddRenderableInitAction(Type type, Action action)
+    public static void SetRenderableInitAction<T>(Action action)
     {
-        if (!RenderablesInitActions.TryAdd(type, action))
-            RenderablesInitActions[type] += action;
+        if (!RenderablesInitActions.TryAdd(typeof(T), action))
+            RenderablesInitActions[typeof(T)] += action;
     }
 
     public static void RemoveRenderableInitAction(Type type, Action action)

@@ -1,7 +1,8 @@
-﻿using System.Runtime.CompilerServices;
-using ImGuiNET;
+﻿using ImGuiNET;
 using OpenTK.Graphics.OpenGL4;
 using OpenTK.Mathematics;
+using Serilog;
+using System.Runtime.CompilerServices;
 
 namespace RE.Libs.Grille.ImGuiTK;
 
@@ -53,7 +54,7 @@ public class GLObjects : IDisposable
                 GL.BufferData(BufferTarget.ArrayBuffer, newSize, nint.Zero, BufferUsageHint.DynamicDraw);
                 _vertexBufferSize = newSize;
 
-                Console.WriteLine($"Resized dear imgui vertex buffer to new size {_vertexBufferSize}");
+                Log.Debug($"Resized dear imgui vertex buffer to new size {_vertexBufferSize}");
             }
 
             var indexSize = cmd_list.IdxBuffer.Size * sizeof(ushort);
@@ -63,7 +64,7 @@ public class GLObjects : IDisposable
                 GL.BufferData(BufferTarget.ElementArrayBuffer, newSize, nint.Zero, BufferUsageHint.DynamicDraw);
                 _indexBufferSize = newSize;
 
-                Console.WriteLine($"Resized dear imgui index buffer to new size {_indexBufferSize}");
+                Log.Debug($"Resized dear imgui index buffer to new size {_indexBufferSize}");
             }
         }
     }
@@ -181,7 +182,7 @@ public class GLObjects : IDisposable
         if (success == 0)
         {
             var info = GL.GetProgramInfoLog(program);
-            Console.WriteLine($"GL.LinkProgram had info log [{name}]:\n{info}");
+            Log.Debug($"GL.LinkProgram had info log [{name}]:\n{info}");
         }
 
         GL.DetachShader(program, vertex);
@@ -204,7 +205,7 @@ public class GLObjects : IDisposable
         if (success == 0)
         {
             var info = GL.GetShaderInfoLog(shader);
-            Console.WriteLine($"GL.CompileShader for shader '{name}' [{type}] had info log:\n{info}");
+            Log.Debug($"GL.CompileShader for shader '{name}' [{type}] had info log:\n{info}");
         }
 
         return shader;

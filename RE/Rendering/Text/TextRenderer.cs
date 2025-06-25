@@ -1,6 +1,5 @@
 ﻿using OpenTK.Graphics.OpenGL4;
 using OpenTK.Mathematics;
-using OpenTK.Windowing.Common;
 using RE.Core;
 
 namespace RE.Rendering.Text;
@@ -8,11 +7,6 @@ namespace RE.Rendering.Text;
 internal class TextRenderer
 {
     private static int shaderProgram;
-
-    private static readonly FreeTypeFont _font = new(32,
-        @"C:\Users\DimucaTheDev\AppData\Local\Microsoft\Windows\Fonts\minecraft-unicode-version-0-1-0.ttf");
-
-    private static string log = "";
 
     public static void Init()
     {
@@ -62,7 +56,7 @@ internal class TextRenderer
         GL.DeleteShader(fragmentShader);
 
 
-        RenderLayerManager.AddRenderableInitAction(typeof(Text), () =>
+        RenderLayerManager.SetRenderableInitAction<Text>(() =>
         {
             var projectionM = Matrix4.CreateOrthographicOffCenter(0.0f, Game.Instance.ClientSize.X,
                 Game.Instance.ClientSize.Y, 0.0f, -1.0f, 1.0f);
@@ -71,34 +65,5 @@ internal class TextRenderer
             GL.UseProgram(shaderProgram);
             GL.UniformMatrix4(1, false, ref projectionM);
         });
-    }
-
-    public static void Render(FrameEventArgs args)
-    {
-        var projectionM = Matrix4.CreateOrthographicOffCenter(0.0f, Game.Instance.ClientSize.X,
-            Game.Instance.ClientSize.Y, 0.0f, -1.0f, 1.0f);
-
-        GL.Enable(EnableCap.Blend);
-        GL.BlendFunc(0, BlendingFactorSrc.SrcAlpha, BlendingFactorDest.OneMinusSrcAlpha);
-        GL.UseProgram(shaderProgram);
-        GL.UniformMatrix4(1, false, ref projectionM);
-
-        GL.Uniform4(3, new Vector4(0, 0, 0, .2f));
-
-
-        _font.RenderText(log, 5.0f, 15.0f, .45f, new Vector2(1.0f, 0));
-
-        GL.Uniform4(3, new Vector4(0, 0, 0, 0));
-
-        GL.Uniform3(2, new Vector3(0.3f, 0.1f, 0.9f));
-        _font.RenderText(Math.Round(1 / args.Time).ToString(), 50.0f, 200.0f, 0.9f, new Vector2(1.0f, -0.25f));
-
-        if (Random.Shared.Next(100) > 90) Log("Random message: " + Random.Shared.Next(1000));
-    }
-
-    private static void Log(string message)
-    {
-        log = message + "\n" + log;
-        Console.WriteLine(message);
     }
 }
