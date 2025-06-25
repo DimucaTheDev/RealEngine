@@ -8,7 +8,7 @@ namespace RE.Rendering.Skybox
 
         public static SkyboxRenderer Instance { get; private set; }
 
-        public RenderLayer RenderLayer => RenderLayer.Back;
+        public RenderLayer RenderLayer => RenderLayer.Skybox;
         public bool IsVisible { get; set; } = true;
 
         private static int _vao, _vbo, _handle;

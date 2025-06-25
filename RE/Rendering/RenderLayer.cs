@@ -9,7 +9,7 @@ namespace RE.Rendering
         Skybox,
         World,
         UI,
-        Overlay,
+        Overlay
     }
 
     public class RenderLayerManager
@@ -43,6 +43,17 @@ namespace RE.Rendering
                     types.Remove(type);
             }
         }
+        public static void RemoveRenderables(Type type)
+        {
+            foreach (var layer in Renderables.Values)
+            {
+                if (layer.ContainsKey(type))
+                {
+                    layer[type].Clear();
+                }
+            }
+        }
+
         public static void AddRenderableInitAction(Type type, Action action)
         {
             if (!RenderablesInitActions.TryAdd(type, action))

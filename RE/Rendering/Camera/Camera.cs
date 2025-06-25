@@ -3,6 +3,7 @@ using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using OpenTK.Windowing.GraphicsLibraryFramework;
 using RE.Core;
+using RE.Debug;
 
 namespace RE.Rendering.Camera
 {
@@ -38,8 +39,21 @@ namespace RE.Rendering.Camera
             Game.Instance.UpdateFrame += (_) => Instance.HandleInput(Game.Instance.KeyboardState);
             Game.Instance.MouseDown += (_) =>
             {
-                if (!ImGui.GetIO().WantCaptureMouse)
-                    Game.Instance.CursorState = CursorState.Grabbed;
+                if (ImGui.GetIO().WantCaptureMouse) return;
+
+                Game.Instance.CursorState = CursorState.Grabbed;
+
+                if (_.Button == MouseButton.Button1)
+                {
+                    var lineRenderable = new LineRenderable()
+                    {
+                        start = Instance.Position,
+                        end = Instance.Position + Instance.Front * 3f
+                    };
+                    lineRenderable.Init();
+                    RenderLayerManager.AddRenderable(
+                        lineRenderable, typeof(LineRenderable));
+                }
             };
         }
         public void HandleMouseMove(float mouseX, float mouseY)
@@ -68,6 +82,7 @@ namespace RE.Rendering.Camera
             front.Z = MathF.Sin(MathHelper.DegreesToRadians(Yaw)) * MathF.Cos(MathHelper.DegreesToRadians(Pitch));
             Front = Vector3.Normalize(front);
         }
+
         public void HandleInput(KeyboardState state)
         {
             var input = state;
@@ -75,16 +90,24 @@ namespace RE.Rendering.Camera
 
 
             if (input.IsKeyDown(Keys.W))
-                Position += Front * speed;
+                Position += (Front with { Y = 0 }).Normalized() * speed;
             if (input.IsKeyDown(Keys.S))
-                Position -= Front * speed;
+                Position -= (Front with { Y = 0 }).Normalized() * speed;
             if (input.IsKeyDown(Keys.A))
                 Position -= Vector3.Normalize(Vector3.Cross(Front, Up)) * speed;
             if (input.IsKeyDown(Keys.D))
                 Position += Vector3.Normalize(Vector3.Cross(Front, Up)) * speed;
+            if (input.IsKeyDown(Keys.Space))
+                Position += Vector3.UnitY * speed;
+            if (input.IsKeyDown(Keys.LeftShift))
+                Position -= Vector3.UnitY * speed;
             if (input.IsKeyDown(Keys.Escape))
+            {
                 Game.Instance.CursorState = CursorState.Normal;
+                _firstMove = true;
+            }
         }
+
         public Matrix4 GetViewMatrix()
             => Matrix4.LookAt(Position, Position + Front, Up);
 

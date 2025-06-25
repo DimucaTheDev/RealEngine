@@ -2,6 +2,7 @@
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using OpenTK.Windowing.Desktop;
+using RE.Debug;
 using RE.Debug.Overlay;
 using RE.Rendering;
 using RE.Rendering.Camera;
@@ -55,6 +56,7 @@ namespace RE.Core
             TextRenderer.Init();
             DebugOverlay.Init();
             SkyboxRenderer.Init();
+            new LineRenderable().Init();
 
             renderable = new Text("123", new(20, 40), new FreeTypeFont(32, "c:/windows/fonts/arial.ttf"), new Vector4(1));
             RenderLayerManager.AddRenderable(renderable, typeof(Text));
@@ -64,6 +66,12 @@ namespace RE.Core
 
         public Text renderable;
 
+        protected override void OnResize(ResizeEventArgs e)
+        {
+            Camera.Instance.AspectRatio = (float)e.Width / e.Height;
+            GL.Viewport(0, 0, e.Width, e.Height);
+            base.OnResize(e);
+        }
 
         protected override void OnRenderFrame(FrameEventArgs args)
         {
@@ -72,9 +80,9 @@ namespace RE.Core
             GL.DepthFunc(DepthFunction.Lequal);
             GL.ClearColor(Color.CadetBlue);
 
-            //TextRenderer.Render(args);
 
             RenderLayerManager.RenderAll(args);
+
 
             base.OnRenderFrame(args);
 
