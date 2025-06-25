@@ -2,7 +2,6 @@
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using OpenTK.Windowing.Desktop;
-using RE.Debug;
 using RE.Debug.Overlay;
 using RE.Rendering;
 using RE.Rendering.Camera;
@@ -31,7 +30,7 @@ namespace RE.Core
         public static void Start()
         {
             using var game = new Game(
-                new GameWindowSettings { UpdateFrequency = 60 },
+                new GameWindowSettings { UpdateFrequency = 0 },
                 new NativeWindowSettings { Title = "DaRealEngin", ClientSize = new OpenTK.Mathematics.Vector2i(800, 600) });
             Instance = game;
             Thread.CurrentThread.Name = "Render Thread";
@@ -56,9 +55,9 @@ namespace RE.Core
             TextRenderer.Init();
             DebugOverlay.Init();
             SkyboxRenderer.Init();
-            new LineRenderable().Init();
+            RenderLayerManager.AddRenderable(Camera.l, typeof(RenderLayerManager));
 
-            renderable = new Text("123", new(20, 40), new FreeTypeFont(32, "c:/windows/fonts/arial.ttf"), new Vector4(1));
+            renderable = new Text("", new(20, 40), new FreeTypeFont(20, "c:/windows/fonts/arial.ttf"), new Vector4(1));
             RenderLayerManager.AddRenderable(renderable, typeof(Text));
 
             base.OnLoad();
@@ -73,8 +72,10 @@ namespace RE.Core
             base.OnResize(e);
         }
 
+        public static double A;
         protected override void OnRenderFrame(FrameEventArgs args)
         {
+
             GL.Viewport(0, 0, this.ClientSize.X, this.ClientSize.Y);
             GL.Clear(ClearBufferMask.ColorBufferBit);
             GL.DepthFunc(DepthFunction.Lequal);

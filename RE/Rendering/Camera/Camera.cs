@@ -31,8 +31,10 @@ namespace RE.Rendering.Camera
             AspectRatio = aspectRatio;
         }
 
+        public static LineManager l = new();
         public static void Init()
         {
+            l.Init();
             Instance = new Camera(Vector3.Zero, Vector3.UnitY, ((float)Game.Instance.ClientSize.X / (float)Game.Instance.ClientSize.Y));
             Game.Instance.CursorState = CursorState.Grabbed;
             Game.Instance.MouseMove += (s) => Instance.HandleMouseMove(s.X, s.Y);
@@ -45,14 +47,7 @@ namespace RE.Rendering.Camera
 
                 if (_.Button == MouseButton.Button1)
                 {
-                    var lineRenderable = new LineRenderable()
-                    {
-                        start = Instance.Position,
-                        end = Instance.Position + Instance.Front * 3f
-                    };
-                    lineRenderable.Init();
-                    RenderLayerManager.AddRenderable(
-                        lineRenderable, typeof(LineRenderable));
+                    l.AddLine(Instance.Position, Instance.Position + Instance.Front * 3f, new(1, 0, 0, 1), new(0, 0, 0, 1));
                 }
             };
         }

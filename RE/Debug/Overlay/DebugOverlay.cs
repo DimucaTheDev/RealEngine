@@ -1,4 +1,5 @@
-﻿using OpenTK.Windowing.Common;
+﻿using OpenTK.Mathematics;
+using OpenTK.Windowing.Common;
 using RE.Core;
 using RE.Libs.Grille.ImGuiTK;
 using RE.Rendering;
@@ -41,8 +42,24 @@ namespace RE.Debug.Overlay
             if (Button("add")) RenderLayerManager.AddRenderable(Game.Instance.renderable, typeof(Text));
             var instance = Camera.Instance;
             Text($"Cam pos: ({instance.Position.X:F}; {instance.Position.Y:F}; {instance.Position.Z:F})");
-            if (Button("1")) RenderLayerManager.RemoveRenderables(typeof(LineRenderable));
-            //Text($"a: ({LineRenderable.a.X:F}, {LineRenderable.a.Y:F})");
+            if (Button("1")) RenderLayerManager.RemoveRenderables(typeof(LineManager));
+            //Text($"a: ({LineManager.a.X:F}, {LineManager.a.Y:F})");
+
+            if (Button("do_shit()"))
+            {
+                Vector3 start = Vector3.Zero;
+                for (int i = 0; i < 3000; i++)
+                {
+                    var end = start + new Vector3(Random.Shared.Next(-2, 2), Random.Shared.Next(-2, 2), Random.Shared.Next(-2, 2));
+                    Camera.l.AddLine(start, end, new Vector4(1, 0, 0, 1), new Vector4(0, 0, 1, 1));
+                    start = end;
+                }
+            }
+            Text((1 / args.Time).ToString("F2") + " FPS\n" +
+                 $"DeltaTime: {Time.DeltaTime:F3} s\n" +
+                 $"Time: {Time.ElapsedTime:F3} s\n" +
+                 $"Camera Position: {Camera.Instance.Position.X:F2}, {Camera.Instance.Position.Y:F2}, {Camera.Instance.Position.Z:F2}" +
+                 $"\nAverage 5sFPS: {Game.A:F2}");
             End();
 
             _controller.Render();
