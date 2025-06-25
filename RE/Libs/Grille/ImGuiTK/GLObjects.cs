@@ -1,23 +1,32 @@
-﻿using ImGuiNET;
+﻿using System.Runtime.CompilerServices;
+using ImGuiNET;
 using OpenTK.Graphics.OpenGL4;
 using OpenTK.Mathematics;
-using System.Runtime.CompilerServices;
 
 namespace RE.Libs.Grille.ImGuiTK;
 
 public class GLObjects : IDisposable
 {
-    public int _vertexArray;
-    public int _vertexBuffer;
-    public int _vertexBufferSize;
+    public int _fontTexture;
     public int _indexBuffer;
     public int _indexBufferSize;
-
-    public int _fontTexture;
 
     public int _shader;
     public int _shaderFontTextureLocation;
     public int _shaderProjectionMatrixLocation;
+    public int _vertexArray;
+    public int _vertexBuffer;
+    public int _vertexBufferSize;
+
+    public void Dispose()
+    {
+        GL.DeleteVertexArray(_vertexArray);
+        GL.DeleteBuffer(_vertexBuffer);
+        GL.DeleteBuffer(_indexBuffer);
+
+        GL.DeleteTexture(_fontTexture);
+        GL.DeleteProgram(_shader);
+    }
 
     public void Bind()
     {
@@ -32,14 +41,14 @@ public class GLObjects : IDisposable
 
     public void GuaranteeBufferSize(ImDrawDataPtr draw_data)
     {
-        for (int i = 0; i < draw_data.CmdListsCount; i++)
+        for (var i = 0; i < draw_data.CmdListsCount; i++)
         {
-            ImDrawListPtr cmd_list = draw_data.CmdLists[i];
+            var cmd_list = draw_data.CmdLists[i];
 
-            int vertexSize = cmd_list.VtxBuffer.Size * Unsafe.SizeOf<ImDrawVert>();
+            var vertexSize = cmd_list.VtxBuffer.Size * Unsafe.SizeOf<ImDrawVert>();
             if (vertexSize > _vertexBufferSize)
             {
-                int newSize = (int)Math.Max(_vertexBufferSize * 1.5f, vertexSize);
+                var newSize = (int)Math.Max(_vertexBufferSize * 1.5f, vertexSize);
 
                 GL.BufferData(BufferTarget.ArrayBuffer, newSize, nint.Zero, BufferUsageHint.DynamicDraw);
                 _vertexBufferSize = newSize;
@@ -47,10 +56,10 @@ public class GLObjects : IDisposable
                 Console.WriteLine($"Resized dear imgui vertex buffer to new size {_vertexBufferSize}");
             }
 
-            int indexSize = cmd_list.IdxBuffer.Size * sizeof(ushort);
+            var indexSize = cmd_list.IdxBuffer.Size * sizeof(ushort);
             if (indexSize > _indexBufferSize)
             {
-                int newSize = (int)Math.Max(_indexBufferSize * 1.5f, indexSize);
+                var newSize = (int)Math.Max(_indexBufferSize * 1.5f, indexSize);
                 GL.BufferData(BufferTarget.ElementArrayBuffer, newSize, nint.Zero, BufferUsageHint.DynamicDraw);
                 _indexBufferSize = newSize;
 
@@ -61,7 +70,7 @@ public class GLObjects : IDisposable
 
     public void UpdateShader(ImGuiIOPtr io)
     {
-        Matrix4 mvp = Matrix4.CreateOrthographicOffCenter(
+        var mvp = Matrix4.CreateOrthographicOffCenter(
             0.0f,
             io.DisplaySize.X,
             io.DisplaySize.Y,
@@ -78,8 +87,8 @@ public class GLObjects : IDisposable
         _vertexBufferSize = 10000;
         _indexBufferSize = 2000;
 
-        int prevVAO = GL.GetInteger(GetPName.VertexArrayBinding);
-        int prevArrayBuffer = GL.GetInteger(GetPName.ArrayBufferBinding);
+        var prevVAO = GL.GetInteger(GetPName.VertexArrayBinding);
+        var prevArrayBuffer = GL.GetInteger(GetPName.ArrayBufferBinding);
 
         _vertexArray = GL.GenVertexArray();
         GL.BindVertexArray(_vertexArray);
@@ -94,14 +103,14 @@ public class GLObjects : IDisposable
 
         RecreateFontDeviceTexture();
 
-        string VertexSource = ShaderCode.VertexSource;
-        string FragmentSource = ShaderCode.FragmentSource;
+        var VertexSource = ShaderCode.VertexSource;
+        var FragmentSource = ShaderCode.FragmentSource;
 
         _shader = CreateProgram("ImGui", VertexSource, FragmentSource);
         _shaderProjectionMatrixLocation = GL.GetUniformLocation(_shader, "projection_matrix");
         _shaderFontTextureLocation = GL.GetUniformLocation(_shader, "in_fontTexture");
 
-        int stride = Unsafe.SizeOf<ImDrawVert>();
+        var stride = Unsafe.SizeOf<ImDrawVert>();
         GL.VertexAttribPointer(0, 2, VertexAttribPointerType.Float, false, stride, 0);
         GL.VertexAttribPointer(1, 2, VertexAttribPointerType.Float, false, stride, 8);
         GL.VertexAttribPointer(2, 4, VertexAttribPointerType.UnsignedByte, true, stride, 16);
@@ -117,24 +126,25 @@ public class GLObjects : IDisposable
     }
 
     /// <summary>
-    /// Recreates the device texture used to render text.
+    ///     Recreates the device texture used to render text.
     /// </summary>
     public void RecreateFontDeviceTexture()
     {
-        ImGuiIOPtr io = ImGui.GetIO();
-        io.Fonts.GetTexDataAsRGBA32(out nint pixels, out int width, out int height, out int bytesPerPixel);
+        var io = ImGui.GetIO();
+        io.Fonts.GetTexDataAsRGBA32(out nint pixels, out var width, out var height, out var bytesPerPixel);
 
-        int mips = (int)Math.Floor(Math.Log(Math.Max(width, height), 2));
+        var mips = (int)Math.Floor(Math.Log(Math.Max(width, height), 2));
 
-        int prevActiveTexture = GL.GetInteger(GetPName.ActiveTexture);
+        var prevActiveTexture = GL.GetInteger(GetPName.ActiveTexture);
         GL.ActiveTexture(TextureUnit.Texture0);
-        int prevTexture2D = GL.GetInteger(GetPName.TextureBinding2D);
+        var prevTexture2D = GL.GetInteger(GetPName.TextureBinding2D);
 
         _fontTexture = GL.GenTexture();
         GL.BindTexture(TextureTarget.Texture2D, _fontTexture);
         GL.TexStorage2D(TextureTarget2d.Texture2D, mips, SizedInternalFormat.Rgba8, width, height);
 
-        GL.TexSubImage2D(TextureTarget.Texture2D, 0, 0, 0, width, height, PixelFormat.Bgra, PixelType.UnsignedByte, pixels);
+        GL.TexSubImage2D(TextureTarget.Texture2D, 0, 0, 0, width, height, PixelFormat.Bgra, PixelType.UnsignedByte,
+            pixels);
 
         GL.GenerateMipmap(GenerateMipmapTarget.Texture2D);
 
@@ -157,20 +167,20 @@ public class GLObjects : IDisposable
 
     private static int CreateProgram(string name, string vertexSource, string fragmentSoruce)
     {
-        int program = GL.CreateProgram();
+        var program = GL.CreateProgram();
 
-        int vertex = CompileShader(name, ShaderType.VertexShader, vertexSource);
-        int fragment = CompileShader(name, ShaderType.FragmentShader, fragmentSoruce);
+        var vertex = CompileShader(name, ShaderType.VertexShader, vertexSource);
+        var fragment = CompileShader(name, ShaderType.FragmentShader, fragmentSoruce);
 
         GL.AttachShader(program, vertex);
         GL.AttachShader(program, fragment);
 
         GL.LinkProgram(program);
 
-        GL.GetProgram(program, GetProgramParameterName.LinkStatus, out int success);
+        GL.GetProgram(program, GetProgramParameterName.LinkStatus, out var success);
         if (success == 0)
         {
-            string info = GL.GetProgramInfoLog(program);
+            var info = GL.GetProgramInfoLog(program);
             Console.WriteLine($"GL.LinkProgram had info log [{name}]:\n{info}");
         }
 
@@ -185,29 +195,18 @@ public class GLObjects : IDisposable
 
     private static int CompileShader(string name, ShaderType type, string source)
     {
-        int shader = GL.CreateShader(type);
+        var shader = GL.CreateShader(type);
 
         GL.ShaderSource(shader, source);
         GL.CompileShader(shader);
 
-        GL.GetShader(shader, ShaderParameter.CompileStatus, out int success);
+        GL.GetShader(shader, ShaderParameter.CompileStatus, out var success);
         if (success == 0)
         {
-            string info = GL.GetShaderInfoLog(shader);
+            var info = GL.GetShaderInfoLog(shader);
             Console.WriteLine($"GL.CompileShader for shader '{name}' [{type}] had info log:\n{info}");
         }
 
         return shader;
     }
-
-    public void Dispose()
-    {
-        GL.DeleteVertexArray(_vertexArray);
-        GL.DeleteBuffer(_vertexBuffer);
-        GL.DeleteBuffer(_indexBuffer);
-
-        GL.DeleteTexture(_fontTexture);
-        GL.DeleteProgram(_shader);
-    }
-
 }

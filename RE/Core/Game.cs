@@ -10,94 +10,97 @@ using RE.Rendering.Text;
 using System.Drawing;
 using System.Runtime.InteropServices;
 
-namespace RE.Core
+namespace RE.Core;
+
+internal class Game : GameWindow
 {
-    internal class Game : GameWindow
+    public static double A;
+
+    private FreeTypeFont _font;
+    private readonly Dictionary<nint, string> _loadedLibs = new();
+
+    public Text renderable;
+
+
+    private Game(GameWindowSettings gws, NativeWindowSettings nws) : base(gws, nws)
     {
-        [DllImport("kernel32.dll", SetLastError = true)]
-        static extern IntPtr LoadLibrary(string lpFileName);
-        [DllImport("kernel32.dll", SetLastError = true)]
-        static extern void FreeLibrary(nint handle);
+    }
 
+    public static Game Instance { get; private set; }
 
-        private Game(GameWindowSettings gws, NativeWindowSettings nws) : base(gws, nws) { }
-        private Dictionary<nint, string> _loadedLibs = new();
+    [DllImport("kernel32.dll", SetLastError = true)]
+    private static extern IntPtr LoadLibrary(string lpFileName);
 
-        public static Game Instance { get; private set; }
+    [DllImport("kernel32.dll", SetLastError = true)]
+    private static extern void FreeLibrary(nint handle);
 
-        FreeTypeFont _font;
+    public static void Start()
+    {
+        using var game = new Game(
+            new GameWindowSettings { UpdateFrequency = 0 },
+            new NativeWindowSettings { Title = "DaRealEngin", ClientSize = new Vector2i(800, 600) });
+        Instance = game;
+        Thread.CurrentThread.Name = "Render Thread";
+        game.Run();
+    }
 
-        public static void Start()
+    protected override void OnLoad()
+    {
+        foreach (var lib in Directory.GetFiles("Dll", "*.dll"))
         {
-            using var game = new Game(
-                new GameWindowSettings { UpdateFrequency = 0 },
-                new NativeWindowSettings { Title = "DaRealEngin", ClientSize = new OpenTK.Mathematics.Vector2i(800, 600) });
-            Instance = game;
-            Thread.CurrentThread.Name = "Render Thread";
-            game.Run();
+            nint handle;
+            Console.Write($"Loading DLL \"{lib}\"... ");
+            _loadedLibs.Add(handle = LoadLibrary(lib), lib);
+            Console.WriteLine($"0x{handle:X}");
         }
 
-        protected override void OnLoad()
+        UpdateFrame += Time.Update;
+
+        RenderLayerManager.Init();
+        Time.Init();
+        Camera.Init();
+        TextRenderer.Init();
+        DebugOverlay.Init();
+        SkyboxRenderer.Init();
+        RenderLayerManager.AddRenderable(Camera.l, typeof(RenderLayerManager));
+
+        renderable = new Text("", new Vector2(20, 40), new FreeTypeFont(20, "c:/windows/fonts/arial.ttf"),
+            new Vector4(1));
+        RenderLayerManager.AddRenderable(renderable, typeof(Text));
+
+        base.OnLoad();
+    }
+
+    protected override void OnResize(ResizeEventArgs e)
+    {
+        Camera.Instance.AspectRatio = (float)e.Width / e.Height;
+        GL.Viewport(0, 0, e.Width, e.Height);
+        base.OnResize(e);
+    }
+
+    protected override void OnRenderFrame(FrameEventArgs args)
+    {
+        GL.Viewport(0, 0, ClientSize.X, ClientSize.Y);
+        GL.Clear(ClearBufferMask.ColorBufferBit);
+        GL.DepthFunc(DepthFunction.Lequal);
+        GL.ClearColor(Color.CadetBlue);
+
+
+        RenderLayerManager.RenderAll(args);
+
+
+        base.OnRenderFrame(args);
+
+        SwapBuffers();
+    }
+
+    protected override void OnUnload()
+    {
+        base.OnUnload();
+        foreach (var lib in _loadedLibs)
         {
-            foreach (var lib in Directory.GetFiles("Dll", "*.dll"))
-            {
-                nint handle;
-                Console.Write($"Loading DLL \"{lib}\"... ");
-                _loadedLibs.Add(handle = LoadLibrary(lib), lib);
-                Console.WriteLine($"0x{handle:X}");
-            }
-
-            this.UpdateFrame += Time.Update;
-
-            RenderLayerManager.Init();
-            Time.Init();
-            Camera.Init();
-            TextRenderer.Init();
-            DebugOverlay.Init();
-            SkyboxRenderer.Init();
-            RenderLayerManager.AddRenderable(Camera.l, typeof(RenderLayerManager));
-
-            renderable = new Text("", new(20, 40), new FreeTypeFont(20, "c:/windows/fonts/arial.ttf"), new Vector4(1));
-            RenderLayerManager.AddRenderable(renderable, typeof(Text));
-
-            base.OnLoad();
-        }
-
-        public Text renderable;
-
-        protected override void OnResize(ResizeEventArgs e)
-        {
-            Camera.Instance.AspectRatio = (float)e.Width / e.Height;
-            GL.Viewport(0, 0, e.Width, e.Height);
-            base.OnResize(e);
-        }
-
-        public static double A;
-        protected override void OnRenderFrame(FrameEventArgs args)
-        {
-
-            GL.Viewport(0, 0, this.ClientSize.X, this.ClientSize.Y);
-            GL.Clear(ClearBufferMask.ColorBufferBit);
-            GL.DepthFunc(DepthFunction.Lequal);
-            GL.ClearColor(Color.CadetBlue);
-
-
-            RenderLayerManager.RenderAll(args);
-
-
-            base.OnRenderFrame(args);
-
-            SwapBuffers();
-        }
-
-        protected override void OnUnload()
-        {
-            base.OnUnload();
-            foreach (var lib in _loadedLibs)
-            {
-                Console.WriteLine($"Unloading library \"{lib.Value}\"");
-                FreeLibrary(lib.Key);
-            }
+            Console.WriteLine($"Unloading library \"{lib.Value}\"");
+            FreeLibrary(lib.Key);
         }
     }
 }

@@ -2,27 +2,28 @@
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Desktop;
 using OpenTK.Windowing.GraphicsLibraryFramework;
+using Vector2 = System.Numerics.Vector2;
 
 namespace RE.Libs.Grille.ImGuiTK;
 
 public class ImGuiController : IDisposable
 {
+    private readonly List<char> PressedChars = new();
     private bool _frameBegun;
 
-    private int _windowWidth;
+    private readonly Vector2 _scaleFactor = Vector2.One;
     private int _windowHeight;
 
-    private System.Numerics.Vector2 _scaleFactor = System.Numerics.Vector2.One;
+    private int _windowWidth;
 
-    public GLRenderer Renderer { get; }
     /// <summary>
-    /// Constructs a new ImGuiController.
+    ///     Constructs a new ImGuiController.
     /// </summary>
     public ImGuiController()
     {
-        Renderer = new();
+        Renderer = new GLRenderer();
 
-        nint context = ImGui.CreateContext();
+        var context = ImGui.CreateContext();
         ImGui.SetCurrentContext(context);
         var io = ImGui.GetIO();
         io.Fonts.AddFontDefault();
@@ -39,6 +40,17 @@ public class ImGuiController : IDisposable
         _frameBegun = true;
     }
 
+    public GLRenderer Renderer { get; }
+
+
+    /// <summary>
+    ///     Frees all graphics resources used by the renderer.
+    /// </summary>
+    public void Dispose()
+    {
+        Renderer.Dispose();
+    }
+
     public void WindowResized(int width, int height)
     {
         _windowWidth = width;
@@ -46,7 +58,7 @@ public class ImGuiController : IDisposable
     }
 
     /// <summary>
-    /// Renders the ImGui draw list data.
+    ///     Renders the ImGui draw list data.
     /// </summary>
     public void Render()
     {
@@ -59,14 +71,11 @@ public class ImGuiController : IDisposable
     }
 
     /// <summary>
-    /// Updates ImGui input and IO configuration state.
+    ///     Updates ImGui input and IO configuration state.
     /// </summary>
     public void Update(GameWindow wnd, float deltaSeconds)
     {
-        if (_frameBegun)
-        {
-            ImGui.Render();
-        }
+        if (_frameBegun) ImGui.Render();
 
         SetPerFrameImGuiData(deltaSeconds);
         UpdateImGuiInput(wnd);
@@ -76,27 +85,25 @@ public class ImGuiController : IDisposable
     }
 
     /// <summary>
-    /// Sets per-frame data based on the associated window.
-    /// This is called by Update(float).
+    ///     Sets per-frame data based on the associated window.
+    ///     This is called by Update(float).
     /// </summary>
     private void SetPerFrameImGuiData(float deltaSeconds)
     {
-        ImGuiIOPtr io = ImGui.GetIO();
-        io.DisplaySize = new System.Numerics.Vector2(
+        var io = ImGui.GetIO();
+        io.DisplaySize = new Vector2(
             _windowWidth / _scaleFactor.X,
             _windowHeight / _scaleFactor.Y);
         io.DisplayFramebufferScale = _scaleFactor;
         io.DeltaTime = deltaSeconds; // DeltaTime is in seconds.
     }
 
-    readonly List<char> PressedChars = new List<char>();
-
     private void UpdateImGuiInput(GameWindow wnd)
     {
-        ImGuiIOPtr io = ImGui.GetIO();
+        var io = ImGui.GetIO();
 
-        MouseState MouseState = wnd.MouseState;
-        KeyboardState KeyboardState = wnd.KeyboardState;
+        var MouseState = wnd.MouseState;
+        var KeyboardState = wnd.KeyboardState;
 
         io.MouseDown[0] = MouseState[MouseButton.Left];
         io.MouseDown[1] = MouseState[MouseButton.Right];
@@ -105,22 +112,16 @@ public class ImGuiController : IDisposable
         io.MouseDown[4] = MouseState[MouseButton.Button5];
 
         var screenPoint = new Vector2i((int)MouseState.X, (int)MouseState.Y);
-        var point = screenPoint;//wnd.PointToClient(screenPoint);
-        io.MousePos = new System.Numerics.Vector2(point.X, point.Y);
+        var point = screenPoint; //wnd.PointToClient(screenPoint);
+        io.MousePos = new Vector2(point.X, point.Y);
 
         foreach (Keys key in Enum.GetValues(typeof(Keys)))
         {
-            if (key == Keys.Unknown)
-            {
-                continue;
-            }
+            if (key == Keys.Unknown) continue;
             io.AddKeyEvent(TranslateKey(key), KeyboardState.IsKeyDown(key));
         }
 
-        foreach (var c in PressedChars)
-        {
-            io.AddInputCharacter(c);
-        }
+        foreach (var c in PressedChars) io.AddInputCharacter(c);
         PressedChars.Clear();
 
         io.KeyCtrl = KeyboardState.IsKeyDown(Keys.LeftControl) || KeyboardState.IsKeyDown(Keys.RightControl);
@@ -134,21 +135,12 @@ public class ImGuiController : IDisposable
         PressedChars.Add(keyChar);
     }
 
-    internal void MouseScroll(Vector2 offset)
+    internal void MouseScroll(OpenTK.Mathematics.Vector2 offset)
     {
-        ImGuiIOPtr io = ImGui.GetIO();
+        var io = ImGui.GetIO();
 
         io.MouseWheel = offset.Y;
         io.MouseWheelH = offset.X;
-    }
-
-
-    /// <summary>
-    /// Frees all graphics resources used by the renderer.
-    /// </summary>
-    public void Dispose()
-    {
-        Renderer.Dispose();
     }
 
     public static ImGuiKey TranslateKey(Keys key)

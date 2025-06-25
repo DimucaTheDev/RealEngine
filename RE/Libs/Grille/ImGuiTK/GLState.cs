@@ -4,29 +4,26 @@ namespace RE.Libs.Grille.ImGuiTK;
 
 public unsafe class GLState
 {
-    int prevVAO;
-    int prevArrayBuffer;
-    int prevProgram;
-    bool prevBlendEnabled;
-    bool prevScissorTestEnabled;
-    BlendEquationMode prevBlendEquationRgb;
-    BlendEquationMode prevBlendEquationAlpha;
-    BlendingFactorSrc prevBlendFuncSrcRgb;
-    BlendingFactorSrc prevBlendFuncSrcAlpha;
-    BlendingFactorDest prevBlendFuncDstRgb;
-    BlendingFactorDest prevBlendFuncDstAlpha;
-    bool prevCullFaceEnabled;
-    bool prevDepthTestEnabled;
-    TextureUnit prevActiveTextureUnit;
-    int prevTexture02D;
-    readonly int[] prevScissorBox;
-    readonly int[] prevPolygonMode;
+    private readonly bool CompatibilityProfile;
 
-    readonly int GLVersion;
-    readonly bool CompatibilityProfile;
-
-    public bool StateBackupEnabled { get; set; }
-
+    private readonly int GLVersion;
+    private readonly int[] prevPolygonMode;
+    private readonly int[] prevScissorBox;
+    private TextureUnit prevActiveTextureUnit;
+    private int prevArrayBuffer;
+    private bool prevBlendEnabled;
+    private BlendEquationMode prevBlendEquationAlpha;
+    private BlendEquationMode prevBlendEquationRgb;
+    private BlendingFactorDest prevBlendFuncDstAlpha;
+    private BlendingFactorDest prevBlendFuncDstRgb;
+    private BlendingFactorSrc prevBlendFuncSrcAlpha;
+    private BlendingFactorSrc prevBlendFuncSrcRgb;
+    private bool prevCullFaceEnabled;
+    private bool prevDepthTestEnabled;
+    private int prevProgram;
+    private bool prevScissorTestEnabled;
+    private int prevTexture02D;
+    private int prevVAO;
 
 
     public GLState()
@@ -36,20 +33,19 @@ public unsafe class GLState
 
         StateBackupEnabled = true;
 
-        int major = GL.GetInteger(GetPName.MajorVersion);
-        int minor = GL.GetInteger(GetPName.MinorVersion);
+        var major = GL.GetInteger(GetPName.MajorVersion);
+        var minor = GL.GetInteger(GetPName.MinorVersion);
 
         GLVersion = major * 100 + minor * 10;
-        CompatibilityProfile = (GL.GetInteger((GetPName)All.ContextProfileMask) & (int)All.ContextCompatibilityProfileBit) != 0;
-
+        CompatibilityProfile =
+            (GL.GetInteger((GetPName)All.ContextProfileMask) & (int)All.ContextCompatibilityProfileBit) != 0;
     }
+
+    public bool StateBackupEnabled { get; set; }
 
     public void Backup()
     {
-        if (!StateBackupEnabled)
-        {
-            return;
-        }
+        if (!StateBackupEnabled) return;
 
         prevVAO = GL.GetInteger(GetPName.VertexArrayBinding);
         prevArrayBuffer = GL.GetInteger(GetPName.ArrayBufferBinding);
@@ -71,6 +67,7 @@ public unsafe class GLState
         {
             GL.GetInteger(GetPName.ScissorBox, iptr);
         }
+
         fixed (int* iptr = prevPolygonMode)
         {
             GL.GetInteger(GetPName.PolygonMode, iptr);
@@ -101,10 +98,7 @@ public unsafe class GLState
 
     public void Restore()
     {
-        if (!StateBackupEnabled)
-        {
-            return;
-        }
+        if (!StateBackupEnabled) return;
 
         // Reset state
         GL.BindTexture(TextureTarget.Texture2D, prevTexture02D);
@@ -118,7 +112,8 @@ public unsafe class GLState
 
         void Set(EnableCap cap, bool value)
         {
-            if (value) GL.Enable(cap); else GL.Disable(cap);
+            if (value) GL.Enable(cap);
+            else GL.Disable(cap);
         }
 
         Set(EnableCap.Blend, prevBlendEnabled);

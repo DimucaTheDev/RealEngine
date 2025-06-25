@@ -5,108 +5,116 @@ using OpenTK.Windowing.GraphicsLibraryFramework;
 using RE.Core;
 using RE.Debug;
 
-namespace RE.Rendering.Camera
+namespace RE.Rendering.Camera;
+
+public class Camera
 {
-    public class Camera
+    private const float MouseSensitivity = 0.2f;
+
+    public static LineManager l = new();
+    private bool _firstMove = true;
+
+    private Vector2 _lastMousePos;
+    public float AspectRatio;
+    public Vector3 Front = -Vector3.UnitZ;
+    public float Pitch;
+
+    public Vector3 Position;
+    public Vector3 Up;
+    public float Yaw = -90f;
+
+    private Camera()
     {
-        public static Camera Instance { get; private set; }
+    }
 
-        private Vector2 _lastMousePos;
-        private bool _firstMove = true;
+    private Camera(Vector3 position, Vector3 up, float aspectRatio)
+    {
+        Position = position;
+        Up = up;
+        AspectRatio = aspectRatio;
+    }
 
-        public Vector3 Position;
-        public Vector3 Front = -Vector3.UnitZ;
-        public Vector3 Up;
-        public float Yaw = -90f;
-        public float Pitch = 0f;
-        public float AspectRatio;
+    public static Camera Instance { get; private set; }
 
-        private const float MouseSensitivity = 0.2f;
-
-        private Camera() { }
-        private Camera(Vector3 position, Vector3 up, float aspectRatio)
+    public static void Init()
+    {
+        l.Init();
+        Instance = new Camera(Vector3.Zero, Vector3.UnitY,
+            Game.Instance.ClientSize.X / (float)Game.Instance.ClientSize.Y);
+        Game.Instance.CursorState = CursorState.Grabbed;
+        Game.Instance.MouseMove += s => Instance.HandleMouseMove(s.X, s.Y);
+        Game.Instance.UpdateFrame += _ => Instance.HandleInput(Game.Instance.KeyboardState);
+        Game.Instance.MouseDown += _ =>
         {
-            Position = position;
-            Up = up;
-            AspectRatio = aspectRatio;
-        }
+            if (ImGui.GetIO().WantCaptureMouse) return;
 
-        public static LineManager l = new();
-        public static void Init()
-        {
-            l.Init();
-            Instance = new Camera(Vector3.Zero, Vector3.UnitY, ((float)Game.Instance.ClientSize.X / (float)Game.Instance.ClientSize.Y));
             Game.Instance.CursorState = CursorState.Grabbed;
-            Game.Instance.MouseMove += (s) => Instance.HandleMouseMove(s.X, s.Y);
-            Game.Instance.UpdateFrame += (_) => Instance.HandleInput(Game.Instance.KeyboardState);
-            Game.Instance.MouseDown += (_) =>
-            {
-                if (ImGui.GetIO().WantCaptureMouse) return;
 
-                Game.Instance.CursorState = CursorState.Grabbed;
+            if (_.Button == MouseButton.Button1)
+                l.AddLine(Instance.Position, Instance.Position + Instance.Front * 3f, new Vector4(1, 0, 0, 1),
+                    new Vector4(0, 0, 0, 1));
+        };
+    }
 
-                if (_.Button == MouseButton.Button1)
-                {
-                    l.AddLine(Instance.Position, Instance.Position + Instance.Front * 3f, new(1, 0, 0, 1), new(0, 0, 0, 1));
-                }
-            };
-        }
-        public void HandleMouseMove(float mouseX, float mouseY)
+    public void HandleMouseMove(float mouseX, float mouseY)
+    {
+        if (Game.Instance.CursorState != CursorState.Grabbed || ImGui.GetIO().WantCaptureMouse) return;
+        if (_firstMove)
         {
-            if (Game.Instance.CursorState != CursorState.Grabbed || ImGui.GetIO().WantCaptureMouse) return;
-            if (_firstMove)
-            {
-                _lastMousePos = new Vector2(mouseX, mouseY);
-                _firstMove = false;
-                return;
-            }
-
-            var deltaX = mouseX - _lastMousePos.X;
-            var deltaY = _lastMousePos.Y - mouseY; // инверсия Y
-
             _lastMousePos = new Vector2(mouseX, mouseY);
-
-            Yaw += deltaX * MouseSensitivity;
-            Pitch += deltaY * MouseSensitivity;
-
-            Pitch = MathHelper.Clamp(Pitch, -89f, 89f);
-
-            Vector3 front;
-            front.X = MathF.Cos(MathHelper.DegreesToRadians(Yaw)) * MathF.Cos(MathHelper.DegreesToRadians(Pitch));
-            front.Y = MathF.Sin(MathHelper.DegreesToRadians(Pitch));
-            front.Z = MathF.Sin(MathHelper.DegreesToRadians(Yaw)) * MathF.Cos(MathHelper.DegreesToRadians(Pitch));
-            Front = Vector3.Normalize(front);
+            _firstMove = false;
+            return;
         }
 
-        public void HandleInput(KeyboardState state)
+        var deltaX = mouseX - _lastMousePos.X;
+        var deltaY = _lastMousePos.Y - mouseY; // инверсия Y
+
+        _lastMousePos = new Vector2(mouseX, mouseY);
+
+        Yaw += deltaX * MouseSensitivity;
+        Pitch += deltaY * MouseSensitivity;
+
+        Pitch = MathHelper.Clamp(Pitch, -89f, 89f);
+
+        Vector3 front;
+        front.X = MathF.Cos(MathHelper.DegreesToRadians(Yaw)) * MathF.Cos(MathHelper.DegreesToRadians(Pitch));
+        front.Y = MathF.Sin(MathHelper.DegreesToRadians(Pitch));
+        front.Z = MathF.Sin(MathHelper.DegreesToRadians(Yaw)) * MathF.Cos(MathHelper.DegreesToRadians(Pitch));
+        Front = Vector3.Normalize(front);
+    }
+
+    public void HandleInput(KeyboardState state)
+    {
+        var input = state;
+        var speed = 2.5f * Time.DeltaTime;
+
+
+        if (input.IsKeyDown(Keys.W))
+            Position += (Front with { Y = 0 }).Normalized() * speed;
+        if (input.IsKeyDown(Keys.S))
+            Position -= (Front with { Y = 0 }).Normalized() * speed;
+        if (input.IsKeyDown(Keys.A))
+            Position -= Vector3.Normalize(Vector3.Cross(Front, Up)) * speed;
+        if (input.IsKeyDown(Keys.D))
+            Position += Vector3.Normalize(Vector3.Cross(Front, Up)) * speed;
+        if (input.IsKeyDown(Keys.Space))
+            Position += Vector3.UnitY * speed;
+        if (input.IsKeyDown(Keys.LeftShift))
+            Position -= Vector3.UnitY * speed;
+        if (input.IsKeyDown(Keys.Escape))
         {
-            var input = state;
-            float speed = 2.5f * Time.DeltaTime;
-
-
-            if (input.IsKeyDown(Keys.W))
-                Position += (Front with { Y = 0 }).Normalized() * speed;
-            if (input.IsKeyDown(Keys.S))
-                Position -= (Front with { Y = 0 }).Normalized() * speed;
-            if (input.IsKeyDown(Keys.A))
-                Position -= Vector3.Normalize(Vector3.Cross(Front, Up)) * speed;
-            if (input.IsKeyDown(Keys.D))
-                Position += Vector3.Normalize(Vector3.Cross(Front, Up)) * speed;
-            if (input.IsKeyDown(Keys.Space))
-                Position += Vector3.UnitY * speed;
-            if (input.IsKeyDown(Keys.LeftShift))
-                Position -= Vector3.UnitY * speed;
-            if (input.IsKeyDown(Keys.Escape))
-            {
-                Game.Instance.CursorState = CursorState.Normal;
-                _firstMove = true;
-            }
+            Game.Instance.CursorState = CursorState.Normal;
+            _firstMove = true;
         }
+    }
 
-        public Matrix4 GetViewMatrix()
-            => Matrix4.LookAt(Position, Position + Front, Up);
+    public Matrix4 GetViewMatrix()
+    {
+        return Matrix4.LookAt(Position, Position + Front, Up);
+    }
 
-        public Matrix4 GetProjectionMatrix()
-            => Matrix4.CreatePerspectiveFieldOfView(MathHelper.DegreesToRadians(60f), AspectRatio, 0.1f, 100f);
+    public Matrix4 GetProjectionMatrix()
+    {
+        return Matrix4.CreatePerspectiveFieldOfView(MathHelper.DegreesToRadians(60f), AspectRatio, 0.1f, 100f);
     }
 }

@@ -1,12 +1,11 @@
 ﻿using RE.Core;
 
-namespace RE
+namespace RE;
+
+internal class Program
 {
-    internal class Program
+    private static void Main(string[] args)
     {
-        static void Main(string[] args)
-        {
-            Game.Start();
-        }
+        Game.Start();
     }
 }
