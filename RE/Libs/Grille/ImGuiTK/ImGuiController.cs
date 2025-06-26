@@ -2,6 +2,7 @@
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Desktop;
 using OpenTK.Windowing.GraphicsLibraryFramework;
+using RE.Core;
 using Vector2 = System.Numerics.Vector2;
 
 namespace RE.Libs.Grille.ImGuiTK;
@@ -16,12 +17,23 @@ public class ImGuiController : IDisposable
 
     private int _windowWidth;
 
+    public static ImGuiController? Instance { get; private set; }
+
+
+    public static ImGuiController Get() => Instance ??= new ImGuiController();
+
     /// <summary>
     ///     Constructs a new ImGuiController.
     /// </summary>
-    public ImGuiController()
+    private ImGuiController()
     {
         Renderer = new GLRenderer();
+
+
+        Game.Instance.Resize += args => WindowResized(args.Width, args.Height);
+        Game.Instance.MouseWheel += args => MouseScroll(args.Offset);
+        Game.Instance.TextInput += args => PressChar((char)args.Unicode);
+
 
         var context = ImGui.CreateContext();
         ImGui.SetCurrentContext(context);
@@ -75,7 +87,10 @@ public class ImGuiController : IDisposable
     /// </summary>
     public void Update(GameWindow wnd, float deltaSeconds)
     {
-        if (_frameBegun) ImGui.Render();
+        if (_frameBegun)
+        {
+            ImGui.Render();
+        }
 
         SetPerFrameImGuiData(deltaSeconds);
         UpdateImGuiInput(wnd);
@@ -88,7 +103,7 @@ public class ImGuiController : IDisposable
     ///     Sets per-frame data based on the associated window.
     ///     This is called by Update(float).
     /// </summary>
-    private void SetPerFrameImGuiData(float deltaSeconds)
+    public void SetPerFrameImGuiData(float deltaSeconds)
     {
         var io = ImGui.GetIO();
         io.DisplaySize = new Vector2(
@@ -98,7 +113,7 @@ public class ImGuiController : IDisposable
         io.DeltaTime = deltaSeconds; // DeltaTime is in seconds.
     }
 
-    private void UpdateImGuiInput(GameWindow wnd)
+    public void UpdateImGuiInput(GameWindow wnd)
     {
         var io = ImGui.GetIO();
 

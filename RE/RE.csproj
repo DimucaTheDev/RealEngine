@@ -2,11 +2,24 @@
 
 	<PropertyGroup>
 		<OutputType>Exe</OutputType>
-		<TargetFramework>net10.0</TargetFramework>
+		<TargetFramework>net10.0-windows</TargetFramework>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 		<AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+		<ApplicationIcon>RealEngine.ico</ApplicationIcon>
+		<Title>Real Engine</Title>
+		<Version>1.2.3.4</Version>
+		<Authors>DimucaTheDev</Authors>
+		<Company>LEFT2.DEV</Company>
+		<Product>Real Engine</Product>
+		<PackageProjectUrl>https://github.com/DimucaTheDev/RealEngine</PackageProjectUrl>
+		<Description>REAL Engine!!!!!! A replacement for Unreal Engine 7</Description>
 	</PropertyGroup>
+
+	<ItemGroup>
+	  <Resource Include="Assets\RealEngine.ico" />
+	  <Resource Include="RealEngine.ico" />
+	</ItemGroup>
 
 
 
@@ -18,6 +31,7 @@
 		<PackageReference Include="Serilog" Version="4.3.0" />
 		<PackageReference Include="Serilog.Enrichers.Thread" Version="4.0.0" />
 		<PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
+		<PackageReference Include="Serilog.Sinks.TextWriter" Version="3.0.0" />
 		<PackageReference Include="SixLabors.ImageSharp" Version="3.1.10" />
 		<PackageReference Include="SpaceWizards.SharpFont" Version="1.0.2" />
 		<PackageReference Include="System.Drawing.Common" Version="9.0.6" />
@@ -35,6 +49,12 @@
 	  <None Update="Dll\**">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </None>
+	</ItemGroup>
+
+
+	<ItemGroup>
+	  <Folder Include="Assets\Audio\" />
+	  <Folder Include="Core\Scripting\" />
 	</ItemGroup>
 
 

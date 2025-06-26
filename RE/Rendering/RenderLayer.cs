@@ -1,4 +1,6 @@
 ﻿using OpenTK.Windowing.Common;
+using RE.Core;
+using RE.Libs.Grille.ImGuiTK;
 
 namespace RE.Rendering;
 
@@ -8,13 +10,16 @@ public enum RenderLayer
     Skybox,
     World,
     UI,
-    Overlay
+    Overlay,
+    ImGui
 }
 
 public class RenderLayerManager
 {
     public static SortedDictionary<RenderLayer, Dictionary<Type, List<IRenderable>>> Renderables = new();
     public static Dictionary<Type, Action> RenderablesInitActions = new();
+    public static Dictionary<Type, Action> RenderablesPostActions = new();
+
 
     public static void Init()
     {
@@ -22,7 +27,6 @@ public class RenderLayerManager
         foreach (RenderLayer layer in Enum.GetValues(typeof(RenderLayer)))
             Renderables[layer] = new Dictionary<Type, List<IRenderable>>();
     }
-
     public static void AddRenderable<T>(T renderable) where T : IRenderable
     {
         var types = Renderables[renderable.RenderLayer];
@@ -53,6 +57,11 @@ public class RenderLayerManager
         if (!RenderablesInitActions.TryAdd(typeof(T), action))
             RenderablesInitActions[typeof(T)] += action;
     }
+    public static void SetRenderablePostAction<T>(Action action)
+    {
+        if (!RenderablesPostActions.TryAdd(typeof(T), action))
+            RenderablesPostActions[typeof(T)] += action;
+    }
 
     public static void RemoveRenderableInitAction(Type type, Action action)
     {
@@ -65,6 +74,17 @@ public class RenderLayerManager
                 RenderablesInitActions[type] = existingAction;
         }
     }
+    public static void RemoveRenderablePostAction(Type type, Action action)
+    {
+        if (RenderablesPostActions.TryGetValue(type, out var existingAction))
+        {
+            existingAction -= action;
+            if (existingAction == null)
+                RenderablesPostActions.Remove(type);
+            else
+                RenderablesPostActions[type] = existingAction;
+        }
+    }
 
     public static void RenderAll(FrameEventArgs args)
     {
@@ -72,15 +92,18 @@ public class RenderLayerManager
         {
             var layer = kvp.Key;
             OnLayerBegin(layer);
-            foreach (var VARIABLE in kvp.Value)
+            foreach (var pair in kvp.Value)
             {
-                List<IRenderable> list = VARIABLE.Value;
-                if (RenderablesInitActions.TryGetValue(VARIABLE.Key, out var value))
-                    value.Invoke();
+                List<IRenderable> list = pair.Value;
+                if (RenderablesInitActions.TryGetValue(pair.Key, out var init))
+                    init.Invoke();
 
                 foreach (var renderable in list)
                     if (renderable.IsVisible)
                         renderable.Render(args);
+
+                if (RenderablesPostActions.TryGetValue(pair.Key, out var post))
+                    post.Invoke();
             }
 
             OnLayerEnd(layer);
@@ -89,15 +112,21 @@ public class RenderLayerManager
 
     private static void OnLayerBegin(RenderLayer layer)
     {
-        return;
         switch (layer)
         {
-            case RenderLayer.UI:
+            case RenderLayer.ImGui:
+                ImGuiController.Get().Update(Game.Instance, Time.DeltaTime);
                 break;
         }
     }
 
     private static void OnLayerEnd(RenderLayer layer)
     {
+        switch (layer)
+        {
+            case RenderLayer.ImGui:
+                ImGuiController.Get().Render();
+                break;
+        }
     }
 }

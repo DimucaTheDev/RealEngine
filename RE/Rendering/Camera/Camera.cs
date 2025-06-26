@@ -4,6 +4,7 @@ using OpenTK.Windowing.Common;
 using OpenTK.Windowing.GraphicsLibraryFramework;
 using RE.Core;
 using RE.Debug;
+using RE.Debug.Overlay;
 
 namespace RE.Rendering.Camera;
 
@@ -44,13 +45,13 @@ public class Camera
         Game.Instance.CursorState = CursorState.Grabbed;
         Game.Instance.MouseMove += s => Instance.HandleMouseMove(s.X, s.Y);
         Game.Instance.UpdateFrame += _ => Instance.HandleInput(Game.Instance.KeyboardState);
-        Game.Instance.MouseDown += _ =>
+        Game.Instance.MouseDown += args =>
         {
             if (ImGui.GetIO().WantCaptureMouse) return;
 
             Game.Instance.CursorState = CursorState.Grabbed;
 
-            if (_.Button == MouseButton.Button1)
+            if (args.Button == MouseButton.Button1)
                 l.AddLine(Instance.Position, Instance.Position + Instance.Front * 3f, new Vector4(1, 0, 0, 1),
                     new Vector4(0, 0, 0, 1));
         };
@@ -101,6 +102,9 @@ public class Camera
             Position += Vector3.UnitY * speed;
         if (input.IsKeyDown(Keys.LeftShift))
             Position -= Vector3.UnitY * speed;
+        if (input.IsKeyPressed(Keys.GraveAccent))
+            ConsoleWindow.Instance.IsVisible = !ConsoleWindow.Instance.IsVisible;
+
         if (input.IsKeyDown(Keys.Escape))
         {
             Game.Instance.CursorState = CursorState.Normal;
