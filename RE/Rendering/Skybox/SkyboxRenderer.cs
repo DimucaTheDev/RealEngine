@@ -1,5 +1,7 @@
 ﻿using OpenTK.Graphics.OpenGL4;
 using OpenTK.Windowing.Common;
+using Serilog;
+using SixLabors.ImageSharp.Processing;
 
 namespace RE.Rendering.Skybox;
 
@@ -23,6 +25,17 @@ internal class SkyboxRenderer : IRenderable
         -1, -1, -1, -1, -1, 1, 1, -1, 1,
         1, -1, 1, 1, -1, -1, -1, -1, -1 // низ
     };
+    private static int _cubemap;
+
+    private static string[] faces =
+    [
+        "Assets/skybox/right.png",   // GL_TEXTURE_CUBE_MAP_POSITIVE_X
+        "Assets/skybox/left.png",    // GL_TEXTURE_CUBE_MAP_NEGATIVE_X
+        "Assets/skybox/top.png",     // GL_TEXTURE_CUBE_MAP_POSITIVE_Y
+        "Assets/skybox/bottom.png",  // GL_TEXTURE_CUBE_MAP_NEGATIVE_Y
+        "Assets/skybox/front.png",   // GL_TEXTURE_CUBE_MAP_POSITIVE_Z
+        "Assets/skybox/back.png"     // GL_TEXTURE_CUBE_MAP_NEGATIVE_Z
+    ];
 
     public static SkyboxRenderer Instance { get; private set; }
 
@@ -43,6 +56,12 @@ internal class SkyboxRenderer : IRenderable
         GL.UniformMatrix4(GL.GetUniformLocation(_handle, "projection"), false, ref proj); // added ref
 
         GL.BindVertexArray(_vao);
+
+        GL.ActiveTexture(TextureUnit.Texture0);
+        GL.BindTexture(TextureTarget.TextureCubeMap, _cubemap);
+        GL.Uniform1(GL.GetUniformLocation(_handle, "skybox"), 0);
+
+
         GL.DrawArrays(PrimitiveType.Triangles, 0, 36);
 
         GL.DepthMask(true);
@@ -83,7 +102,39 @@ internal class SkyboxRenderer : IRenderable
         GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, 3 * sizeof(float), 0);
         GL.EnableVertexAttribArray(0);
 
-        RenderLayerManager.AddRenderable(Instance);
+        _cubemap = GL.GenTexture();
+        GL.BindTexture(TextureTarget.TextureCubeMap, _cubemap);
 
+        try
+        {
+            for (int i = 0; i < faces.Length; i++)
+            {
+                using var image = SixLabors.ImageSharp.Image.Load<SixLabors.ImageSharp.PixelFormats.Rgba32>(faces[i]);
+                image.Mutate(x => x.Flip(SixLabors.ImageSharp.Processing.FlipMode.Horizontal)); // OpenGL flip
+                var pixels = new byte[4 * image.Width * image.Height];
+                image.CopyPixelDataTo(pixels);
+
+                GL.TexImage2D(TextureTarget.TextureCubeMapPositiveX + i, 0,
+                    PixelInternalFormat.Rgba,
+                    image.Width, image.Height, 0,
+                    PixelFormat.Rgba,
+                    PixelType.UnsignedByte,
+                    pixels);
+            }
+        }
+        catch (Exception e)
+        {
+            Log.Error(e, "Unable to load panorama");
+        }
+
+        GL.TexParameter(TextureTarget.TextureCubeMap, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Linear);
+        GL.TexParameter(TextureTarget.TextureCubeMap, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Linear);
+        GL.TexParameter(TextureTarget.TextureCubeMap, TextureParameterName.TextureWrapS, (int)TextureWrapMode.ClampToEdge);
+        GL.TexParameter(TextureTarget.TextureCubeMap, TextureParameterName.TextureWrapT, (int)TextureWrapMode.ClampToEdge);
+        GL.TexParameter(TextureTarget.TextureCubeMap, TextureParameterName.TextureWrapR, (int)TextureWrapMode.ClampToEdge);
+
+
+
+        RenderLayerManager.AddRenderable(Instance);
     }
 }
