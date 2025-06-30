@@ -1,7 +1,8 @@
 ﻿using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
+using RE.Audio;
 using RE.Rendering;
-using RE.Rendering.Camera;
+using Serilog;
 using static ImGuiNET.ImGui;
 
 namespace RE.Debug.Overlay;
@@ -20,7 +21,6 @@ internal class DebugOverlay : IRenderable
 
     public void Render(FrameEventArgs args)
     {
-
         Begin("123");
         if (Button("gc")) GC.Collect();
         var instance = Camera.Instance;
@@ -35,9 +35,15 @@ internal class DebugOverlay : IRenderable
             {
                 var end = start + new Vector3(Random.Shared.NextSingle() * .1f, Random.Shared.NextSingle() * .1f,
                     Random.Shared.NextSingle() * .1f);
-                Camera.l.AddLine(start, end, new Vector4(1, 0, 0, 1), new Vector4(0, 0, 1, 1), 2000);
+                LineManager.Main.AddLine(start, end, new Vector4(1, 0, 0, 1), new Vector4(0, 0, 1, 1), 2000);
                 start = end;
             }
+        }
+
+        if (Button("play random"))
+        {
+            var soundId = SoundManager.SoundMap.ToList()[Random.Shared.Next(SoundManager.SoundMap.Count)];
+            SoundManager.Play(soundId.Key, new() { Volume = .2f });
         }
 
         //Text((1 / args.Time).ToString("F2") + " FPS\n" +
@@ -46,8 +52,85 @@ internal class DebugOverlay : IRenderable
         //     $"Camera Position: {Camera.Instance.Position.X:F2}, {Camera.Instance.Position.Y:F2}, {Camera.Instance.Position.Z:F2}" +
         //     $"\nAverage 5sFPS: {Game.A:F2}");
         End();
+
+        if (Begin("test"))
+        {
+            BeginDisabled(s != null!);
+            if (Button("init"))
+            {
+                s = SoundManager.Get("ambience/wind");
+                s.Position = Camera.Instance.Position;
+                s.Volume = .2f;
+                s.Stopped += () => Log.Information("Sound stopped");
+                s.Paused += () => Log.Information("Sound paused");
+                s.Playing += () => Log.Information("Sound playing");
+                s.Resumed += () => Log.Information("Sound resumed");
+                Log.Debug($"{s.Source} p:{s.Pitch} l:{s.Length} v:{s.Volume}");
+            }
+            EndDisabled();
+            Text($"{MathF.Round(s?.Offset ?? 0, 1):F1}/{MathF.Round(s?.Length ?? 0, 1):F1}");
+            BeginDisabled(s == null);
+            if (Button("play"))
+            {
+                s.Play();
+            }
+            if (Button("stop"))
+            {
+                s.Stop();
+            }
+            if (Button("pause"))
+            {
+                s.Pause();
+            }
+            if (Button("resume"))
+            {
+                s.Resume();
+            }
+
+            Checkbox("Loop", ref l);
+            SameLine();
+            if (Button("upd")) s.Loop = l;
+
+            EndDisabled();
+        }
+
+        End();
+
+        Begin("Sound Player");
+        Text($"{SoundManager.SoundMap.Count} sound IDs");
+        if (SoundManager.ActiveSounds.Count > 0)
+        {
+            SameLine();
+            Text($"{SoundManager.ActiveSounds.Count} active sounds.");
+        }
+        if (Button("Stop"))
+            SoundManager.StopAll();
+        InputText("Search...", ref search, 256);
+        Separator();
+        BeginChild("Sounds");
+        foreach (var sound in SoundManager.SoundMap.Where(s => s.Key.Contains(search)))
+        {
+            if (Button(sound.Key))
+            {
+                SoundManager.Play(sound.Key, new() { Volume = .2f });
+            }
+            if (sound.Value.Count > 1)
+            {
+                for (int i = 0; i < sound.Value.Count; i++)
+                {
+                    SameLine();
+                    if (Button(i.ToString()))
+                        SoundManager.Play(sound.Key, new() { VariantIndex = i, Volume = .2f });
+                }
+            }
+        }
+        EndChild();
+        End();
     }
 
+    private string search = "";
+    private bool l;
+    private Sound s;
     public static void Init()
     {
         Instance ??= new DebugOverlay();

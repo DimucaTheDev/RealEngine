@@ -1,5 +1,6 @@
 ﻿using ImGuiNET;
 using OpenTK.Mathematics;
+using OpenTK.Windowing.Common;
 using OpenTK.Windowing.Desktop;
 using OpenTK.Windowing.GraphicsLibraryFramework;
 using RE.Core;
@@ -93,7 +94,8 @@ public class ImGuiController : IDisposable
         }
 
         SetPerFrameImGuiData(deltaSeconds);
-        UpdateImGuiInput(wnd);
+        if (Game.Instance.CursorState != CursorState.Grabbed)
+            UpdateImGuiInput(wnd);
 
         _frameBegun = true;
         ImGui.NewFrame();

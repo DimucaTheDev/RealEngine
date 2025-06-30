@@ -85,7 +85,19 @@ public class RenderLayerManager
                 RenderablesPostActions[type] = existingAction;
         }
     }
-
+    public static void RenderType<T>(T renderable, FrameEventArgs args) where T : IRenderable
+    {
+        if (Renderables.TryGetValue(renderable.RenderLayer, out var types) && types.TryGetValue(typeof(T), out var list))
+        {
+            if (RenderablesInitActions.TryGetValue(typeof(T), out var init))
+                init.Invoke();
+            foreach (var r in list)
+                if (r.IsVisible)
+                    r.Render(args);
+            if (RenderablesPostActions.TryGetValue(typeof(T), out var post))
+                post.Invoke();
+        }
+    }
     public static void RenderAll(FrameEventArgs args)
     {
         foreach (var kvp in Renderables)
@@ -115,6 +127,7 @@ public class RenderLayerManager
         switch (layer)
         {
             case RenderLayer.ImGui:
+
                 ImGuiController.Get().Update(Game.Instance, Time.DeltaTime);
                 break;
         }

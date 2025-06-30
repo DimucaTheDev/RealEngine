@@ -10,8 +10,7 @@ internal class SkyboxRenderer : IRenderable
     private static int _vao, _vbo, _handle;
 
     private static readonly float[] _cubeVertices =
-    {
-        // Только позиции, без цветов, без нормалей
+    [
         -1, 1, -1, -1, -1, -1, 1, -1, -1,
         1, -1, -1, 1, 1, -1, -1, 1, -1, // задняя
         -1, -1, 1, -1, -1, -1, -1, 1, -1,
@@ -24,7 +23,7 @@ internal class SkyboxRenderer : IRenderable
         1, 1, 1, -1, 1, 1, -1, 1, -1, // верх
         -1, -1, -1, -1, -1, 1, 1, -1, 1,
         1, -1, 1, 1, -1, -1, -1, -1, -1 // низ
-    };
+    ];
     private static int _cubemap;
 
     private static string[] faces =
@@ -47,8 +46,8 @@ internal class SkyboxRenderer : IRenderable
         GL.DepthMask(false); // не пишем в z-buffer
 
         GL.UseProgram(_handle);
-        var view = Camera.Camera.Instance.GetViewMatrix();
-        var proj = Camera.Camera.Instance.GetProjectionMatrix();
+        var view = Camera.Instance.GetViewMatrix();
+        var proj = Camera.Instance.GetProjectionMatrix();
         view.Row3.X = 0;
         view.Row3.Y = 0;
         view.Row3.Z = 0;
@@ -132,8 +131,6 @@ internal class SkyboxRenderer : IRenderable
         GL.TexParameter(TextureTarget.TextureCubeMap, TextureParameterName.TextureWrapS, (int)TextureWrapMode.ClampToEdge);
         GL.TexParameter(TextureTarget.TextureCubeMap, TextureParameterName.TextureWrapT, (int)TextureWrapMode.ClampToEdge);
         GL.TexParameter(TextureTarget.TextureCubeMap, TextureParameterName.TextureWrapR, (int)TextureWrapMode.ClampToEdge);
-
-
 
         RenderLayerManager.AddRenderable(Instance);
     }

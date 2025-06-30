@@ -3,26 +3,151 @@ using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using OpenTK.Windowing.Common.Input;
 using OpenTK.Windowing.Desktop;
+using RE.Audio;
+using RE.Debug;
 using RE.Debug.Overlay;
 using RE.Libs.Grille.ImGuiTK;
 using RE.Rendering;
-using RE.Rendering.Camera;
 using RE.Rendering.Skybox;
-using RE.Rendering.Text;
 using RE.Utils;
 using Serilog;
 using Serilog.Events;
 using System.Drawing;
 using System.Drawing.Imaging;
+using System.Windows.Forms;
 using Image = OpenTK.Windowing.Common.Input.Image;
+using TextRenderer = RE.Rendering.Text.TextRenderer;
 
 namespace RE.Core;
 
 internal class Game : GameWindow
 {
+    private Game(GameWindowSettings gws, NativeWindowSettings nws) : base(gws, nws) { }
 
-    // ...
+    public static Game Instance { get; private set; }
+    public static StringWriter GameLog = new();
 
+    private static readonly Dictionary<nint, string> _loadedLibs = new();
+
+
+
+
+    public static void Start()
+    {
+        Thread.CurrentThread.Name = "Render Thread";
+        Environment.CurrentDirectory = AppContext.BaseDirectory;
+
+        Log.Logger = new LoggerConfiguration()
+            .MinimumLevel.Debug()
+            .Enrich.WithThreadName()
+            .WriteTo.TextWriter(GameLog, LogEventLevel.Information, outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] [{ThreadName}] {Message:lj}{NewLine}{Exception}")
+            .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss.fff} {Level:u3}] [{ThreadName}] {Message:lj}{NewLine}{Exception}")
+            .CreateLogger();
+        Log.Information("Hello, World!");
+
+        foreach (var lib in Directory.GetFiles("Dll", "*.dll"))
+        {
+            nint handle;
+            _loadedLibs.Add(handle = WinApi.LoadLibrary(lib), lib);
+            Log.Debug($"Loaded DLL \"{Path.GetFileName(lib)}\": 0x{handle:X} ");
+        }
+
+        using var game = new Game(
+            new GameWindowSettings { UpdateFrequency = 60 },
+            new NativeWindowSettings
+            {
+                Title = "Real Engine",
+                ClientSize = new Vector2i(1280, 720),
+                Location = new Vector2i(Screen.PrimaryScreen!.Bounds.Width / 2 - 640, Screen.PrimaryScreen.Bounds.Height / 2 - 360),
+                Icon = LoadIcon(),
+                WindowState = WindowState.Normal
+            });
+        Instance = game;
+
+        game.Run();
+
+        Log.Information("End");
+    }
+
+    protected override void OnLoad()
+    {
+        UpdateFrame += Time.Update;
+        UpdateFrame += SoundManager.Update;
+
+        RenderLayerManager.Init();
+        Time.Init();
+        ImGuiController.Get();
+        Camera.Init();
+        TextRenderer.Init();
+        Initializer.Init();
+
+        Initializer.AddStep(("Initializing Debug Overlay", DebugOverlay.Init));
+        Initializer.AddStep(("Initializing Debug Renderer", () =>
+                {
+                    LineManager.Main!.Init();
+                    LineManager.Main.Render();
+                }
+        ));
+        Initializer.AddStep(("Initializing ConsoleWindow", ConsoleWindow.Init));
+        Initializer.AddStep(("Initializing Skybox", SkyboxRenderer.Init));
+        Initializer.AddStep(("Initializing SoundManager", SoundManager.Init));
+
+
+
+        base.OnLoad();
+    }
+
+
+
+    protected override void OnResize(ResizeEventArgs e)
+    {
+        Camera.Instance.AspectRatio = (float)e.Width / e.Height;
+        GL.Viewport(0, 0, e.Width, e.Height);
+        base.OnResize(e);
+    }
+
+
+    protected override void OnRenderFrame(FrameEventArgs args)
+    {
+        if (Initializer.Render(args))
+            return;
+
+        GL.Viewport(0, 0, ClientSize.X, ClientSize.Y);
+        GL.Clear(ClearBufferMask.ColorBufferBit);
+        GL.DepthFunc(DepthFunction.Lequal);
+        GL.ClearColor(Color.CadetBlue);
+
+        RenderLayerManager.RenderAll(args);
+
+        base.OnRenderFrame(args);
+
+        SwapBuffers();
+    }
+
+    public void ToggleFullscreen()
+    {
+        if (WindowState == WindowState.Fullscreen)
+        {
+            Log.Debug("Switching to windowed mode");
+            WindowState = WindowState.Normal;
+            WindowBorder = WindowBorder.Resizable;
+        }
+        else
+        {
+            Log.Debug("Switching to fullscreen mode");
+            WindowState = WindowState.Fullscreen;
+            WindowBorder = WindowBorder.Hidden;
+        }
+    }
+    protected override void OnUnload()
+    {
+        base.OnUnload();
+        foreach (var lib in _loadedLibs)
+        {
+            Log.Debug($"Unloading library \"{lib.Value}\"");
+            WinApi.FreeLibrary(lib.Key);
+        }
+    }
     public static WindowIcon? LoadIcon()
     {
         var path = "Assets/RealEngine.ico";
@@ -66,96 +191,6 @@ internal class Game : GameWindow
         {
             Log.Error(e, "An error occurred while loading the icon.");
             throw;
-        }
-    }
-
-    private Game(GameWindowSettings gws, NativeWindowSettings nws) : base(gws, nws) { }
-
-    private static readonly Dictionary<nint, string> _loadedLibs = new();
-    public static StringWriter stringWriter = new StringWriter();
-    public static Game Instance { get; private set; }
-
-    public static void Start()
-    {
-        Thread.CurrentThread.Name = "Render Thread";
-        Environment.CurrentDirectory = AppContext.BaseDirectory;
-
-        Log.Logger = new LoggerConfiguration()
-            .MinimumLevel.Debug()
-            .Enrich.WithThreadName()
-            .WriteTo.TextWriter(stringWriter, LogEventLevel.Information, outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] [{ThreadName}] {Message:lj}{NewLine}{Exception}")
-            .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss.fff} {Level:u3}] [{ThreadName}] {Message:lj}{NewLine}{Exception}")
-            .CreateLogger();
-        Log.Information("Hello, World!");
-
-        foreach (var lib in Directory.GetFiles("Dll", "*.dll"))
-        {
-            nint handle;
-            _loadedLibs.Add(handle = WinApi.LoadLibrary(lib), lib);
-            Log.Debug($"Loaded DLL \"{Path.GetFileName(lib)}\": 0x{handle:X} ");
-        }
-
-        using var game = new Game(
-            new GameWindowSettings { UpdateFrequency = 0 },
-            new NativeWindowSettings
-            {
-                Title = "Real Engine",
-                ClientSize = new Vector2i(800, 600),
-                Icon = LoadIcon()
-            });
-        Instance = game;
-
-        game.Run();
-
-        Log.Information("End");
-    }
-
-    protected override void OnLoad()
-    {
-        UpdateFrame += Time.Update;
-
-        RenderLayerManager.Init();
-        Time.Init();
-        Camera.Init();
-        TextRenderer.Init();
-        ImGuiController.Get();
-        DebugOverlay.Init();
-        Debug.Overlay.ConsoleWindow.Init();
-        SkyboxRenderer.Init();
-
-        RenderLayerManager.AddRenderable(Camera.l);
-
-        base.OnLoad();
-    }
-
-    protected override void OnResize(ResizeEventArgs e)
-    {
-        Camera.Instance.AspectRatio = (float)e.Width / e.Height;
-        GL.Viewport(0, 0, e.Width, e.Height);
-        base.OnResize(e);
-    }
-
-    protected override void OnRenderFrame(FrameEventArgs args)
-    {
-        GL.Viewport(0, 0, ClientSize.X, ClientSize.Y);
-        GL.Clear(ClearBufferMask.ColorBufferBit);
-        GL.DepthFunc(DepthFunction.Lequal);
-        GL.ClearColor(Color.CadetBlue);
-
-        RenderLayerManager.RenderAll(args);
-
-        base.OnRenderFrame(args);
-
-        SwapBuffers();
-    }
-
-    protected override void OnUnload()
-    {
-        base.OnUnload();
-        foreach (var lib in _loadedLibs)
-        {
-            Log.Debug($"Unloading library \"{lib.Value}\"");
-            WinApi.FreeLibrary(lib.Key);
         }
     }
 }

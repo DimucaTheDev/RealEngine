@@ -5,6 +5,7 @@
 		<TargetFramework>net10.0-windows</TargetFramework>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
+		<LangVersion>preview</LangVersion>
 		<AllowUnsafeBlocks>True</AllowUnsafeBlocks>
 		<ApplicationIcon>RealEngine.ico</ApplicationIcon>
 		<Title>Real Engine</Title>
@@ -26,6 +27,7 @@
 	<ItemGroup>
 		<PackageReference Include="freetype" Version="2.8.0.1" />
 		<PackageReference Include="ImGui.NET" Version="1.90.0.1" />
+		<PackageReference Include="NAudio" Version="2.2.1" />
 		<PackageReference Include="NVorbis" Version="0.10.5" />
 		<PackageReference Include="OpenTK" Version="4.9.4" />
 		<PackageReference Include="Serilog" Version="4.3.0" />
@@ -34,6 +36,7 @@
 		<PackageReference Include="Serilog.Sinks.TextWriter" Version="3.0.0" />
 		<PackageReference Include="SixLabors.ImageSharp" Version="3.1.10" />
 		<PackageReference Include="SpaceWizards.SharpFont" Version="1.0.2" />
+		<PackageReference Include="StbImageSharp" Version="2.30.15" />
 		<PackageReference Include="System.Drawing.Common" Version="9.0.6" />
 	</ItemGroup>
 

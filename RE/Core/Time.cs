@@ -3,16 +3,11 @@ using Serilog;
 
 namespace RE.Core;
 
-internal static class Time
+public static class Time
 {
-    private const double interval = 5.0;
-
     private static bool _initialized;
     private static readonly List<ScheduledTask> _scheduled = new();
     private static readonly List<ScheduledTask> _scheduledFrames = new();
-    private static double accumTime = 0.0;
-    private static int frameCount = 0;
-    private static double avgFPS = 0.0;
 
     public static DateTime StartTime { get; private set; } = DateTime.Now;
     public static DateTime LastUpdate { get; private set; } = StartTime;
@@ -21,23 +16,27 @@ internal static class Time
     public static long ElapsedFrames { get; private set; }
     public static TimeSpan TotalTime => DateTime.Now - StartTime;
 
-    public static void Schedule(int ms, Action action)
+    public static bool IsScheduled(this ScheduledTask task) => _scheduled.Contains(task) || _scheduledFrames.Contains(task);
+    public static ScheduledTask Schedule(int ms, Action action)
     {
-        _scheduled.Add(new ScheduledTask
-        {
-            TargetTime = ElapsedTime + (double)ms / 1000,
-            Action = action
-        });
+        var scheduledTask = new ScheduledTask(ElapsedTime + (double)ms / 1000, action);
+        _scheduled.Add(scheduledTask);
+        return scheduledTask;
+    }
+    public static void RemoveTask(ScheduledTask task)
+    {
+        if (_scheduled.Contains(task))
+            _scheduled.Remove(task);
+        else if (_scheduledFrames.Contains(task))
+            _scheduledFrames.Remove(task);
+        else
+            Log.Warning($"Tried to remove a task that was not scheduled: {task.Action.Method.Name}");
     }
 
     [Obsolete("Doesnt work!!!!", true)]
     public static void ScheduleFrames(int frames, Action action)
     {
-        _scheduledFrames.Add(new ScheduledTask
-        {
-            TargetTime = ElapsedFrames + frames,
-            Action = action
-        });
+        _scheduledFrames.Add(new ScheduledTask(ElapsedFrames + frames, action));
     }
 
     public static void Init()
@@ -60,36 +59,24 @@ internal static class Time
         DeltaTime = (float)args.Time;
         ElapsedFrames++;
 
-        //accumTime += args.Time;
-        //frameCount++;
-
-        //if (accumTime >= interval)
-        //{
-        //    avgFPS = frameCount / accumTime;
-        //    accumTime = 0.0;
-        //    frameCount = 0;
-        //    Game.A = avgFPS;
-        //}
-
         for (var i = _scheduled.Count - 1; i >= 0; i--)
             if (ElapsedTime >= _scheduled[i].TargetTime)
             {
                 try
                 {
                     _scheduled[i].Action?.Invoke();
+                    _scheduled.RemoveAt(i);
                 }
                 catch (Exception ex)
                 {
                     Log.Error($"[Timer] Exception: {ex}");
                 }
-
-                _scheduled.RemoveAt(i);
             }
     }
 
-    private class ScheduledTask
+    public class ScheduledTask(double targetTime, Action action)
     {
-        public Action Action;
-        public double TargetTime;
+        public Action Action { get; } = action;
+        public double TargetTime { get; } = targetTime;
     }
 }

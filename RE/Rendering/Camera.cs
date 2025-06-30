@@ -6,13 +6,12 @@ using RE.Core;
 using RE.Debug;
 using RE.Debug.Overlay;
 
-namespace RE.Rendering.Camera;
+namespace RE.Rendering;
 
 public class Camera
 {
     private const float MouseSensitivity = 0.2f;
 
-    public static LineManager l = new();
     private bool _firstMove = true;
 
     private Vector2 _lastMousePos;
@@ -39,7 +38,6 @@ public class Camera
 
     public static void Init()
     {
-        l.Init();
         Instance = new Camera(Vector3.Zero, Vector3.UnitY,
             Game.Instance.ClientSize.X / (float)Game.Instance.ClientSize.Y);
         Game.Instance.CursorState = CursorState.Grabbed;
@@ -52,7 +50,7 @@ public class Camera
             Game.Instance.CursorState = CursorState.Grabbed;
 
             if (args.Button == MouseButton.Button1)
-                l.AddLine(Instance.Position, Instance.Position + Instance.Front * 3f, new Vector4(1, 0, 0, 1),
+                LineManager.Main.AddLine(Instance.Position, Instance.Position + Instance.Front * 3f, new Vector4(1, 0, 0, 1),
                     new Vector4(0, 0, 0, 1));
         };
     }
@@ -104,6 +102,9 @@ public class Camera
             Position -= Vector3.UnitY * speed;
         if (input.IsKeyPressed(Keys.GraveAccent))
             ConsoleWindow.Instance.IsVisible = !ConsoleWindow.Instance.IsVisible;
+        if (input.IsKeyPressed(Keys.F11))
+            Game.Instance.ToggleFullscreen();
+
 
         if (input.IsKeyDown(Keys.Escape))
         {
@@ -121,4 +122,15 @@ public class Camera
     {
         return Matrix4.CreatePerspectiveFieldOfView(MathHelper.DegreesToRadians(60f), AspectRatio, 0.1f, 100f);
     }
+    public Matrix4 GetBillboard(Vector3 objectPosition)
+    {
+        Matrix4 view = GetViewMatrix();
+
+        // Инвертируем только поворот (обнуляем позицию)
+        view.Row3.Xyz = Vector3.Zero;
+        return Matrix4.Transpose(view); // транспонированная матрица без смещения
+
+
+    }
+
 }

@@ -2,7 +2,6 @@
 using OpenTK.Mathematics;
 using Serilog;
 using SharpFont;
-using System.Runtime.InteropServices;
 
 namespace RE.Rendering.Text;
 
@@ -12,11 +11,11 @@ public class FreeTypeFont
     private readonly int _vao;
     private readonly int _vbo;
     private nint hLib;
-    private readonly uint pixelHeight;
+    public readonly uint PixelHeight;
 
     public FreeTypeFont(uint pixelheight, string ttfPath)
     {
-        pixelHeight = pixelheight;
+        PixelHeight = pixelheight;
         var lib = new Library();
 
         Stream resource_stream = File.OpenRead(ttfPath);
@@ -101,9 +100,27 @@ public class FreeTypeFont
         GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
         GL.BindVertexArray(0);
     }
+    public float GetTextHeight(string text, float scale = 1f)
+    {
+        int lines = text.Count(c => c == '\n') + 1;
+        return PixelHeight * scale * lines;
+    }
 
-    [DllImport("kernel32.dll", SetLastError = true)]
-    private static extern nint LoadLibrary(string lpFileName);
+    public float GetTextWidth(string text, float scale = 1f)
+    {
+        float width = 0f;
+
+        foreach (char c in text)
+        {
+            if (_characters.TryGetValue(c, out var ch))
+            {
+                width += (ch.Advance >> 6) * scale; // Advance в 1/64 пикселя, поэтому >> 6
+            }
+        }
+
+        return width;
+    }
+
 
     public void RenderText(string text, float x, float y, float scale, Vector2 dir)
     {
@@ -113,7 +130,7 @@ public class FreeTypeFont
         if (text.IndexOf('\n') > -1)
         {
             foreach (var row in text.Split('\n'))
-                RenderText(row, x, y + line++ * scale * pixelHeight, scale, dir);
+                RenderText(row, x, y + line++ * scale * PixelHeight, scale, dir);
             return;
         }
 

@@ -3,7 +3,6 @@ using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using RE.Core;
 using RE.Rendering;
-using RE.Rendering.Camera;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 
@@ -11,7 +10,11 @@ namespace RE.Debug;
 
 public class LineManager : IRenderable, IDisposable
 {
-    private bool _inited;
+    public static LineManager? Main
+    {
+        get => field ??= new LineManager();
+        private set;
+    } = null!;
 
     private readonly List<LineEntry> _lines = new();
     private int _nextId;
@@ -102,7 +105,7 @@ public class LineManager : IRenderable, IDisposable
 
         GL.BindVertexArray(_vao);
         GL.BindBuffer(BufferTarget.ArrayBuffer, _vbo);
-        GL.BufferData(BufferTarget.ArrayBuffer, 0, IntPtr.Zero, BufferUsageHint.DynamicDraw);
+        GL.BufferData(BufferTarget.ArrayBuffer, 0, nint.Zero, BufferUsageHint.DynamicDraw);
 
         var stride = Vector3.SizeInBytes + Vector4.SizeInBytes;
 
@@ -114,7 +117,6 @@ public class LineManager : IRenderable, IDisposable
 
         GL.BindVertexArray(0);
 
-        _inited = true;
     }
 
 
