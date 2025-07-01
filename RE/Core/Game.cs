@@ -15,6 +15,7 @@ using Serilog.Events;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Windows.Forms;
+using Camera = RE.Rendering.Camera;
 using Image = OpenTK.Windowing.Common.Input.Image;
 using TextRenderer = RE.Rendering.Text.TextRenderer;
 
@@ -28,8 +29,6 @@ internal class Game : GameWindow
     public static StringWriter GameLog = new();
 
     private static readonly Dictionary<nint, string> _loadedLibs = new();
-
-
 
 
     public static void Start()
@@ -91,12 +90,19 @@ internal class Game : GameWindow
         Initializer.AddStep(("Initializing ConsoleWindow", ConsoleWindow.Init));
         Initializer.AddStep(("Initializing Skybox", SkyboxRenderer.Init));
         Initializer.AddStep(("Initializing SoundManager", SoundManager.Init));
+        for (int i = 0; i < 20; i++)
+        {
+            //Initializer.AddStep(($"Step number {i}", () => { Thread.Sleep(100); }));
+        }
 
+        imageRenderer = new ImageRenderer("Assets/sprites/editor/blank.png", new(100f, 200f));
+        imageRenderer.Render();
 
 
         base.OnLoad();
     }
 
+    private ImageRenderer imageRenderer;
 
 
     protected override void OnResize(ResizeEventArgs e)
@@ -113,11 +119,17 @@ internal class Game : GameWindow
             return;
 
         GL.Viewport(0, 0, ClientSize.X, ClientSize.Y);
-        GL.Clear(ClearBufferMask.ColorBufferBit);
+        GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
         GL.DepthFunc(DepthFunction.Lequal);
+        GL.Enable(EnableCap.DepthTest);
+        GL.Enable(EnableCap.Blend);
+        GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
+
         GL.ClearColor(Color.CadetBlue);
 
         RenderLayerManager.RenderAll(args);
+
+        imageRenderer.Position = new(200 + (float)Math.Sin(Time.TotalTime.TotalSeconds) * 100f, 200 + (float)Math.Sin(Time.TotalTime.TotalSeconds / 2) * 100f);
 
         base.OnRenderFrame(args);
 

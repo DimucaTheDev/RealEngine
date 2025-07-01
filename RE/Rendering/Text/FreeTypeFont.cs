@@ -110,7 +110,7 @@ public class FreeTypeFont
     {
         float width = 0f;
 
-        foreach (char c in text)
+        foreach (char c in text.Split('\n')[0])
         {
             if (_characters.TryGetValue(c, out var ch))
             {

@@ -1,4 +1,5 @@
-﻿using OpenTK.Mathematics;
+﻿using OpenTK.Graphics.OpenGL4;
+using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using RE.Audio;
 using RE.Rendering;
@@ -27,7 +28,15 @@ internal class DebugOverlay : IRenderable
         Text($"Cam pos: ({instance.Position.X:F}; {instance.Position.Y:F}; {instance.Position.Z:F})");
         if (Button("1")) RenderLayerManager.RemoveRenderables<LineManager>();
         //Text($"a: ({LineManager.a.X:F}, {LineManager.a.Y:F})");
-
+        Selectable("wireframe", ref w);
+        if (w)
+        {
+            GL.PolygonMode(TriangleFace.FrontAndBack, PolygonMode.Line);
+        }
+        else
+        {
+            GL.PolygonMode(TriangleFace.FrontAndBack, PolygonMode.Fill);
+        }
         if (Button("do_shit()"))
         {
             var start = Vector3.Zero;
@@ -69,28 +78,32 @@ internal class DebugOverlay : IRenderable
             }
             EndDisabled();
             Text($"{MathF.Round(s?.Offset ?? 0, 1):F1}/{MathF.Round(s?.Length ?? 0, 1):F1}");
-            BeginDisabled(s == null);
-            if (Button("play"))
-            {
-                s.Play();
-            }
-            if (Button("stop"))
-            {
-                s.Stop();
-            }
-            if (Button("pause"))
-            {
-                s.Pause();
-            }
-            if (Button("resume"))
-            {
-                s.Resume();
-            }
 
+            BeginDisabled(s == null);
+            SameLine();
+            if (Button("play"))
+                s.Play();
+            SameLine();
+            if (Button("stop"))
+                s.Stop();
+            SameLine();
+            if (Button("pause"))
+                s.Pause();
+            SameLine();
+            if (Button("resume"))
+                s.Resume();
             Checkbox("Loop", ref l);
             SameLine();
             if (Button("upd")) s.Loop = l;
-
+            Text($"vol: {s?.Volume:F3}");
+            if (SliderFloat("max distance", ref m, 0, 20))
+            {
+                s.MaxDistance = m;
+            }
+            if (SliderFloat("ref distance", ref f, 0, 20))
+            {
+                s.ReferenceDistance = f;
+            }
             EndDisabled();
         }
 
@@ -101,7 +114,7 @@ internal class DebugOverlay : IRenderable
         if (SoundManager.ActiveSounds.Count > 0)
         {
             SameLine();
-            Text($"{SoundManager.ActiveSounds.Count} active sounds.");
+            Text($"{SoundManager.ActiveSounds.Count(s => s.IsPlaying && !s.IsPaused)}/{SoundManager.ActiveSounds.Count} active sounds.");
         }
         if (Button("Stop"))
             SoundManager.StopAll();
@@ -112,7 +125,7 @@ internal class DebugOverlay : IRenderable
         {
             if (Button(sound.Key))
             {
-                SoundManager.Play(sound.Key, new() { Volume = .2f });
+                SoundManager.Play(sound.Key, new() { Volume = .2f, InWorld = true, MaxDistance = 5, ReferenceDistance = 1 });
             }
             if (sound.Value.Count > 1)
             {
@@ -128,6 +141,8 @@ internal class DebugOverlay : IRenderable
         End();
     }
 
+    private float m = 10, f = 1;
+    private bool w;
     private string search = "";
     private bool l;
     private Sound s;

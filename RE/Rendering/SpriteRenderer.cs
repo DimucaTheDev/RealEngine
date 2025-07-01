@@ -1,6 +1,7 @@
 ﻿using OpenTK.Graphics.OpenGL4;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
+using RE.Utils;
 using StbImageSharp;
 
 namespace RE.Rendering
@@ -10,18 +11,18 @@ namespace RE.Rendering
         private int _vao, _vbo;
         private int _shaderProgram;
         private int _texture;
-        private Vector3 _position;
         private float texWidth = 0, texHeight = 0;
         private bool constantSize;
         private float scale;
 
+        public Vector3 Position { get; set; }
         public RenderLayer RenderLayer => RenderLayer.World;
         public bool IsVisible { get; set; } = true;
 
         public SpriteRenderer(Vector3 position, string spritePath = "Assets/Sprites/Editor/blank.png",
             bool constantSize = false, float scale = .25f)
         {
-            _position = position;
+            Position = position;
             this.constantSize = constantSize;
             this.scale = scale;
 
@@ -68,7 +69,7 @@ namespace RE.Rendering
             GL.UseProgram(_shaderProgram);
 
             Vector3 camPos = Camera.Instance.Position;
-            Vector3 lookDir = Vector3.Normalize(camPos - _position);
+            Vector3 lookDir = Vector3.Normalize(camPos - Position);
 
             Vector3 up = Vector3.UnitY; // предположим, что Y - вверх
             Vector3 right = Vector3.Normalize(Vector3.Cross(up, lookDir));
@@ -82,7 +83,7 @@ namespace RE.Rendering
             Matrix4 translateToCenter = Matrix4.CreateTranslation(-w / 2f, -h / 2f, 0f);
 
             float baseSize = 1.0f; // условный "экранный" размер
-            float distance = (_position - Camera.Instance.Position).Length;
+            float distance = (Position - Camera.Instance.Position).Length;
             float scale = distance * baseSize;
 
             float size = 1.0f;
@@ -93,8 +94,8 @@ namespace RE.Rendering
                 Matrix4.CreateScale(w, -h, 0) *
                 (constantSize ? Matrix4.CreateScale(scale * this.scale) : Matrix4.Identity) *
                 Matrix4.CreateScale(size) *
-                Camera.Instance.GetBillboard(_position) *
-                Matrix4.CreateTranslation(_position);
+                Camera.Instance.GetBillboard(Position) *
+                Matrix4.CreateTranslation(Position);
 
 
 
@@ -110,9 +111,10 @@ namespace RE.Rendering
             GL.DrawElements(PrimitiveType.Triangles, 6, DrawElementsType.UnsignedInt, 0);
         }
 
-
+        public void ChangeTexture(string path) => _texture = LoadTexture(path);
         public void Dispose()
         {
+            this.StopRender();
             GL.DeleteVertexArray(_vao);
             GL.DeleteBuffer(_vbo);
             GL.DeleteProgram(_shaderProgram);

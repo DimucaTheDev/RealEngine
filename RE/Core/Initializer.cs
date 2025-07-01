@@ -15,7 +15,7 @@ namespace RE.Core
         private static FreeTypeFont titleFont;
         private static Text _textCurrentStep;
         private static Text _textSteps;
-        private static Text _textPastSteps;
+        private static List<Text> _textPastSteps = new();
         private static Text _textTitle;
         private static Queue<(string label, Action action)> _initSteps = new();
         private static string _currentStep = "";
@@ -24,7 +24,7 @@ namespace RE.Core
         private static Action? _pendingAction;
         private static int _step = 1;
         private static int _steps = 0;
-
+        private const int MaxSteps = 10;
         private static string pastLog = "";
 
         public static void Init()
@@ -35,7 +35,6 @@ namespace RE.Core
 
             _textCurrentStep = new Text(null, Vector2.Zero, font);
             _textSteps = new Text(null, Vector2.Zero, font);
-            _textPastSteps = new Text(null, Vector2.Zero, font, new Vector4(Vector3.One, .25f));
 
             var title = "REAL ENGINE";
             _textTitle = new Text(title,
@@ -49,7 +48,6 @@ namespace RE.Core
 
             _textCurrentStep.Render();
             _textSteps.Render();
-            _textPastSteps.Render();
             _textTitle.Render();
 
             InitializationCompleted += () =>
@@ -60,7 +58,7 @@ namespace RE.Core
                 _textCurrentStep.Color = new Vector4(0, 0, 0, 0.345f);
                 _textSteps.StopRender();
                 _textTitle.StopRender();
-                _textPastSteps.StopRender();
+                _textPastSteps.ForEach(s => s.StopRender());
             };
         }
 
@@ -74,17 +72,27 @@ namespace RE.Core
         {
             if (!_initDone)
             {
-                // Выполнить отложенное действие после отображения текста
                 if (_shouldExecuteAction)
                 {
                     Serilog.Log.Information(_currentStep);
                     _pendingAction?.Invoke();
                     _shouldExecuteAction = false;
                     _pendingAction = null;
-                    pastLog = pastLog.Insert(0, $"{_currentStep}\n");
+
+                    if (!string.IsNullOrEmpty(_currentStep))
+                    {
+                        var pastText = new Text(_currentStep, Vector2.Zero, font, new Vector4(Vector3.One, .175f));
+                        pastText.Render();
+                        _textPastSteps.Insert(0, pastText);
+
+                        if (_textPastSteps.Count > MaxSteps)
+                        {
+                            _textPastSteps.Last().StopRender();
+                            _textPastSteps.RemoveAt(_textPastSteps.Count - 1);
+                        }
+                    }
                 }
 
-                // Загрузить следующий шаг
                 if (_initSteps.Count > 0)
                 {
                     var (label, action) = _initSteps.Dequeue();
@@ -96,14 +104,34 @@ namespace RE.Core
                     _textCurrentStep.Position = new(textX, textY);
                     _textCurrentStep.Content = label;
 
-                    _textPastSteps.Content = pastLog;
-                    _textPastSteps.Position = new Vector2(textX, textY + font.PixelHeight);
+                    float centerX = Game.Instance.ClientSize.X / 2f;
+                    float centerY = Game.Instance.ClientSize.Y / 2f + 50;
+
+                    _textCurrentStep.Content = _currentStep;
+                    _textCurrentStep.Position = new Vector2(centerX - font.GetTextWidth(_currentStep) / 2f, centerY);
+
+                    for (int i = 0; i < _textPastSteps.Count; i++)
+                    {
+                        var txt = _textPastSteps[i];
+                        float y = centerY + font.PixelHeight * (i + 1);
+                        txt.Position = new Vector2(centerX - font.GetTextWidth(txt.Content) / 2f, y);
+
+                        float t = i / (float)(MaxSteps - 1); //[0; 1]
+                        float alpha = MathF.Pow(1f - t, 1.5f); // [0,18; 1]]
+
+                        float x = alpha;
+                        float fromMin = 0f, fromMax = 1;
+                        float toMin = 0.01f, toMax = 0.25f;
+
+                        float result = toMin + (x - fromMin) / (fromMax - fromMin) * (toMax - toMin);
+
+                        txt.Color = txt.Color with { W = result };
+                    }
 
                     _textSteps.Content = $"{_step++}/{_steps}";
                     _textSteps.Position =
                         new Vector2((Game.Instance.ClientSize.X - font.GetTextWidth(_textSteps.Content)) / 2,
                             (Game.Instance.ClientSize.Y - font.GetTextHeight(_textSteps.Content)) / 2 - 20 + 50);
-
 
                     _shouldExecuteAction = true;
                     _pendingAction = action;

@@ -10,7 +10,7 @@ namespace RE.Audio
         public float Volume { get; set; } = 1f;
         public bool Loop { get; set; } = false;
         public bool InWorld { get; set; } = false;
-        public float MaxDistance { get; set; } = 100f;
+        public float MaxDistance { get; set; } = 10f;
         public float RollOff { get; set; } = 1f;
         public float ReferenceDistance { get; set; } = 1f;
     }

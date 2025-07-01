@@ -1,6 +1,7 @@
 ﻿using OpenTK.Audio.OpenAL;
 using OpenTK.Mathematics;
 using RE.Core;
+using RE.Debug.Renderers;
 using RE.Rendering;
 using RE.Utils;
 using Log = Serilog.Log;
@@ -20,16 +21,20 @@ namespace RE.Audio
         private bool _disposed;
         private float? _length = null!;
         private Time.ScheduledTask? _task;
+        private CircleRenderer crRefDis, crMaxDis;
+        private SpriteRenderer sprite;
+
 
         public event Action? Playing;
         public event Action? Paused;
         public event Action? Stopped;
         public event Action? Resumed;
+        public event Action<float>? VolumeChanged;
 
         public int Source => _source;
         public int Buffer => _buffer;
 
-        public float Volume
+        public float Volume //add max volume for 
         {
             get => AL.GetSource(_source, ALSourcef.Gain);
             set
@@ -39,6 +44,7 @@ namespace RE.Audio
                     Log.Warning("Volume cant be negative. Clamping to 0");
                     value = 0;
                 }
+                VolumeChanged?.Invoke(value);
                 AL.Source(_source, ALSourcef.Gain, value);
             }
         }
@@ -76,7 +82,6 @@ namespace RE.Audio
             }
         }
 
-        //todo: fix 3d sound position
         public Vector3 Position
         {
             get
@@ -84,7 +89,13 @@ namespace RE.Audio
                 AL.GetSource(_source, ALSource3f.Position, out float x, out float y, out float z);
                 return new Vector3(x, y, z);
             }
-            set => AL.Source(_source, ALSource3f.Position, value.X, value.Y, value.Z);
+            set
+            {
+                crMaxDis.Center = value;
+                crRefDis.Center = value;
+                sprite.Position = value;
+                AL.Source(_source, ALSource3f.Position, value.X, value.Y, value.Z);
+            }
         }
 
         public float Length
@@ -93,17 +104,95 @@ namespace RE.Audio
             {
                 if (_length == null)
                 {
-                    var size = AL.GetBuffer(_buffer, ALGetBufferi.Size);
-                    var channels = AL.GetBuffer(_buffer, ALGetBufferi.Channels);
-                    var bits = AL.GetBuffer(_buffer, ALGetBufferi.Bits);
-                    var frequency = AL.GetBuffer(_buffer, ALGetBufferi.Frequency);
-                    var lengthInSamples = size * 8 / (channels * bits);
-                    _length = (float)lengthInSamples / frequency;
+                    try
+                    {
+                        var size = AL.GetBuffer(_buffer, ALGetBufferi.Size);
+                        var channels = AL.GetBuffer(_buffer, ALGetBufferi.Channels);
+                        var bits = AL.GetBuffer(_buffer, ALGetBufferi.Bits);
+                        var frequency = AL.GetBuffer(_buffer, ALGetBufferi.Frequency);
+                        var lengthInSamples = size * 8 / (channels * bits);
+                        _length = (float)lengthInSamples / frequency;
+                    }
+                    catch (DivideByZeroException e)
+                    {
+                        Log.Error($"Unable to obtain 'channels', 'bits' or 'size'. Is _buffer({_buffer}) correct?");
+                    }
                 }
-
                 return _length ?? 0;
             }
         }
+
+        public bool IsRelative
+        {
+            get => AL.GetSource(_source, ALSourceb.SourceRelative);
+            set
+            {
+                if (value)
+                {
+                    crMaxDis.StopRender();
+                    crRefDis.StopRender();
+                }
+                else
+                {
+                    crMaxDis.Render();
+                    crRefDis.Render();
+                }
+                AL.Source(_source, ALSourceb.SourceRelative, value);
+            }
+        }
+
+        public float MaxDistance
+        {
+            get => AL.GetSource(_source, ALSourcef.MaxDistance);
+            set
+            {
+                crMaxDis.Radius = value;
+                AL.Source(_source, ALSourcef.MaxDistance, value);
+            }
+        }
+
+        public float ReferenceDistance
+        {
+            get => AL.GetSource(_source, ALSourcef.ReferenceDistance);
+            set
+            {
+                crRefDis.Radius = value;
+                AL.Source(_source, ALSourcef.ReferenceDistance, value);
+            }
+        }
+
+        public float RollOff
+        {
+            get => AL.GetSource(_source, ALSourcef.RolloffFactor);
+            set
+            {
+                if (UseLinearFading && value != 0)
+                    Log.Warning($"Setting {nameof(RollOff)} value to {value}, but {nameof(UseLinearFading)} is true");
+                AL.Source(_source, ALSourcef.RolloffFactor, value);
+            }
+        }
+
+        public bool ShowDebugInfo
+        {
+            get => crRefDis.IsRendering() || crMaxDis.IsRendering() || sprite.IsRendering();
+            set
+            {
+                if (value)
+                {
+                    crMaxDis.Render();
+                    crRefDis.Render();
+                    sprite.Render();
+                }
+                else
+                {
+                    crMaxDis.StopRender();
+                    crRefDis.StopRender();
+                    sprite.StopRender();
+                }
+            }
+        }
+
+        public bool UseLinearFading { get; set; } = true;
 
         public SoundState State
         {
@@ -130,18 +219,39 @@ namespace RE.Audio
                 Log.Error($"Invalid OpenAL source specified: {_source}");
             _buffer = AL.GetSource(_source, ALGetSourcei.Buffer);
 
-            r = new SpriteRenderer(Position, "Assets/Sprites/Editor/speaker.png");
-            r.Render();
+            sprite = new SpriteRenderer(Position, "Assets/Sprites/Editor/speaker.png");
+            crMaxDis = new CircleRenderer(Vector3.Zero, 0);
+            crRefDis = new CircleRenderer(Vector3.Zero, 0);
+
+            MaxDistance = 10;
+            ReferenceDistance = 1;
+            RollOff = 0f;
+            Volume = 1.0f;
+            Pitch = 1.0f;
+            IsRelative = false;
+            Position = Vector3.Zero;
+
+            ShowDebugInfo = true;
+
+            Playing += () => sprite.ChangeTexture("Assets/sprites/editor/speaker_play.png");
+            Stopped += () => sprite.ChangeTexture("Assets/sprites/editor/speaker.png");
+            Paused += () => sprite.ChangeTexture("Assets/sprites/editor/speaker.png");
+            VolumeChanged += (volume) =>
+            {
+                sprite.ChangeTexture(volume == 0
+                    ? "Assets/Sprites/Editor/speaker_mute.png"
+                    : "Assets/Sprites/Editor/speaker.png");
+            };
         }
 
-        private SpriteRenderer r;
         internal void Play()
         {
             Playing?.Invoke();
             AL.SourcePlay(_source);
 
             _task.TerminateIfScheduled();
-            _task = Time.Schedule((int)(Length * 1000), () => Stopped?.Invoke());
+            if (!Loop)
+                _task = Time.Schedule((int)(Length * 1000), () => Stopped?.Invoke());
         }
         public void Pause()
         {
@@ -172,8 +282,9 @@ namespace RE.Audio
         {
             if (_disposed) return;
             Stop();
-            r.Dispose();
-            //_task?.TerminateIfScheduled();
+            sprite.Dispose();
+            crRefDis.Dispose();
+            crMaxDis.Dispose();
             AL.DeleteSource(_source);
             _disposed = true;
         }

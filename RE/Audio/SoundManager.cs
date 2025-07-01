@@ -40,15 +40,34 @@ namespace RE.Audio
         }
         public static void Update(FrameEventArgs args)
         {
-            var cam = Camera.Instance; // или откуда ты получаешь камеру
+            var cam = Camera.Instance;
             Vector3 pos = cam.Position;
             Vector3 forward = cam.Front.Normalized();
             Vector3 up = cam.Up.Normalized();
             AL.Listener(ALListener3f.Position, pos.X, pos.Y, pos.Z);
-            AL.Listener(ALListenerfv.Orientation, [
-                forward.X, forward.Y, forward.Z,
-                up.X,     up.Y,     up.Z
-            ]);
+            AL.Listener(ALListenerfv.Orientation, [forward.X, forward.Y, forward.Z, up.X, up.Y, up.Z]);
+
+            foreach (var sound in _activeSounds.Where(s => s is { IsRelative: false, UseLinearFading: true })) //only 3d sounds
+            {
+                float distance = Vector3.Distance(sound.Position, cam.Position);
+
+                if (distance >= sound.MaxDistance)
+                {
+                    AL.Source(sound.Source, ALSourcef.Gain, 0f);
+                    continue;
+                }
+                float range = sound.MaxDistance - sound.ReferenceDistance;
+                float gain;
+
+                if (distance <= sound.ReferenceDistance)
+                    gain = 1f;
+                else
+                    gain = 1f - ((distance - sound.ReferenceDistance) / range);
+
+                gain = Math.Clamp(gain, 0f, 1f);
+
+                AL.Source(sound.Source, ALSourcef.Gain, gain);
+            }
         }
         public static Sound Get(string id, int? n = null)
         {
@@ -69,8 +88,8 @@ namespace RE.Audio
             AL.Source(source, ALSourcei.Buffer, buffer);
 
             var sound = new Sound(source);
-            sound.Playing += () => _activeSounds.Add(sound);
-            sound.Stopped += () => _activeSounds.Remove(sound);
+            _activeSounds.Add(sound);
+            // sound.Stopped += () => _activeSounds.Remove(sound);
 
             return sound;
         }
@@ -86,19 +105,22 @@ namespace RE.Audio
 
             var sound = Get(id, variant);
 
-            AL.Source(sound.Source, ALSourcef.Gain, settings.Volume);
-            AL.Source(sound.Source, ALSourcef.Pitch, settings.Pitch);
-            AL.Source(sound.Source, ALSourceb.Looping, settings.Loop);
-            AL.Source(sound.Source, ALSource3f.Position, settings.SourcePosition?.X ?? 0, settings.SourcePosition?.Y ?? 0, settings.SourcePosition?.Z ?? 0);
+            sound.Volume = settings.Volume;
+            sound.Pitch = settings.Pitch;
+            sound.Loop = settings.Loop;
+            sound.Position = settings.SourcePosition ?? Vector3.Zero;
 
             if (settings.InWorld)
             {
-                AL.Source(sound.Source, ALSourceb.SourceRelative, false);
-                AL.Source(sound.Source, ALSourcef.ReferenceDistance, settings.ReferenceDistance);
-                AL.Source(sound.Source, ALSourcef.MaxDistance, settings.MaxDistance);
-                AL.Source(sound.Source, ALSourcef.RolloffFactor, settings.RollOff);
+                sound.IsRelative = false;
+                sound.ReferenceDistance = settings.ReferenceDistance;
+                sound.MaxDistance = settings.MaxDistance;
+                sound.RollOff = settings.RollOff;
             }
-
+            else
+            {
+                sound.IsRelative = true;
+            }
             sound.Play();
             return sound;
         }

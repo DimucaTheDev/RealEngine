@@ -32,7 +32,8 @@ public class RenderLayerManager
         var types = Renderables[renderable.RenderLayer];
         if (!types.ContainsKey(typeof(T)))
             types[typeof(T)] = new List<IRenderable>();
-        types[typeof(T)].Add(renderable);
+        if (!types[typeof(T)].Contains(renderable))
+            types[typeof(T)].Add(renderable);
     }
 
     public static void RemoveRenderable<T>(T renderable) where T : IRenderable
