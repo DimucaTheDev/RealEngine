@@ -5,7 +5,7 @@ using SixLabors.ImageSharp.Processing;
 
 namespace RE.Rendering.Skybox;
 
-internal class SkyboxRenderer : IRenderable
+internal class SkyboxRenderer : Renderable
 {
     private static int _vao, _vbo, _handle;
 
@@ -38,10 +38,10 @@ internal class SkyboxRenderer : IRenderable
 
     public static SkyboxRenderer Instance { get; private set; }
 
-    public RenderLayer RenderLayer => RenderLayer.Skybox;
-    public bool IsVisible { get; set; } = true;
+    public override RenderLayer RenderLayer => RenderLayer.Skybox;
+    public override bool IsVisible { get; set; } = true;
 
-    public void Render(FrameEventArgs args)
+    public override void Render(FrameEventArgs args)
     {
         GL.DepthMask(false); // не пишем в z-buffer
 

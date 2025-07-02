@@ -12,6 +12,7 @@ using RE.Rendering.Skybox;
 using RE.Utils;
 using Serilog;
 using Serilog.Events;
+using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Windows.Forms;
@@ -29,7 +30,6 @@ internal class Game : GameWindow
     public static StringWriter GameLog = new();
 
     private static readonly Dictionary<nint, string> _loadedLibs = new();
-
 
     public static void Start()
     {
@@ -90,19 +90,21 @@ internal class Game : GameWindow
         Initializer.AddStep(("Initializing ConsoleWindow", ConsoleWindow.Init));
         Initializer.AddStep(("Initializing Skybox", SkyboxRenderer.Init));
         Initializer.AddStep(("Initializing SoundManager", SoundManager.Init));
-        for (int i = 0; i < 20; i++)
-        {
-            //Initializer.AddStep(($"Step number {i}", () => { Thread.Sleep(100); }));
-        }
+        Initializer.AddStep(("Adding stuff to scene...", () =>
+                {
+                    var startNew = Stopwatch.StartNew();
 
-        imageRenderer = new ImageRenderer("Assets/sprites/editor/blank.png", new(100f, 200f));
-        imageRenderer.Render();
+                    for (int i = 0; i < 1; i++)
+                    {
+                        //new ModelRenderer("Assets/Models/test.fbx").Render();
+                    }
 
+                    Log.Information($"Model loaded in {startNew.ElapsedMilliseconds} ms");
+                }
+        ));
 
         base.OnLoad();
     }
-
-    private ImageRenderer imageRenderer;
 
 
     protected override void OnResize(ResizeEventArgs e)
@@ -111,7 +113,6 @@ internal class Game : GameWindow
         GL.Viewport(0, 0, e.Width, e.Height);
         base.OnResize(e);
     }
-
 
     protected override void OnRenderFrame(FrameEventArgs args)
     {
@@ -128,8 +129,6 @@ internal class Game : GameWindow
         GL.ClearColor(Color.CadetBlue);
 
         RenderLayerManager.RenderAll(args);
-
-        imageRenderer.Position = new(200 + (float)Math.Sin(Time.TotalTime.TotalSeconds) * 100f, 200 + (float)Math.Sin(Time.TotalTime.TotalSeconds / 2) * 100f);
 
         base.OnRenderFrame(args);
 

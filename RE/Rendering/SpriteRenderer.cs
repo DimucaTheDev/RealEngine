@@ -6,7 +6,7 @@ using StbImageSharp;
 
 namespace RE.Rendering
 {
-    public class SpriteRenderer : IRenderable, IDisposable
+    public class SpriteRenderer : Renderable
     {
         private int _vao, _vbo;
         private int _shaderProgram;
@@ -16,8 +16,8 @@ namespace RE.Rendering
         private float scale;
 
         public Vector3 Position { get; set; }
-        public RenderLayer RenderLayer => RenderLayer.World;
-        public bool IsVisible { get; set; } = true;
+        public override RenderLayer RenderLayer => RenderLayer.World;
+        public override bool IsVisible { get; set; } = true;
 
         public SpriteRenderer(Vector3 position, string spritePath = "Assets/Sprites/Editor/blank.png",
             bool constantSize = false, float scale = .25f)
@@ -64,7 +64,7 @@ namespace RE.Rendering
             _texture = LoadTexture(spritePath);
         }
 
-        public void Render(FrameEventArgs args)
+        public override void Render(FrameEventArgs args)
         {
             GL.UseProgram(_shaderProgram);
 

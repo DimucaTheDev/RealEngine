@@ -7,12 +7,12 @@ using System.Numerics;
 
 namespace RE.Debug.Overlay
 {
-    internal class ConsoleWindow : IRenderable
+    internal class ConsoleWindow : Renderable
     {
         public static ConsoleWindow? Instance = null!;
 
-        public RenderLayer RenderLayer => RenderLayer.ImGui;
-        public bool IsVisible { get; set; } = false;
+        public override RenderLayer RenderLayer => RenderLayer.ImGui;
+        public override bool IsVisible { get; set; } = false;
 
         private ConsoleWindow()
         {
@@ -25,7 +25,7 @@ namespace RE.Debug.Overlay
         private static bool _scrollToBottom = false;
 
 
-        public void Render(FrameEventArgs args)
+        public override void Render(FrameEventArgs args)
         {
 
             ImGui.SetNextWindowSize(_consoleSize, ImGuiCond.FirstUseEver);

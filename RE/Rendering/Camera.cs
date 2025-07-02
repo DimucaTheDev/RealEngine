@@ -5,6 +5,8 @@ using OpenTK.Windowing.GraphicsLibraryFramework;
 using RE.Core;
 using RE.Debug;
 using RE.Debug.Overlay;
+using RE.Utils;
+using System.Diagnostics;
 
 namespace RE.Rendering;
 
@@ -52,6 +54,14 @@ public class Camera
             if (args.Button == MouseButton.Button1)
                 LineManager.Main.AddLine(Instance.Position, Instance.Position + Instance.Front * 3f, new Vector4(1, 0, 0, 1),
                     new Vector4(0, 0, 0, 1));
+            if (args.Button == MouseButton.Button2)
+            {
+                Console.WriteLine($"ModelRenderer RAM: {Process.GetCurrentProcess().PrivateMemorySize64 / 1024 / 1024} MB");
+
+                new ModelRenderer("Assets/Models/test.fbx", Instance.Position + Instance.Front * 1.2f).Render();
+                Console.WriteLine($"ModelRenderer RAM: {Process.GetCurrentProcess().PrivateMemorySize64 / 1024 / 1024} MB");
+
+            }
         };
     }
 

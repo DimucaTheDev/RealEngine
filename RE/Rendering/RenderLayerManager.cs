@@ -16,41 +16,49 @@ public enum RenderLayer
 
 public class RenderLayerManager
 {
-    public static SortedDictionary<RenderLayer, Dictionary<Type, List<IRenderable>>> Renderables = new();
+    public static SortedDictionary<RenderLayer, Dictionary<Type, List<Renderable>>> Renderables = new();
     public static Dictionary<Type, Action> RenderablesInitActions = new();
     public static Dictionary<Type, Action> RenderablesPostActions = new();
-
 
     public static void Init()
     {
         Renderables.Clear();
         foreach (RenderLayer layer in Enum.GetValues(typeof(RenderLayer)))
-            Renderables[layer] = new Dictionary<Type, List<IRenderable>>();
+            Renderables[layer] = new Dictionary<Type, List<Renderable>>();
     }
-    public static void AddRenderable<T>(T renderable) where T : IRenderable
+    public static void AddRenderable<T>(T renderable) where T : Renderable
     {
         var types = Renderables[renderable.RenderLayer];
         if (!types.ContainsKey(typeof(T)))
-            types[typeof(T)] = new List<IRenderable>();
+            types[typeof(T)] = new List<Renderable>();
         if (!types[typeof(T)].Contains(renderable))
+        {
             types[typeof(T)].Add(renderable);
+            renderable.AddedToRenderList();
+        }
     }
 
-    public static void RemoveRenderable<T>(T renderable) where T : IRenderable
+    public static void RemoveRenderable<T>(T renderable) where T : Renderable
     {
         if (Renderables.TryGetValue(renderable.RenderLayer, out var types) && types.TryGetValue(typeof(T), out var list))
         {
             list.Remove(renderable);
             if (list.Count == 0)
+            {
                 types.Remove(typeof(T));
+                renderable.RemovedFromRenderList();
+            }
         }
     }
 
-    public static void RemoveRenderables<T>() where T : IRenderable
+    public static void RemoveRenderables<T>() where T : Renderable
     {
         foreach (var layer in Renderables.Values)
             if (layer.ContainsKey(typeof(T)))
+            {
+                layer[typeof(T)].ForEach(r => r.RemovedFromRenderList());
                 layer[typeof(T)].Clear();
+            }
     }
 
     public static void SetRenderableInitAction<T>(Action action)
@@ -107,7 +115,7 @@ public class RenderLayerManager
             OnLayerBegin(layer);
             foreach (var pair in kvp.Value)
             {
-                List<IRenderable> list = pair.Value;
+                List<Renderable> list = pair.Value;
                 if (RenderablesInitActions.TryGetValue(pair.Key, out var init))
                     init.Invoke();
 
@@ -118,7 +126,6 @@ public class RenderLayerManager
                 if (RenderablesPostActions.TryGetValue(pair.Key, out var post))
                     post.Invoke();
             }
-
             OnLayerEnd(layer);
         }
     }

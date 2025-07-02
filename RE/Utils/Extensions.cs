@@ -18,13 +18,13 @@ namespace RE.Utils
         }
 
         public static void Terminate(this Time.ScheduledTask task) => Time.RemoveTask(task);
-        public static void Render<T>(this T r) where T : IRenderable => RenderLayerManager.AddRenderable(r);
-        public static bool IsRendering<T>(this T r) where T : IRenderable
+        public static void Render<T>(this T r) where T : Renderable => RenderLayerManager.AddRenderable(r);
+        public static bool IsRendering<T>(this T r) where T : Renderable
         {
             return RenderLayerManager.Renderables.TryGetValue(r.RenderLayer, out var types) &&
                    types.TryGetValue(typeof(T), out var list) &&
                    list.Contains(r);
         }
-        public static void StopRender<T>(this T r) where T : IRenderable => RenderLayerManager.RemoveRenderable(r);
+        public static void StopRender<T>(this T r) where T : Renderable => RenderLayerManager.RemoveRenderable(r);
     }
 }

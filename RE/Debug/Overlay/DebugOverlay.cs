@@ -8,7 +8,7 @@ using static ImGuiNET.ImGui;
 
 namespace RE.Debug.Overlay;
 
-internal class DebugOverlay : IRenderable
+internal class DebugOverlay : Renderable
 {
 
     private DebugOverlay()
@@ -17,10 +17,10 @@ internal class DebugOverlay : IRenderable
     }
 
     public static DebugOverlay? Instance { get; private set; }
-    public RenderLayer RenderLayer => RenderLayer.ImGui;
-    public bool IsVisible { get; set; } = true;
+    public override RenderLayer RenderLayer => RenderLayer.ImGui;
+    public override bool IsVisible { get; set; } = true;
 
-    public void Render(FrameEventArgs args)
+    public override void Render(FrameEventArgs args)
     {
         Begin("123");
         if (Button("gc")) GC.Collect();
@@ -127,6 +127,7 @@ internal class DebugOverlay : IRenderable
             {
                 SoundManager.Play(sound.Key, new() { Volume = .2f, InWorld = true, MaxDistance = 5, ReferenceDistance = 1 });
             }
+
             if (sound.Value.Count > 1)
             {
                 for (int i = 0; i < sound.Value.Count; i++)

@@ -5,8 +5,8 @@ using System.Diagnostics;
 
 namespace RE.Rendering.Text;
 
-[DebuggerDisplay($"Text: \"{nameof(Content)}\"")]
-internal class Text : IRenderable
+[DebuggerDisplay("Text: \"{Content}\"")]
+internal class Text : Renderable
 {
     public Text(string? content, Vector2 position, FreeTypeFont font)
     {
@@ -46,10 +46,10 @@ internal class Text : IRenderable
     public Vector4 Color { get; set; } = new(0, 0, 0, 1);
     public FreeTypeFont Font { get; }
     public Vector2 Direction { get; set; } = new(1, 0);
-    public bool IsVisible { get; set; } = true; //TODO: move this to IRenderable interface
-    public RenderLayer RenderLayer => RenderLayer.UI;
+    public override bool IsVisible { get; set; } = true;
+    public override RenderLayer RenderLayer => RenderLayer.UI;
 
-    public void Render(FrameEventArgs args)
+    public override void Render(FrameEventArgs args)
     {
         if (!IsVisible) return;
         GL.Uniform4(3, Color);

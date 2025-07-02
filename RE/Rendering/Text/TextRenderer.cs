@@ -14,7 +14,6 @@ internal class TextRenderer
         GL.ShaderSource(vertexShader, File.ReadAllText("assets/shaders/text.vert"));
         GL.CompileShader(vertexShader);
 
-        // Проверка на ошибки компиляции (по желанию)
         GL.GetShader(vertexShader, ShaderParameter.CompileStatus, out var vStatus);
         if (vStatus != (int)All.True)
         {
@@ -22,12 +21,10 @@ internal class TextRenderer
             throw new Exception($"Ошибка компиляции вершинного шейдера: {infoLog}");
         }
 
-        // Компиляция фрагментного шейдера
         var fragmentShader = GL.CreateShader(ShaderType.FragmentShader);
         GL.ShaderSource(fragmentShader, File.ReadAllText("assets/shaders/text.frag"));
         GL.CompileShader(fragmentShader);
 
-        // Проверка на ошибки компиляции
         GL.GetShader(fragmentShader, ShaderParameter.CompileStatus, out var fStatus);
         if (fStatus != (int)All.True)
         {
@@ -35,21 +32,11 @@ internal class TextRenderer
             throw new Exception($"Ошибка компиляции фрагментного шейдера: {infoLog}");
         }
 
-        // Создание и линковка программы
         shaderProgram = GL.CreateProgram();
         GL.AttachShader(shaderProgram, vertexShader);
         GL.AttachShader(shaderProgram, fragmentShader);
         GL.LinkProgram(shaderProgram);
 
-        // Проверка на ошибки линковки
-        GL.GetProgram(shaderProgram, GetProgramParameterName.LinkStatus, out var linkStatus);
-        if (linkStatus != (int)All.True)
-        {
-            var infoLog = GL.GetProgramInfoLog(shaderProgram);
-            throw new Exception($"Ошибка линковки программы: {infoLog}");
-        }
-
-        // Удаление шейдеров после линковки
         GL.DetachShader(shaderProgram, vertexShader);
         GL.DetachShader(shaderProgram, fragmentShader);
         GL.DeleteShader(vertexShader);

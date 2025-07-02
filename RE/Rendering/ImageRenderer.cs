@@ -6,15 +6,15 @@ using StbImageSharp;
 
 namespace RE.Rendering;
 
-public class ImageRenderer : IRenderable, IDisposable
+public class ImageRenderer : Renderable
 {
     private int _texture;
     private int _vao, _vbo, _ebo;
     private int _shaderProgram;
     private string _pathToImg;
 
-    public RenderLayer RenderLayer => RenderLayer.UI;
-    public bool IsVisible { get; set; } = true;
+    public override RenderLayer RenderLayer => RenderLayer.UI;
+    public override bool IsVisible { get; set; } = true;
     public Vector2 Position { get; set; }
     public Vector2 Scale { get; set; }
 
@@ -28,12 +28,13 @@ public class ImageRenderer : IRenderable, IDisposable
         _texture = LoadTexture(_pathToImg);
         SetupQuad();
     }
+
     public void ReplaceImage(string path) => _texture = LoadTexture(path);
-    public void Render(FrameEventArgs args)
+    public override void Render(FrameEventArgs args)
     {
         GL.UseProgram(_shaderProgram);
 
-        Matrix4 model = Matrix4.CreateScale(Scale.X, Scale.Y, 1f) * Matrix4.CreateTranslation(Position.X, Position.Y, 0);
+        Matrix4 model = Matrix4.CreateScale(Scale.X, Scale.Y, 1f) * Matrix4.CreateTranslation(Position.X, Position.Y, 1);
         Matrix4 projection = Matrix4.CreateOrthographicOffCenter(0, Game.Instance.ClientSize.X, Game.Instance.ClientSize.Y, 0, -1, 1);
 
         GL.UniformMatrix4(GL.GetUniformLocation(_shaderProgram, "uModel"), false, ref model);

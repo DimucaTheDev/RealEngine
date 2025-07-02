@@ -8,7 +8,7 @@ using System.Runtime.InteropServices;
 
 namespace RE.Debug;
 
-public class LineManager : IRenderable, IDisposable
+public class LineManager : Renderable
 {
     public static LineManager? Main
     {
@@ -44,12 +44,12 @@ public class LineManager : IRenderable, IDisposable
     }
 
 
-    public RenderLayer RenderLayer => RenderLayer.World;
+    public override RenderLayer RenderLayer => RenderLayer.World;
 
-    public bool IsVisible { get; set; } = true;
+    public override bool IsVisible { get; set; } = true;
 
     //FIXME: https://chatgpt.com/c/685c2b7b-58ec-800b-8dfb-a5da27ba6717
-    public void Render(FrameEventArgs args)
+    public override void Render(FrameEventArgs args)
     {
         if (_lines.Count == 0)
             return;

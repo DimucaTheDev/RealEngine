@@ -2,16 +2,19 @@
 using OpenTK.Mathematics;
 using Serilog;
 using SharpFont;
+using System.Collections.ObjectModel;
 
 namespace RE.Rendering.Text;
 
 public class FreeTypeFont
 {
+    //change!
     private readonly Dictionary<uint, Character> _characters = new();
     private readonly int _vao;
     private readonly int _vbo;
-    private nint hLib;
+
     public readonly uint PixelHeight;
+    public ReadOnlyDictionary<uint, Character> CharacterMap => _characters.AsReadOnly();
 
     public FreeTypeFont(uint pixelheight, string ttfPath)
     {
@@ -105,7 +108,6 @@ public class FreeTypeFont
         int lines = text.Count(c => c == '\n') + 1;
         return PixelHeight * scale * lines;
     }
-
     public float GetTextWidth(string text, float scale = 1f)
     {
         float width = 0f;
@@ -120,8 +122,6 @@ public class FreeTypeFont
 
         return width;
     }
-
-
     public void RenderText(string text, float x, float y, float scale, Vector2 dir)
     {
         if (string.IsNullOrWhiteSpace(text)) return;
@@ -176,4 +176,7 @@ public class FreeTypeFont
         GL.BindVertexArray(0);
         GL.BindTexture(TextureTarget.Texture2D, 0);
     }
+
+
+
 }

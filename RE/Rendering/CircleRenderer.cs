@@ -1,20 +1,19 @@
 ﻿using OpenTK.Graphics.OpenGL4;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
-using RE.Rendering;
 using RE.Utils;
 
-namespace RE.Debug.Renderers;
+namespace RE.Rendering;
 
-public class CircleRenderer : IRenderable, IDisposable
+public class CircleRenderer : Renderable
 {
     private readonly int _vao;
     private readonly int _vbo;
     private readonly int _shaderProgram;
     private Vector3[] _vertices;
 
-    public RenderLayer RenderLayer => RenderLayer.World;
-    public bool IsVisible { get; set; } = true;
+    public override RenderLayer RenderLayer => RenderLayer.World;
+    public override bool IsVisible { get; set; } = true;
     public Vector3 Center { get; set; }
     public float Radius { get; set; }
     public int Segments { get; set; }
@@ -32,7 +31,7 @@ public class CircleRenderer : IRenderable, IDisposable
 
         GL.BindVertexArray(_vao);
         GL.BindBuffer(BufferTarget.ArrayBuffer, _vbo);
-        GL.BufferData(BufferTarget.ArrayBuffer, (Segments + 1) * Vector3.SizeInBytes, IntPtr.Zero, BufferUsageHint.DynamicDraw);
+        GL.BufferData(BufferTarget.ArrayBuffer, (Segments + 1) * Vector3.SizeInBytes, nint.Zero, BufferUsageHint.DynamicDraw);
 
         GL.EnableVertexAttribArray(0);
         GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, Vector3.SizeInBytes, 0);
@@ -44,20 +43,9 @@ public class CircleRenderer : IRenderable, IDisposable
 
     private int CompileShader()
     {
-        var vertexSource = @"#version 460 core
-layout(location = 0) in vec3 aPosition;
-uniform mat4 uView;
-uniform mat4 uProj;
-void main() {
-    gl_Position = uProj * uView * vec4(aPosition, 1.0);
-}";
+        var vertexSource = File.ReadAllText("assets/shaders/circle.vert");
 
-        var fragmentSource = @"#version 460 core
-out vec4 FragColor;
-uniform vec4 uColor;
-void main() {
-    FragColor = uColor;
-}";
+        var fragmentSource = File.ReadAllText("assets/shaders/circle.frag");
 
         int vertexShader = GL.CreateShader(ShaderType.VertexShader);
         GL.ShaderSource(vertexShader, vertexSource);
@@ -94,7 +82,7 @@ void main() {
         }
     }
 
-    public void Render(FrameEventArgs args)
+    public override void Render(FrameEventArgs args)
     {
         UpdateVertices();
 
@@ -123,8 +111,8 @@ void main() {
         {
             float angle = i * step;
             Vector3 point = Center +
-                            (MathF.Cos(angle) * Radius) * axis1 +
-                            (MathF.Sin(angle) * Radius) * axis2;
+                            MathF.Cos(angle) * Radius * axis1 +
+                            MathF.Sin(angle) * Radius * axis2;
             _vertices[i] = point;
         }
 
