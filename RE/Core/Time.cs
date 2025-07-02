@@ -58,7 +58,7 @@ public static class Time
         LastUpdate = DateTime.Now;
         DeltaTime = (float)args.Time;
         ElapsedFrames++;
-
+        Game.Instance.Title = (1 / DeltaTime).ToString("F2");
         for (var i = _scheduled.Count - 1; i >= 0; i--)
             if (ElapsedTime >= _scheduled[i].TargetTime)
             {

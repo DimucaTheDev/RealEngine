@@ -94,9 +94,12 @@ internal class Game : GameWindow
                 {
                     var startNew = Stopwatch.StartNew();
 
-                    for (int i = 0; i < 1; i++)
+                    for (int i = 0; i < 100; i++)
                     {
-                        //new ModelRenderer("Assets/Models/test.fbx").Render();
+                        for (int j = 0; j < 100; j++)
+                        {
+                            new ModelRenderer("Assets/Models/test.fbx", new(-i, 0, -j)).Render();
+                        }
                     }
 
                     Log.Information($"Model loaded in {startNew.ElapsedMilliseconds} ms");
@@ -125,8 +128,12 @@ internal class Game : GameWindow
         GL.Enable(EnableCap.DepthTest);
         GL.Enable(EnableCap.Blend);
         GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
-
         GL.ClearColor(Color.CadetBlue);
+        //GL.Enable(EnableCap.CullFace);
+        //GL.CullFace(CullFaceMode.Back);
+        //GL.FrontFace(FrontFaceDirection.Ccw);
+
+
 
         RenderLayerManager.RenderAll(args);
 

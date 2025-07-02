@@ -59,6 +59,13 @@ public class Camera
                 Console.WriteLine($"ModelRenderer RAM: {Process.GetCurrentProcess().PrivateMemorySize64 / 1024 / 1024} MB");
 
                 new ModelRenderer("Assets/Models/test.fbx", Instance.Position + Instance.Front * 1.2f).Render();
+                //SoundManager.Play("npc/headcrab_poison/ph_scream", new SoundPlaybackSettings()
+                //{
+                //    InWorld = true,
+                //    MaxDistance = 3,
+                //    ReferenceDistance = .5f,
+                //    SourcePosition = Instance.Position + Instance.Front * 1.2f,
+                //});
                 Console.WriteLine($"ModelRenderer RAM: {Process.GetCurrentProcess().PrivateMemorySize64 / 1024 / 1024} MB");
 
             }

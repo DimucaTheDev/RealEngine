@@ -14,8 +14,12 @@ namespace RE.Rendering
     public class ModelRenderer : Renderable
     {
         private static readonly FreeTypeFont _font = new(32, "Assets/Fonts/consola.ttf");
+        private static readonly Dictionary<string, (int vao, int vbo, int ebo, int indexCount)> _meshCache = new();
+        private static readonly Dictionary<string, int> _textureCache = new();
+        private static int _sharedShader;
+        private static bool _shaderInitialized = false;
 
-        private int _vao, _vbo, _ebo, _texture, _shader;
+        private int _vao, _vbo, _ebo, _texture;
         private int _indexCount;
         private BillboardText3D? _text;
         private SpriteRenderer? _noModelSprite;
@@ -63,31 +67,29 @@ namespace RE.Rendering
 
         private bool LoadModel(string path)
         {
+            if (_meshCache.TryGetValue(path, out var meshData))
+            {
+                (_vao, _vbo, _ebo, _indexCount) = meshData;
+                _texture = GetOrLoadTexture(path);
+                return true;
+            }
+
             using AssimpContext importer = new AssimpContext();
             Scene scene;
             try
             {
                 scene = importer.ImportFile(path,
-                   PostProcessSteps.Triangulate | PostProcessSteps.GenerateNormals | PostProcessSteps.FlipUVs);
+                    PostProcessSteps.Triangulate | PostProcessSteps.GenerateNormals | PostProcessSteps.FlipUVs);
             }
-            catch (FileNotFoundException ex)
+            catch (Exception ex)
             {
-                Log.Error(ex, $"Model file not found: {Path.GetRelativePath(".", path)}");
-                return false;
-            }
-            catch (AssimpException ex)
-            {
-                Log.Error(ex, $"Failed to load model from {Path.GetRelativePath(".", path)}");
-                return false;
-            }
-            if (!scene.Meshes.Any())
-            {
-                Log.Error($"No meshes found in model file({Path.GetRelativePath(".", path)})");
+                Log.Error(ex, $"Failed to load model: {path}");
                 return false;
             }
 
-
+            if (!scene.Meshes.Any()) return false;
             var mesh = scene.Meshes[0];
+
             var vertices = new List<float>();
             var indices = new List<uint>();
 
@@ -99,11 +101,10 @@ namespace RE.Rendering
             }
 
             foreach (var face in mesh.Faces)
-                indices.AddRange(face.Indices.Select(s => (uint)s));
+                indices.AddRange(face.Indices.Select(i => (uint)i));
 
             _indexCount = indices.Count;
 
-            // OpenGL
             _vao = GL.GenVertexArray();
             _vbo = GL.GenBuffer();
             _ebo = GL.GenBuffer();
@@ -115,70 +116,53 @@ namespace RE.Rendering
             GL.BindBuffer(BufferTarget.ElementArrayBuffer, _ebo);
             GL.BufferData(BufferTarget.ElementArrayBuffer, indices.Count * sizeof(uint), indices.ToArray(), BufferUsageHint.StaticDraw);
 
-            // layout: pos (3), uv (2)
             GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, 5 * sizeof(float), 0);
             GL.EnableVertexAttribArray(0);
             GL.VertexAttribPointer(1, 2, VertexAttribPointerType.Float, false, 5 * sizeof(float), 3 * sizeof(float));
             GL.EnableVertexAttribArray(1);
-
             GL.BindVertexArray(0);
 
-            if (!scene.Materials.Any())
-            {
-                Log.Warning($"No materials found in the model ({Path.GetRelativePath(".", path)})");
-            }
-            else
-            {
-                var mat = scene.Materials[mesh.MaterialIndex];
+            _meshCache[path] = (_vao, _vbo, _ebo, _indexCount);
 
-                var texPath = mat.HasTextureDiffuse ? mat.TextureDiffuse.FilePath : null;
-
-
-                if (texPath != null && File.Exists(texPath))
-                {
-                    _texture = LoadTexture(texPath);
-                    return true;
-                }
-                if (mat.HasTextureDiffuse)
-                {
-                    _texture = GL.GenTexture();
-                    GL.BindTexture(TextureTarget.Texture2D, _texture);
-
-                    var img = ImageResult.FromMemory(scene.Textures.First().CompressedData, ColorComponents.RedGreenBlueAlpha);
-
-                    GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba,
-                        img.Width, img.Height, 0, PixelFormat.Rgba, PixelType.UnsignedByte,
-                        img.Data);
-
-                    GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter,
-                        (int)TextureMinFilter.Nearest);
-                    GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter,
-                        (int)TextureMagFilter.Nearest);
-
-                    GL.GenerateMipmap(GenerateMipmapTarget.Texture2D);
-
-
-                    vertices.Clear();
-                    indices.Clear();
-
-
-                    return true;
-                }
-            }
-
-
-            Log.Warning($"No texture found for model {Path.GetRelativePath(".", path)}");
-            _texture = CreateMissingTexture();
+            _texture = GetOrLoadTexture(path);
             return true;
         }
 
-        private int LoadTexture(string filePath)
+        private int GetOrLoadTexture(string path)
+        {
+            if (_textureCache.TryGetValue(path, out var texId))
+                return texId;
+
+
+            var assimpContext = new AssimpContext();
+            var importFile = assimpContext.ImportFile(path);
+            var mat = importFile.Materials.FirstOrDefault();
+            string? texPath = mat?.TextureDiffuse.FilePath;
+
+
+            if (texPath != null && File.Exists(texPath))
+            {
+                using var s = File.OpenRead(texPath);
+                texId = LoadTexture(ImageResult.FromStream(s, ColorComponents.RedGreenBlueAlpha));
+            }
+            else if (mat?.HasTextureDiffuse ?? false)
+            {
+                var t = ImageResult.FromMemory(importFile.Textures.First().CompressedData, ColorComponents.RedGreenBlueAlpha);
+                texId = LoadTexture(t);
+            }
+            else
+            {
+                texId = CreateMissingTexture();
+            }
+            assimpContext.Dispose();
+            _textureCache[path] = texId;
+            return texId;
+        }
+
+        private int LoadTexture(ImageResult img)
         {
             int texID = GL.GenTexture();
             GL.BindTexture(TextureTarget.Texture2D, texID);
-
-            using var stream = File.OpenRead(filePath);
-            var img = ImageResult.FromStream(stream, ColorComponents.RedGreenBlueAlpha);
 
             GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba,
                 img.Width, img.Height, 0, OpenTK.Graphics.OpenGL4.PixelFormat.Rgba, PixelType.UnsignedByte, img.Data);
@@ -224,8 +208,9 @@ namespace RE.Rendering
 
         private void InitShader()
         {
-            string vertexShaderSrc = File.ReadAllText("assets/shaders/assimp.vert");
+            if (_shaderInitialized) return;
 
+            string vertexShaderSrc = File.ReadAllText("assets/shaders/assimp.vert");
             string fragmentShaderSrc = File.ReadAllText("assets/shaders/assimp.frag");
 
             int vs = GL.CreateShader(ShaderType.VertexShader);
@@ -240,14 +225,17 @@ namespace RE.Rendering
             GL.GetShader(fs, ShaderParameter.CompileStatus, out status);
             if (status == 0) throw new Exception(GL.GetShaderInfoLog(fs));
 
-            _shader = GL.CreateProgram();
-            GL.AttachShader(_shader, vs);
-            GL.AttachShader(_shader, fs);
-            GL.LinkProgram(_shader);
+            _sharedShader = GL.CreateProgram();
+            GL.AttachShader(_sharedShader, vs);
+            GL.AttachShader(_sharedShader, fs);
+            GL.LinkProgram(_sharedShader);
 
             GL.DeleteShader(vs);
             GL.DeleteShader(fs);
+
+            _shaderInitialized = true;
         }
+
 
         public override void Render(FrameEventArgs args)
         {
@@ -259,14 +247,14 @@ namespace RE.Rendering
             Matrix4 view = Camera.Instance.GetViewMatrix();
             Matrix4 proj = Camera.Instance.GetProjectionMatrix();
 
-            GL.UseProgram(_shader);
-            GL.UniformMatrix4(GL.GetUniformLocation(_shader, "model"), false, ref model);
-            GL.UniformMatrix4(GL.GetUniformLocation(_shader, "view"), false, ref view);
-            GL.UniformMatrix4(GL.GetUniformLocation(_shader, "projection"), false, ref proj);
+            GL.UseProgram(_sharedShader);
+            GL.UniformMatrix4(GL.GetUniformLocation(_sharedShader, "model"), false, ref model);
+            GL.UniformMatrix4(GL.GetUniformLocation(_sharedShader, "view"), false, ref view);
+            GL.UniformMatrix4(GL.GetUniformLocation(_sharedShader, "projection"), false, ref proj);
 
             GL.ActiveTexture(TextureUnit.Texture0);
             GL.BindTexture(TextureTarget.Texture2D, _texture);
-            GL.Uniform1(GL.GetUniformLocation(_shader, "tex"), 0);
+            GL.Uniform1(GL.GetUniformLocation(_sharedShader, "tex"), 0);
 
             GL.BindVertexArray(_vao);
             GL.DrawElements(PrimitiveType.Triangles, _indexCount, DrawElementsType.UnsignedInt, 0);
@@ -284,7 +272,7 @@ namespace RE.Rendering
             GL.DeleteBuffer(_vbo);
             GL.DeleteBuffer(_ebo);
             GL.DeleteTexture(_texture);
-            GL.DeleteProgram(_shader);
+            GL.DeleteProgram(_sharedShader);
         }
     }
 
