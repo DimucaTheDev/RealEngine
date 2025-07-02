@@ -2,6 +2,7 @@
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using RE.Rendering;
+using RE.Rendering.Renderables;
 using RE.Rendering.Text;
 using RE.Utils;
 
@@ -13,10 +14,10 @@ namespace RE.Core
 
         private static FreeTypeFont font;
         private static FreeTypeFont titleFont;
-        private static Text _textCurrentStep;
-        private static Text _textSteps;
-        private static List<Text> _textPastSteps = new();
-        private static Text _textTitle;
+        private static ScreenText _textCurrentStep;
+        private static ScreenText _textSteps;
+        private static List<ScreenText> _textPastSteps = new();
+        private static ScreenText _textTitle;
         private static Queue<(string label, Action action)> _initSteps = new();
         private static string _currentStep = "";
         private static bool _initDone = false;
@@ -33,11 +34,11 @@ namespace RE.Core
             titleFont = new(64, Fonts.Eurostile);
 
 
-            _textCurrentStep = new Text(null, Vector2.Zero, font);
-            _textSteps = new Text(null, Vector2.Zero, font);
+            _textCurrentStep = new ScreenText(null, Vector2.Zero, font);
+            _textSteps = new ScreenText(null, Vector2.Zero, font);
 
             var title = "REAL ENGINE";
-            _textTitle = new Text(title,
+            _textTitle = new ScreenText(title,
                 new Vector2(
                     (Game.Instance.ClientSize.X - titleFont.GetTextWidth(title)) / 2,
                     Game.Instance.ClientSize.Y / 4 - titleFont.GetTextHeight(title) / 2 + 80), titleFont, Vector4.One);
@@ -81,7 +82,7 @@ namespace RE.Core
 
                     if (!string.IsNullOrEmpty(_currentStep))
                     {
-                        var pastText = new Text(_currentStep, Vector2.Zero, font, new Vector4(Vector3.One, .175f));
+                        var pastText = new ScreenText(_currentStep, Vector2.Zero, font, new Vector4(Vector3.One, .175f));
                         pastText.Render();
                         _textPastSteps.Insert(0, pastText);
 
@@ -144,8 +145,8 @@ namespace RE.Core
                 GL.ClearColor(0.1f, 0.1f, 0.1f, 1f);
                 GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
-                RenderLayerManager.RenderType(_textCurrentStep, args);
-                RenderLayerManager.RenderType(_textSteps, args);
+                RenderManager.RenderType(_textCurrentStep, args);
+                RenderManager.RenderType(_textSteps, args);
 
                 Game.Instance.SwapBuffers();
                 return true;

@@ -1,7 +1,7 @@
 ﻿using OpenTK.Audio.OpenAL;
 using OpenTK.Mathematics;
 using RE.Core;
-using RE.Rendering;
+using RE.Rendering.Renderables;
 using RE.Utils;
 using Log = Serilog.Log;
 

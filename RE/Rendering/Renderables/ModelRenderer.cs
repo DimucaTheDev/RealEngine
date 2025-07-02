@@ -9,7 +9,7 @@ using StbImageSharp;
 using PrimitiveType = OpenTK.Graphics.OpenGL4.PrimitiveType;
 using Quaternion = OpenTK.Mathematics.Quaternion;
 
-namespace RE.Rendering
+namespace RE.Rendering.Renderables
 {
     public class ModelRenderer : Renderable
     {
@@ -21,7 +21,7 @@ namespace RE.Rendering
 
         private int _vao, _vbo, _ebo, _texture;
         private int _indexCount;
-        private BillboardText3D? _text;
+        private FloatingText? _text;
         private SpriteRenderer? _noModelSprite;
         private bool modelLoaded = false;
 
@@ -30,6 +30,8 @@ namespace RE.Rendering
         public Vector3 Position { get; set; }
         public Quaternion Rotation { get; set; }
         public Vector3 Scale { get; set; }
+        public Matrix4 RotationMatrix { get; set; }
+
 
         public ModelRenderer(string path, Vector3? pos = null, Quaternion? rot = null, Vector3? scale = null)
         {
@@ -40,7 +42,7 @@ namespace RE.Rendering
             if (!(modelLoaded = LoadModel(path)))
             {
                 _noModelSprite = new SpriteRenderer(Position, "Assets/Sprites/Editor/no_model.png");
-                _text = new BillboardText3D(path, Position + new Vector3(0, .5f, 0), _font, true);
+                _text = new FloatingText(path, Position + new Vector3(0, .5f, 0), _font, true);
 
                 _noModelSprite.Render();
                 _text.Render();
@@ -49,7 +51,34 @@ namespace RE.Rendering
             }
             InitShader();
         }
+        public override void Render(FrameEventArgs args)
+        {
+            if (!RenderManager.IsSphereInFrustum(new(Position.X, Position.Y, Position.Z), 1))
+                return;
 
+            Matrix4 model =
+                Matrix4.CreateScale(Scale) *
+                Matrix4.CreateFromQuaternion(Rotation) *
+                Matrix4.CreateTranslation(Position);
+
+
+
+            Matrix4 view = Camera.Instance.GetViewMatrix();
+            Matrix4 proj = Camera.Instance.GetProjectionMatrix();
+
+            GL.UseProgram(_sharedShader);
+            GL.UniformMatrix4(GL.GetUniformLocation(_sharedShader, "model"), false, ref model);
+            GL.UniformMatrix4(GL.GetUniformLocation(_sharedShader, "view"), false, ref view);
+            GL.UniformMatrix4(GL.GetUniformLocation(_sharedShader, "projection"), false, ref proj);
+
+            GL.ActiveTexture(TextureUnit.Texture0);
+            GL.BindTexture(TextureTarget.Texture2D, _texture);
+            GL.Uniform1(GL.GetUniformLocation(_sharedShader, "tex"), 0);
+
+            GL.BindVertexArray(_vao);
+            GL.DrawElements(PrimitiveType.Triangles, _indexCount, DrawElementsType.UnsignedInt, 0);
+            GL.BindVertexArray(0);
+        }
         public override void AddedToRenderList()
         {
             if (!modelLoaded)
@@ -70,7 +99,7 @@ namespace RE.Rendering
             if (_meshCache.TryGetValue(path, out var meshData))
             {
                 (_vao, _vbo, _ebo, _indexCount) = meshData;
-                _texture = GetOrLoadTexture(path);
+                _texture = CreateMissingTexture();// GetOrLoadTexture(path);
                 return true;
             }
 
@@ -93,12 +122,31 @@ namespace RE.Rendering
             var vertices = new List<float>();
             var indices = new List<uint>();
 
+            var min = new Vector3D(float.MaxValue, float.MaxValue, float.MaxValue);
+            var max = new Vector3D(float.MinValue, float.MinValue, float.MinValue);
+
             for (int i = 0; i < mesh.VertexCount; i++)
             {
-                var pos = mesh.Vertices[i];
+                var v = mesh.Vertices[i];
+                min.X = Math.Min(min.X, v.X);
+                min.Y = Math.Min(min.Y, v.Y);
+                min.Z = Math.Min(min.Z, v.Z);
+
+                max.X = Math.Max(max.X, v.X);
+                max.Y = Math.Max(max.Y, v.Y);
+                max.Z = Math.Max(max.Z, v.Z);
+            }
+
+            var center = (min + max) * 0.5f;
+
+            // 2. Смещение всех вершин
+            for (int i = 0; i < mesh.VertexCount; i++)
+            {
+                var pos = mesh.Vertices[i] - center;
                 var uv = mesh.HasTextureCoords(0) ? mesh.TextureCoordinateChannels[0][i] : new Vector3D(0, 0, 0);
                 vertices.AddRange([pos.X, pos.Y, pos.Z, uv.X, uv.Y]);
             }
+
 
             foreach (var face in mesh.Faces)
                 indices.AddRange(face.Indices.Select(i => (uint)i));
@@ -165,7 +213,7 @@ namespace RE.Rendering
             GL.BindTexture(TextureTarget.Texture2D, texID);
 
             GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba,
-                img.Width, img.Height, 0, OpenTK.Graphics.OpenGL4.PixelFormat.Rgba, PixelType.UnsignedByte, img.Data);
+                img.Width, img.Height, 0, PixelFormat.Rgba, PixelType.UnsignedByte, img.Data);
 
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Linear);
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Linear);
@@ -182,6 +230,11 @@ namespace RE.Rendering
 
             byte[] data = new byte[size * size * 4];
 
+            byte[] r =
+            {
+                (byte)Random.Shared.Next(255), (byte)Random.Shared.Next(255), (byte)Random.Shared.Next(255), 255
+            };
+
             byte[] purple = { 255, 0, 255, 255 };
             byte[] black = { 0, 0, 0, 255 };
 
@@ -189,8 +242,8 @@ namespace RE.Rendering
             {
                 for (int x = 0; x < size; x++)
                 {
-                    bool isPurple = ((x + y) % 2 == 0);
-                    byte[] color = isPurple ? purple : black;
+                    bool isPurple = (x + y) % 2 == 0;
+                    byte[] color = r;// isPurple ? purple : black;
 
                     int index = (y * size + x) * 4;
                     System.Buffer.BlockCopy(color, 0, data, index, 4);
@@ -237,29 +290,12 @@ namespace RE.Rendering
         }
 
 
-        public override void Render(FrameEventArgs args)
+        // Предполагается, что q — нормированный
+        Quaternion InvertQuaternion(Quaternion q)
         {
-            Matrix4 model =
-                Matrix4.CreateRotationX(MathHelper.DegreesToRadians(-90)) *
-                Matrix4.CreateFromQuaternion(Rotation) *
-                Matrix4.CreateTranslation(Position);
-
-            Matrix4 view = Camera.Instance.GetViewMatrix();
-            Matrix4 proj = Camera.Instance.GetProjectionMatrix();
-
-            GL.UseProgram(_sharedShader);
-            GL.UniformMatrix4(GL.GetUniformLocation(_sharedShader, "model"), false, ref model);
-            GL.UniformMatrix4(GL.GetUniformLocation(_sharedShader, "view"), false, ref view);
-            GL.UniformMatrix4(GL.GetUniformLocation(_sharedShader, "projection"), false, ref proj);
-
-            GL.ActiveTexture(TextureUnit.Texture0);
-            GL.BindTexture(TextureTarget.Texture2D, _texture);
-            GL.Uniform1(GL.GetUniformLocation(_sharedShader, "tex"), 0);
-
-            GL.BindVertexArray(_vao);
-            GL.DrawElements(PrimitiveType.Triangles, _indexCount, DrawElementsType.UnsignedInt, 0);
-            GL.BindVertexArray(0);
+            return new Quaternion(-q.X, -q.Y, -q.Z, q.W);
         }
+
 
         public override void Dispose()
         {

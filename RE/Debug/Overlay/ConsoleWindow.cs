@@ -16,7 +16,7 @@ namespace RE.Debug.Overlay
 
         private ConsoleWindow()
         {
-            RenderLayerManager.AddRenderable(this);
+            RenderManager.AddRenderable(this);
         }
 
         private static string _inputBuffer = string.Empty;

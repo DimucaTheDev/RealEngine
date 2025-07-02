@@ -1,40 +1,43 @@
 ﻿using OpenTK.Graphics.OpenGL4;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
+using RE.Core;
+using RE.Rendering.Text;
+using RE.Utils;
 using System.Diagnostics;
 
-namespace RE.Rendering.Text;
+namespace RE.Rendering.Renderables;
 
 [DebuggerDisplay("Text: \"{Content}\"")]
-internal class Text : Renderable
+internal class ScreenText : Renderable
 {
-    public Text(string? content, Vector2 position, FreeTypeFont font)
+    public ScreenText(string? content, Vector2 position, FreeTypeFont font)
     {
         Content = content ?? "";
         Position = position;
         Font = font;
     }
 
-    public Text(string? content, Vector2 position, FreeTypeFont font, float scale)
+    public ScreenText(string? content, Vector2 position, FreeTypeFont font, float scale)
         : this(content, position, font)
     {
         Scale = scale;
     }
 
-    public Text(string? content, Vector2 position, FreeTypeFont font, Vector4 color)
+    public ScreenText(string? content, Vector2 position, FreeTypeFont font, Vector4 color)
         : this(content, position, font)
     {
         Color = color;
     }
 
-    public Text(string? content, Vector2 position, FreeTypeFont font, float scale, Vector4 color)
+    public ScreenText(string? content, Vector2 position, FreeTypeFont font, float scale, Vector4 color)
         : this(content, position, font)
     {
         Scale = scale;
         Color = color;
     }
 
-    public Text(string? content, Vector2 position, FreeTypeFont font, float scale, Vector4 color, Vector2 direction)
+    public ScreenText(string? content, Vector2 position, FreeTypeFont font, float scale, Vector4 color, Vector2 direction)
         : this(content, position, font, scale, color)
     {
         Direction = direction;
@@ -48,6 +51,22 @@ internal class Text : Renderable
     public Vector2 Direction { get; set; } = new(1, 0);
     public override bool IsVisible { get; set; } = true;
     public override RenderLayer RenderLayer => RenderLayer.UI;
+
+    [Obsolete("bla bla bla ble ble ble ", error: true)]
+    public void Fade()
+    {
+        Time.Schedule(3000, () =>
+        {
+            Game.Instance.UpdateFrame += (a) =>
+            {
+                Color = Color with
+                {
+                    W = Color.W - 0.5f * (float)a.Time
+                };
+                if (Color.W <= 0) this.StopRender();
+            };
+        });
+    }
 
     public override void Render(FrameEventArgs args)
     {

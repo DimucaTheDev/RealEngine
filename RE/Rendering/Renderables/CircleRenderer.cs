@@ -3,7 +3,7 @@ using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using RE.Utils;
 
-namespace RE.Rendering;
+namespace RE.Rendering.Renderables;
 
 public class CircleRenderer : Renderable
 {

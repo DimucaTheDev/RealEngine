@@ -5,8 +5,9 @@ using OpenTK.Windowing.GraphicsLibraryFramework;
 using RE.Core;
 using RE.Debug;
 using RE.Debug.Overlay;
+using RE.Rendering.Renderables;
 using RE.Utils;
-using System.Diagnostics;
+using Serilog;
 
 namespace RE.Rendering;
 
@@ -25,9 +26,7 @@ public class Camera
     public Vector3 Up;
     public float Yaw = -90f;
 
-    private Camera()
-    {
-    }
+    private Camera() { }
 
     private Camera(Vector3 position, Vector3 up, float aspectRatio)
     {
@@ -52,24 +51,15 @@ public class Camera
             Game.Instance.CursorState = CursorState.Grabbed;
 
             if (args.Button == MouseButton.Button1)
-                LineManager.Main.AddLine(Instance.Position, Instance.Position + Instance.Front * 3f, new Vector4(1, 0, 0, 1),
+                LineManager.Main!.AddLine(Instance.Position, Instance.Position + Instance.Front * 3f, new Vector4(1, 0, 0, 1),
                     new Vector4(0, 0, 0, 1));
             if (args.Button == MouseButton.Button2)
             {
-                Console.WriteLine($"ModelRenderer RAM: {Process.GetCurrentProcess().PrivateMemorySize64 / 1024 / 1024} MB");
-
-                new ModelRenderer("Assets/Models/test.fbx", Instance.Position + Instance.Front * 1.2f).Render();
-                //SoundManager.Play("npc/headcrab_poison/ph_scream", new SoundPlaybackSettings()
-                //{
-                //    InWorld = true,
-                //    MaxDistance = 3,
-                //    ReferenceDistance = .5f,
-                //    SourcePosition = Instance.Position + Instance.Front * 1.2f,
-                //});
-                Console.WriteLine($"ModelRenderer RAM: {Process.GetCurrentProcess().PrivateMemorySize64 / 1024 / 1024} MB");
-
+                new ModelRenderer("assets/models/test.fbx", Instance.Position + Instance.Front * 6).Render();
             }
         };
+        (fr = new()).Render();
+
     }
 
     public void HandleMouseMove(float mouseX, float mouseY)
@@ -83,7 +73,7 @@ public class Camera
         }
 
         var deltaX = mouseX - _lastMousePos.X;
-        var deltaY = _lastMousePos.Y - mouseY; // инверсия Y
+        var deltaY = _lastMousePos.Y - mouseY;
 
         _lastMousePos = new Vector2(mouseX, mouseY);
 
@@ -99,11 +89,10 @@ public class Camera
         Front = Vector3.Normalize(front);
     }
 
-    public void HandleInput(KeyboardState state)
+    public unsafe void HandleInput(KeyboardState state)
     {
         var input = state;
         var speed = 2.5f * Time.DeltaTime;
-
 
         if (input.IsKeyDown(Keys.W))
             Position += (Front with { Y = 0 }).Normalized() * speed;
@@ -118,10 +107,42 @@ public class Camera
         if (input.IsKeyDown(Keys.LeftShift))
             Position -= Vector3.UnitY * speed;
         if (input.IsKeyPressed(Keys.GraveAccent))
-            ConsoleWindow.Instance.IsVisible = !ConsoleWindow.Instance.IsVisible;
+            ConsoleWindow.Instance!.IsVisible = !ConsoleWindow.Instance.IsVisible;
         if (input.IsKeyPressed(Keys.F11))
             Game.Instance.ToggleFullscreen();
+        if (input.IsKeyPressed(Keys.F1))
+        {
+            fr.Clear();
+            if (input.IsKeyDown(Keys.LeftShift))
+            {
+                return;
+            }
 
+            var corners = GetFrustumCorners(Camera.Instance.GetProjectionMatrix(), Camera.Instance.GetViewMatrix());
+            fr.AddLine(corners[0], corners[1], new Vector4(1, 0, 0, 1), new Vector4(1, 0, 0, 1), 0);
+            fr.AddLine(corners[1], corners[2], new Vector4(1, 0, 0, 1), new Vector4(1, 0, 0, 1), 0);
+            fr.AddLine(corners[2], corners[3], new Vector4(1, 0, 0, 1), new Vector4(1, 0, 0, 1), 0);
+            fr.AddLine(corners[3], corners[0], new Vector4(1, 0, 0, 1), new Vector4(1, 0, 0, 1), 0);
+            fr.AddLine(corners[4], corners[5], new Vector4(1, 0, 0, 1), new Vector4(1, 0, 0, 1), 0);
+            fr.AddLine(corners[5], corners[6], new Vector4(1, 0, 0, 1), new Vector4(1, 0, 0, 1), 0);
+            fr.AddLine(corners[6], corners[7], new Vector4(1, 0, 0, 1), new Vector4(1, 0, 0, 1), 0);
+            fr.AddLine(corners[7], corners[4], new Vector4(1, 0, 0, 1), new Vector4(1, 0, 0, 1), 0);
+
+            // линии соединяющие near и far плоскости  
+            for (int i = 0; i < 4; i++)
+            {
+                fr.AddLine(corners[i], corners[i + 4], new Vector4(1, 0, 0, 1), new Vector4(1, 0, 0, 1), 0);
+            }
+        }
+
+        if (input.IsKeyPressed(Keys.F2))
+        {
+            var p = Game.TakeScreenshot();
+            //var text = new ScreenText($"Screenshot saved to {Path.GetFileName(p)}", new Vector2(15, Game.Instance.ClientSize.Y - 20), new FreeTypeFont(32, "assets/fonts/eurostile.otf"), Vector4.One);
+            //text.Render();
+            //text.Fade();
+            Log.Information($"Screenshot saved to {p}");
+        }
 
         if (input.IsKeyDown(Keys.Escape))
         {
@@ -129,25 +150,58 @@ public class Camera
             _firstMove = true;
         }
     }
+    Vector3[] GetFrustumCorners(Matrix4 proj, Matrix4 view, float maxDistance = 1000f)
+    {
+        Matrix4 inv = Matrix4.Invert(view * proj);
+        Vector3[] ndcCorners = new Vector3[]
+        {
+            new Vector3(-1, -1, -1), // near bottom left
+            new Vector3(1, -1, -1),  // near bottom right
+            new Vector3(1, 1, -1),   // near top right
+            new Vector3(-1, 1, -1),  // near top left
+
+            new Vector3(-1, -1, 1),  // far bottom left
+            new Vector3(1, -1, 1),   // far bottom right
+            new Vector3(1, 1, 1),    // far top right
+            new Vector3(-1, 1, 1)    // far top left
+        };
+
+        Vector3[] worldCorners = new Vector3[8];
+
+        for (int i = 0; i < 8; i++)
+        {
+            Vector4 corner = new Vector4(ndcCorners[i], 1.0f);
+            Vector4 worldPos = Vector4.TransformRow(corner, inv);
+            worldPos /= worldPos.W; // перспективное деление
+
+            Vector3 pos = worldPos.Xyz;
+
+            float length = pos.Length;
+            if (length > maxDistance)
+            {
+                pos = pos.Normalized() * maxDistance;
+            }
+            worldCorners[i] = pos;
+        }
+        return worldCorners;
+    }
+
+    public static LineManager fr = new LineManager();
 
     public Matrix4 GetViewMatrix()
     {
         return Matrix4.LookAt(Position, Position + Front, Up);
     }
-
     public Matrix4 GetProjectionMatrix()
     {
-        return Matrix4.CreatePerspectiveFieldOfView(MathHelper.DegreesToRadians(60f), AspectRatio, 0.1f, 100f);
+        return Matrix4.CreatePerspectiveFieldOfView(MathHelper.DegreesToRadians(60), AspectRatio, 0.1f, 10000f);
     }
     public Matrix4 GetBillboard(Vector3 objectPosition)
     {
         Matrix4 view = GetViewMatrix();
 
-        // Инвертируем только поворот (обнуляем позицию)
         view.Row3.Xyz = Vector3.Zero;
-        return Matrix4.Transpose(view); // транспонированная матрица без смещения
-
-
+        return Matrix4.Transpose(view);
     }
 
 }

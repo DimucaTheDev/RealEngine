@@ -4,7 +4,7 @@ using OpenTK.Windowing.Common;
 using RE.Core;
 using StbImageSharp;
 
-namespace RE.Rendering;
+namespace RE.Rendering.Renderables;
 
 public class ImageRenderer : Renderable
 {

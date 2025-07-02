@@ -13,7 +13,7 @@ internal class DebugOverlay : Renderable
 
     private DebugOverlay()
     {
-        RenderLayerManager.AddRenderable(this);
+        RenderManager.AddRenderable(this);
     }
 
     public static DebugOverlay? Instance { get; private set; }
@@ -26,8 +26,8 @@ internal class DebugOverlay : Renderable
         if (Button("gc")) GC.Collect();
         var instance = Camera.Instance;
         Text($"Cam pos: ({instance.Position.X:F}; {instance.Position.Y:F}; {instance.Position.Z:F})");
-        if (Button("1")) RenderLayerManager.RemoveRenderables<LineManager>();
-        //Text($"a: ({LineManager.a.X:F}, {LineManager.a.Y:F})");
+        if (Button("1")) RenderManager.RemoveRenderables<LineManager>();
+        //ScreenText($"a: ({LineManager.a.X:F}, {LineManager.a.Y:F})");
         Selectable("wireframe", ref w);
         if (w)
         {
@@ -55,7 +55,7 @@ internal class DebugOverlay : Renderable
             SoundManager.Play(soundId.Key, new() { Volume = .2f });
         }
 
-        //Text((1 / args.Time).ToString("F2") + " FPS\n" +
+        //ScreenText((1 / args.Time).ToString("F2") + " FPS\n" +
         //     $"DeltaTime: {Time.DeltaTime:F3} s\n" +
         //     $"Time: {Time.ElapsedTime:F3} s\n" +
         //     $"Camera Position: {Camera.Instance.Position.X:F2}, {Camera.Instance.Position.Y:F2}, {Camera.Instance.Position.Z:F2}" +

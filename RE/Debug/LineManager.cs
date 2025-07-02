@@ -10,6 +10,9 @@ namespace RE.Debug;
 
 public class LineManager : Renderable
 {
+    //REMOVE AND REMAKE!!!
+    public LineManager() => Init();
+
     public static LineManager? Main
     {
         get => field ??= new LineManager();
@@ -138,7 +141,8 @@ public class LineManager : Renderable
             ColorEnd = colorEnd,
             Id = id
         });
-        Time.Schedule(msRemove, () => { ScheduleRemove(id); });
+        if (msRemove != 0)
+            Time.Schedule(msRemove, () => { ScheduleRemove(id); });
         return id;
     }
 
@@ -165,8 +169,7 @@ public class LineManager : Renderable
 
     public void Clear()
     {
-        _vertices.Clear();
-        Dispose();
+        _lines.Clear();
     }
 
     private struct Vertex

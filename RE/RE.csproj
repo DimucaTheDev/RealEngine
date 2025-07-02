@@ -59,6 +59,7 @@
 
 	<ItemGroup>
 	  <Folder Include="Assets\Audio\" />
+	  <Folder Include="Core\Physics\" />
 	  <Folder Include="Core\Scripting\" />
 	</ItemGroup>
 

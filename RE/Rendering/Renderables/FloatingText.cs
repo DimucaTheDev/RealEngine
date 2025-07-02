@@ -1,11 +1,12 @@
 ﻿using OpenTK.Graphics.OpenGL4;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
+using RE.Rendering.Text;
 using RE.Utils;
 
-namespace RE.Rendering.Text;
+namespace RE.Rendering.Renderables;
 
-public class BillboardText3D : Renderable
+public class FloatingText : Renderable
 {
     private readonly Dictionary<uint, Character> _characters;
     private readonly int _vao;
@@ -20,11 +21,11 @@ public class BillboardText3D : Renderable
     public float Scale { get; set; }
     public string Text { get; set; }
 
-    public static BillboardText3D I;
+    public static FloatingText I;
 
-    public BillboardText3D(string content, Vector3 pos, FreeTypeFont font, bool bottomToTop = false)
+    public FloatingText(string content, Vector3 pos, FreeTypeFont font, bool bottomToTop = false)
         : this(content, pos, font, 1, Color4.White, new(0.3f, 0.3f, 0.3f, .5f), bottomToTop) { }
-    public BillboardText3D(string content, Vector3 pos, FreeTypeFont font, float scale, Color4 textColor, Color4 bgColor, bool bottomToTop)
+    public FloatingText(string content, Vector3 pos, FreeTypeFont font, float scale, Color4 textColor, Color4 bgColor, bool bottomToTop)
     {
         I = this;
         Position = pos;
@@ -153,7 +154,7 @@ public class BillboardText3D : Renderable
                       * Matrix4.CreateTranslation(bgOffset)
                       * Camera.Instance.GetBillboard(bgPos)
                       * Matrix4.CreateTranslation(bgPos)
-                      * Matrix4.CreateTranslation(0, _bottomToTop ? (bgHeight / 2) : 0, 0);
+                      * Matrix4.CreateTranslation(0, _bottomToTop ? bgHeight / 2 : 0, 0);
 
         int locM = GL.GetUniformLocation(_shaderProgram, "uModel");
         int locV = GL.GetUniformLocation(_shaderProgram, "uView");
@@ -186,14 +187,14 @@ public class BillboardText3D : Renderable
                 float w = ch.Size.X * _scale;
                 float h = ch.Size.Y * _scale;
 
-                float xrel = penX + (ch.Bearing.X * _scale) - lineWidth / 2f;
-                float yoff = yrel + (ch.Bearing.Y * _scale);
+                float xrel = penX + ch.Bearing.X * _scale - lineWidth / 2f;
+                float yoff = yrel + ch.Bearing.Y * _scale;
 
                 var modelCh = Matrix4.CreateScale(w, h, 1f)
                                 * Matrix4.CreateTranslation(xrel, yoff, 0f)
                                 * Camera.Instance.GetBillboard(Position)
                                 * Matrix4.CreateTranslation(Position)
-                                * Matrix4.CreateTranslation(0, _bottomToTop ? (bgHeight / 2) : 0, 0);
+                                * Matrix4.CreateTranslation(0, _bottomToTop ? bgHeight / 2 : 0, 0);
 
                 GL.UniformMatrix4(locM, false, ref modelCh);
                 GL.BindTexture(TextureTarget.Texture2D, ch.TextureID);

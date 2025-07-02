@@ -8,16 +8,21 @@ using RE.Debug;
 using RE.Debug.Overlay;
 using RE.Libs.Grille.ImGuiTK;
 using RE.Rendering;
-using RE.Rendering.Skybox;
+using RE.Rendering.Renderables;
 using RE.Utils;
 using Serilog;
 using Serilog.Events;
-using System.Diagnostics;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.PixelFormats;
+using SixLabors.ImageSharp.Processing;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Windows.Forms;
 using Camera = RE.Rendering.Camera;
+using Color = System.Drawing.Color;
 using Image = OpenTK.Windowing.Common.Input.Image;
+using PixelFormat = OpenTK.Graphics.OpenGL.PixelFormat;
+using Rectangle = System.Drawing.Rectangle;
 using TextRenderer = RE.Rendering.Text.TextRenderer;
 
 namespace RE.Core;
@@ -68,13 +73,21 @@ internal class Game : GameWindow
         Log.Information("End");
     }
 
+    protected override void OnUpdateFrame(FrameEventArgs args)
+    {
+        base.OnUpdateFrame(args);
+    }
+
     protected override void OnLoad()
     {
+
         UpdateFrame += Time.Update;
         UpdateFrame += SoundManager.Update;
 
-        RenderLayerManager.Init();
+        RenderManager.Init();
         Time.Init();
+
+
         ImGuiController.Get();
         Camera.Init();
         TextRenderer.Init();
@@ -83,28 +96,14 @@ internal class Game : GameWindow
         Initializer.AddStep(("Initializing Debug Overlay", DebugOverlay.Init));
         Initializer.AddStep(("Initializing Debug Renderer", () =>
                 {
-                    LineManager.Main!.Init();
+                    // LineManager.Main!.Init();
                     LineManager.Main.Render();
                 }
         ));
         Initializer.AddStep(("Initializing ConsoleWindow", ConsoleWindow.Init));
         Initializer.AddStep(("Initializing Skybox", SkyboxRenderer.Init));
         Initializer.AddStep(("Initializing SoundManager", SoundManager.Init));
-        Initializer.AddStep(("Adding stuff to scene...", () =>
-                {
-                    var startNew = Stopwatch.StartNew();
-
-                    for (int i = 0; i < 100; i++)
-                    {
-                        for (int j = 0; j < 100; j++)
-                        {
-                            new ModelRenderer("Assets/Models/test.fbx", new(-i, 0, -j)).Render();
-                        }
-                    }
-
-                    Log.Information($"Model loaded in {startNew.ElapsedMilliseconds} ms");
-                }
-        ));
+        //Initializer.AddStep(("Initializing Physics", PhysicsManager.Init));
 
         base.OnLoad();
     }
@@ -122,6 +121,7 @@ internal class Game : GameWindow
         if (Initializer.Render(args))
             return;
 
+        //LineManager.Main.Clear();
         GL.Viewport(0, 0, ClientSize.X, ClientSize.Y);
         GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
         GL.DepthFunc(DepthFunction.Lequal);
@@ -135,7 +135,7 @@ internal class Game : GameWindow
 
 
 
-        RenderLayerManager.RenderAll(args);
+        RenderManager.RenderAll(args);
 
         base.OnRenderFrame(args);
 
@@ -165,6 +165,18 @@ internal class Game : GameWindow
             Log.Debug($"Unloading library \"{lib.Value}\"");
             WinApi.FreeLibrary(lib.Key);
         }
+    }
+    public static string TakeScreenshot() => TakeScreenshot($"re_{DateTime.Now:yyyy-MM-dd_HH-mm-ss}.png");
+    public static unsafe string TakeScreenshot(string fileName)
+    {
+        byte[] a = new byte[Game.Instance.ClientSize.X * Game.Instance.ClientSize.Y * 3];
+        fixed (byte* ptr = a)
+            GL.ReadPixels(0, 0, Instance.ClientSize.X, Instance.ClientSize.Y, PixelFormat.Rgb, PixelType.UnsignedByte, (IntPtr)ptr);
+        Image<Rgb24> image = SixLabors.ImageSharp.Image.LoadPixelData<Rgb24>(a, Game.Instance.ClientSize.X, Game.Instance.ClientSize.Y);
+        image.Mutate(s => s.Flip(FlipMode.Vertical));
+        image.SaveAsPng(fileName);
+        image.Dispose();
+        return Path.GetFullPath(fileName);
     }
     public static WindowIcon? LoadIcon()
     {

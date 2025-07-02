@@ -1,6 +1,7 @@
 ﻿using OpenTK.Graphics.OpenGL4;
 using OpenTK.Mathematics;
 using RE.Core;
+using RE.Rendering.Renderables;
 
 namespace RE.Rendering.Text;
 
@@ -43,7 +44,7 @@ internal class TextRenderer
         GL.DeleteShader(fragmentShader);
 
 
-        RenderLayerManager.SetRenderableInitAction<Text>(() =>
+        RenderManager.SetRenderableInitAction<ScreenText>(() =>
         {
             var projectionM = Matrix4.CreateOrthographicOffCenter(0.0f, Game.Instance.ClientSize.X,
                 Game.Instance.ClientSize.Y, 0.0f, -1.0f, 1.0f);

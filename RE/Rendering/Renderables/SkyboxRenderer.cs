@@ -3,7 +3,7 @@ using OpenTK.Windowing.Common;
 using Serilog;
 using SixLabors.ImageSharp.Processing;
 
-namespace RE.Rendering.Skybox;
+namespace RE.Rendering.Renderables;
 
 internal class SkyboxRenderer : Renderable
 {
@@ -109,7 +109,7 @@ internal class SkyboxRenderer : Renderable
             for (int i = 0; i < faces.Length; i++)
             {
                 using var image = SixLabors.ImageSharp.Image.Load<SixLabors.ImageSharp.PixelFormats.Rgba32>(faces[i]);
-                image.Mutate(x => x.Flip(SixLabors.ImageSharp.Processing.FlipMode.Horizontal)); // OpenGL flip
+                image.Mutate(x => x.Flip(FlipMode.Horizontal)); // OpenGL flip
                 var pixels = new byte[4 * image.Width * image.Height];
                 image.CopyPixelDataTo(pixels);
 
@@ -132,6 +132,6 @@ internal class SkyboxRenderer : Renderable
         GL.TexParameter(TextureTarget.TextureCubeMap, TextureParameterName.TextureWrapT, (int)TextureWrapMode.ClampToEdge);
         GL.TexParameter(TextureTarget.TextureCubeMap, TextureParameterName.TextureWrapR, (int)TextureWrapMode.ClampToEdge);
 
-        RenderLayerManager.AddRenderable(Instance);
+        RenderManager.AddRenderable(Instance);
     }
 }

@@ -1,11 +1,15 @@
-﻿using OpenTK.Windowing.Common;
+﻿using OpenTK.Mathematics;
+using OpenTK.Windowing.Common;
 using RE.Core;
 using RE.Libs.Grille.ImGuiTK;
+using System.Numerics;
+using Vector3 = System.Numerics.Vector3;
 
 namespace RE.Rendering;
 
 public enum RenderLayer
 {
+    //make layers be able to be added from code
     Back,
     Skybox,
     World,
@@ -14,7 +18,7 @@ public enum RenderLayer
     ImGui
 }
 
-public class RenderLayerManager
+public class RenderManager
 {
     public static SortedDictionary<RenderLayer, Dictionary<Type, List<Renderable>>> Renderables = new();
     public static Dictionary<Type, Action> RenderablesInitActions = new();
@@ -107,14 +111,72 @@ public class RenderLayerManager
                 post.Invoke();
         }
     }
+    public static bool IsSphereInFrustum(Vector3 center, float radius)
+    {
+        foreach (var plane in frustumPlanes)
+        {
+            float distance = Vector3.Dot(plane.Normal, center) + plane.D;
+            if (distance < -radius) // Сфера полностью за плоскостью — не видна
+                return false;
+        }
+        return true;
+    }
+
+    public static Plane[] frustumPlanes = new Plane[6];
     public static void RenderAll(FrameEventArgs args)
     {
+        // todo: add ICullable interface for Renderables
+        #region Frustum culling
+        Matrix4 view = Camera.Instance.GetViewMatrix();
+        Matrix4 proj = Camera.Instance.GetProjectionMatrix();
+        Matrix4 vp = view * proj;
+
+        frustumPlanes[0] = new Plane( // Left
+            vp.M14 + vp.M11,
+            vp.M24 + vp.M21,
+            vp.M34 + vp.M31,
+            vp.M44 + vp.M41);
+        frustumPlanes[1] = new Plane( // Right
+            vp.M14 - vp.M11,
+            vp.M24 - vp.M21,
+            vp.M34 - vp.M31,
+            vp.M44 - vp.M41);
+        frustumPlanes[2] = new Plane( // Bottom
+            vp.M14 + vp.M12,
+            vp.M24 + vp.M22,
+            vp.M34 + vp.M32,
+            vp.M44 + vp.M42);
+        frustumPlanes[3] = new Plane( // Top
+            vp.M14 - vp.M12,
+            vp.M24 - vp.M22,
+            vp.M34 - vp.M32,
+            vp.M44 - vp.M42);
+        frustumPlanes[4] = new Plane( // Near
+            vp.M13,
+            vp.M23,
+            vp.M33,
+            vp.M43);
+        frustumPlanes[5] = new Plane( // Far
+            vp.M14 - vp.M13,
+            vp.M24 - vp.M23,
+            vp.M34 - vp.M33,
+            vp.M44 - vp.M43);
+
+        for (int i = 0; i < 6; i++)
+        {
+            float length = frustumPlanes[i].Normal.Length();
+            frustumPlanes[i].Normal /= length;
+            frustumPlanes[i].D /= length;
+        }
+        #endregion
+
         foreach (var kvp in Renderables)
         {
             var layer = kvp.Key;
             OnLayerBegin(layer);
             foreach (var pair in kvp.Value)
             {
+
                 List<Renderable> list = pair.Value;
                 if (RenderablesInitActions.TryGetValue(pair.Key, out var init))
                     init.Invoke();
