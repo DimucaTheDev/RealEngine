@@ -14,9 +14,12 @@ public class FloatingText : Renderable
     private readonly int _shaderProgram;
     private readonly int _whiteTexture;
     private readonly bool _bottomToTop;
-    private Color4 _bgColor, _textColor;
     private float _scale => Scale * 0.005f;
 
+    public Color4 BackgroundColor { get; set; }
+    public Color4 ForegroundColor { get; set; }
+    public override RenderLayer RenderLayer => RenderLayer.World;
+    public override bool IsVisible { get; set; } = true;
     public Vector3 Position { get; set; }
     public float Scale { get; set; }
     public string Text { get; set; }
@@ -25,7 +28,7 @@ public class FloatingText : Renderable
 
     public FloatingText(string content, Vector3 pos, FreeTypeFont font, bool bottomToTop = false)
         : this(content, pos, font, 1, Color4.White, new(0.3f, 0.3f, 0.3f, .5f), bottomToTop) { }
-    public FloatingText(string content, Vector3 pos, FreeTypeFont font, float scale, Color4 textColor, Color4 bgColor, bool bottomToTop)
+    public FloatingText(string content, Vector3 pos, FreeTypeFont font, float scale, Color4 foregroundColor, Color4 backgroundColor, bool bottomToTop)
     {
         I = this;
         Position = pos;
@@ -33,8 +36,8 @@ public class FloatingText : Renderable
         Scale = scale;
 
         _bottomToTop = bottomToTop;
-        _textColor = textColor;
-        _bgColor = bgColor;
+        ForegroundColor = foregroundColor;
+        BackgroundColor = backgroundColor;
         _characters = font.CharacterMap.ToDictionary();
         _shaderProgram = LoadShaderProgram();
 
@@ -164,13 +167,13 @@ public class FloatingText : Renderable
         GL.UniformMatrix4(locM, false, ref modelBG);
         GL.UniformMatrix4(locV, false, ref view);
         GL.UniformMatrix4(locP, false, ref projection);
-        GL.Uniform4(locC, _bgColor);
+        GL.Uniform4(locC, BackgroundColor);
 
         GL.BindVertexArray(_vao);
         GL.BindTexture(TextureTarget.Texture2D, _whiteTexture);
         GL.DrawArrays(PrimitiveType.Triangles, 0, 6);
 
-        GL.Uniform4(locC, _textColor);
+        GL.Uniform4(locC, ForegroundColor);
         for (int i = 0; i < lines.Length; i++)
         {
             string line = lines[i];
@@ -209,8 +212,6 @@ public class FloatingText : Renderable
     }
 
 
-    public override RenderLayer RenderLayer => RenderLayer.World;
-    public override bool IsVisible { get; set; } = true;
     public override void Dispose()
     {
         this.StopRender();

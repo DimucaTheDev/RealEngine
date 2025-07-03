@@ -13,5 +13,6 @@ namespace RE.Audio
         public float MaxDistance { get; set; } = 10f;
         public float RollOff { get; set; } = 1f;
         public float ReferenceDistance { get; set; } = 1f;
+        public bool UseLinearFading { get; set; } = true;
     }
 }

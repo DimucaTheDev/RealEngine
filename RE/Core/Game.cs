@@ -78,7 +78,7 @@ internal class Game : GameWindow
 
     protected override void OnUpdateFrame(FrameEventArgs args)
     {
-        PhysManager.Instance.Update((float)args.Time);
+        PhysManager.Update((float)args.Time);
         base.OnUpdateFrame(args);
     }
 
@@ -95,30 +95,21 @@ internal class Game : GameWindow
         Initializer.Init();
 
         PhysManager.Init();
-        PhysManager.Instance.c(new Vector3(10, 1, 10)).Render();
+        PhysManager.c(new Vector3(10, 1, 10)).Render();
 
         new FloatingText("Adding physics cost me nerve cells\nIn fact, i tried 2 different libs!", new(-5, 5, 4), new FreeTypeFont(64, "assets/fonts/arial.ttf")).Render();
 
         OpenTK.Mathematics.Vector3 pyramidBaseCenter = new OpenTK.Mathematics.Vector3(0, 0, 0); // Adjust as needed
-        float cubeSize = .5f;
-        int levels = 7;
-        for (int i = 0; i < levels; i++)
+        float cubeSize = .45f;
+        for (int k = 0; k < 1; k++)
         {
-            int cubesInRow = levels - i;
-            float startX = pyramidBaseCenter.X - (cubesInRow - 1) * cubeSize * 0.5f;
-
-            for (int j = 0; j < cubesInRow; j++)
+            for (int i = 0; i < 1; i++)
             {
-                OpenTK.Mathematics.Vector3 cubePosition = new OpenTK.Mathematics.Vector3(
-                    startX + j * cubeSize,
-                    pyramidBaseCenter.Y + i * cubeSize + cubeSize / 2f,
-                    pyramidBaseCenter.Z
-                );
-
-                ModelRenderer cubeModel = new ModelRenderer("assets/models/cub.fbx", cubePosition, OpenTK.Mathematics.Quaternion.Identity, new(cubeSize));
-
-                PhysicObject cubePhysicsObject = PhysManager.Instance.CreateCubePhysicsObject(cubeModel, .5f);
-                RenderManager.AddRenderable(cubePhysicsObject);
+                for (int j = 0; j < 0; j++)
+                {
+                    PhysManager.CreateCubePhysicsObject(
+                        new ModelRenderer("assets/models/cub.fbx", new(j, i, k), scale: new(cubeSize, cubeSize, cubeSize)), 0.1f).Render();
+                }
             }
         }
 

@@ -4,25 +4,22 @@ using RE.Rendering.Renderables;
 
 namespace RE.Core.Physics
 {
-    internal class PhysManager : IDisposable
+    internal static class PhysManager
     {
-        private CollisionConfiguration _collisionConfiguration;
-        private CollisionDispatcher _dispatcher;
-        private BroadphaseInterface _broadphase;
-        private ConstraintSolver _solver;
-        private DiscreteDynamicsWorld _dynamicsWorld;
+        private static CollisionConfiguration _collisionConfiguration;
+        private static CollisionDispatcher _dispatcher;
+        private static BroadphaseInterface _broadphase;
+        private static ConstraintSolver _solver;
+        private static DiscreteDynamicsWorld _dynamicsWorld;
+        private static List<PhysicObject> _physicObjects = new();
+        private static HashSet<Tuple<PhysicObject, PhysicObject>> _currentCollisions = new();
+        private static HashSet<Tuple<PhysicObject, PhysicObject>> _previousCollisions = new();
 
-        // List to keep track of created PhysicObjects to dispose them correctly
-        private List<PhysicObject> _physicObjects = new List<PhysicObject>();
-
-        public static PhysManager Instance { get; set; }
+        public static event Action<PhysicObject, PhysicObject> CollisionEnter;
+        public static event Action<PhysicObject, PhysicObject> CollisionStay;
+        public static event Action<PhysicObject, PhysicObject> CollisionExit;
 
         public static void Init()
-        {
-            Instance = new PhysManager();
-        }
-
-        public PhysManager()
         {
             _collisionConfiguration = new DefaultCollisionConfiguration();
             _dispatcher = new CollisionDispatcher(_collisionConfiguration);
@@ -31,9 +28,25 @@ namespace RE.Core.Physics
             _dynamicsWorld = new DiscreteDynamicsWorld(_dispatcher, _broadphase, _solver, _collisionConfiguration);
 
             _dynamicsWorld.Gravity = new BulletSharp.Math.Vector3(0, -9.81f, 0);
-        }
 
-        public PhysicObject c(BulletSharp.Math.Vector3 scale)
+            CollisionEnter += (a, b) =>
+            {
+                a.Model.t.ForegroundColor = Color4.Green;
+                b.Model.t.ForegroundColor = Color4.Green;
+            };
+            CollisionStay += (a, b) =>
+            {
+                a.Model.t.ForegroundColor = Color4.DarkGreen;
+                b.Model.t.ForegroundColor = Color4.DarkGreen;
+            };
+            CollisionExit += (a, b) =>
+            {
+                a.Model.t.ForegroundColor = Color4.Red;
+                b.Model.t.ForegroundColor = Color4.Red;
+            };
+        }
+        //remove me
+        public static PhysicObject c(BulletSharp.Math.Vector3 scale)
         {
             var modelRenderer = new ModelRenderer("Assets/Models/plane.fbx", Vector3.Zero, Quaternion.Identity);
             BulletSharp.Math.Matrix startTransform = BulletSharp.Math.Matrix.Identity;
@@ -57,7 +70,7 @@ namespace RE.Core.Physics
             _physicObjects.Add(physObject);
             return physObject;
         }
-        public PhysicObject CreateCubePhysicsObject(ModelRenderer modelRenderer, float mass)
+        public static PhysicObject CreateCubePhysicsObject(ModelRenderer modelRenderer, float mass)
         {
             BulletSharp.Math.Matrix startTransform = BulletSharp.Math.Matrix.Identity;
             startTransform.Origin = new BulletSharp.Math.Vector3(modelRenderer.Position.X, modelRenderer.Position.Y, modelRenderer.Position.Z);
@@ -66,7 +79,7 @@ namespace RE.Core.Physics
             BulletSharp.Math.Vector3 halfExtents = new BulletSharp.Math.Vector3(
                 modelRenderer.Scale.X * 1,// 0.5f,
                 modelRenderer.Scale.Y * 1,// 0.5f,
-                modelRenderer.Scale.Z * 1// 0.5f
+                modelRenderer.Scale.Z * 1 // 0.5f
             );
             CollisionShape boxShape = new BoxShape(halfExtents);
 
@@ -87,30 +100,109 @@ namespace RE.Core.Physics
             _physicObjects.Add(physObject);
             return physObject;
         }
-        public void RemovePhysicsObject(PhysicObject physicObject)
+
+        public static void RemovePhysicsObject(PhysicObject physicObject)
         {
             if (_physicObjects.Contains(physicObject))
             {
                 _dynamicsWorld.RemoveRigidBody(physicObject.RigidBody);
+
+                _currentCollisions.RemoveWhere(pair => pair.Item1 == physicObject || pair.Item2 == physicObject);
+                _previousCollisions.RemoveWhere(pair => pair.Item1 == physicObject || pair.Item2 == physicObject);
+
                 physicObject.RigidBody.Dispose();
                 _physicObjects.Remove(physicObject);
                 physicObject.Dispose();
             }
         }
 
-        public void Update(float deltaTime)
+
+
+        public static void Update(float deltaTime)
         {
-            _dynamicsWorld.StepSimulation(deltaTime);
+            _dynamicsWorld.StepSimulation(deltaTime, 1, 1f / 60f);
+
+            _currentCollisions.Clear();
+
+            int numManifolds = _dispatcher.NumManifolds;
+            for (int i = 0; i < numManifolds; i++)
+            {
+                PersistentManifold contactManifold = _dispatcher.GetManifoldByIndexInternal(i);
+                CollisionObject obA = contactManifold.Body0;
+                CollisionObject obB = contactManifold.Body1;
+
+                if (obA.UserObject is PhysicObject physObjA && obB.UserObject is PhysicObject physObjB)
+                {
+                    bool hasActualContact = false;
+                    for (int j = 0; j < contactManifold.NumContacts; j++)
+                    {
+                        ManifoldPoint pt = contactManifold.GetContactPoint(j);
+
+                        const float contactThreshold = 0.005f;
+
+                        if (pt.Distance <= contactThreshold)
+                        {
+                            hasActualContact = true;
+                            break;
+                        }
+                    }
+
+                    if (hasActualContact)
+                    {
+                        _currentCollisions.Add(GetCollisionPair(physObjA, physObjB));
+                    }
+                }
+            }
+
+            foreach (var previousPair in _previousCollisions)
+            {
+                if (!_currentCollisions.Contains(previousPair))
+                {
+                    CollisionExit?.Invoke(previousPair.Item1, previousPair.Item2);
+                }
+            }
+
+            foreach (var currentPair in _currentCollisions)
+            {
+                if (!_previousCollisions.Contains(currentPair))
+                {
+                    CollisionEnter?.Invoke(currentPair.Item1, currentPair.Item2);
+                }
+                else
+                {
+                    CollisionStay?.Invoke(currentPair.Item1, currentPair.Item2);
+                }
+            }
+
+            _previousCollisions.Clear();
+            foreach (var pair in _currentCollisions)
+            {
+                _previousCollisions.Add(pair);
+            }
         }
 
-        public void Dispose()
+        private static Tuple<PhysicObject, PhysicObject> GetCollisionPair(PhysicObject objA, PhysicObject objB)
         {
-            // Clean up physics objects
+            if (objA.GetHashCode() < objB.GetHashCode())
+            {
+                return Tuple.Create(objA, objB);
+            }
+            else
+            {
+                return Tuple.Create(objB, objA);
+            }
+        }
+
+        public static void Dispose()
+        {
+            _currentCollisions.Clear();
+            _previousCollisions.Clear();
+
             foreach (var obj in _physicObjects)
             {
                 _dynamicsWorld.RemoveRigidBody(obj.RigidBody);
                 obj.RigidBody.Dispose();
-                obj.Dispose(); // Dispose of the PhysicObject itself
+                obj.Dispose();
             }
             _physicObjects.Clear();
 

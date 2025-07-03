@@ -89,7 +89,6 @@ namespace RE.Audio
 
             var sound = new Sound(source);
             _activeSounds.Add(sound);
-            // sound.Stopped += () => _activeSounds.Remove(sound);
 
             return sound;
         }
@@ -115,7 +114,8 @@ namespace RE.Audio
                 sound.IsRelative = false;
                 sound.ReferenceDistance = settings.ReferenceDistance;
                 sound.MaxDistance = settings.MaxDistance;
-                sound.RollOff = settings.RollOff;
+                if (!settings.UseLinearFading)
+                    sound.RollOff = settings.RollOff;
             }
             else
             {

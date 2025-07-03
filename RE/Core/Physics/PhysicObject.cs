@@ -4,7 +4,6 @@ using OpenTK.Windowing.Common;
 using RE.Debug;
 using RE.Rendering;
 using RE.Rendering.Renderables;
-using RE.Utils;
 using Quaternion = OpenTK.Mathematics.Quaternion;
 using Vector3 = OpenTK.Mathematics.Vector3;
 using Vector4 = OpenTK.Mathematics.Vector4;
@@ -14,8 +13,9 @@ namespace RE.Core.Physics
     internal class PhysicObject : Renderable
     {
         public ModelRenderer Model { get; set; }
-
         public RigidBody RigidBody { get; private set; }
+        public bool HasCollided { get; set; } = false;
+
 
         public override RenderLayer RenderLayer => RenderLayer.World;
         public override bool IsVisible { get; set; } = true;
@@ -24,7 +24,8 @@ namespace RE.Core.Physics
         {
             Model = model;
             RigidBody = rigidBody;
-            model.Render(); // This might be handled by your RenderManager, so you might remove it here
+            RigidBody.UserObject = this;
+
         }
 
         public override void Render(FrameEventArgs args)
@@ -40,7 +41,6 @@ namespace RE.Core.Physics
             Model.Render(args);
             // DrawRigidBodyBounds(RigidBody, LineManager.Main!);
         }
-        // Inside your PhysicalObject class
 
         void DrawRigidBodyBounds(RigidBody body, LineManager lineManager)
         {

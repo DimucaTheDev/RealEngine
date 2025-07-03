@@ -20,9 +20,9 @@ namespace RE.Audio
         private bool _disposed;
         private float? _length = null!;
         private Time.ScheduledTask? _task;
-        private CircleRenderer crRefDis, crMaxDis;
-        private SpriteRenderer sprite;
-
+        private readonly CircleRenderer _crRefDis;
+        private readonly CircleRenderer _crMaxDis;
+        private readonly SpriteRenderer _sprite;
 
         public event Action? Playing;
         public event Action? Paused;
@@ -90,9 +90,9 @@ namespace RE.Audio
             }
             set
             {
-                crMaxDis.Center = value;
-                crRefDis.Center = value;
-                sprite.Position = value;
+                _crMaxDis.Center = value;
+                _crRefDis.Center = value;
+                _sprite.Position = value;
                 AL.Source(_source, ALSource3f.Position, value.X, value.Y, value.Z);
             }
         }
@@ -128,13 +128,13 @@ namespace RE.Audio
             {
                 if (value)
                 {
-                    crMaxDis.StopRender();
-                    crRefDis.StopRender();
+                    _crMaxDis.StopRender();
+                    _crRefDis.StopRender();
                 }
                 else
                 {
-                    crMaxDis.Render();
-                    crRefDis.Render();
+                    _crMaxDis.Render();
+                    _crRefDis.Render();
                 }
                 AL.Source(_source, ALSourceb.SourceRelative, value);
             }
@@ -145,7 +145,7 @@ namespace RE.Audio
             get => AL.GetSource(_source, ALSourcef.MaxDistance);
             set
             {
-                crMaxDis.Radius = value;
+                _crMaxDis.Radius = value;
                 AL.Source(_source, ALSourcef.MaxDistance, value);
             }
         }
@@ -155,7 +155,7 @@ namespace RE.Audio
             get => AL.GetSource(_source, ALSourcef.ReferenceDistance);
             set
             {
-                crRefDis.Radius = value;
+                _crRefDis.Radius = value;
                 AL.Source(_source, ALSourcef.ReferenceDistance, value);
             }
         }
@@ -173,20 +173,20 @@ namespace RE.Audio
 
         public bool ShowDebugInfo
         {
-            get => crRefDis.IsRendering() || crMaxDis.IsRendering() || sprite.IsRendering();
+            get => _crRefDis.IsRendering() || _crMaxDis.IsRendering() || _sprite.IsRendering();
             set
             {
                 if (value)
                 {
-                    crMaxDis.Render();
-                    crRefDis.Render();
-                    sprite.Render();
+                    _crMaxDis.Render();
+                    _crRefDis.Render();
+                    _sprite.Render();
                 }
                 else
                 {
-                    crMaxDis.StopRender();
-                    crRefDis.StopRender();
-                    sprite.StopRender();
+                    _crMaxDis.StopRender();
+                    _crRefDis.StopRender();
+                    _sprite.StopRender();
                 }
             }
         }
@@ -218,9 +218,9 @@ namespace RE.Audio
                 Log.Error($"Invalid OpenAL source specified: {_source}");
             _buffer = AL.GetSource(_source, ALGetSourcei.Buffer);
 
-            sprite = new SpriteRenderer(Position, "Assets/Sprites/Editor/speaker.png");
-            crMaxDis = new CircleRenderer(Vector3.Zero, 0);
-            crRefDis = new CircleRenderer(Vector3.Zero, 0);
+            _sprite = new SpriteRenderer(Position, "Assets/Sprites/Editor/speaker.png");
+            _crMaxDis = new CircleRenderer(Vector3.Zero, 0);
+            _crRefDis = new CircleRenderer(Vector3.Zero, 0);
 
             MaxDistance = 10;
             ReferenceDistance = 1;
@@ -230,14 +230,13 @@ namespace RE.Audio
             IsRelative = false;
             Position = Vector3.Zero;
 
-            ShowDebugInfo = true;
-
-            Playing += () => sprite.ChangeTexture("Assets/sprites/editor/speaker_play.png");
-            Stopped += () => sprite.ChangeTexture("Assets/sprites/editor/speaker.png");
-            Paused += () => sprite.ChangeTexture("Assets/sprites/editor/speaker.png");
+            Playing += () => _sprite.ChangeTexture("Assets/sprites/editor/speaker_play.png");
+            Stopped += () => _sprite.ChangeTexture("Assets/sprites/editor/speaker.png");
+            Paused += () => _sprite.ChangeTexture("Assets/sprites/editor/speaker.png");
+            Resumed += () => _sprite.ChangeTexture("Assets/sprites/editor/speaker_play.png");
             VolumeChanged += (volume) =>
             {
-                sprite.ChangeTexture(volume == 0
+                _sprite.ChangeTexture(volume == 0
                     ? "Assets/Sprites/Editor/speaker_mute.png"
                     : "Assets/Sprites/Editor/speaker.png");
             };
@@ -281,9 +280,9 @@ namespace RE.Audio
         {
             if (_disposed) return;
             Stop();
-            sprite.Dispose();
-            crRefDis.Dispose();
-            crMaxDis.Dispose();
+            _sprite.Dispose();
+            _crRefDis.Dispose();
+            _crMaxDis.Dispose();
             AL.DeleteSource(_source);
             _disposed = true;
         }

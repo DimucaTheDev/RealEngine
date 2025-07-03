@@ -52,13 +52,19 @@ public class Camera
             Game.Instance.CursorState = CursorState.Grabbed;
 
             if (args.Button == MouseButton.Button1)
-                LineManager.Main!.AddLine(Instance.Position, Instance.Position + Instance.Front * 3f, new Vector4(1, 0, 0, 1),
-                    new Vector4(0, 0, 0, 1));
+            {
+                var modelRenderer = new ModelRenderer("assets/models/cub.fbx", Instance.Position + Instance.Front * 2, scale: new(0.6f));
+
+                var cubePhysicsObject = PhysManager.CreateCubePhysicsObject(modelRenderer, 1);
+
+                cubePhysicsObject.Render();
+            }
             if (args.Button == MouseButton.Button2)
             {
                 var modelRenderer = new ModelRenderer("assets/models/cub.fbx", Instance.Position + Instance.Front * 2, scale: new(0.6f));
 
-                var cubePhysicsObject = PhysManager.Instance.CreateCubePhysicsObject(modelRenderer, 1); OpenTK.Mathematics.Vector3 cameraFrontOpenTK = Camera.Instance.Front;
+                var cubePhysicsObject = PhysManager.CreateCubePhysicsObject(modelRenderer, 1);
+                OpenTK.Mathematics.Vector3 cameraFrontOpenTK = Camera.Instance.Front;
 
                 BulletSharp.Math.Vector3 cameraFrontBullet = new BulletSharp.Math.Vector3(cameraFrontOpenTK.X, cameraFrontOpenTK.Y, cameraFrontOpenTK.Z);
 

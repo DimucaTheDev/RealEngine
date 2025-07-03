@@ -33,13 +33,22 @@ namespace RE.Rendering.Renderables
         public Quaternion Rotation { get; set; }
         public Vector3 Scale { get; set; }
         public Matrix4 RotationMatrix { get; set; }
+        public string Name { get; set; }
 
+        //remove me
 
-        public ModelRenderer(string path, Vector3? pos = null, Quaternion? rot = null, Vector3? scale = null)
+        public FloatingText t;
+
+        public ModelRenderer(string path, Vector3? pos = null, Quaternion? rot = null, Vector3? scale = null, string? name = null)
         {
             Position = pos ?? Vector3.Zero;
             Rotation = rot ?? Quaternion.Identity;
             Scale = scale ?? Vector3.One;
+            Name = name ?? $"0x{Random.Shared.Next():x}";
+
+
+            t = new(Name, Vector3.Zero, new FreeTypeFont(32, "assets/fonts/consola.ttf"));
+            t.Render();
 
             if (!(modelLoaded = LoadModel(path)))
             {
@@ -57,6 +66,8 @@ namespace RE.Rendering.Renderables
         {
             if (!RenderManager.IsSphereInFrustum(new(Position.X, Position.Y, Position.Z), 1))
                 return;
+
+            t.Position = Position + new Vector3(0, 1.5f, 0);
 
             Matrix4 model =
                 Matrix4.CreateScale(Scale) *
@@ -115,6 +126,9 @@ namespace RE.Rendering.Renderables
                 Log.Error(ex, $"Failed to load model: {path}");
                 return false;
             }
+
+            if (string.IsNullOrEmpty(scene.RootNode.Name))
+                Name = scene.RootNode.Name;
 
             if (!scene.Meshes.Any()) return false;
             var mesh = scene.Meshes[0];
