@@ -2,25 +2,71 @@
 using OpenTK.Mathematics;
 using RE.Rendering.Renderables;
 using Log = Serilog.Log;
+using TaskScheduler = BulletSharp.TaskScheduler;
 
 namespace RE.Core.Physics
 {
     internal static class PhysManager
     {
-        private static CollisionConfiguration? _collisionConfiguration;
-        private static CollisionDispatcher? _dispatcher;
-        private static BroadphaseInterface? _broadphase;
-        private static ConstraintSolver? _solver;
-        private static DiscreteDynamicsWorld? _dynamicsWorld;
+
+        private static ConstraintSolverPoolMultiThreaded _solverPool;
+        private static SequentialImpulseConstraintSolverMultiThreaded _parallelSolver;
+        private static DbvtBroadphase _broadphase;
+        private static CollisionDispatcherMultiThreaded _dispatcher;
+        private static DiscreteDynamicsWorldMultiThreaded _dynamicsWorld;
+        private static CollisionConfiguration CollisionConfiguration;
 
         private static List<PhysicObject> _physicObjects = new();
         private static HashSet<Tuple<PhysicObject, PhysicObject>> _currentCollisions = new();
         private static HashSet<Tuple<PhysicObject, PhysicObject>> _previousCollisions = new();
         private static bool _init = false;
 
+        private static List<TaskScheduler> _schedulers = new List<TaskScheduler>();
+        private static int _currentScheduler = 0;
+
         public static event Action<PhysicObject, PhysicObject>? CollisionEnter;
         public static event Action<PhysicObject, PhysicObject>? CollisionStay;
         public static event Action<PhysicObject, PhysicObject>? CollisionExit;
+
+        public static void NextTaskScheduler()
+        {
+            _currentScheduler++;
+            if (_currentScheduler >= _schedulers.Count)
+            {
+                _currentScheduler = 0;
+            }
+            TaskScheduler scheduler = _schedulers[_currentScheduler];
+            scheduler.NumThreads = scheduler.MaxNumThreads;
+            Threads.TaskScheduler = scheduler;
+        }
+        private static void CreateSchedulers()
+        {
+            var args = Environment.GetCommandLineArgs();
+            if (args.Contains("-s"))
+            {
+                Log.Information("Using Sequential Task Scheduler");
+                AddScheduler(Threads.GetSequentialTaskScheduler());
+            }
+            if (args.Contains("-mpt"))
+            {
+                Log.Information("Using Multi-Processing Task Scheduler");
+                AddScheduler(Threads.GetOpenMPTaskScheduler());
+            }
+            if (args.Contains("-tbb"))
+            {
+                Log.Information("Using TBB Task Scheduler");
+                AddScheduler(Threads.GetTbbTaskScheduler());
+            }
+
+            AddScheduler(Threads.GetPplTaskScheduler());
+        }
+        private static void AddScheduler(TaskScheduler scheduler)
+        {
+            if (scheduler != null)
+            {
+                _schedulers.Add(scheduler);
+            }
+        }
 
         public static void Init()
         {
@@ -29,17 +75,32 @@ namespace RE.Core.Physics
                 Log.Warning("Physics Manager is already initialized!");
                 return;
             }
-            _collisionConfiguration = new DefaultCollisionConfiguration();
-            _dispatcher = new CollisionDispatcher(_collisionConfiguration);
+
+            CreateSchedulers();
+            NextTaskScheduler();
+
+            using (var collisionConfigurationInfo = new DefaultCollisionConstructionInfo
+            {
+                DefaultMaxPersistentManifoldPoolSize = 80000,
+                DefaultMaxCollisionAlgorithmPoolSize = 80000
+            })
+            {
+                CollisionConfiguration = new DefaultCollisionConfiguration(collisionConfigurationInfo);
+            }
+
+            _dispatcher = new CollisionDispatcherMultiThreaded(CollisionConfiguration);
             _broadphase = new DbvtBroadphase();
-            _solver = new SequentialImpulseConstraintSolver();
-            _dynamicsWorld = new DiscreteDynamicsWorld(_dispatcher, _broadphase, _solver, _collisionConfiguration);
-            _dynamicsWorld.Gravity = new BulletSharp.Math.Vector3(0, -9.81f, 0);
+            _solverPool = new ConstraintSolverPoolMultiThreaded(1);
+            _parallelSolver = new SequentialImpulseConstraintSolverMultiThreaded();
+            _dynamicsWorld = new DiscreteDynamicsWorldMultiThreaded(_dispatcher, _broadphase, _solverPool,
+                _parallelSolver, CollisionConfiguration);
+            _dynamicsWorld.SolverInfo.SolverMode = SolverModes.Simd | SolverModes.UseWarmStarting;
+
+            _dynamicsWorld.Gravity = new BulletSharp.Math.Vector3(0, 0, 0);
 
             _init = true;
-
-
         }
+
         //remove me
         public static PhysicObject c(BulletSharp.Math.Vector3 scale)
         {
@@ -206,10 +267,10 @@ namespace RE.Core.Physics
             _physicObjects.Clear();
 
             _dynamicsWorld.Dispose();
-            _solver.Dispose();
+            _parallelSolver.Dispose();
             _broadphase.Dispose();
             _dispatcher.Dispose();
-            _collisionConfiguration.Dispose();
+            CollisionConfiguration.Dispose();
         }
     }
 }

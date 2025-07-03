@@ -18,14 +18,15 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-	  <Resource Include="Assets\RealEngine.ico" />
-	  <Resource Include="RealEngine.ico" />
+		<Resource Include="Assets\RealEngine.ico" />
+		<Resource Include="RealEngine.ico" />
 	</ItemGroup>
 
 
 
 	<ItemGroup>
 		<PackageReference Include="AssimpNet" Version="4.1.0" />
+		<PackageReference Include="BulletSharp" Version="0.11.1" />
 		<PackageReference Include="freetype" Version="2.8.0.1" />
 		<PackageReference Include="ImGui.NET" Version="1.90.0.1" />
 		<PackageReference Include="NAudio" Version="2.2.1" />
@@ -50,23 +51,23 @@
 
 
 	<ItemGroup>
-	  <None Update="Dll\**">
-	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-	  </None>
+		<None Update="Dll\**">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
 	</ItemGroup>
 
 
 	<ItemGroup>
-	  <Folder Include="Assets\Audio\" />
-	  <Folder Include="Core\Scripting\" />
+		<Folder Include="Assets\Audio\" />
+		<Folder Include="Core\Scripting\" />
 	</ItemGroup>
 
-
+	<!--
 	<ItemGroup>
 	  <Reference Include="BulletSharp">
 	    <HintPath>Dll\BulletSharp.dll</HintPath>
 	  </Reference>
 	</ItemGroup>
-
+-->
 
 </Project>

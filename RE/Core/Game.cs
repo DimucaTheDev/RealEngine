@@ -107,7 +107,7 @@ internal class Game : GameWindow
             PhysManager.c(new Vector3(30, 0, 30)).Render();
 
             float cubeSize = .45f;
-            var c = 10;
+            var c = 20;
             var m = 1.1f;
             for (int k = 0; k < c; k++)
             {
