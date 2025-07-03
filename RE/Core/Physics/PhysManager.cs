@@ -1,49 +1,44 @@
 ﻿using BulletSharp;
-using OpenTK.Mathematics; // Add this using directive
+using OpenTK.Mathematics;
 using RE.Rendering.Renderables;
+using Log = Serilog.Log;
 
 namespace RE.Core.Physics
 {
     internal static class PhysManager
     {
-        private static CollisionConfiguration _collisionConfiguration;
-        private static CollisionDispatcher _dispatcher;
-        private static BroadphaseInterface _broadphase;
-        private static ConstraintSolver _solver;
-        private static DiscreteDynamicsWorld _dynamicsWorld;
+        private static CollisionConfiguration? _collisionConfiguration;
+        private static CollisionDispatcher? _dispatcher;
+        private static BroadphaseInterface? _broadphase;
+        private static ConstraintSolver? _solver;
+        private static DiscreteDynamicsWorld? _dynamicsWorld;
+
         private static List<PhysicObject> _physicObjects = new();
         private static HashSet<Tuple<PhysicObject, PhysicObject>> _currentCollisions = new();
         private static HashSet<Tuple<PhysicObject, PhysicObject>> _previousCollisions = new();
+        private static bool _init = false;
 
-        public static event Action<PhysicObject, PhysicObject> CollisionEnter;
-        public static event Action<PhysicObject, PhysicObject> CollisionStay;
-        public static event Action<PhysicObject, PhysicObject> CollisionExit;
+        public static event Action<PhysicObject, PhysicObject>? CollisionEnter;
+        public static event Action<PhysicObject, PhysicObject>? CollisionStay;
+        public static event Action<PhysicObject, PhysicObject>? CollisionExit;
 
         public static void Init()
         {
+            if (_init)
+            {
+                Log.Warning("Physics Manager is already initialized!");
+                return;
+            }
             _collisionConfiguration = new DefaultCollisionConfiguration();
             _dispatcher = new CollisionDispatcher(_collisionConfiguration);
             _broadphase = new DbvtBroadphase();
             _solver = new SequentialImpulseConstraintSolver();
             _dynamicsWorld = new DiscreteDynamicsWorld(_dispatcher, _broadphase, _solver, _collisionConfiguration);
-
             _dynamicsWorld.Gravity = new BulletSharp.Math.Vector3(0, -9.81f, 0);
 
-            CollisionEnter += (a, b) =>
-            {
-                a.Model.t.ForegroundColor = Color4.Green;
-                b.Model.t.ForegroundColor = Color4.Green;
-            };
-            CollisionStay += (a, b) =>
-            {
-                a.Model.t.ForegroundColor = Color4.DarkGreen;
-                b.Model.t.ForegroundColor = Color4.DarkGreen;
-            };
-            CollisionExit += (a, b) =>
-            {
-                a.Model.t.ForegroundColor = Color4.Red;
-                b.Model.t.ForegroundColor = Color4.Red;
-            };
+            _init = true;
+
+
         }
         //remove me
         public static PhysicObject c(BulletSharp.Math.Vector3 scale)
@@ -115,13 +110,11 @@ namespace RE.Core.Physics
                 physicObject.Dispose();
             }
         }
-
-
-
         public static void Update(float deltaTime)
         {
-            _dynamicsWorld.StepSimulation(deltaTime, 1, 1f / 60f);
+            if (!_init) return;
 
+            _dynamicsWorld.StepSimulation(deltaTime, 10, 1f / 60f);
             _currentCollisions.Clear();
 
             int numManifolds = _dispatcher.NumManifolds;
@@ -159,6 +152,8 @@ namespace RE.Core.Physics
                 if (!_currentCollisions.Contains(previousPair))
                 {
                     CollisionExit?.Invoke(previousPair.Item1, previousPair.Item2);
+                    previousPair.Item1.OnColliderExit(previousPair.Item2);
+                    previousPair.Item2.OnColliderExit(previousPair.Item1);
                 }
             }
 
@@ -167,10 +162,14 @@ namespace RE.Core.Physics
                 if (!_previousCollisions.Contains(currentPair))
                 {
                     CollisionEnter?.Invoke(currentPair.Item1, currentPair.Item2);
+                    currentPair.Item1.OnColliderEnter(currentPair.Item2);
+                    currentPair.Item2.OnColliderEnter(currentPair.Item1);
                 }
                 else
                 {
                     CollisionStay?.Invoke(currentPair.Item1, currentPair.Item2);
+                    currentPair.Item1.OnColliderStay(currentPair.Item2);
+                    currentPair.Item2.OnColliderStay(currentPair.Item1);
                 }
             }
 

@@ -10,13 +10,11 @@ using Vector4 = OpenTK.Mathematics.Vector4;
 
 namespace RE.Core.Physics
 {
+    //todo: make class abstract, make SimplePhysicObject or smth like that
     internal class PhysicObject : Renderable
     {
         public ModelRenderer Model { get; set; }
         public RigidBody RigidBody { get; private set; }
-        public bool HasCollided { get; set; } = false;
-
-
         public override RenderLayer RenderLayer => RenderLayer.World;
         public override bool IsVisible { get; set; } = true;
 
@@ -25,19 +23,18 @@ namespace RE.Core.Physics
             Model = model;
             RigidBody = rigidBody;
             RigidBody.UserObject = this;
-
         }
+
+        public virtual void OnColliderEnter(PhysicObject obj) { }
+        public virtual void OnColliderStay(PhysicObject obj) { }
+        public virtual void OnColliderExit(PhysicObject obj) { }
 
         public override void Render(FrameEventArgs args)
         {
             RigidBody.GetWorldTransform(out Matrix bulletTransform);
-
             Model.Position = new Vector3(bulletTransform.Origin.X, bulletTransform.Origin.Y, bulletTransform.Origin.Z);
-
             BulletSharp.Math.Quaternion bulletRotation = BulletSharp.Math.Quaternion.RotationMatrix(bulletTransform.Basis);
-
             Model.Rotation = new Quaternion(bulletRotation.X, bulletRotation.Y, bulletRotation.Z, bulletRotation.W);
-
             Model.Render(args);
             // DrawRigidBodyBounds(RigidBody, LineManager.Main!);
         }

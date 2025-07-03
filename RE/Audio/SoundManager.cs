@@ -2,6 +2,7 @@
 using OpenTK.Audio.OpenAL;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
+using RE.Core;
 using RE.Rendering;
 using Serilog;
 using System.Collections.ObjectModel;
@@ -23,6 +24,8 @@ namespace RE.Audio
 
         public static void Init()
         {
+            Game.Instance.UpdateFrame += Update;
+
             _device = ALC.OpenDevice(null);
             _context = ALC.CreateContext(_device, (int[])null!);
             ALC.MakeContextCurrent(_context);
@@ -85,6 +88,8 @@ namespace RE.Audio
             }
 
             int source = AL.GenSource();
+            if (source == 0)
+                Log.Error("Failed to generate OpenAL source.");
             AL.Source(source, ALSourcei.Buffer, buffer);
 
             var sound = new Sound(source);
@@ -108,6 +113,8 @@ namespace RE.Audio
             sound.Pitch = settings.Pitch;
             sound.Loop = settings.Loop;
             sound.Position = settings.SourcePosition ?? Vector3.Zero;
+            sound.DisposeOnStop = settings.DisposeOnStop;
+            sound.ShowDebugInfo = settings.ShowDebugInfo;
 
             if (settings.InWorld)
             {
@@ -123,6 +130,14 @@ namespace RE.Audio
             }
             sound.Play();
             return sound;
+        }
+
+        //you can use Sound.Dispose(), but this method will also remove sound from the active list
+        public static void DisposeSound(Sound? sound)
+        {
+            if (sound == null) return;
+            sound.Dispose();
+            _activeSounds.Remove(sound);
         }
         public static void StopAll()
         {

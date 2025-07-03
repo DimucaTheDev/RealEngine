@@ -47,6 +47,7 @@ public static class Time
             return;
         }
 
+        Game.Instance.UpdateFrame += Update;
         StartTime = DateTime.Now;
         LastUpdate = StartTime;
         _initialized = true;

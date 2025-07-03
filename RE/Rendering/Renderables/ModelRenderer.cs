@@ -35,9 +35,6 @@ namespace RE.Rendering.Renderables
         public Matrix4 RotationMatrix { get; set; }
         public string Name { get; set; }
 
-        //remove me
-
-        public FloatingText t;
 
         public ModelRenderer(string path, Vector3? pos = null, Quaternion? rot = null, Vector3? scale = null, string? name = null)
         {
@@ -47,13 +44,10 @@ namespace RE.Rendering.Renderables
             Name = name ?? $"0x{Random.Shared.Next():x}";
 
 
-            t = new(Name, Vector3.Zero, new FreeTypeFont(32, "assets/fonts/consola.ttf"));
-            t.Render();
-
             if (!(modelLoaded = LoadModel(path)))
             {
                 _noModelSprite = new SpriteRenderer(Position, "Assets/Sprites/Editor/no_model.png");
-                _text = new FloatingText(path, Position + new Vector3(0, .5f, 0), _font, true);
+                _text = new FloatingText($"{Name}\n{path}", Position + new Vector3(0, .5f, 0), _font, true);
 
                 _noModelSprite.Render();
                 _text.Render();
@@ -64,10 +58,8 @@ namespace RE.Rendering.Renderables
         }
         public override void Render(FrameEventArgs args)
         {
-            if (!RenderManager.IsSphereInFrustum(new(Position.X, Position.Y, Position.Z), 1))
+            if (!RenderManager.IsSphereInFrustum(new(Position.X, Position.Y, Position.Z), 1) || !IsVisible)
                 return;
-
-            t.Position = Position + new Vector3(0, 1.5f, 0);
 
             Matrix4 model =
                 Matrix4.CreateScale(Scale) *
@@ -123,7 +115,7 @@ namespace RE.Rendering.Renderables
             }
             catch (Exception ex)
             {
-                Log.Error(ex, $"Failed to load model: {path}");
+                Log.Error(ex, $"Failed to load model {Name} at {path}");
                 return false;
             }
 

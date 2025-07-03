@@ -38,9 +38,10 @@ public class Camera
 
     public static Camera Instance { get; private set; }
 
+
     public static void Init()
     {
-        Instance = new Camera(new(0, 3, 8), Vector3.UnitY,
+        Instance = new Camera(new(15, 3, 8), Vector3.UnitY,
             Game.Instance.ClientSize.X / (float)Game.Instance.ClientSize.Y);
         Game.Instance.CursorState = CursorState.Grabbed;
         Game.Instance.MouseMove += s => Instance.HandleMouseMove(s.X, s.Y);
@@ -51,14 +52,7 @@ public class Camera
 
             Game.Instance.CursorState = CursorState.Grabbed;
 
-            if (args.Button == MouseButton.Button1)
-            {
-                var modelRenderer = new ModelRenderer("assets/models/cub.fbx", Instance.Position + Instance.Front * 2, scale: new(0.6f));
-
-                var cubePhysicsObject = PhysManager.CreateCubePhysicsObject(modelRenderer, 1);
-
-                cubePhysicsObject.Render();
-            }
+            if (args.Button == MouseButton.Button1) { }
             if (args.Button == MouseButton.Button2)
             {
                 var modelRenderer = new ModelRenderer("assets/models/cub.fbx", Instance.Position + Instance.Front * 2, scale: new(0.6f));
@@ -109,7 +103,7 @@ public class Camera
     public unsafe void HandleInput(KeyboardState state)
     {
         var input = state;
-        var speed = 2.5f * Time.DeltaTime;
+        var speed = 7f * Time.DeltaTime;
 
         if (input.IsKeyDown(Keys.W))
             Position += (Front with { Y = 0 }).Normalized() * speed;

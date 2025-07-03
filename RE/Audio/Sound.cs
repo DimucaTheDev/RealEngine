@@ -128,13 +128,19 @@ namespace RE.Audio
             {
                 if (value)
                 {
-                    _crMaxDis.StopRender();
-                    _crRefDis.StopRender();
+                    if (ShowDebugInfo)
+                    {
+                        _crMaxDis.StopRender();
+                        _crRefDis.StopRender();
+                    }
                 }
                 else
                 {
-                    _crMaxDis.Render();
-                    _crRefDis.Render();
+                    if (ShowDebugInfo)
+                    {
+                        _crMaxDis.Render();
+                        _crRefDis.Render();
+                    }
                 }
                 AL.Source(_source, ALSourceb.SourceRelative, value);
             }
@@ -191,6 +197,7 @@ namespace RE.Audio
             }
         }
 
+        public bool DisposeOnStop { get; set; }
         public bool UseLinearFading { get; set; } = true;
 
         public SoundState State
@@ -229,9 +236,14 @@ namespace RE.Audio
             Pitch = 1.0f;
             IsRelative = false;
             Position = Vector3.Zero;
+            ShowDebugInfo = false;
 
             Playing += () => _sprite.ChangeTexture("Assets/sprites/editor/speaker_play.png");
             Stopped += () => _sprite.ChangeTexture("Assets/sprites/editor/speaker.png");
+            Stopped += () =>
+            {
+                if (DisposeOnStop) SoundManager.DisposeSound(this);
+            };
             Paused += () => _sprite.ChangeTexture("Assets/sprites/editor/speaker.png");
             Resumed += () => _sprite.ChangeTexture("Assets/sprites/editor/speaker_play.png");
             VolumeChanged += (volume) =>
@@ -279,7 +291,6 @@ namespace RE.Audio
         public void Dispose()
         {
             if (_disposed) return;
-            Stop();
             _sprite.Dispose();
             _crRefDis.Dispose();
             _crMaxDis.Dispose();

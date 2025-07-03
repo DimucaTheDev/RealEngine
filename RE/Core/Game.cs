@@ -10,7 +10,6 @@ using RE.Debug.Overlay;
 using RE.Libs.Grille.ImGuiTK;
 using RE.Rendering;
 using RE.Rendering.Renderables;
-using RE.Rendering.Text;
 using RE.Utils;
 using Serilog;
 using Serilog.Events;
@@ -36,6 +35,7 @@ internal class Game : GameWindow
 
     public static Game Instance { get; private set; }
     public static StringWriter GameLog = new();
+    public const int FpsLock = 0;
 
     private static readonly Dictionary<nint, string> _loadedLibs = new();
 
@@ -60,7 +60,7 @@ internal class Game : GameWindow
         }
 
         using var game = new Game(
-            new GameWindowSettings { UpdateFrequency = 60 },
+            new GameWindowSettings { UpdateFrequency = FpsLock },
             new NativeWindowSettings
             {
                 Title = "Real Engine",
@@ -84,34 +84,12 @@ internal class Game : GameWindow
 
     protected override void OnLoad()
     {
-        UpdateFrame += Time.Update;
-        UpdateFrame += SoundManager.Update;
-
         RenderManager.Init();
         Time.Init();
         ImGuiController.Get();
         Camera.Init();
         TextRenderer.Init();
         Initializer.Init();
-
-        PhysManager.Init();
-        PhysManager.c(new Vector3(10, 1, 10)).Render();
-
-        new FloatingText("Adding physics cost me nerve cells\nIn fact, i tried 2 different libs!", new(-5, 5, 4), new FreeTypeFont(64, "assets/fonts/arial.ttf")).Render();
-
-        OpenTK.Mathematics.Vector3 pyramidBaseCenter = new OpenTK.Mathematics.Vector3(0, 0, 0); // Adjust as needed
-        float cubeSize = .45f;
-        for (int k = 0; k < 1; k++)
-        {
-            for (int i = 0; i < 1; i++)
-            {
-                for (int j = 0; j < 0; j++)
-                {
-                    PhysManager.CreateCubePhysicsObject(
-                        new ModelRenderer("assets/models/cub.fbx", new(j, i, k), scale: new(cubeSize, cubeSize, cubeSize)), 0.1f).Render();
-                }
-            }
-        }
 
         Initializer.AddStep(("Initializing Debug Overlay", DebugOverlay.Init));
         Initializer.AddStep(("Initializing Debug Renderer", () =>
@@ -123,12 +101,29 @@ internal class Game : GameWindow
         Initializer.AddStep(("Initializing ConsoleWindow", ConsoleWindow.Init));
         Initializer.AddStep(("Initializing Skybox", SkyboxRenderer.Init));
         Initializer.AddStep(("Initializing SoundManager", SoundManager.Init));
+        Initializer.AddStep(("Initializing Physics Manager", PhysManager.Init));
+        Initializer.AddStep(("Preparing scene...", () =>
+        {
+            PhysManager.c(new Vector3(30, 0, 30)).Render();
 
-
+            float cubeSize = .45f;
+            var c = 10;
+            var m = 1.1f;
+            for (int k = 0; k < c; k++)
+            {
+                for (int i = 0; i < c; i++)
+                {
+                    for (int j = 0; j < c; j++)
+                    {
+                        PhysManager.CreateCubePhysicsObject(new ModelRenderer("assets/models/cub.fbx", new(j * m, i * m, k * m), scale: new(cubeSize, cubeSize, cubeSize)), 0.1f).Render();
+                    }
+                }
+            }
+            new ModelRenderer("assets/models/cubr.fbx", new(-5, 3, -5)).Render();
+        }
+        ));
         base.OnLoad();
     }
-
-
     protected override void OnResize(ResizeEventArgs e)
     {
         Camera.Instance.AspectRatio = (float)e.Width / e.Height;
@@ -141,7 +136,6 @@ internal class Game : GameWindow
         if (Initializer.Render(args))
             return;
 
-        //LineManager.Main.Clear();
         GL.Viewport(0, 0, ClientSize.X, ClientSize.Y);
         GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
         GL.DepthFunc(DepthFunction.Lequal);

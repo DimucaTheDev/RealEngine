@@ -14,5 +14,7 @@ namespace RE.Audio
         public float RollOff { get; set; } = 1f;
         public float ReferenceDistance { get; set; } = 1f;
         public bool UseLinearFading { get; set; } = true;
+        public bool DisposeOnStop { get; set; } = true;
+        public bool ShowDebugInfo { get; set; } = false;
     }
 }
