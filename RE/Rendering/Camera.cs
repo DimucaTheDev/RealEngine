@@ -3,6 +3,7 @@ using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using OpenTK.Windowing.GraphicsLibraryFramework;
 using RE.Core;
+using RE.Core.Physics;
 using RE.Debug;
 using RE.Debug.Overlay;
 using RE.Rendering.Renderables;
@@ -39,7 +40,7 @@ public class Camera
 
     public static void Init()
     {
-        Instance = new Camera(Vector3.Zero, Vector3.UnitY,
+        Instance = new Camera(new(0, 3, 8), Vector3.UnitY,
             Game.Instance.ClientSize.X / (float)Game.Instance.ClientSize.Y);
         Game.Instance.CursorState = CursorState.Grabbed;
         Game.Instance.MouseMove += s => Instance.HandleMouseMove(s.X, s.Y);
@@ -55,7 +56,17 @@ public class Camera
                     new Vector4(0, 0, 0, 1));
             if (args.Button == MouseButton.Button2)
             {
-                new ModelRenderer("assets/models/test.fbx", Instance.Position + Instance.Front * 6).Render();
+                var modelRenderer = new ModelRenderer("assets/models/cub.fbx", Instance.Position + Instance.Front * 2, scale: new(0.6f));
+
+                var cubePhysicsObject = PhysManager.Instance.CreateCubePhysicsObject(modelRenderer, 1); OpenTK.Mathematics.Vector3 cameraFrontOpenTK = Camera.Instance.Front;
+
+                BulletSharp.Math.Vector3 cameraFrontBullet = new BulletSharp.Math.Vector3(cameraFrontOpenTK.X, cameraFrontOpenTK.Y, cameraFrontOpenTK.Z);
+
+                float impulseStrength = 50.0f;
+                BulletSharp.Math.Vector3 impulseVector = cameraFrontBullet * impulseStrength;
+                cubePhysicsObject.RigidBody.ApplyImpulse(impulseVector, BulletSharp.Math.Vector3.Zero);
+
+                cubePhysicsObject.Render();
             }
         };
         (fr = new()).Render();

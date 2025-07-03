@@ -19,6 +19,8 @@ namespace RE.Rendering.Renderables
         private static int _sharedShader;
         private static bool _shaderInitialized = false;
 
+        public Scene AssimpScene;
+
         private int _vao, _vbo, _ebo, _texture;
         private int _indexCount;
         private FloatingText? _text;
@@ -61,8 +63,6 @@ namespace RE.Rendering.Renderables
                 Matrix4.CreateFromQuaternion(Rotation) *
                 Matrix4.CreateTranslation(Position);
 
-
-
             Matrix4 view = Camera.Instance.GetViewMatrix();
             Matrix4 proj = Camera.Instance.GetProjectionMatrix();
 
@@ -99,7 +99,7 @@ namespace RE.Rendering.Renderables
             if (_meshCache.TryGetValue(path, out var meshData))
             {
                 (_vao, _vbo, _ebo, _indexCount) = meshData;
-                _texture = CreateMissingTexture();// GetOrLoadTexture(path);
+                _texture = CreateMissingTexture(); //GetOrLoadTexture(path);
                 return true;
             }
 
@@ -107,8 +107,8 @@ namespace RE.Rendering.Renderables
             Scene scene;
             try
             {
-                scene = importer.ImportFile(path,
-                    PostProcessSteps.Triangulate | PostProcessSteps.GenerateNormals | PostProcessSteps.FlipUVs);
+                AssimpScene = scene = importer.ImportFile(path,
+                     PostProcessSteps.Triangulate | PostProcessSteps.GenerateNormals | PostProcessSteps.FlipUVs);
             }
             catch (Exception ex)
             {
@@ -139,12 +139,19 @@ namespace RE.Rendering.Renderables
 
             var center = (min + max) * 0.5f;
 
-            // 2. Смещение всех вершин
+            OpenTK.Mathematics.Quaternion correctionRotation = OpenTK.Mathematics.Quaternion.FromAxisAngle(OpenTK.Mathematics.Vector3.UnitX, MathHelper.DegreesToRadians(-90.0f));
+
             for (int i = 0; i < mesh.VertexCount; i++)
             {
                 var pos = mesh.Vertices[i] - center;
-                var uv = mesh.HasTextureCoords(0) ? mesh.TextureCoordinateChannels[0][i] : new Vector3D(0, 0, 0);
-                vertices.AddRange([pos.X, pos.Y, pos.Z, uv.X, uv.Y]);
+                // Convert Assimp.Vector3D to OpenTK.Mathematics.Vector3
+                OpenTK.Mathematics.Vector3 opentkPos = new OpenTK.Mathematics.Vector3(pos.X, pos.Y, pos.Z);
+
+                // Apply correction rotation to the vertex position using Quaternion.Transform
+                opentkPos = OpenTK.Mathematics.Vector3.Transform(opentkPos, correctionRotation);
+
+                var uv = mesh.HasTextureCoords(0) ? mesh.TextureCoordinateChannels[0][i] : new Assimp.Vector3D(0, 0, 0); // Corrected namespace for Assimp.Vector3D
+                vertices.AddRange([opentkPos.X, opentkPos.Y, opentkPos.Z, uv.X, uv.Y]);
             }
 
 

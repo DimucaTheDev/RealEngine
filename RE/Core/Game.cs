@@ -4,11 +4,13 @@ using OpenTK.Windowing.Common;
 using OpenTK.Windowing.Common.Input;
 using OpenTK.Windowing.Desktop;
 using RE.Audio;
+using RE.Core.Physics;
 using RE.Debug;
 using RE.Debug.Overlay;
 using RE.Libs.Grille.ImGuiTK;
 using RE.Rendering;
 using RE.Rendering.Renderables;
+using RE.Rendering.Text;
 using RE.Utils;
 using Serilog;
 using Serilog.Events;
@@ -24,6 +26,7 @@ using Image = OpenTK.Windowing.Common.Input.Image;
 using PixelFormat = OpenTK.Graphics.OpenGL.PixelFormat;
 using Rectangle = System.Drawing.Rectangle;
 using TextRenderer = RE.Rendering.Text.TextRenderer;
+using Vector3 = BulletSharp.Math.Vector3;
 
 namespace RE.Core;
 
@@ -75,23 +78,49 @@ internal class Game : GameWindow
 
     protected override void OnUpdateFrame(FrameEventArgs args)
     {
+        PhysManager.Instance.Update((float)args.Time);
         base.OnUpdateFrame(args);
     }
 
     protected override void OnLoad()
     {
-
         UpdateFrame += Time.Update;
         UpdateFrame += SoundManager.Update;
 
         RenderManager.Init();
         Time.Init();
-
-
         ImGuiController.Get();
         Camera.Init();
         TextRenderer.Init();
         Initializer.Init();
+
+        PhysManager.Init();
+        PhysManager.Instance.c(new Vector3(10, 1, 10)).Render();
+
+        new FloatingText("Adding physics cost me nerve cells\nIn fact, i tried 2 different libs!", new(-5, 5, 4), new FreeTypeFont(64, "assets/fonts/arial.ttf")).Render();
+
+        OpenTK.Mathematics.Vector3 pyramidBaseCenter = new OpenTK.Mathematics.Vector3(0, 0, 0); // Adjust as needed
+        float cubeSize = .5f;
+        int levels = 7;
+        for (int i = 0; i < levels; i++)
+        {
+            int cubesInRow = levels - i;
+            float startX = pyramidBaseCenter.X - (cubesInRow - 1) * cubeSize * 0.5f;
+
+            for (int j = 0; j < cubesInRow; j++)
+            {
+                OpenTK.Mathematics.Vector3 cubePosition = new OpenTK.Mathematics.Vector3(
+                    startX + j * cubeSize,
+                    pyramidBaseCenter.Y + i * cubeSize + cubeSize / 2f,
+                    pyramidBaseCenter.Z
+                );
+
+                ModelRenderer cubeModel = new ModelRenderer("assets/models/cub.fbx", cubePosition, OpenTK.Mathematics.Quaternion.Identity, new(cubeSize));
+
+                PhysicObject cubePhysicsObject = PhysManager.Instance.CreateCubePhysicsObject(cubeModel, .5f);
+                RenderManager.AddRenderable(cubePhysicsObject);
+            }
+        }
 
         Initializer.AddStep(("Initializing Debug Overlay", DebugOverlay.Init));
         Initializer.AddStep(("Initializing Debug Renderer", () =>
@@ -103,7 +132,7 @@ internal class Game : GameWindow
         Initializer.AddStep(("Initializing ConsoleWindow", ConsoleWindow.Init));
         Initializer.AddStep(("Initializing Skybox", SkyboxRenderer.Init));
         Initializer.AddStep(("Initializing SoundManager", SoundManager.Init));
-        //Initializer.AddStep(("Initializing Physics", PhysicsManager.Init));
+
 
         base.OnLoad();
     }

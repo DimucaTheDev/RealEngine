@@ -1,5 +1,6 @@
 ﻿using RE.Core;
 using RE.Rendering;
+using System.Numerics;
 
 namespace RE.Utils
 {
@@ -26,6 +27,10 @@ namespace RE.Utils
                    list.Contains(r);
         }
         public static void StopRender<T>(this T r) where T : Renderable => RenderManager.RemoveRenderable(r);
-        // Conversions 
+        // Conversions
+        public static OpenTK.Mathematics.Vector3 ToOpenTkVector3(this Vector3 v) => new(v.X, v.Y, v.Z);
+        public static OpenTK.Mathematics.Quaternion ToOpenTkQuaternion(this Quaternion q) => new(q.X, q.Y, q.Z, q.W);
+        public static Vector3 ToSystemVector3(this OpenTK.Mathematics.Vector3 v) => new(v.X, v.Y, v.Z);
+        public static Quaternion ToSystemQuaternion(this OpenTK.Mathematics.Quaternion q) => new(q.X, q.Y, q.Z, q.W);
     }
 }
