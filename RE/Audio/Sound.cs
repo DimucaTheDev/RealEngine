@@ -23,6 +23,7 @@ namespace RE.Audio
         private readonly CircleRenderer _crRefDis;
         private readonly CircleRenderer _crMaxDis;
         private readonly SpriteRenderer _sprite;
+        private float? _volumeCached = null;
 
         public event Action? Playing;
         public event Action? Paused;
@@ -35,7 +36,7 @@ namespace RE.Audio
 
         public float Volume //add max volume for 
         {
-            get => AL.GetSource(_source, ALSourcef.Gain);
+            get => _volumeCached ??= AL.GetSource(_source, ALSourcef.Gain);
             set
             {
                 if (value < 0)
@@ -44,6 +45,7 @@ namespace RE.Audio
                     value = 0;
                 }
                 VolumeChanged?.Invoke(value);
+                _volumeCached = value;
                 AL.Source(_source, ALSourcef.Gain, value);
             }
         }

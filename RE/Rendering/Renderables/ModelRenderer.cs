@@ -6,35 +6,53 @@ using RE.Rendering.Text;
 using RE.Utils;
 using Serilog;
 using StbImageSharp;
+using System.Diagnostics;
 using PrimitiveType = OpenTK.Graphics.OpenGL4.PrimitiveType;
 using Quaternion = OpenTK.Mathematics.Quaternion;
 
 namespace RE.Rendering.Renderables
 {
-    public class ModelRenderer : Renderable
+    [DebuggerDisplay("{Name}")]
+    public class ModelRenderer : Renderable, ICullable
     {
         private static readonly FreeTypeFont _font = new(32, "Assets/Fonts/consola.ttf");
-        private static readonly Dictionary<string, (int vao, int vbo, int ebo, int indexCount)> _meshCache = new();
-        private static readonly Dictionary<string, int> _textureCache = new();
+
+        private static Dictionary<string, (uint vao, uint vbo, uint ebo, int indexCount, List<float> vertices, List<int> indices)> _meshCache = new();
+        private static readonly Dictionary<string, uint> _textureCache = new();
         private static int _sharedShader;
         private static bool _shaderInitialized = false;
 
-        public Scene AssimpScene;
 
-        private int _vao, _vbo, _ebo, _texture;
+        private uint _vao, _vbo, _ebo, _texture;
         private int _indexCount;
-        private FloatingText? _text;
+        private FloatingText? _noModelText;
         private SpriteRenderer? _noModelSprite;
         private bool modelLoaded = false;
+        private string? _exception;
 
         public override RenderLayer RenderLayer => RenderLayer.World;
         public override bool IsVisible { get; set; } = true;
-        public Vector3 Position { get; set; }
+
+        public Vector3 Position
+        {
+            get => field;
+            set
+            {
+                if (_noModelSprite != null)
+                    _noModelSprite.Position = value;
+                if (_noModelText != null)
+                    _noModelText.Position = value + new Vector3(0, 0.5f, 0);
+                field = value;
+            }
+        }
+
+        public bool ShouldCull { get; set; } = true;
         public Quaternion Rotation { get; set; }
         public Vector3 Scale { get; set; }
         public Matrix4 RotationMatrix { get; set; }
         public string Name { get; set; }
-
+        public float[]? PhysicsVertices { get; private set; }
+        public List<int>? PhysicsIndices { get; private set; }
 
         public ModelRenderer(string path, Vector3? pos = null, Quaternion? rot = null, Vector3? scale = null, string? name = null)
         {
@@ -47,19 +65,18 @@ namespace RE.Rendering.Renderables
             if (!(modelLoaded = LoadModel(path)))
             {
                 _noModelSprite = new SpriteRenderer(Position, "Assets/Sprites/Editor/no_model.png");
-                _text = new FloatingText($"{Name}\n{path}", Position + new Vector3(0, .5f, 0), _font, true);
+                _noModelText = new FloatingText($"[{Name}]\n{path}\n{_exception}", Position + new Vector3(0, .5f, 0), _font, true);
 
                 _noModelSprite.Render();
-                _text.Render();
+                _noModelText.Render();
 
                 return;
             }
+
             InitShader();
         }
         public override void Render(FrameEventArgs args)
         {
-            if (!RenderManager.IsSphereInFrustum(new(Position.X, Position.Y, Position.Z), 1) || !IsVisible)
-                return;
 
             Matrix4 model =
                 Matrix4.CreateScale(Scale) *
@@ -87,22 +104,35 @@ namespace RE.Rendering.Renderables
             if (!modelLoaded)
             {
                 _noModelSprite?.Render();
-                _text?.Render();
+                _noModelText?.Render();
             }
         }
 
         public override void RemovedFromRenderList()
         {
             if (_noModelSprite?.IsRendering() ?? false) _noModelSprite?.StopRender();
-            if (_text?.IsRendering() ?? false) _text?.StopRender();
+            if (_noModelText?.IsRendering() ?? false) _noModelText?.StopRender();
         }
 
         private bool LoadModel(string path)
         {
+            // Define separate lists for rendering vertices (with UVs) and physics vertices (only positions)
+            var renderVertices = new List<float>();
+            var physicsVerticesTemp = new List<float>(); // This will hold only X, Y, Z
+            var indices = new List<uint>();
+
             if (_meshCache.TryGetValue(path, out var meshData))
             {
-                (_vao, _vbo, _ebo, _indexCount) = meshData;
-                _texture = CreateMissingTexture(); //GetOrLoadTexture(path);
+                (_vao, _vbo, _ebo, _indexCount, renderVertices, PhysicsIndices) = meshData;
+                PhysicsVertices = new float[renderVertices.Count / 5 * 3]; // Calculate size for XYZ only
+                for (int i = 0, j = 0; i < renderVertices.Count; i += 5, j += 3)
+                {
+                    PhysicsVertices[j] = renderVertices[i];     // X
+                    PhysicsVertices[j + 1] = renderVertices[i + 1]; // Y
+                    PhysicsVertices[j + 2] = renderVertices[i + 2]; // Z
+                }
+
+                _texture = GetOrLoadTexture(path);
                 return true;
             }
 
@@ -110,12 +140,13 @@ namespace RE.Rendering.Renderables
             Scene scene;
             try
             {
-                AssimpScene = scene = importer.ImportFile(path,
+                scene = importer.ImportFile(path,
                      PostProcessSteps.Triangulate | PostProcessSteps.GenerateNormals | PostProcessSteps.FlipUVs);
             }
             catch (Exception ex)
             {
                 Log.Error(ex, $"Failed to load model {Name} at {path}");
+                _exception = ex.Message;
                 return false;
             }
 
@@ -123,10 +154,9 @@ namespace RE.Rendering.Renderables
                 Name = scene.RootNode.Name;
 
             if (!scene.Meshes.Any()) return false;
-            var mesh = scene.Meshes[0];
 
-            var vertices = new List<float>();
-            var indices = new List<uint>();
+
+            var mesh = scene.Meshes[0];
 
             var min = new Vector3D(float.MaxValue, float.MaxValue, float.MaxValue);
             var max = new Vector3D(float.MinValue, float.MinValue, float.MinValue);
@@ -145,19 +175,24 @@ namespace RE.Rendering.Renderables
 
             var center = (min + max) * 0.5f;
 
-            OpenTK.Mathematics.Quaternion correctionRotation = OpenTK.Mathematics.Quaternion.FromAxisAngle(OpenTK.Mathematics.Vector3.UnitX, MathHelper.DegreesToRadians(-90.0f));
+            Quaternion correctionRotation = Quaternion.FromAxisAngle(Vector3.UnitX, MathHelper.DegreesToRadians(-90.0f));
 
             for (int i = 0; i < mesh.VertexCount; i++)
             {
                 var pos = mesh.Vertices[i] - center;
                 // Convert Assimp.Vector3D to OpenTK.Mathematics.Vector3
-                OpenTK.Mathematics.Vector3 opentkPos = new OpenTK.Mathematics.Vector3(pos.X, pos.Y, pos.Z);
+                Vector3 opentkPos = new Vector3(pos.X, pos.Y, pos.Z);
 
                 // Apply correction rotation to the vertex position using Quaternion.Transform
-                opentkPos = OpenTK.Mathematics.Vector3.Transform(opentkPos, correctionRotation);
+                opentkPos = Vector3.Transform(opentkPos, correctionRotation);
 
-                var uv = mesh.HasTextureCoords(0) ? mesh.TextureCoordinateChannels[0][i] : new Assimp.Vector3D(0, 0, 0); // Corrected namespace for Assimp.Vector3D
-                vertices.AddRange([opentkPos.X, opentkPos.Y, opentkPos.Z, uv.X, uv.Y]);
+                var uv = mesh.HasTextureCoords(0) ? mesh.TextureCoordinateChannels[0][i] : new Vector3D(0, 0, 0); // Corrected namespace for Assimp.Vector3D
+
+                // Add to rendering vertices (position + UV)
+                renderVertices.AddRange([opentkPos.X, opentkPos.Y, opentkPos.Z, uv.X, uv.Y]);
+
+                // Add to physics vertices (position only)
+                physicsVerticesTemp.AddRange([opentkPos.X, opentkPos.Y, opentkPos.Z]);
             }
 
 
@@ -166,13 +201,13 @@ namespace RE.Rendering.Renderables
 
             _indexCount = indices.Count;
 
-            _vao = GL.GenVertexArray();
-            _vbo = GL.GenBuffer();
-            _ebo = GL.GenBuffer();
+            _vao = (uint)GL.GenVertexArray();
+            _vbo = (uint)GL.GenBuffer();
+            _ebo = (uint)GL.GenBuffer();
 
             GL.BindVertexArray(_vao);
             GL.BindBuffer(BufferTarget.ArrayBuffer, _vbo);
-            GL.BufferData(BufferTarget.ArrayBuffer, vertices.Count * sizeof(float), vertices.ToArray(), BufferUsageHint.StaticDraw);
+            GL.BufferData(BufferTarget.ArrayBuffer, renderVertices.Count * sizeof(float), renderVertices.ToArray(), BufferUsageHint.StaticDraw);
 
             GL.BindBuffer(BufferTarget.ElementArrayBuffer, _ebo);
             GL.BufferData(BufferTarget.ElementArrayBuffer, indices.Count * sizeof(uint), indices.ToArray(), BufferUsageHint.StaticDraw);
@@ -183,17 +218,21 @@ namespace RE.Rendering.Renderables
             GL.EnableVertexAttribArray(1);
             GL.BindVertexArray(0);
 
-            _meshCache[path] = (_vao, _vbo, _ebo, _indexCount);
+            // Store renderVertices (with UVs) in the cache for rendering
+            _meshCache[path] = ((uint)_vao, (uint)_vbo, (uint)_ebo, _indexCount, renderVertices, indices.Select(s => (int)s).ToList());
 
-            _texture = GetOrLoadTexture(path);
+            // Assign the physics-only vertices to PhysicsVertices
+            PhysicsVertices = physicsVerticesTemp.ToArray(); // This now correctly contains only X, Y, Z
+            PhysicsIndices = indices.Select(i => (int)i).ToList(); // Convert from uint[] to int[]
+
+            _texture = GetOrLoadTexture(path); // Uncomment this line if you want to load actual textures
             return true;
         }
 
-        private int GetOrLoadTexture(string path)
+        private uint GetOrLoadTexture(string path)
         {
             if (_textureCache.TryGetValue(path, out var texId))
-                return texId;
-
+                return texId;//CreateMissingTexture();
 
             var assimpContext = new AssimpContext();
             var importFile = assimpContext.ImportFile(path);
@@ -220,9 +259,9 @@ namespace RE.Rendering.Renderables
             return texId;
         }
 
-        private int LoadTexture(ImageResult img)
+        private uint LoadTexture(ImageResult img)
         {
-            int texID = GL.GenTexture();
+            uint texID = (uint)GL.GenTexture();
             GL.BindTexture(TextureTarget.Texture2D, texID);
 
             GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba,
@@ -235,10 +274,10 @@ namespace RE.Rendering.Renderables
             return texID;
         }
 
-        private int CreateMissingTexture()
+        private uint CreateMissingTexture()
         {
             const int size = 100;
-            int texID = GL.GenTexture();
+            uint texID = (uint)GL.GenTexture();
             GL.BindTexture(TextureTarget.Texture2D, texID);
 
             byte[] data = new byte[size * size * 4];
@@ -256,7 +295,7 @@ namespace RE.Rendering.Renderables
                 for (int x = 0; x < size; x++)
                 {
                     bool isPurple = (x + y) % 2 == 0;
-                    byte[] color = r;// isPurple ? purple : black;
+                    byte[] color = isPurple ? purple : black;
 
                     int index = (y * size + x) * 4;
                     System.Buffer.BlockCopy(color, 0, data, index, 4);
@@ -302,20 +341,12 @@ namespace RE.Rendering.Renderables
             _shaderInitialized = true;
         }
 
-
-        // Предполагается, что q — нормированный
-        Quaternion InvertQuaternion(Quaternion q)
-        {
-            return new Quaternion(-q.X, -q.Y, -q.Z, q.W);
-        }
-
-
         public override void Dispose()
         {
             this.StopRender();
-            _text?.StopRender();
+            _noModelText?.StopRender();
             _noModelSprite?.StopRender();
-            _text?.Dispose();
+            _noModelText?.Dispose();
             _noModelSprite?.Dispose();
             GL.DeleteVertexArray(_vao);
             GL.DeleteBuffer(_vbo);

@@ -4,15 +4,14 @@ using OpenTK.Windowing.Common;
 using OpenTK.Windowing.Common.Input;
 using OpenTK.Windowing.Desktop;
 using RE.Audio;
-using RE.Core.Physics;
+using RE.Core.Scripting;
+using RE.Core.World.Physics;
 using RE.Debug;
 using RE.Debug.Overlay;
 using RE.Libs.Grille.ImGuiTK;
 using RE.Rendering;
-using RE.Rendering.Renderables;
 using RE.Utils;
 using Serilog;
-using Serilog.Events;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
@@ -25,7 +24,6 @@ using Image = OpenTK.Windowing.Common.Input.Image;
 using PixelFormat = OpenTK.Graphics.OpenGL.PixelFormat;
 using Rectangle = System.Drawing.Rectangle;
 using TextRenderer = RE.Rendering.Text.TextRenderer;
-using Vector3 = BulletSharp.Math.Vector3;
 
 namespace RE.Core;
 
@@ -34,7 +32,6 @@ internal class Game : GameWindow
     private Game(GameWindowSettings gws, NativeWindowSettings nws) : base(gws, nws) { }
 
     public static Game Instance { get; private set; }
-    public static StringWriter GameLog = new();
     public const int FpsLock = 0;
 
     private static readonly Dictionary<nint, string> _loadedLibs = new();
@@ -47,7 +44,7 @@ internal class Game : GameWindow
         Log.Logger = new LoggerConfiguration()
             .MinimumLevel.Debug()
             .Enrich.WithThreadName()
-            .WriteTo.TextWriter(GameLog, LogEventLevel.Information, outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] [{ThreadName}] {Message:lj}{NewLine}{Exception}")
+            .WriteTo.Sink(new GameLogger("[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}"))
             .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss.fff} {Level:u3}] [{ThreadName}] {Message:lj}{NewLine}{Exception}")
             .CreateLogger();
         Log.Information("Hello, World!");
@@ -78,7 +75,7 @@ internal class Game : GameWindow
 
     protected override void OnUpdateFrame(FrameEventArgs args)
     {
-        PhysManager.Update((float)args.Time);
+        PhysicsManager.Update((float)args.Time);
         base.OnUpdateFrame(args);
     }
 
@@ -99,29 +96,12 @@ internal class Game : GameWindow
                 }
         ));
         Initializer.AddStep(("Initializing ConsoleWindow", ConsoleWindow.Init));
-        Initializer.AddStep(("Initializing Skybox", SkyboxRenderer.Init));
+        // Initializer.AddStep(("Initializing Skybox", SkyboxRenderer.Init));
         Initializer.AddStep(("Initializing SoundManager", SoundManager.Init));
-        Initializer.AddStep(("Initializing Physics Manager", PhysManager.Init));
-        Initializer.AddStep(("Preparing scene...", () =>
-        {
-            PhysManager.c(new Vector3(30, 0, 30)).Render();
+        Initializer.AddStep(("Initializing Physics Manager", PhysicsManager.Init));
+        Initializer.AddStep(("Registering Commands", CommandHandler.RegisterAllCommands));
+        Initializer.AddStep(("Running default.cfg", () => { CommandHandler.ExecuteCommand("source assets/cfg/default.cfg"); }));
 
-            float cubeSize = .45f;
-            var c = 20;
-            var m = 1.1f;
-            for (int k = 0; k < c; k++)
-            {
-                for (int i = 0; i < c; i++)
-                {
-                    for (int j = 0; j < c; j++)
-                    {
-                        PhysManager.CreateCubePhysicsObject(new ModelRenderer("assets/models/cub.fbx", new(j * m, i * m, k * m), scale: new(cubeSize, cubeSize, cubeSize)), 0.1f).Render();
-                    }
-                }
-            }
-            new ModelRenderer("assets/models/cubr.fbx", new(-5, 3, -5)).Render();
-        }
-        ));
         base.OnLoad();
     }
     protected override void OnResize(ResizeEventArgs e)
@@ -147,12 +127,9 @@ internal class Game : GameWindow
         //GL.CullFace(CullFaceMode.Back);
         //GL.FrontFace(FrontFaceDirection.Ccw);
 
-
-
-        RenderManager.RenderAll(args);
-
         base.OnRenderFrame(args);
 
+        RenderManager.RenderAll(args);
         SwapBuffers();
     }
 
@@ -183,10 +160,10 @@ internal class Game : GameWindow
     public static string TakeScreenshot() => TakeScreenshot($"re_{DateTime.Now:yyyy-MM-dd_HH-mm-ss}.png");
     public static unsafe string TakeScreenshot(string fileName)
     {
-        byte[] a = new byte[Game.Instance.ClientSize.X * Game.Instance.ClientSize.Y * 3];
+        byte[] a = new byte[Instance.ClientSize.X * Instance.ClientSize.Y * 3];
         fixed (byte* ptr = a)
             GL.ReadPixels(0, 0, Instance.ClientSize.X, Instance.ClientSize.Y, PixelFormat.Rgb, PixelType.UnsignedByte, (IntPtr)ptr);
-        Image<Rgb24> image = SixLabors.ImageSharp.Image.LoadPixelData<Rgb24>(a, Game.Instance.ClientSize.X, Game.Instance.ClientSize.Y);
+        Image<Rgb24> image = SixLabors.ImageSharp.Image.LoadPixelData<Rgb24>(a, Instance.ClientSize.X, Instance.ClientSize.Y);
         image.Mutate(s => s.Flip(FlipMode.Vertical));
         image.SaveAsPng(fileName);
         image.Dispose();

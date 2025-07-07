@@ -2,6 +2,8 @@
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using RE.Audio;
+using RE.Core.World;
+using RE.Core.World.Components;
 using RE.Rendering;
 using Serilog;
 using static ImGuiNET.ImGui;
@@ -47,6 +49,18 @@ internal class DebugOverlay : Renderable
                 LineManager.Main.AddLine(start, end, new Vector4(1, 0, 0, 1), new Vector4(0, 0, 1, 1), 2000);
                 start = end;
             }
+        }
+
+        if (Button("new scene"))
+        {
+            var scene = new Scene();
+            var gameObject = new GameObject();
+            gameObject.Components.Add(new MeshComponent("assets/models/cub.fbx"));
+            gameObject.Components.Add(new RigidBodyComponent());
+            gameObject.Components.Add(new BoxColliderComponent());
+            gameObject.Transform.Position = new Vector3(5, 10, 5);
+            scene.GameObjects.Add(gameObject);
+            SceneManager.LoadScene(scene);
         }
 
         if (Button("play random"))

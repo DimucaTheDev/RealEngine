@@ -1,6 +1,7 @@
 ﻿using ImGuiNET;
 using OpenTK.Windowing.Common;
 using RE.Core;
+using RE.Core.Scripting;
 using RE.Rendering;
 using Serilog;
 using System.Numerics;
@@ -25,17 +26,19 @@ namespace RE.Debug.Overlay
         private static bool _scrollToBottom = false;
 
 
+        private bool _focusNextFrame = false;
+
         public override void Render(FrameEventArgs args)
         {
-
             ImGui.SetNextWindowSize(_consoleSize, ImGuiCond.FirstUseEver);
             ImGui.SetNextWindowPos(_consolePos, ImGuiCond.FirstUseEver);
             ImGui.SetNextWindowBgAlpha(.5f);
+
             if (ImGui.Begin("Console", ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.AlwaysVerticalScrollbar | ImGuiWindowFlags.NoDocking))
             {
                 ImGui.BeginChild("ScrollRegion", new Vector2(0, -ImGui.GetFrameHeightWithSpacing()), ImGuiChildFlags.Border, ImGuiWindowFlags.HorizontalScrollbar);
 
-                ImGui.TextUnformatted(Game.GameLog.ToString());
+                ImGui.TextUnformatted(GameLogger.Log);
 
                 if (_scrollToBottom)
                 {
@@ -45,20 +48,30 @@ namespace RE.Debug.Overlay
                 ImGui.EndChild();
 
                 ImGui.PushItemWidth(-1);
+                if (_focusNextFrame)
+                {
+                    ImGui.SetKeyboardFocusHere();
+                    _focusNextFrame = false;
+                }
                 if (ImGui.InputText("##ConsoleInput", ref _inputBuffer, 512, ImGuiInputTextFlags.EnterReturnsTrue))
                 {
                     if (!string.IsNullOrWhiteSpace(_inputBuffer))
                     {
-                        Log.Information("CONSOLE: " + _inputBuffer);
+                        Log.Information(">>> " + _inputBuffer);
+                        CommandHandler.ExecuteCommand(_inputBuffer);
                         _inputBuffer = string.Empty;
-                        ImGui.SetKeyboardFocusHere();
+                        _scrollToBottom = true;
+
+                        _focusNextFrame = true; // отложим фокус
                     }
                 }
                 ImGui.PopItemWidth();
             }
+
             ImGui.End();
             ImGui.PopStyleColor();
         }
+
         public static void Init()
         {
             Instance ??= new ConsoleWindow();

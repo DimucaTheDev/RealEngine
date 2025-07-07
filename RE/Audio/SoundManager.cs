@@ -69,7 +69,7 @@ namespace RE.Audio
 
                 gain = Math.Clamp(gain, 0f, 1f);
 
-                AL.Source(sound.Source, ALSourcef.Gain, gain);
+                AL.Source(sound.Source, ALSourcef.Gain, gain * sound.Volume);
             }
         }
         public static Sound Get(string id, int? n = null)
@@ -147,6 +147,7 @@ namespace RE.Audio
             }
             _activeSounds.Clear();
         }
+        //todo: warn if sound cant be played in 3d
         public static unsafe int Load(string path)
         {
             using var reader = new WaveFileReader(path);

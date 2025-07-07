@@ -59,7 +59,7 @@
 
 	<ItemGroup>
 		<Folder Include="Assets\Audio\" />
-		<Folder Include="Core\Scripting\" />
+		<Folder Include="Assets\Cfg\" />
 	</ItemGroup>
 
 	<!--

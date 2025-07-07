@@ -54,19 +54,30 @@ namespace RE.Core
             InitializationCompleted += () =>
             {
                 _initDone = true;
-                _textCurrentStep.Content = "REAL ENGINE";
-                _textCurrentStep.Position = new(10, 20);
-                _textCurrentStep.Color = new Vector4(0, 0, 0, 0.345f);
+                //_textCurrentStep.Content = "REAL ENGINE";
+                //_textCurrentStep.Position = new(10, 20);
+                //_textCurrentStep.Color = new Vector4(0, 0, 0, 0.345f);
                 _textSteps.StopRender();
+                _textCurrentStep.StopRender();
                 _textTitle.StopRender();
                 _textPastSteps.ForEach(s => s.StopRender());
             };
         }
 
+        private static void SetupScreen()
+        {
+            _textPastSteps.ForEach(s => s.Render());
+            _textCurrentStep.Render();
+            _textSteps.Render();
+            _textTitle.Render();
+        }
         public static void AddStep((string label, Action action) step)
         {
+            if (!_initSteps.Any()) SetupScreen();
+
+            _initDone = false;
             _initSteps.Enqueue(step);
-            _steps = _initSteps.Count;
+            _steps++;
         }
 
         public static bool Render(FrameEventArgs args)

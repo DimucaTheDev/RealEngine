@@ -1,0 +1,41 @@
+[
+    {
+        "name": "Cubik",
+        "transform":{
+            "position": [0, 0, 0],
+            "rotation": [0, 0, 0],
+            "scale": [1, 1, 1]
+        },
+        "components": {
+            "MeshComponent": {
+                "args":["assets/models/crate.fbx"]
+            },
+            "RigidBody": {
+                "Mass": 0.001
+            },
+            "BoxCollider":{}
+        }
+    },
+    {
+        "name": "Floor",
+        "transform":{
+            "position": [0, -3, 0],
+            "rotation": [0, 0, 0],
+            "scale": [20, 0.1, 20]
+        },
+        "components": {
+            "MeshComponent": {
+                "args":["assets/models/cub.fbx"]
+            }, 
+            "BoxCollider":{}
+        }
+    },
+    {
+        "name": "Skybox",
+        "components": {
+            "Skybox": {
+                "args": ["assets/skybox/mc"]
+            }
+        }
+    }
+]

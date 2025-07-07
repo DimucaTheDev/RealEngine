@@ -3,11 +3,11 @@ using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using OpenTK.Windowing.GraphicsLibraryFramework;
 using RE.Core;
-using RE.Core.Physics;
-using RE.Debug;
+using RE.Core.Scripting;
+using RE.Core.World;
+using RE.Core.World.Components;
+using RE.Core.World.Physics;
 using RE.Debug.Overlay;
-using RE.Rendering.Renderables;
-using RE.Utils;
 using Serilog;
 
 namespace RE.Rendering;
@@ -22,7 +22,7 @@ public class Camera
     public float AspectRatio;
     public Vector3 Front = -Vector3.UnitZ;
     public float Pitch;
-
+    public float Fov = 60;
     public Vector3 Position;
     public Vector3 Up;
     public float Yaw = -90f;
@@ -43,6 +43,13 @@ public class Camera
     {
         Instance = new Camera(new(15, 3, 8), Vector3.UnitY,
             Game.Instance.ClientSize.X / (float)Game.Instance.ClientSize.Y);
+        Variables.VariableChanged += (s, e) =>
+        {
+            if (s == "fov")
+            {
+                Instance.Fov = (float)e!;
+            }
+        };
         Game.Instance.CursorState = CursorState.Grabbed;
         Game.Instance.MouseMove += s => Instance.HandleMouseMove(s.X, s.Y);
         Game.Instance.UpdateFrame += _ => Instance.HandleInput(Game.Instance.KeyboardState);
@@ -52,24 +59,33 @@ public class Camera
 
             Game.Instance.CursorState = CursorState.Grabbed;
 
-            if (args.Button == MouseButton.Button1) { }
+            if (args.Button == MouseButton.Button1)
+            {
+                PhysicsManager.Explode(Vector3.Zero, 10, 10);
+            }
             if (args.Button == MouseButton.Button2)
             {
-                var modelRenderer = new ModelRenderer("assets/models/cub.fbx", Instance.Position + Instance.Front * 2, scale: new(0.6f));
+                GameObject obj = new GameObject();
+                obj.Components.Add(new MeshComponent("assets/models/crate.fbx"));
 
-                var cubePhysicsObject = PhysManager.CreateCubePhysicsObject(modelRenderer, 1);
-                OpenTK.Mathematics.Vector3 cameraFrontOpenTK = Camera.Instance.Front;
+                Vector3 cameraFrontOpenTK = Instance.Front;
+
+                obj.Components.Add(new BoxColliderComponent());
+                var rb = new RigidBodyComponent();
+                obj.Components.Add(rb);
+
+                SceneManager.CurrentScene.GameObjects.Add(obj);
 
                 BulletSharp.Math.Vector3 cameraFrontBullet = new BulletSharp.Math.Vector3(cameraFrontOpenTK.X, cameraFrontOpenTK.Y, cameraFrontOpenTK.Z);
-
-                float impulseStrength = 50.0f;
+                rb.GetRigidBody().Restitution = 0.2f;
+                float impulseStrength = 5.0f;
                 BulletSharp.Math.Vector3 impulseVector = cameraFrontBullet * impulseStrength;
-                cubePhysicsObject.RigidBody.ApplyImpulse(impulseVector, BulletSharp.Math.Vector3.Zero);
+                rb.GetRigidBody().ApplyImpulse(impulseVector, BulletSharp.Math.Vector3.Zero);
 
-                cubePhysicsObject.Render();
+                obj.SetPosition(2 * cameraFrontOpenTK + Instance.Position);
+
             }
         };
-        (fr = new()).Render();
 
     }
 
@@ -103,6 +119,26 @@ public class Camera
     public unsafe void HandleInput(KeyboardState state)
     {
         var input = state;
+
+        if (input.IsKeyPressed(Keys.GraveAccent))
+        {
+            if (ConsoleWindow.Instance!.IsVisible)
+            {
+                ConsoleWindow.Instance!.IsVisible = false;
+                Game.Instance.CursorState = CursorState.Grabbed;
+            }
+            else
+            {
+                ConsoleWindow.Instance!.IsVisible = true;
+                Game.Instance.CursorState = CursorState.Normal;
+                _firstMove = true;
+            }
+
+        }
+
+        if (Game.Instance.CursorState != CursorState.Grabbed || ImGui.GetIO().WantCaptureMouse) return;
+
+
         var speed = 7f * Time.DeltaTime;
 
         if (input.IsKeyDown(Keys.W))
@@ -117,33 +153,16 @@ public class Camera
             Position += Vector3.UnitY * speed;
         if (input.IsKeyDown(Keys.LeftShift))
             Position -= Vector3.UnitY * speed;
-        if (input.IsKeyPressed(Keys.GraveAccent))
-            ConsoleWindow.Instance!.IsVisible = !ConsoleWindow.Instance.IsVisible;
         if (input.IsKeyPressed(Keys.F11))
             Game.Instance.ToggleFullscreen();
         if (input.IsKeyPressed(Keys.F1))
         {
-            fr.Clear();
+            RenderManager.RemoveCameraFrustum();
             if (input.IsKeyDown(Keys.LeftShift))
             {
                 return;
             }
-
-            var corners = GetFrustumCorners(Camera.Instance.GetProjectionMatrix(), Camera.Instance.GetViewMatrix());
-            fr.AddLine(corners[0], corners[1], new Vector4(1, 0, 0, 1), new Vector4(1, 0, 0, 1), 0);
-            fr.AddLine(corners[1], corners[2], new Vector4(1, 0, 0, 1), new Vector4(1, 0, 0, 1), 0);
-            fr.AddLine(corners[2], corners[3], new Vector4(1, 0, 0, 1), new Vector4(1, 0, 0, 1), 0);
-            fr.AddLine(corners[3], corners[0], new Vector4(1, 0, 0, 1), new Vector4(1, 0, 0, 1), 0);
-            fr.AddLine(corners[4], corners[5], new Vector4(1, 0, 0, 1), new Vector4(1, 0, 0, 1), 0);
-            fr.AddLine(corners[5], corners[6], new Vector4(1, 0, 0, 1), new Vector4(1, 0, 0, 1), 0);
-            fr.AddLine(corners[6], corners[7], new Vector4(1, 0, 0, 1), new Vector4(1, 0, 0, 1), 0);
-            fr.AddLine(corners[7], corners[4], new Vector4(1, 0, 0, 1), new Vector4(1, 0, 0, 1), 0);
-
-            // линии соединяющие near и far плоскости  
-            for (int i = 0; i < 4; i++)
-            {
-                fr.AddLine(corners[i], corners[i + 4], new Vector4(1, 0, 0, 1), new Vector4(1, 0, 0, 1), 0);
-            }
+            RenderManager.CreateCameraFrustum();
         }
 
         if (input.IsKeyPressed(Keys.F2))
@@ -161,52 +180,10 @@ public class Camera
             _firstMove = true;
         }
     }
-    Vector3[] GetFrustumCorners(Matrix4 proj, Matrix4 view, float maxDistance = 1000f)
-    {
-        Matrix4 inv = Matrix4.Invert(view * proj);
-        Vector3[] ndcCorners = new Vector3[]
-        {
-            new Vector3(-1, -1, -1), // near bottom left
-            new Vector3(1, -1, -1),  // near bottom right
-            new Vector3(1, 1, -1),   // near top right
-            new Vector3(-1, 1, -1),  // near top left
 
-            new Vector3(-1, -1, 1),  // far bottom left
-            new Vector3(1, -1, 1),   // far bottom right
-            new Vector3(1, 1, 1),    // far top right
-            new Vector3(-1, 1, 1)    // far top left
-        };
-
-        Vector3[] worldCorners = new Vector3[8];
-
-        for (int i = 0; i < 8; i++)
-        {
-            Vector4 corner = new Vector4(ndcCorners[i], 1.0f);
-            Vector4 worldPos = Vector4.TransformRow(corner, inv);
-            worldPos /= worldPos.W; // перспективное деление
-
-            Vector3 pos = worldPos.Xyz;
-
-            float length = pos.Length;
-            if (length > maxDistance)
-            {
-                pos = pos.Normalized() * maxDistance;
-            }
-            worldCorners[i] = pos;
-        }
-        return worldCorners;
-    }
-
-    public static LineManager fr = new LineManager();
-
-    public Matrix4 GetViewMatrix()
-    {
-        return Matrix4.LookAt(Position, Position + Front, Up);
-    }
-    public Matrix4 GetProjectionMatrix()
-    {
-        return Matrix4.CreatePerspectiveFieldOfView(MathHelper.DegreesToRadians(60), AspectRatio, 0.1f, 10000f);
-    }
+    public Matrix4 GetViewMatrix() => Matrix4.LookAt(Position, Position + Front, Up);
+    public Matrix4 GetProjectionMatrix() => GetProjectionMatrix(Fov);
+    public Matrix4 GetProjectionMatrix(float fov) => Matrix4.CreatePerspectiveFieldOfView(MathHelper.DegreesToRadians(fov), AspectRatio, 0.1f, 10000f);
     public Matrix4 GetBillboard(Vector3 objectPosition)
     {
         Matrix4 view = GetViewMatrix();

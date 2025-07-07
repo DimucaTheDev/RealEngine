@@ -1,5 +1,5 @@
 ﻿using RE.Core;
-using RE.Core.Physics;
+using RE.Core.World.Physics;
 using RE.Rendering;
 using System.Numerics;
 
@@ -32,8 +32,7 @@ namespace RE.Utils
         {
             if (r is PhysicObject obj)
             {
-                PhysManager.RemovePhysicsObject(obj);
-                RenderManager.RemoveRenderable(obj.Model);
+                PhysicsManager.RemovePhysicsObject(obj, true);
                 return;
             }
             RenderManager.RemoveRenderable(r);
