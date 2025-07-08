@@ -12,7 +12,6 @@ namespace RE.Core.World.Components
                 Owner.Transform.Scale.Z * 1 // 0.5f
             );
             CollisionShape boxShape = new BoxShape(halfExtents);
-
             return boxShape;
         }
     }

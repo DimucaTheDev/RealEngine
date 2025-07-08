@@ -48,6 +48,8 @@ namespace RE.Core.World.Components
 
                 PhysicsManager.DynamicsWorld.AddRigidBody(_rigidBody);
             }
+
+            _rigidBody.Friction = 1;
         }
 
         public abstract CollisionShape CreateCollisionShape();
@@ -67,7 +69,7 @@ namespace RE.Core.World.Components
 
         public override void Render(FrameEventArgs args)
         {
-            if (_rigidBody != null)
+            if (_rigidBody is { IsInWorld: true })
                 DrawRigidBodyBounds(_rigidBody, LineManager.Main!);
         }
 

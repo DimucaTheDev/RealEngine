@@ -70,13 +70,14 @@ public class Camera
                 Vector3 cameraFrontOpenTK = Instance.Front;
 
                 obj.Components.Add(new BoxColliderComponent());
-                var rb = new RigidBodyComponent();
+                var rb = new RigidBodyComponent(20);
                 obj.Components.Add(rb);
 
                 SceneManager.CurrentScene.GameObjects.Add(obj);
 
                 BulletSharp.Math.Vector3 cameraFrontBullet = new BulletSharp.Math.Vector3(cameraFrontOpenTK.X, cameraFrontOpenTK.Y, cameraFrontOpenTK.Z);
                 rb.GetRigidBody().Restitution = 0.2f;
+                rb.GetRigidBody().Friction = 1;
                 float impulseStrength = 5.0f;
                 BulletSharp.Math.Vector3 impulseVector = cameraFrontBullet * impulseStrength;
                 rb.GetRigidBody().ApplyImpulse(impulseVector, BulletSharp.Math.Vector3.Zero);

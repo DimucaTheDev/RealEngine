@@ -1,4 +1,5 @@
-﻿using RE.Core;
+﻿using BulletSharp;
+using RE.Core;
 using RE.Core.World.Physics;
 using RE.Rendering;
 using System.Numerics;
@@ -53,5 +54,9 @@ namespace RE.Utils
         public static OpenTK.Mathematics.Quaternion ToOpenTkQuaternion(this Quaternion q) => new(q.X, q.Y, q.Z, q.W);
         public static Vector3 ToSystemVector3(this OpenTK.Mathematics.Vector3 v) => new(v.X, v.Y, v.Z);
         public static Quaternion ToSystemQuaternion(this OpenTK.Mathematics.Quaternion q) => new(q.X, q.Y, q.Z, q.W);
+
+
+        public static void Disable(this RigidBody r) => PhysicsManager.DynamicsWorld.RemoveRigidBody(r);
+        public static void Enable(this RigidBody r) => PhysicsManager.DynamicsWorld.AddRigidBody(r);
     }
 }
