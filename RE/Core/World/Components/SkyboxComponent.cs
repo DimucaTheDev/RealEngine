@@ -95,8 +95,9 @@ namespace RE.Core.World.Components
                     }
                     else
                     {
-                        var p = CreateMissingTexture();
+                        Log.Error($"Could not load texture for face {i} at path: {pathToFace}");
 
+                        var p = CreateMissingTexture();
                         GL.TexImage2D(TextureTarget.TextureCubeMapPositiveX + i, 0,
                             PixelInternalFormat.Rgba,
                             100, 100, 0,

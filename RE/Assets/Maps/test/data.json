@@ -17,6 +17,17 @@
         }
     },
     {
+        "name": "player",
+        "transform":{
+            "position": [0, 5, 0],
+            "rotation": [0, 0, 0],
+            "scale": [1, 1, 1]
+        },
+        "components": {
+            "PlayerComponent":{}
+        }
+    },
+    {
         "name": "Floor",
         "transform":{
             "position": [0, -3, 0],

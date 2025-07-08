@@ -15,10 +15,9 @@ namespace RE.Rendering;
 public class Camera
 {
     private const float MouseSensitivity = 0.2f;
-
-    private bool _firstMove = true;
-
     private Vector2 _lastMousePos;
+
+    public bool FirstMove = true;
     public float AspectRatio;
     public Vector3 Front = -Vector3.UnitZ;
     public float Pitch;
@@ -52,7 +51,7 @@ public class Camera
         };
         Game.Instance.CursorState = CursorState.Grabbed;
         Game.Instance.MouseMove += s => Instance.HandleMouseMove(s.X, s.Y);
-        Game.Instance.UpdateFrame += _ => Instance.HandleInput(Game.Instance.KeyboardState);
+        //Game.Instance.UpdateFrame += _ => Instance.HandleInput(Game.Instance.KeyboardState);
         Game.Instance.MouseDown += args =>
         {
             if (ImGui.GetIO().WantCaptureMouse) return;
@@ -92,10 +91,10 @@ public class Camera
     public void HandleMouseMove(float mouseX, float mouseY)
     {
         if (Game.Instance.CursorState != CursorState.Grabbed || ImGui.GetIO().WantCaptureMouse) return;
-        if (_firstMove)
+        if (FirstMove)
         {
             _lastMousePos = new Vector2(mouseX, mouseY);
-            _firstMove = false;
+            FirstMove = false;
             return;
         }
 
@@ -131,7 +130,7 @@ public class Camera
             {
                 ConsoleWindow.Instance!.IsVisible = true;
                 Game.Instance.CursorState = CursorState.Normal;
-                _firstMove = true;
+                FirstMove = true;
             }
 
         }
@@ -177,7 +176,7 @@ public class Camera
         if (input.IsKeyDown(Keys.Escape))
         {
             Game.Instance.CursorState = CursorState.Normal;
-            _firstMove = true;
+            FirstMove = true;
         }
     }
 

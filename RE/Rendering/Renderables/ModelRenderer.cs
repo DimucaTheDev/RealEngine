@@ -287,8 +287,8 @@ namespace RE.Rendering.Renderables
                 (byte)Random.Shared.Next(255), (byte)Random.Shared.Next(255), (byte)Random.Shared.Next(255), 255
             };
 
-            byte[] purple = { 255, 0, 255, 255 };
-            byte[] black = { 0, 0, 0, 255 };
+            byte[] purple = [255, 0, 255, 255];
+            byte[] black = [0, 0, 0, 255];
 
             for (int y = 0; y < size; y++)
             {

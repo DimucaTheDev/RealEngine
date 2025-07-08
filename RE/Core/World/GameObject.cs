@@ -35,7 +35,7 @@ namespace RE.Core.World
             }
         }
 
-        public void SetPosition(Quaternion q)
+        public void SetRotation(Quaternion q)
         {
             Transform.Rotation = q;
             var rigidBodyComponent = GetComponent<RigidBodyComponent>();
