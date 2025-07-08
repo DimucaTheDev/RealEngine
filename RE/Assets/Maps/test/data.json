@@ -11,7 +11,41 @@
                 "args":["assets/models/crate.fbx"]
             },
             "RigidBody": {
-                "Mass": 0.001
+                "Mass": 20
+            },
+            "BoxCollider":{}
+        }
+    },
+    {
+        "name": "Cubik",
+        "transform":{
+            "position": [0, 2, 1.95],
+            "rotation": [0, 0, 0],
+            "scale": [1, 1, 1]
+        },
+        "components": {
+            "MeshComponent": {
+                "args":["assets/models/crate.fbx"]
+            },
+            "RigidBody": {
+                "Mass": 20
+            },
+            "BoxCollider":{}
+        }
+    },
+    {
+        "name": "Cubik",
+        "transform":{
+            "position": [0, 0, 3.85],
+            "rotation": [0, 0, 0],
+            "scale": [1, 1, 1]
+        },
+        "components": {
+            "MeshComponent": {
+                "args":["assets/models/crate.fbx"]
+            },
+            "RigidBody": {
+                "Mass": 20
             },
             "BoxCollider":{}
         }

@@ -69,8 +69,8 @@ namespace RE.Core.World.Components
 
         public override void Render(FrameEventArgs args)
         {
-            if (_rigidBody is { IsInWorld: true })
-                DrawRigidBodyBounds(_rigidBody, LineManager.Main!);
+            //if (_rigidBody is { IsInWorld: true })
+            //    DrawRigidBodyBounds(_rigidBody, LineManager.Main!);
         }
 
         void DrawRigidBodyBounds(RigidBody body, LineManager lineManager)
