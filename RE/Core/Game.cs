@@ -32,7 +32,7 @@ internal class Game : GameWindow
     private Game(GameWindowSettings gws, NativeWindowSettings nws) : base(gws, nws) { }
 
     public static Game Instance { get; private set; }
-    public const int FpsLock = 0;
+    public const int FpsLock = 165;
 
     private static readonly Dictionary<nint, string> _loadedLibs = new();
 

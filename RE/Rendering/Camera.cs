@@ -6,7 +6,6 @@ using RE.Core;
 using RE.Core.Scripting;
 using RE.Core.World;
 using RE.Core.World.Components;
-using RE.Core.World.Physics;
 using RE.Debug.Overlay;
 using Serilog;
 
@@ -58,10 +57,7 @@ public class Camera
 
             Game.Instance.CursorState = CursorState.Grabbed;
 
-            if (args.Button == MouseButton.Button1)
-            {
-                PhysicsManager.Explode(Vector3.Zero, 10, 10);
-            }
+
             if (args.Button == MouseButton.Button2)
             {
                 GameObject obj = new GameObject();
