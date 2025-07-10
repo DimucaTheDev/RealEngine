@@ -5,6 +5,7 @@ using RE.Audio;
 using RE.Core.World;
 using RE.Core.World.Components;
 using RE.Rendering;
+using RE.Utils;
 using Serilog;
 using static ImGuiNET.ImGui;
 
@@ -25,17 +26,18 @@ internal class DebugOverlay : Renderable
     public override void Render(FrameEventArgs args)
     {
         Begin("123");
-        if (Button("gc")) GC.Collect();
+        if (Button("gc"))
+            GC.Collect();
         var instance = Camera.Instance;
         Text($"Cam pos: ({instance.Position.X:F}; {instance.Position.Y:F}; {instance.Position.Z:F})");
-        if (Button("1")) RenderManager.RemoveRenderables<LineManager>();
+        if (Button("1"))
+            RenderManager.RemoveRenderables<LineManager>();
         //ScreenText($"a: ({LineManager.a.X:F}, {LineManager.a.Y:F})");
         Selectable("wireframe", ref w);
         if (w)
         {
             GL.PolygonMode(TriangleFace.FrontAndBack, PolygonMode.Line);
-        }
-        else
+        } else
         {
             GL.PolygonMode(TriangleFace.FrontAndBack, PolygonMode.Fill);
         }
@@ -108,7 +110,8 @@ internal class DebugOverlay : Renderable
                 s.Resume();
             Checkbox("Loop", ref l);
             SameLine();
-            if (Button("upd")) s.Loop = l;
+            if (Button("upd"))
+                s.Loop = l;
             Text($"vol: {s?.Volume:F3}");
             if (SliderFloat("max distance", ref m, 0, 20))
             {
@@ -164,5 +167,7 @@ internal class DebugOverlay : Renderable
     public static void Init()
     {
         Instance ??= new DebugOverlay();
+
+        SceneEditor.Instance.Render();
     }
 }

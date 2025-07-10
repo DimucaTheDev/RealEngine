@@ -5,14 +5,16 @@ using OpenTK.Windowing.Common;
 using OpenTK.Windowing.GraphicsLibraryFramework;
 using RE.Audio;
 using RE.Core.World.Physics;
+using RE.Debug;
 using RE.Debug.Overlay;
 using RE.Rendering;
+using RE.Rendering.Renderables;
 using RE.Utils;
 using Serilog;
 
 namespace RE.Core.World.Components
 {
-    internal class PlayerComponent : Component
+    internal class PlayerComponent : Component, ISceneRenderer
     {
         private Camera _camera;
         private GameObject _playerGameObject;
@@ -35,54 +37,13 @@ namespace RE.Core.World.Components
         float _bobTimer = 0f;
         float _bobBlend = 0f;
         float _currentCameraYOffset2 = 0f;
-        void UpdateCameraPosition2(float deltaTime, bool isWalking, bool isSprinting, bool isCrouching)
-        {
-            float targetYOffset = isCrouching ? _crouchCameraOffset : _standCameraOffset;
-            _currentCameraYOffset = MathHelper.Lerp(_currentCameraYOffset, targetYOffset, deltaTime * _cameraLerpSpeed);
 
-            if (isWalking)
-                _bobTimer += deltaTime * _bobSpeed * (isSprinting ? 2f : 1f);
-            else
-                _bobTimer = 0f;
-
-            float bobAmount = _bobAmount * (isCrouching ? 0.5f : 1f);
-            float bobOffsetY = MathF.Sin(_bobTimer) * bobAmount * 2;
-            float bobOffsetX = MathF.Sin(_bobTimer * 0.5f) * bobAmount * 2f;
-
-            Vector3 playerPos = _playerGameObject.Transform.Position;
-            _camera.Position = new Vector3(
-                playerPos.X + bobOffsetX,
-                playerPos.Y + _currentCameraYOffset + bobOffsetY,
-                playerPos.Z
-            );
-        }
-        void UpdateCameraPosition(float deltaTime, bool isWalking, bool isSprinting, bool isCrouching)
-        {
-            float targetYOffset = isCrouching ? _crouchCameraOffset : _standCameraOffset;
-            _currentCameraYOffset2 = MathHelper.Lerp(_currentCameraYOffset2, targetYOffset, deltaTime * _cameraLerpSpeed2);
-
-            float walkSpeedFactor = isSprinting ? 2f : 1f;
-            _bobTimer += deltaTime * _bobSpeed * walkSpeedFactor;
-
-            float targetBlend = isWalking ? 1f : 0f;
-            _bobBlend = MathHelper.Lerp(_bobBlend, targetBlend, deltaTime * 5f);
-
-            float bobAmount = _bobAmount * (isCrouching ? 0.5f : 1f);
-            float bobOffsetY = MathF.Sin(_bobTimer * 1f) * bobAmount * _bobBlend;
-            float bobOffsetX = MathF.Sin(_bobTimer * 0.5f) * bobAmount * 0.5f * _bobBlend;
-
-            Vector3 playerPos = _playerGameObject.Transform.Position;
-            _camera.Position = new Vector3(
-                playerPos.X + bobOffsetX,
-                playerPos.Y + _currentCameraYOffset2 + bobOffsetY,
-                playerPos.Z
-            );
-        }
+        SpriteRenderer _spriteSpawnpoint;
 
         public override void Start()
         {
             _camera = Camera.Instance;
-            _playerGameObject = new GameObject();
+            _playerGameObject = new GameObject(Owner);
             _playerGameObject.Transform.Scale = new Vector3(0.75f, _standHeight, 0.75f);
             _playerGameObject.Components.Add(new CapsuleColliderComponent());
             var rigidBodyComponent = new RigidBodyComponent();
@@ -93,6 +54,8 @@ namespace RE.Core.World.Components
             rigidBodyComponent.GetRigidBody().ActivationState = ActivationState.DisableDeactivation;
             rigidBodyComponent.GetRigidBody().Gravity = new BulletSharp.Math.Vector3(0, -25f, 0);
             _playerGameObject.SetPosition(Owner.Transform.Position);
+
+            _spriteSpawnpoint = new SpriteRenderer(Vector3.Zero, "assets/sprites/editor/spawn.png", scale: 3);
         }
 
         public override void Update(FrameEventArgs args)
@@ -105,8 +68,7 @@ namespace RE.Core.World.Components
                 {
                     ConsoleWindow.Instance!.IsVisible = false;
                     Game.Instance.CursorState = CursorState.Grabbed;
-                }
-                else
+                } else
                 {
                     ConsoleWindow.Instance!.IsVisible = true;
                     Game.Instance.CursorState = CursorState.Normal;
@@ -115,11 +77,36 @@ namespace RE.Core.World.Components
             }
 
 
-            var rbN = _playerGameObject.GetComponent<RigidBodyComponent>()?.GetRigidBody();
-            if (rbN == null) return;
-
             if (!(Game.Instance.CursorState != CursorState.Grabbed || ImGui.GetIO().WantCaptureMouse))
             {
+                if (SceneEditor.Enabled)
+                {
+                    var p = Camera.Instance.Position;
+
+                    var speed = 7f * Time.DeltaTime;
+
+                    if (input.IsKeyDown(Keys.W))
+                        p += (Camera.Instance.Front with { Y = 0 }).Normalized() * speed;
+                    if (input.IsKeyDown(Keys.S))
+                        p -= (Camera.Instance.Front with { Y = 0 }).Normalized() * speed;
+                    if (input.IsKeyDown(Keys.A))
+                        p -= Vector3.Normalize(Vector3.Cross(Camera.Instance.Front, Camera.Instance.Up)) * speed;
+                    if (input.IsKeyDown(Keys.D))
+                        p += Vector3.Normalize(Vector3.Cross(Camera.Instance.Front, Camera.Instance.Up)) * speed;
+                    if (input.IsKeyDown(Keys.Space))
+                        p += Vector3.UnitY * speed;
+                    if (input.IsKeyDown(Keys.LeftShift))
+                        p -= Vector3.UnitY * speed;
+
+                    Camera.Instance.Position = (p);
+                    return;
+                }
+
+
+                var rbN = _playerGameObject.GetComponent<RigidBodyComponent>()?.GetRigidBody();
+                if (rbN == null)
+                    return;
+
                 #region dirmisch
 
                 Vector3 moveDirection = Vector3.Zero;
@@ -128,8 +115,10 @@ namespace RE.Core.World.Components
                     moveDirection += (_camera.Front with { Y = 0 });
                 if (input.IsKeyDown(Keys.S))
                     moveDirection -= (_camera.Front with { Y = 0 });
-                if (input.IsKeyDown(Keys.A)) moveDirection -= (Vector3.Cross(_camera.Front, _camera.Up));
-                if (input.IsKeyDown(Keys.D)) moveDirection += (Vector3.Cross(_camera.Front, _camera.Up));
+                if (input.IsKeyDown(Keys.A))
+                    moveDirection -= (Vector3.Cross(_camera.Front, _camera.Up));
+                if (input.IsKeyDown(Keys.D))
+                    moveDirection += (Vector3.Cross(_camera.Front, _camera.Up));
 
                 moveDirection = moveDirection.Normalized();
 
@@ -171,8 +160,7 @@ namespace RE.Core.World.Components
                     {
                         currentHorizontalVelocity = currentHorizontalVelocity.Normalized() * maxSpeed;
                     }
-                }
-                else
+                } else
                 {
                     float currentSpeed = currentHorizontalVelocity.Length;
                     if (currentSpeed > 0)
@@ -238,7 +226,8 @@ namespace RE.Core.World.Components
                 }
 
 
-                if (_jumpCd >= 0) _jumpCd -= (float)args.Time;
+                if (_jumpCd >= 0)
+                    _jumpCd -= (float)args.Time;
 
 
 
@@ -272,8 +261,7 @@ namespace RE.Core.World.Components
                                     Pitch = 1,
                                     Volume = .25f
                                 });
-                            }
-                            else
+                            } else
                             {
                                 SoundManager.Play("common/wpn_denyselect", new SoundPlaybackSettings()
                                 {
@@ -282,8 +270,7 @@ namespace RE.Core.World.Components
                                     Volume = .25f
                                 });
                             }
-                        }
-                        else
+                        } else
                         {
                             SoundManager.Play("common/wpn_denyselect", new SoundPlaybackSettings()
                             {
@@ -293,8 +280,7 @@ namespace RE.Core.World.Components
                             });
                             Log.Information("Ray hit an object, but its UserObject is not a Controller.");
                         }
-                    }
-                    else
+                    } else
                     {
                         SoundManager.Play("common/wpn_denyselect", new SoundPlaybackSettings()
                         {
@@ -329,14 +315,14 @@ namespace RE.Core.World.Components
                     Game.Instance.CursorState = CursorState.Normal;
                     _camera.FirstMove = true;
                 }
-            }
 
-            // UpdateCameraPosition((float)args.Time, currentHorizontalVelocity.LengthSquared > 1e-6, sprintKeyDown, _isCrouching);
-            _targetCameraYOffset = _isCrouching ? _crouchCameraOffset : _standCameraOffset;
-            _currentCameraYOffset = MathHelper.Lerp(_currentCameraYOffset, _targetCameraYOffset,
-                (float)(Time.DeltaTime * _cameraLerpSpeed));
-            var basePosition = _playerGameObject.Transform.Position;
-            _camera.Position = new Vector3(basePosition.X, basePosition.Y + _currentCameraYOffset, basePosition.Z);
+                // UpdateCameraPosition((float)args.Time, currentHorizontalVelocity.LengthSquared > 1e-6, sprintKeyDown, _isCrouching);
+                _targetCameraYOffset = _isCrouching ? _crouchCameraOffset : _standCameraOffset;
+                _currentCameraYOffset = MathHelper.Lerp(_currentCameraYOffset, _targetCameraYOffset,
+                    (float)(Time.DeltaTime * _cameraLerpSpeed));
+                var basePosition = _playerGameObject.Transform.Position;
+                _camera.Position = new Vector3(basePosition.X, basePosition.Y + _currentCameraYOffset, basePosition.Z);
+            }
         }
         bool IsGrounded(Vector3 rel)
         {
@@ -385,5 +371,55 @@ namespace RE.Core.World.Components
                    CanStandUp((-offset, 0, -offset)) && CanStandUp((offset, 0, -offset));
         }
 
+        void UpdateCameraPosition2(float deltaTime, bool isWalking, bool isSprinting, bool isCrouching)
+        {
+            float targetYOffset = isCrouching ? _crouchCameraOffset : _standCameraOffset;
+            _currentCameraYOffset = MathHelper.Lerp(_currentCameraYOffset, targetYOffset, deltaTime * _cameraLerpSpeed);
+
+            if (isWalking)
+                _bobTimer += deltaTime * _bobSpeed * (isSprinting ? 2f : 1f);
+            else
+                _bobTimer = 0f;
+
+            float bobAmount = _bobAmount * (isCrouching ? 0.5f : 1f);
+            float bobOffsetY = MathF.Sin(_bobTimer) * bobAmount * 2;
+            float bobOffsetX = MathF.Sin(_bobTimer * 0.5f) * bobAmount * 2f;
+
+            Vector3 playerPos = _playerGameObject.Transform.Position;
+            _camera.Position = new Vector3(
+                playerPos.X + bobOffsetX,
+                playerPos.Y + _currentCameraYOffset + bobOffsetY,
+                playerPos.Z
+            );
+        }
+        void UpdateCameraPosition(float deltaTime, bool isWalking, bool isSprinting, bool isCrouching)
+        {
+            float targetYOffset = isCrouching ? _crouchCameraOffset : _standCameraOffset;
+            _currentCameraYOffset2 = MathHelper.Lerp(_currentCameraYOffset2, targetYOffset, deltaTime * _cameraLerpSpeed2);
+
+            float walkSpeedFactor = isSprinting ? 2f : 1f;
+            _bobTimer += deltaTime * _bobSpeed * walkSpeedFactor;
+
+            float targetBlend = isWalking ? 1f : 0f;
+            _bobBlend = MathHelper.Lerp(_bobBlend, targetBlend, deltaTime * 5f);
+
+            float bobAmount = _bobAmount * (isCrouching ? 0.5f : 1f);
+            float bobOffsetY = MathF.Sin(_bobTimer * 1f) * bobAmount * _bobBlend;
+            float bobOffsetX = MathF.Sin(_bobTimer * 0.5f) * bobAmount * 0.5f * _bobBlend;
+
+            Vector3 playerPos = _playerGameObject.Transform.Position;
+            _camera.Position = new Vector3(
+                playerPos.X + bobOffsetX,
+                playerPos.Y + _currentCameraYOffset2 + bobOffsetY,
+                playerPos.Z
+            );
+        }
+
+        public void DebugRender(FrameEventArgs args)
+        {
+            _spriteSpawnpoint.Position = Owner.Transform.Position;
+
+            _spriteSpawnpoint.Render(args);
+        }
     }
 }

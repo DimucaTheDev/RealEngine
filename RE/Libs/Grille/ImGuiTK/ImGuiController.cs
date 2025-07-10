@@ -4,6 +4,7 @@ using OpenTK.Windowing.Common;
 using OpenTK.Windowing.Desktop;
 using OpenTK.Windowing.GraphicsLibraryFramework;
 using RE.Core;
+using RE.Utils;
 using Vector2 = System.Numerics.Vector2;
 
 namespace RE.Libs.Grille.ImGuiTK;
@@ -51,6 +52,8 @@ public class ImGuiController : IDisposable
 
         ImGui.NewFrame();
         _frameBegun = true;
+
+        ImGuiTheme.ApplyDarkTheme();
     }
 
     public GLRenderer Renderer { get; }
@@ -134,11 +137,13 @@ public class ImGuiController : IDisposable
 
         foreach (Keys key in Enum.GetValues(typeof(Keys)))
         {
-            if (key == Keys.Unknown) continue;
+            if (key == Keys.Unknown)
+                continue;
             io.AddKeyEvent(TranslateKey(key), KeyboardState.IsKeyDown(key));
         }
 
-        foreach (var c in PressedChars) io.AddInputCharacter(c);
+        foreach (var c in PressedChars)
+            io.AddInputCharacter(c);
         PressedChars.Clear();
 
         io.KeyCtrl = KeyboardState.IsKeyDown(Keys.LeftControl) || KeyboardState.IsKeyDown(Keys.RightControl);
@@ -176,54 +181,102 @@ public class ImGuiController : IDisposable
 
         switch (key)
         {
-            case Keys.Tab: return ImGuiKey.Tab;
-            case Keys.Left: return ImGuiKey.LeftArrow;
-            case Keys.Right: return ImGuiKey.RightArrow;
-            case Keys.Up: return ImGuiKey.UpArrow;
-            case Keys.Down: return ImGuiKey.DownArrow;
-            case Keys.PageUp: return ImGuiKey.PageUp;
-            case Keys.PageDown: return ImGuiKey.PageDown;
-            case Keys.Home: return ImGuiKey.Home;
-            case Keys.End: return ImGuiKey.End;
-            case Keys.Insert: return ImGuiKey.Insert;
-            case Keys.Delete: return ImGuiKey.Delete;
-            case Keys.Backspace: return ImGuiKey.Backspace;
-            case Keys.Space: return ImGuiKey.Space;
-            case Keys.Enter: return ImGuiKey.Enter;
-            case Keys.Escape: return ImGuiKey.Escape;
-            case Keys.Apostrophe: return ImGuiKey.Apostrophe;
-            case Keys.Comma: return ImGuiKey.Comma;
-            case Keys.Minus: return ImGuiKey.Minus;
-            case Keys.Period: return ImGuiKey.Period;
-            case Keys.Slash: return ImGuiKey.Slash;
-            case Keys.Semicolon: return ImGuiKey.Semicolon;
-            case Keys.Equal: return ImGuiKey.Equal;
-            case Keys.LeftBracket: return ImGuiKey.LeftBracket;
-            case Keys.Backslash: return ImGuiKey.Backslash;
-            case Keys.RightBracket: return ImGuiKey.RightBracket;
-            case Keys.GraveAccent: return ImGuiKey.GraveAccent;
-            case Keys.CapsLock: return ImGuiKey.CapsLock;
-            case Keys.ScrollLock: return ImGuiKey.ScrollLock;
-            case Keys.NumLock: return ImGuiKey.NumLock;
-            case Keys.PrintScreen: return ImGuiKey.PrintScreen;
-            case Keys.Pause: return ImGuiKey.Pause;
-            case Keys.KeyPadDecimal: return ImGuiKey.KeypadDecimal;
-            case Keys.KeyPadDivide: return ImGuiKey.KeypadDivide;
-            case Keys.KeyPadMultiply: return ImGuiKey.KeypadMultiply;
-            case Keys.KeyPadSubtract: return ImGuiKey.KeypadSubtract;
-            case Keys.KeyPadAdd: return ImGuiKey.KeypadAdd;
-            case Keys.KeyPadEnter: return ImGuiKey.KeypadEnter;
-            case Keys.KeyPadEqual: return ImGuiKey.KeypadEqual;
-            case Keys.LeftShift: return ImGuiKey.LeftShift;
-            case Keys.LeftControl: return ImGuiKey.LeftCtrl;
-            case Keys.LeftAlt: return ImGuiKey.LeftAlt;
-            case Keys.LeftSuper: return ImGuiKey.LeftSuper;
-            case Keys.RightShift: return ImGuiKey.RightShift;
-            case Keys.RightControl: return ImGuiKey.RightCtrl;
-            case Keys.RightAlt: return ImGuiKey.RightAlt;
-            case Keys.RightSuper: return ImGuiKey.RightSuper;
-            case Keys.Menu: return ImGuiKey.Menu;
-            default: return ImGuiKey.None;
+            case Keys.Tab:
+                return ImGuiKey.Tab;
+            case Keys.Left:
+                return ImGuiKey.LeftArrow;
+            case Keys.Right:
+                return ImGuiKey.RightArrow;
+            case Keys.Up:
+                return ImGuiKey.UpArrow;
+            case Keys.Down:
+                return ImGuiKey.DownArrow;
+            case Keys.PageUp:
+                return ImGuiKey.PageUp;
+            case Keys.PageDown:
+                return ImGuiKey.PageDown;
+            case Keys.Home:
+                return ImGuiKey.Home;
+            case Keys.End:
+                return ImGuiKey.End;
+            case Keys.Insert:
+                return ImGuiKey.Insert;
+            case Keys.Delete:
+                return ImGuiKey.Delete;
+            case Keys.Backspace:
+                return ImGuiKey.Backspace;
+            case Keys.Space:
+                return ImGuiKey.Space;
+            case Keys.Enter:
+                return ImGuiKey.Enter;
+            case Keys.Escape:
+                return ImGuiKey.Escape;
+            case Keys.Apostrophe:
+                return ImGuiKey.Apostrophe;
+            case Keys.Comma:
+                return ImGuiKey.Comma;
+            case Keys.Minus:
+                return ImGuiKey.Minus;
+            case Keys.Period:
+                return ImGuiKey.Period;
+            case Keys.Slash:
+                return ImGuiKey.Slash;
+            case Keys.Semicolon:
+                return ImGuiKey.Semicolon;
+            case Keys.Equal:
+                return ImGuiKey.Equal;
+            case Keys.LeftBracket:
+                return ImGuiKey.LeftBracket;
+            case Keys.Backslash:
+                return ImGuiKey.Backslash;
+            case Keys.RightBracket:
+                return ImGuiKey.RightBracket;
+            case Keys.GraveAccent:
+                return ImGuiKey.GraveAccent;
+            case Keys.CapsLock:
+                return ImGuiKey.CapsLock;
+            case Keys.ScrollLock:
+                return ImGuiKey.ScrollLock;
+            case Keys.NumLock:
+                return ImGuiKey.NumLock;
+            case Keys.PrintScreen:
+                return ImGuiKey.PrintScreen;
+            case Keys.Pause:
+                return ImGuiKey.Pause;
+            case Keys.KeyPadDecimal:
+                return ImGuiKey.KeypadDecimal;
+            case Keys.KeyPadDivide:
+                return ImGuiKey.KeypadDivide;
+            case Keys.KeyPadMultiply:
+                return ImGuiKey.KeypadMultiply;
+            case Keys.KeyPadSubtract:
+                return ImGuiKey.KeypadSubtract;
+            case Keys.KeyPadAdd:
+                return ImGuiKey.KeypadAdd;
+            case Keys.KeyPadEnter:
+                return ImGuiKey.KeypadEnter;
+            case Keys.KeyPadEqual:
+                return ImGuiKey.KeypadEqual;
+            case Keys.LeftShift:
+                return ImGuiKey.LeftShift;
+            case Keys.LeftControl:
+                return ImGuiKey.LeftCtrl;
+            case Keys.LeftAlt:
+                return ImGuiKey.LeftAlt;
+            case Keys.LeftSuper:
+                return ImGuiKey.LeftSuper;
+            case Keys.RightShift:
+                return ImGuiKey.RightShift;
+            case Keys.RightControl:
+                return ImGuiKey.RightCtrl;
+            case Keys.RightAlt:
+                return ImGuiKey.RightAlt;
+            case Keys.RightSuper:
+                return ImGuiKey.RightSuper;
+            case Keys.Menu:
+                return ImGuiKey.Menu;
+            default:
+                return ImGuiKey.None;
         }
     }
 }

@@ -2,7 +2,7 @@
 
 namespace RE.Core.World
 {
-    internal class Transform
+    public class Transform
     {
         public Vector3 Position { get; set; }
         public Vector3 Scale { get; set; }

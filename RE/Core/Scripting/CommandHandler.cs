@@ -1,10 +1,11 @@
-﻿using RE.Audio;
-using RE.Core.World;
-using RE.Rendering;
-using Serilog;
-using System.Collections;
+﻿using System.Collections;
 using System.Globalization;
 using System.Text.RegularExpressions;
+using RE.Audio;
+using RE.Core.World;
+using RE.Debug.Overlay;
+using RE.Rendering;
+using Serilog;
 
 namespace RE.Core.Scripting
 {
@@ -89,8 +90,7 @@ namespace RE.Core.Scripting
                     else if (list[1].Equals("null", StringComparison.OrdinalIgnoreCase))
                         value = null!;
                     Variables.SetVariable(key, value);
-                }
-                else
+                } else
                 {
                     var value = Variables.GetVariable(list[0]);
 
@@ -119,7 +119,8 @@ namespace RE.Core.Scripting
             });
             RegisterHandler("sound", list =>
             {
-                if (list[0] == "stopall") SoundManager.StopAll();
+                if (list[0] == "stopall")
+                    SoundManager.StopAll();
                 if (list[0] == "play") // sound play <name> [volume] [inWorld] [maxDistance] [referenceDistance]
                 {
                     if (list.Count < 2)
@@ -162,13 +163,17 @@ namespace RE.Core.Scripting
             });
             RegisterHandler("frustum", args =>
             {
-                if (args[0] == "create") RenderManager.CreateCameraFrustum();
-                else if (args[0] == "destroy") RenderManager.RemoveCameraFrustum();
-                else Log.Error("Usage: frustum create|destroy");
+                if (args[0] == "create")
+                    RenderManager.CreateCameraFrustum();
+                else if (args[0] == "destroy")
+                    RenderManager.RemoveCameraFrustum();
+                else
+                    Log.Error("Usage: frustum create|destroy");
             });
             RegisterHandler("level", args =>
             {
-                if (args.Count == 0) Log.Information($"Current level: {SceneManager.CurrentScene.Name ?? "<unnamed>"}");
+                if (args.Count == 0)
+                    Log.Information($"Current level: {SceneManager.CurrentScene.Name ?? "<unnamed>"}");
                 else
                 {
                     var name = args[0];
@@ -181,14 +186,26 @@ namespace RE.Core.Scripting
                     SceneManager.LoadScene(name);
                 }
             });
+            RegisterHandler("editor", args =>
+            {
+                var ov = SceneEditor.Instance;
+                if (!ov.IsVisible)
+                    ov.Enable();
+                else
+                    ov.Disable();
+            });
         }
 
         private static string Format(object? obj)
         {
-            if (obj is string) return $"\"{obj}\"";
-            if (obj is null) return "<null>";
-            if (obj is ICollection coll) return $"<list,{coll.Count}>";
-            if (obj is IEnumerable enumerable) return $"<list,{enumerable.Cast<object>().Count()}>";
+            if (obj is string)
+                return $"\"{obj}\"";
+            if (obj is null)
+                return "<null>";
+            if (obj is ICollection coll)
+                return $"<list,{coll.Count}>";
+            if (obj is IEnumerable enumerable)
+                return $"<list,{enumerable.Cast<object>().Count()}>";
             return obj.ToString() ?? "<object>";
         }
     }

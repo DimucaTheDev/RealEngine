@@ -1,8 +1,10 @@
-﻿using BulletSharp;
+﻿using System.Numerics;
+using BulletSharp;
 using RE.Core;
+using RE.Core.World;
+using RE.Core.World.Components;
 using RE.Core.World.Physics;
 using RE.Rendering;
-using System.Numerics;
 
 namespace RE.Utils
 {
@@ -31,11 +33,6 @@ namespace RE.Utils
 
         public static void StopRender<T>(this T r) where T : Renderable
         {
-            if (r is PhysicObject obj)
-            {
-                PhysicsManager.RemovePhysicsObject(obj, true);
-                return;
-            }
             RenderManager.RemoveRenderable(r);
         }
         // Conversions
@@ -58,5 +55,7 @@ namespace RE.Utils
 
         public static void Disable(this RigidBody r) => PhysicsManager.DynamicsWorld.RemoveRigidBody(r);
         public static void Enable(this RigidBody r) => PhysicsManager.DynamicsWorld.AddRigidBody(r);
+
+        public static GameObject? GetSpawnPoint(this Scene scene) => scene.GameObjects.FirstOrDefault(s => s.Components.Any(s => s is PlayerComponent));
     }
 }

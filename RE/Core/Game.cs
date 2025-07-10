@@ -1,4 +1,7 @@
-﻿using OpenTK.Graphics.OpenGL;
+﻿using System.Drawing;
+using System.Drawing.Imaging;
+using System.Windows.Forms;
+using OpenTK.Graphics.OpenGL;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using OpenTK.Windowing.Common.Input;
@@ -15,9 +18,6 @@ using Serilog;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
-using System.Drawing;
-using System.Drawing.Imaging;
-using System.Windows.Forms;
 using Camera = RE.Rendering.Camera;
 using Color = System.Drawing.Color;
 using Image = OpenTK.Windowing.Common.Input.Image;
@@ -100,7 +100,8 @@ internal class Game : GameWindow
         Initializer.AddStep(("Initializing SoundManager", SoundManager.Init));
         Initializer.AddStep(("Initializing Physics Manager", PhysicsManager.Init));
         Initializer.AddStep(("Registering Commands", CommandHandler.RegisterAllCommands));
-        Initializer.AddStep(("Running default.cfg", () => { CommandHandler.ExecuteCommand("source assets/cfg/default.cfg"); }));
+        Initializer.AddStep(("Running default.cfg", () => { CommandHandler.ExecuteCommand("source assets/cfg/default.cfg"); }
+        ));
 
         base.OnLoad();
     }
@@ -140,8 +141,7 @@ internal class Game : GameWindow
             Log.Debug("Switching to windowed mode");
             WindowState = WindowState.Normal;
             WindowBorder = WindowBorder.Resizable;
-        }
-        else
+        } else
         {
             Log.Debug("Switching to fullscreen mode");
             WindowState = WindowState.Fullscreen;

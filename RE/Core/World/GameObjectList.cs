@@ -2,13 +2,15 @@
 
 namespace RE.Core.World
 {
-    internal class GameObjectList : IEnumerable<GameObject>
+    public class GameObjectList(Scene scene) : IEnumerable<GameObject>
     {
         private readonly List<GameObject> _components = new();
+        private readonly Scene _scene = scene;
 
         public void Add(GameObject g)
         {
             _components.Add(g);
+            g.Scene = _scene;
             foreach (var component in g.Components)
             {
                 component.Start();

@@ -2,9 +2,8 @@
     {
         "name": "Cubik",
         "transform":{
-            "position": [-3, 0, -3],
-            "rotation": [0, 0, 0],
-            "scale": [0.5, 0.5, 0.5]
+            "position": [-3, 0, -3], 
+            "scale": [0.5,0.5,0.5]
         },
         "components": {
             "MeshComponent": {
@@ -13,7 +12,7 @@
             "RigidBody": {
                 "Mass": 0
             },
-            "Usable":{},
+            "Usable":{"args":["level lobby"]},
             "BoxCollider":{}
         }
     },
@@ -30,6 +29,20 @@
             },
             "RigidBody": {
                 "Mass": 20
+            },
+            "BoxCollider":{}
+        }
+    },
+        {
+        "name": "Cubik",
+        "transform":{
+            "position": [-7, -1.4, 0],
+            "rotation": [30, 0, 0],
+            "scale": [3, 0.05, 3]
+        },
+        "components": {
+            "MeshComponent": {
+                "args":["assets/models/cub.fbx"]
             },
             "BoxCollider":{}
         }

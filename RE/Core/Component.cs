@@ -3,7 +3,7 @@ using RE.Core.World;
 
 namespace RE.Core
 {
-    internal abstract class Component
+    public abstract class Component
     {
         public GameObject Owner { get; internal set; }
 

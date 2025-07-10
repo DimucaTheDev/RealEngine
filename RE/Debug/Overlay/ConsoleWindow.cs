@@ -1,10 +1,10 @@
-﻿using ImGuiNET;
+﻿using System.Numerics;
+using ImGuiNET;
 using OpenTK.Windowing.Common;
 using RE.Core;
 using RE.Core.Scripting;
 using RE.Rendering;
 using Serilog;
-using System.Numerics;
 
 namespace RE.Debug.Overlay
 {
@@ -32,9 +32,9 @@ namespace RE.Debug.Overlay
         {
             ImGui.SetNextWindowSize(_consoleSize, ImGuiCond.FirstUseEver);
             ImGui.SetNextWindowPos(_consolePos, ImGuiCond.FirstUseEver);
-            ImGui.SetNextWindowBgAlpha(.5f);
+            ImGui.SetNextWindowBgAlpha(.80f);
 
-            if (ImGui.Begin("Console", ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.AlwaysVerticalScrollbar | ImGuiWindowFlags.NoDocking))
+            if (ImGui.Begin("Console", ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoDocking))
             {
                 ImGui.BeginChild("ScrollRegion", new Vector2(0, -ImGui.GetFrameHeightWithSpacing()), ImGuiChildFlags.Border, ImGuiWindowFlags.HorizontalScrollbar);
 

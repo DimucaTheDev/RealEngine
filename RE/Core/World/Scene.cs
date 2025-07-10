@@ -1,9 +1,11 @@
 ﻿namespace RE.Core.World
 {
-    internal class Scene : IDisposable
+    public class Scene : IDisposable
     {
         public string? Name { get; set; }
-        public GameObjectList GameObjects { get; } = [];
+        public GameObjectList GameObjects { get; }
+
+        public Scene() => GameObjects = new GameObjectList(this);
 
         public void Load()
         {

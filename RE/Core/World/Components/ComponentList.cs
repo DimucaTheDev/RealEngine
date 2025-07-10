@@ -4,7 +4,7 @@
 
 namespace RE.Core.World.Components
 {
-    internal class ComponentList(GameObject owner) : IEnumerable<Component>
+    public class ComponentList(GameObject owner) : IEnumerable<Component>
     {
         private readonly GameObject _owner = owner ?? throw new ArgumentNullException(nameof(owner));
         private readonly List<Component> _components = new();

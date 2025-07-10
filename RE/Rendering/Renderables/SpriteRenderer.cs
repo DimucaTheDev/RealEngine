@@ -90,12 +90,12 @@ namespace RE.Rendering.Renderables
 
             Matrix4 model =
                 translateToCenter *
-                Matrix4.CreateScale(.5f) *
-                Matrix4.CreateScale(w, -h, 0) *
-                (constantSize ? Matrix4.CreateScale(scale * this.scale) : Matrix4.Identity) *
-                Matrix4.CreateScale(size) *
+                Matrix4.CreateScale(w, -h, 1) * // сохраняем 1 по Z
+                Matrix4.CreateScale(constantSize ? scale * this.scale : size) *
                 Camera.Instance.GetBillboard(Position) *
                 Matrix4.CreateTranslation(Position);
+
+
 
 
 

@@ -4,22 +4,33 @@ using RE.Utils;
 
 namespace RE.Core.World
 {
-    internal class GameObject
+    public class GameObject
     {
-        public GameObject()
+        private static int _next = 0;
+
+        public GameObject() : this(null) { }
+        public GameObject(GameObject? parent)
         {
             Components = new ComponentList(this);
+            Parent = parent;
             Transform = new Transform()
             {
                 Position = Vector3.Zero,
                 Rotation = Quaternion.Identity,
                 Scale = Vector3.One
             };
+            Id = _next++;
         }
 
         public ComponentList Components { get; }
         public Transform Transform { get; set; }
-        public string Name { get; set; }
+        public GameObject? Parent { get; set; }
+        public string? Name { get; set; }
+        public int Id { get; private set; }
+
+        public Scene Scene { get; set; }
+        public IReadOnlyList<GameObject> Children => Scene.GameObjects.Where(s => s.Parent == this).ToList().AsReadOnly();
+
 
         public void SetPosition(Vector3 position)
         {
