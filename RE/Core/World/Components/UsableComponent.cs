@@ -14,9 +14,13 @@ namespace RE.Core.World.Components
         public UsableComponent() { }
         public UsableComponent(string command) => OnUsed += () => CommandHandler.ExecuteCommand(command);
 
+        [EditorProperty(IsReadOnly = true)] public string Subscribers => $"{OnUsed?.GetInvocationList().Length} Total";
+        [EditorProperty(DisplayedName = "Invoke Command")] public string Command { get; set; }
+
         public override void Start()
         {
-            _spriteClick = new SpriteRenderer(Vector3.Zero, "assets/sprites/editor/use.png", scale: 1, constantSize: false);
+            _spriteClick = new SpriteRenderer(Vector3.Zero, "assets/sprites/editor/use.png", scale: .5f, constantSize: false);
+            OnUsed += () => CommandHandler.ExecuteCommand(Command);
         }
 
         public void DebugRender(FrameEventArgs args)

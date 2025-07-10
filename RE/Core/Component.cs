@@ -5,6 +5,12 @@ namespace RE.Core
 {
     public abstract class Component
     {
+        protected Component()
+        {
+            var ctor = GetType().GetConstructor(Type.EmptyTypes);
+            if (ctor == null)
+                throw new InvalidOperationException("Class must have parameterless constructor.");
+        }
         public GameObject Owner { get; internal set; }
 
         public T GetComponent<T>() where T : Component
@@ -13,6 +19,7 @@ namespace RE.Core
         }
 
         public virtual void Start() { }
+        public virtual void OnSceneLoading(Scene scene) { }
         public virtual void Update(FrameEventArgs args) { }
         public virtual void Render(FrameEventArgs args) { }
         public virtual void OnDestroy() { }

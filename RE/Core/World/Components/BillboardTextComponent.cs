@@ -1,5 +1,6 @@
 ﻿using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
+using RE.Core.Scripting;
 using RE.Rendering.Renderables;
 using RE.Rendering.Text;
 
@@ -10,9 +11,11 @@ namespace RE.Core.World.Components
         private FloatingText _text = new(text, Vector3.Zero, new FreeTypeFont(64, "assets/fonts/consola.ttf"));
         public BillboardTextComponent() : this("Billboard Text") { }
 
+        [EditorProperty] public Vector3 PositionOffset { get; set; }
+
         public override void Update(FrameEventArgs args)
         {
-            _text.Position = Owner.Transform.Position;
+            _text.Position = Owner.Transform.Position + PositionOffset;
         }
 
         public override void Render(FrameEventArgs args)

@@ -15,7 +15,7 @@
                 {
                     //see GameObjectList.Add()
 
-                    //component.Start();
+                    component.OnSceneLoading(this);
                 }
             }
         }

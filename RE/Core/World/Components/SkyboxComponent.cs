@@ -37,6 +37,8 @@ namespace RE.Core.World.Components
 
         private string path = path;
 
+        public SkyboxComponent() : this("") { }
+
         public override void Start()
         {
             var vertexSource = File.ReadAllText("Assets/shaders/skybox.vert");
@@ -92,8 +94,7 @@ namespace RE.Core.World.Components
                             PixelFormat.Rgba,
                             PixelType.UnsignedByte,
                             pixels);
-                    }
-                    else
+                    } else
                     {
                         Log.Error($"Could not load texture for face {i} at path: {pathToFace}");
 

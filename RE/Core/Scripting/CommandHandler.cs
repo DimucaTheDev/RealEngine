@@ -35,7 +35,7 @@ namespace RE.Core.Scripting
         }
         public static void ExecuteCommand(string command)
         {
-            if (command.TrimStart(' ').StartsWith("#") || string.IsNullOrWhiteSpace(command))
+            if (string.IsNullOrWhiteSpace(command) || command.TrimStart(' ').StartsWith("#"))
                 return;
 
             var matches = Regex.Matches(command, @"[\""].+?[\""]|\S+");
@@ -90,7 +90,8 @@ namespace RE.Core.Scripting
                     else if (list[1].Equals("null", StringComparison.OrdinalIgnoreCase))
                         value = null!;
                     Variables.SetVariable(key, value);
-                } else
+                }
+                else
                 {
                     var value = Variables.GetVariable(list[0]);
 
@@ -189,7 +190,7 @@ namespace RE.Core.Scripting
             RegisterHandler("editor", args =>
             {
                 var ov = SceneEditor.Instance;
-                if (!ov.IsVisible)
+                if (!SceneEditor.Enabled)
                     ov.Enable();
                 else
                     ov.Disable();

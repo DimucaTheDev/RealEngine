@@ -40,7 +40,8 @@ public class ImGuiController : IDisposable
         var context = ImGui.CreateContext();
         ImGui.SetCurrentContext(context);
         var io = ImGui.GetIO();
-        io.Fonts.AddFontDefault();
+        //io.Fonts.AddFontDefault();
+        io.Fonts.AddFontFromFileTTF("assets/fonts/consola.ttf", 13, null, io.Fonts.GetGlyphRangesCyrillic());
 
         io.BackendFlags |= ImGuiBackendFlags.RendererHasVtxOffset;
         // Enable Docking

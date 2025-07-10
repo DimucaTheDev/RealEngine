@@ -1,4 +1,5 @@
-﻿using Assimp;
+﻿using System.Diagnostics;
+using Assimp;
 using OpenTK.Graphics.OpenGL4;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
@@ -6,7 +7,6 @@ using RE.Rendering.Text;
 using RE.Utils;
 using Serilog;
 using StbImageSharp;
-using System.Diagnostics;
 using PrimitiveType = OpenTK.Graphics.OpenGL4.PrimitiveType;
 using Quaternion = OpenTK.Mathematics.Quaternion;
 
@@ -21,14 +21,22 @@ namespace RE.Rendering.Renderables
         private static readonly Dictionary<string, uint> _textureCache = new();
         private static int _sharedShader;
         private static bool _shaderInitialized = false;
-
-
         private uint _vao, _vbo, _ebo, _texture;
         private int _indexCount;
         private FloatingText? _noModelText;
         private SpriteRenderer? _noModelSprite;
         private bool modelLoaded = false;
         private string? _exception;
+
+        public string Path
+        {
+            get;
+            set
+            {
+                TryLoad(value);
+                field = value;
+            }
+        }
 
         public override RenderLayer RenderLayer => RenderLayer.World;
         public override bool IsVisible { get; set; } = true;
@@ -60,21 +68,25 @@ namespace RE.Rendering.Renderables
             Rotation = rot ?? Quaternion.Identity;
             Scale = scale ?? Vector3.One;
             Name = name ?? $"0x{Random.Shared.Next():x}";
+            Path = path;
 
+            TryLoad(Path);
+            InitShader();
+        }
 
+        public bool TryLoad(string path)
+        {
             if (!(modelLoaded = LoadModel(path)))
             {
                 _noModelSprite = new SpriteRenderer(Position, "Assets/Sprites/Editor/no_model.png");
                 _noModelText = new FloatingText($"[{Name}]\n{path}\n{_exception}", Position + new Vector3(0, .5f, 0), _font, true);
-
                 _noModelSprite.Render();
                 _noModelText.Render();
-
-                return;
+                return false;
             }
-
-            InitShader();
+            return true;
         }
+
         public override void Render(FrameEventArgs args)
         {
 
@@ -110,8 +122,10 @@ namespace RE.Rendering.Renderables
 
         public override void RemovedFromRenderList()
         {
-            if (_noModelSprite?.IsRendering() ?? false) _noModelSprite?.StopRender();
-            if (_noModelText?.IsRendering() ?? false) _noModelText?.StopRender();
+            if (_noModelSprite?.IsRendering() ?? false)
+                _noModelSprite?.StopRender();
+            if (_noModelText?.IsRendering() ?? false)
+                _noModelText?.StopRender();
         }
 
         private bool LoadModel(string path)
@@ -153,7 +167,8 @@ namespace RE.Rendering.Renderables
             if (string.IsNullOrEmpty(scene.RootNode.Name))
                 Name = scene.RootNode.Name;
 
-            if (!scene.Meshes.Any()) return false;
+            if (!scene.Meshes.Any())
+                return false;
 
 
             var mesh = scene.Meshes[0];
@@ -313,7 +328,8 @@ namespace RE.Rendering.Renderables
 
         private void InitShader()
         {
-            if (_shaderInitialized) return;
+            if (_shaderInitialized)
+                return;
 
             string vertexShaderSrc = File.ReadAllText("assets/shaders/assimp.vert");
             string fragmentShaderSrc = File.ReadAllText("assets/shaders/assimp.frag");
@@ -322,13 +338,15 @@ namespace RE.Rendering.Renderables
             GL.ShaderSource(vs, vertexShaderSrc);
             GL.CompileShader(vs);
             GL.GetShader(vs, ShaderParameter.CompileStatus, out var status);
-            if (status == 0) throw new Exception(GL.GetShaderInfoLog(vs));
+            if (status == 0)
+                throw new Exception(GL.GetShaderInfoLog(vs));
 
             int fs = GL.CreateShader(ShaderType.FragmentShader);
             GL.ShaderSource(fs, fragmentShaderSrc);
             GL.CompileShader(fs);
             GL.GetShader(fs, ShaderParameter.CompileStatus, out status);
-            if (status == 0) throw new Exception(GL.GetShaderInfoLog(fs));
+            if (status == 0)
+                throw new Exception(GL.GetShaderInfoLog(fs));
 
             _sharedShader = GL.CreateProgram();
             GL.AttachShader(_sharedShader, vs);

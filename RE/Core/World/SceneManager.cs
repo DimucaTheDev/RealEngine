@@ -9,7 +9,6 @@ namespace RE.Core.World
     {
         public static Scene CurrentScene { get; private set; }
 
-        [Obsolete("Untested")]
         public static void LoadScene(Scene scene) => LoadScene(scene, true);
         public static void LoadScene(Scene scene, bool disposeCurrent)
         {
@@ -116,7 +115,8 @@ namespace RE.Core.World
                                                 ?? throw new InvalidOperationException($"Failed to deserialize argument {i} to {paramType}");
                             }
                             instance = Activator.CreateInstance(type, parsedArgs)!;
-                        } else
+                        }
+                        else
                             instance = Activator.CreateInstance(type)!;
 
                         Component c = (Component)instance;
@@ -130,7 +130,15 @@ namespace RE.Core.World
                             var propertyName = prop.Name;
                             var propertyInfo = type.GetProperty(propertyName, BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
 
-                            var propertyValue = prop.Value.Deserialize(propertyInfo!.PropertyType);
+                            object? propertyValue = null!;
+
+                            if (propertyInfo!.PropertyType == typeof(Vector3)) //float[] -> Vec3(xyz)
+                            {
+                                var arr = prop.Value.EnumerateArray().Select(s => s.GetSingle()).ToList();
+                                propertyValue = new Vector3(arr[0], arr[1], arr[2]);
+                            }
+                            else
+                                propertyValue = prop.Value.Deserialize(propertyInfo!.PropertyType);
 
                             if (propertyInfo != null! && propertyInfo.CanWrite)
                             {

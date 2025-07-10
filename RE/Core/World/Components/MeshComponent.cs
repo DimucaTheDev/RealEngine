@@ -1,4 +1,5 @@
 ﻿using OpenTK.Windowing.Common;
+using RE.Core.Scripting;
 using RE.Rendering.Renderables;
 
 namespace RE.Core.World.Components
@@ -7,12 +8,20 @@ namespace RE.Core.World.Components
     {
         private ModelRenderer _modelRenderer;
         private bool _started;
+
+        public MeshComponent() : this("") { }
         public MeshComponent(string modelPath)
         {
             _modelRenderer = new ModelRenderer(modelPath);
         }
 
         public ModelRenderer GetModelRenderer() => _modelRenderer;
+        [EditorProperty("Model Path")]
+        public string Path
+        {
+            get => _modelRenderer.Path;
+            set => _modelRenderer.Path = value;
+        }
 
         public override void Start()
         {

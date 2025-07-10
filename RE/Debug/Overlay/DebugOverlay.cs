@@ -16,7 +16,7 @@ internal class DebugOverlay : Renderable
 
     private DebugOverlay()
     {
-        RenderManager.AddRenderable(this);
+        // RenderManager.AddRenderable(this);
     }
 
     public static DebugOverlay? Instance { get; private set; }
@@ -37,7 +37,8 @@ internal class DebugOverlay : Renderable
         if (w)
         {
             GL.PolygonMode(TriangleFace.FrontAndBack, PolygonMode.Line);
-        } else
+        }
+        else
         {
             GL.PolygonMode(TriangleFace.FrontAndBack, PolygonMode.Fill);
         }

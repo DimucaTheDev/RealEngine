@@ -53,10 +53,15 @@ namespace RE.Core.World.Components
             rigidBodyComponent.GetRigidBody().AngularFactor = BulletSharp.Math.Vector3.Zero;
             rigidBodyComponent.GetRigidBody().ActivationState = ActivationState.DisableDeactivation;
             rigidBodyComponent.GetRigidBody().Gravity = new BulletSharp.Math.Vector3(0, -25f, 0);
-            _playerGameObject.SetPosition(Owner.Transform.Position);
 
             _spriteSpawnpoint = new SpriteRenderer(Vector3.Zero, "assets/sprites/editor/spawn.png", scale: 3);
         }
+
+        public override void OnSceneLoading(Scene scene)
+        {
+            _playerGameObject.SetPosition(Owner.Transform.Position);
+        }
+
 
         public override void Update(FrameEventArgs args)
         {
@@ -68,7 +73,8 @@ namespace RE.Core.World.Components
                 {
                     ConsoleWindow.Instance!.IsVisible = false;
                     Game.Instance.CursorState = CursorState.Grabbed;
-                } else
+                }
+                else
                 {
                     ConsoleWindow.Instance!.IsVisible = true;
                     Game.Instance.CursorState = CursorState.Normal;
@@ -97,7 +103,11 @@ namespace RE.Core.World.Components
                         p += Vector3.UnitY * speed;
                     if (input.IsKeyDown(Keys.LeftShift))
                         p -= Vector3.UnitY * speed;
-
+                    if (input.IsKeyDown(Keys.Escape))
+                    {
+                        Camera.Instance.FirstMove = true;
+                        Game.Instance.CursorState = CursorState.Normal;
+                    }
                     Camera.Instance.Position = (p);
                     return;
                 }
@@ -160,7 +170,8 @@ namespace RE.Core.World.Components
                     {
                         currentHorizontalVelocity = currentHorizontalVelocity.Normalized() * maxSpeed;
                     }
-                } else
+                }
+                else
                 {
                     float currentSpeed = currentHorizontalVelocity.Length;
                     if (currentSpeed > 0)
@@ -246,8 +257,8 @@ namespace RE.Core.World.Components
 
                     if (callback.HasHit)
                     {
-                        Log.Information($"Ray hit object at distance: {callback.ClosestHitFraction * rayLength}");
-                        Log.Information(
+                        Log.Debug($"Ray hit object at distance: {callback.ClosestHitFraction * rayLength}");
+                        Log.Debug(
                             $"Hit object's UserObject type: {callback.CollisionObject.UserObject?.GetType().Name ?? "null"}");
 
                         if (callback.CollisionObject.UserObject is Component controller)
@@ -261,7 +272,8 @@ namespace RE.Core.World.Components
                                     Pitch = 1,
                                     Volume = .25f
                                 });
-                            } else
+                            }
+                            else
                             {
                                 SoundManager.Play("common/wpn_denyselect", new SoundPlaybackSettings()
                                 {
@@ -270,7 +282,8 @@ namespace RE.Core.World.Components
                                     Volume = .25f
                                 });
                             }
-                        } else
+                        }
+                        else
                         {
                             SoundManager.Play("common/wpn_denyselect", new SoundPlaybackSettings()
                             {
@@ -278,9 +291,10 @@ namespace RE.Core.World.Components
                                 Pitch = 1,
                                 Volume = .25f
                             });
-                            Log.Information("Ray hit an object, but its UserObject is not a Controller.");
+                            Log.Debug("Ray hit an object, but its UserObject is not a Controller.");
                         }
-                    } else
+                    }
+                    else
                     {
                         SoundManager.Play("common/wpn_denyselect", new SoundPlaybackSettings()
                         {
