@@ -7,16 +7,20 @@ namespace RE.Core.World.Components
 {
     internal class MeshComponent : Component
     {
-        private ModelRenderer _modelRenderer;
+        protected ModelRenderer _modelRenderer;
         private bool _started;
 
-        public MeshComponent() : this("") { }
+        public MeshComponent()
+        {
+            _modelRenderer = new ModelRenderer();
+        }
         public MeshComponent(string modelPath)
         {
             _modelRenderer = new ModelRenderer(modelPath);
         }
 
         public ModelRenderer GetModelRenderer() => _modelRenderer;
+
         [EditorProperty("Model Path")]
         public string Path
         {

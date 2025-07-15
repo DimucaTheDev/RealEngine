@@ -38,6 +38,8 @@ namespace RE.Rendering.Renderables
             }
         }
 
+        public Vector4 OutlineColor { get; set; }
+        public bool Outline { get; set; }
         public override RenderLayer RenderLayer => RenderLayer.World;
         public override bool IsVisible { get; set; } = true;
 
@@ -62,6 +64,15 @@ namespace RE.Rendering.Renderables
         public float[]? PhysicsVertices { get; private set; }
         public List<int>? PhysicsIndices { get; private set; }
 
+        public ModelRenderer()
+        {
+            Position = Vector3.Zero;
+            Rotation = Quaternion.Identity;
+            Scale = Vector3.One;
+            Name = $"0x{Random.Shared.Next():x}";
+            InitShader();
+
+        }
         public ModelRenderer(string path, Vector3? pos = null, Quaternion? rot = null, Vector3? scale = null, string? name = null)
         {
             Position = pos ?? Vector3.Zero;
@@ -108,8 +119,25 @@ namespace RE.Rendering.Renderables
             GL.Uniform1(GL.GetUniformLocation(_sharedShader, "tex"), 0);
 
             GL.BindVertexArray(_vao);
+            if (Outline)
+            {
+                GL.Enable(EnableCap.CullFace);
+                GL.CullFace(TriangleFace.Front); // отбрасываем передние грани, остаются задние
+                GL.Uniform1(GL.GetUniformLocation(_sharedShader, "outline"), 1);
+                GL.Uniform4(GL.GetUniformLocation(_sharedShader, "outlineColor"), OutlineColor);
+                GL.PolygonMode(TriangleFace.Back,
+                    PolygonMode.Fill); //todo: render only back side monocolor. somewhy it doesnt work
+            }
+
             GL.DrawElements(PrimitiveType.Triangles, _indexCount, DrawElementsType.UnsignedInt, 0);
             GL.BindVertexArray(0);
+            if (Outline)
+            {
+                GL.Disable(EnableCap.CullFace);
+                GL.PolygonMode(TriangleFace.FrontAndBack, PolygonMode.Fill);
+                GL.Uniform1(GL.GetUniformLocation(_sharedShader, "outline"), 0);
+
+            }
         }
         public override void AddedToRenderList()
         {
@@ -282,8 +310,8 @@ namespace RE.Rendering.Renderables
             GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba,
                 img.Width, img.Height, 0, PixelFormat.Rgba, PixelType.UnsignedByte, img.Data);
 
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Linear);
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Linear);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
 
             GL.GenerateMipmap(GenerateMipmapTarget.Texture2D);
             return texID;

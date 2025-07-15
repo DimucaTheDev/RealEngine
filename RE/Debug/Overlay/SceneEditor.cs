@@ -10,6 +10,7 @@ using RE.Core.Scripting;
 using RE.Core.World;
 using RE.Core.World.Components;
 using RE.Rendering;
+using RE.Rendering.Renderables;
 using RE.Utils;
 using Serilog;
 using static ImGuiNET.ImGui;
@@ -19,7 +20,7 @@ using Vector4 = System.Numerics.Vector4;
 
 namespace RE.Debug.Overlay
 {
-    internal class SceneEditor : Renderable
+    internal partial class SceneEditor : Renderable
     {
         public static SceneEditor Instance = new();
         public static bool Enabled = false;
@@ -31,6 +32,33 @@ namespace RE.Debug.Overlay
         private Scene _scene;
         private GameObject? _selectedObject;
         private bool _popupOpen = false;
+
+        private static OpenTK.Mathematics.Vector4 _outlineColor = new(1, 0, 0, 1);
+
+        static SceneEditor()
+        {
+            Variables.VariableChanged += (s, e) =>
+            {
+                if (s == "selectColor")
+                {
+                    var propertyInfo = typeof(Color4)
+                        .GetProperty(e?.ToString() ?? "red",
+                            BindingFlags.IgnoreCase | BindingFlags.Static | BindingFlags.Public)!;
+                    if (propertyInfo == null)
+                    {
+                        var props = typeof(Color4).GetProperties(BindingFlags.Static | BindingFlags.Public)
+                            .Where(prop => prop.PropertyType == typeof(Color4));
+                        Log.Error($"incorrect color '{e}'. Possible values: {string.Join("; ", props.Select(s => s.Name))}");
+                        return;
+                    }
+
+                    Color4 color = (Color4)propertyInfo.GetValue(null)!;
+                    _outlineColor = new(color.R, color.G, color.B, color.A);
+                    selectedObjectOutline.OutlineColor = _outlineColor;
+
+                }
+            };
+        }
 
         public void Enable()
         {
@@ -66,6 +94,15 @@ namespace RE.Debug.Overlay
 
         public override void Render(FrameEventArgs args)
         {
+            if (selectedObjectArrow != null!)
+            {
+                if (_selectedObject != null)
+                    selectedObjectArrow.Position = _selectedObject.Transform.Position
+                                                   //+ (0, _selectedObject.Transform.Scale.Y, 0)
+                                                   + (0, 1.2f, 0)
+                                                   + (0, MathF.Sin(Time.ElapsedTime * 3) / 4, 0);
+            }
+
             foreach (var obj in _scene.GameObjects)
             {
                 foreach (var com in obj.Components)
@@ -78,7 +115,7 @@ namespace RE.Debug.Overlay
             if (SceneManager.CurrentScene == null!)
                 return;
 
-            ImGuiViewportPtr viewport = ImGui.GetMainViewport();
+            ImGuiViewportPtr viewport = GetMainViewport();
             float totalWorkWidth = viewport.WorkSize.X;
             float totalWorkHeight = viewport.WorkSize.Y;
 
@@ -104,7 +141,7 @@ namespace RE.Debug.Overlay
             }
 
             Separator();
-            foreach (var obj in SceneManager.CurrentScene.GameObjects.Where(s => s.Parent == null))
+            foreach (var obj in SceneManager.CurrentScene.GameObjects.Where(s => s.Parent == null).ToList())
             {
                 DrawObjectTree(obj);
             }
@@ -131,8 +168,8 @@ namespace RE.Debug.Overlay
 
             if (BeginTable("InspectorTable", 2, ImGuiTableFlags.BordersOuterH | ImGuiTableFlags.BordersInnerH | ImGuiTableFlags.RowBg | ImGuiTableFlags.SizingStretchProp))
             {
-                ImGui.TableSetupColumn("Label");
-                ImGui.TableSetupColumn("Value");
+                TableSetupColumn("Label");
+                TableSetupColumn("Value");
 
 
                 TableNextRow();
@@ -433,6 +470,9 @@ namespace RE.Debug.Overlay
 
             throw new NotImplementedException(type.Name);
         }
+
+        private static ModelRenderer selectedObjectOutline = new() { Outline = true };
+        private static SpriteRenderer selectedObjectArrow = new(OpenTK.Mathematics.Vector3.PositiveInfinity, "assets/sprites/editor/arrow_down.png");
         private void DrawObjectTree(GameObject obj)
         {
             ImGuiTreeNodeFlags flags = obj.Children.Count == 0
@@ -442,7 +482,36 @@ namespace RE.Debug.Overlay
             bool nodeOpen = TreeNodeEx((nint)obj.GetHashCode(), flags, $"[0x{obj.Id:x}] {obj.Name ?? "<unnamed>"}");
 
             if (IsItemClicked())
+            {
                 _selectedObject = obj;
+
+                var mesh = _selectedObject.GetComponent<MeshComponent>();
+
+                if (mesh == null!)
+                {
+                    selectedObjectOutline.StopRender();
+                    selectedObjectArrow.Render();
+                    selectedObjectArrow.Position = _selectedObject.Transform.Position
+                                                   + (0, 1.2f, 0)
+                                                   + (0, MathF.Sin(Time.ElapsedTime * 3) / 4, 0);
+                }
+                else
+                {
+                    selectedObjectArrow.StopRender();
+                    selectedObjectOutline.Render();
+
+                    selectedObjectOutline.Position = _selectedObject.Transform.Position;
+                    selectedObjectOutline.Rotation = _selectedObject.Transform.Rotation;
+                    selectedObjectOutline.Scale = _selectedObject.Transform.Scale;
+                    var f = 0.05f;
+                    selectedObjectOutline.Scale += (f, f, f);
+
+                    if (mesh != null!)
+                    {
+                        selectedObjectOutline.Path = mesh.Path;
+                    }
+                }
+            }
 
             if (nodeOpen && obj.Children.Count > 0)
             {
@@ -458,7 +527,10 @@ namespace RE.Debug.Overlay
             {
                 return text;
             }
-            return Regex.Replace(text, "(?<!^)([A-Z])", " $1");
+            return CamelSpaceRegex().Replace(text, " $1");
         }
+
+        [GeneratedRegex("(?<!^)([A-Z])")]
+        private static partial Regex CamelSpaceRegex();
     }
 }

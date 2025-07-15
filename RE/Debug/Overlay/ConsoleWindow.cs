@@ -28,6 +28,8 @@ namespace RE.Debug.Overlay
 
         private bool _focusNextFrame = false;
 
+        public void Focus() => _focusNextFrame = true;
+
         public override void Render(FrameEventArgs args)
         {
             ImGui.SetNextWindowSize(_consoleSize, ImGuiCond.FirstUseEver);
@@ -36,13 +38,17 @@ namespace RE.Debug.Overlay
 
             if (ImGui.Begin("Console", ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoDocking))
             {
-                ImGui.BeginChild("ScrollRegion", new Vector2(0, -ImGui.GetFrameHeightWithSpacing()), ImGuiChildFlags.Border, ImGuiWindowFlags.HorizontalScrollbar);
+                var w = (bool)Variables.GetVariable("wrapConsole")!;
+                ImGui.BeginChild("ScrollRegion", new Vector2(0, -ImGui.GetFrameHeightWithSpacing()), ImGuiChildFlags.Border, w ? ImGuiWindowFlags.None : ImGuiWindowFlags.HorizontalScrollbar);
 
-                ImGui.TextUnformatted(GameLogger.Log);
+                if (w)
+                    ImGui.TextWrapped(GameLogger.Log);
+                else
+                    ImGui.TextUnformatted(GameLogger.Log);
 
                 if (_scrollToBottom)
                 {
-                    ImGui.SetScrollHereY(1.0f);
+                    ImGui.SetScrollHereY(9999.0f);
                     _scrollToBottom = false;
                 }
                 ImGui.EndChild();
@@ -53,6 +59,9 @@ namespace RE.Debug.Overlay
                     ImGui.SetKeyboardFocusHere();
                     _focusNextFrame = false;
                 }
+
+                //ImGui.SetKeyboardFocusHere();//fixme: fix focus
+
                 if (ImGui.InputText("##ConsoleInput", ref _inputBuffer, 512, ImGuiInputTextFlags.EnterReturnsTrue))
                 {
                     if (!string.IsNullOrWhiteSpace(_inputBuffer))

@@ -1,0 +1,79 @@
+[
+    {
+        "name": "player",
+        "transform": {
+            "position": [
+                0,
+                2,
+                0
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                1
+            ]
+        },
+        "components": {
+            "PlayerComponent": {}
+        }
+    },
+    {
+        "name": "Floor",
+        "transform": {
+            "position": [
+                0,
+                0,
+                0
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                5,
+                0.1,
+                5
+            ]
+        },
+        "components": {
+            "MeshComponent": {
+                "args": [
+                    "assets/models/cub.fbx"
+                ]
+            },
+            "BoxCollider": {}
+        }
+    },
+    {
+        "name": "Modelka",
+        "transform": {
+            "position": [
+                0,
+                2,
+                0
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                2,2,2
+            ]
+        },
+        "components": {
+            "MeshComponent": {
+                "args": [
+                    "assets/models/player.fbx"
+                ]
+            },
+            "AnimatedMesh": {}
+        }
+    }
+]

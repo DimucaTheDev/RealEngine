@@ -64,7 +64,6 @@ namespace RE.Core.World.Components
             _playerGameObject.SetPosition(Owner.Transform.Position);
         }
 
-
         public override void Update(FrameEventArgs args)
         {
             var input = Game.Instance.KeyboardState;
@@ -74,6 +73,7 @@ namespace RE.Core.World.Components
                 if (ConsoleWindow.Instance!.IsVisible)
                 {
                     ConsoleWindow.Instance!.IsVisible = false;
+                    ConsoleWindow.Instance.Focus();
                     Game.Instance.CursorState = CursorState.Grabbed;
                 }
                 else
