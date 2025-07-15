@@ -27,6 +27,7 @@ namespace RE.Core.World
         public GameObject? Parent { get; set; }
         public string? Name { get; set; }
         public int Id { get; private set; }
+        public bool DoNotSave { get; set; } = false;
 
         public Scene Scene { get; set; }
         public IReadOnlyList<GameObject> Children => Scene.GameObjects.Where(s => s.Parent == this).ToList().AsReadOnly();

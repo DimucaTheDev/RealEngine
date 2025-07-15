@@ -1,4 +1,5 @@
-﻿using OpenTK.Mathematics;
+﻿using System.Text.Json.Nodes;
+using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using RE.Rendering.Renderables;
 
@@ -23,6 +24,14 @@ namespace RE.Core.World.Components
         public override void OnDestroy()
         {
             _sprite.Dispose();
+        }
+        public override JsonNode GetSaveData()
+        {
+            JsonObject root = new();
+            var args = new JsonArray();
+            args.Add(path);
+            root.Add("args", args);
+            return root;
         }
     }
 }

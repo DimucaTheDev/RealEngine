@@ -1,4 +1,5 @@
-﻿using OpenTK.Windowing.Common;
+﻿using System.Text.Json.Nodes;
+using OpenTK.Windowing.Common;
 using RE.Core.Scripting;
 using RE.Rendering.Renderables;
 
@@ -46,6 +47,15 @@ namespace RE.Core.World.Components
         {
             _modelRenderer.RemovedFromRenderList();
             _started = false;
+        }
+
+        public override JsonNode GetSaveData()
+        {
+            JsonObject root = new();
+            var args = new JsonArray();
+            args.Add(Path);
+            root.Add("args", args);
+            return root;
         }
     }
 }

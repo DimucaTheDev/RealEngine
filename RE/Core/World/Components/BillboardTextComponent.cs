@@ -1,4 +1,5 @@
-﻿using OpenTK.Mathematics;
+﻿using System.Text.Json.Nodes;
+using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using RE.Core.Scripting;
 using RE.Rendering.Renderables;
@@ -12,6 +13,7 @@ namespace RE.Core.World.Components
         public BillboardTextComponent() : this("Billboard Text") { }
 
         [EditorProperty] public Vector3 PositionOffset { get; set; }
+        [EditorProperty] public string Text { get => _text.Text; set => _text.Text = value; }
 
         public override void Update(FrameEventArgs args)
         {
@@ -26,6 +28,15 @@ namespace RE.Core.World.Components
         public override void OnDestroy()
         {
             _text.Dispose();
+        }
+
+        public override JsonNode GetSaveData()
+        {
+            JsonObject root = new();
+            var args = new JsonArray();
+            args.Add(Text);
+            root.Add("args", args);
+            return root;
         }
     }
 }

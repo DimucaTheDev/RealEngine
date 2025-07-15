@@ -1,6 +1,8 @@
 ﻿using System.Reflection;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using OpenTK.Mathematics;
+using Serilog;
 using Quaternion = OpenTK.Mathematics.Quaternion;
 
 namespace RE.Core.World
@@ -39,6 +41,48 @@ namespace RE.Core.World
                 CurrentScene.Load();
             }
             ));
+        }
+
+        public static void SaveScene(Scene scene, string path)
+        {
+            var root = new JsonArray();
+            foreach (var obj in scene.GameObjects.Where(s => !s.DoNotSave))
+            {
+                JsonObject o = new JsonObject { { "name", obj.Name } };
+                root.Add(o);
+                var transform = obj.Transform;
+                JsonObject trObj = new()
+                {
+                    { "position", new JsonArray(transform.Position[0], transform.Position[1], transform.Position[2]) },
+                    { "rotation", new JsonArray(MathHelper.RadiansToDegrees(transform.Rotation.X),MathHelper.RadiansToDegrees( transform.Rotation.Y),MathHelper.RadiansToDegrees( transform.Rotation.Z)) },
+                    { "scale", new JsonArray(transform.Scale[0], transform.Scale[1], transform.Scale[2]) }
+                };
+                o.Add("transform", trObj);
+                JsonObject componentsObj = new();
+                o.Add("components", componentsObj);
+                foreach (var com in obj.Components)
+                {
+                    var saveData = com.GetSaveData();
+                    componentsObj.Add(com.GetType().Name, saveData);
+                }
+            }
+
+            var jsonString = root.ToJsonString(new JsonSerializerOptions() { WriteIndented = true });
+            string savedTo;
+            if (jsonString.EndsWith(".json")) // a file
+            {
+                var directoryName = Path.GetDirectoryName(path);
+                if (!Directory.Exists(directoryName))
+                    Directory.CreateDirectory(directoryName!);
+                File.WriteAllText(savedTo = path, jsonString);
+            }
+            else
+            {
+                if (!Directory.Exists(path))
+                    Directory.CreateDirectory(path);
+                File.WriteAllText(savedTo = Path.Combine(path, "data.json"), jsonString);
+            }
+            Log.Information($"Saved level to '{savedTo}'");
         }
 
         public static Scene ParseScene(string name)

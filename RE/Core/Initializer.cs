@@ -54,7 +54,7 @@ namespace RE.Core
             InitializationCompleted += () =>
             {
                 _initDone = true;
-                //_textCurrentStep.Content = "REAL ENGINE";
+                //_textCurrentStep.Text = "REAL ENGINE";
                 //_textCurrentStep.Position = new(10, 20);
                 //_textCurrentStep.Color = new Vector4(0, 0, 0, 0.345f);
                 _textSteps.StopRender();

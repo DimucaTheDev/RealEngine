@@ -1,4 +1,5 @@
-﻿using OpenTK.Graphics.OpenGL4;
+﻿using System.Text.Json.Nodes;
+using OpenTK.Graphics.OpenGL4;
 using OpenTK.Windowing.Common;
 using RE.Rendering;
 using Serilog;
@@ -94,7 +95,8 @@ namespace RE.Core.World.Components
                             PixelFormat.Rgba,
                             PixelType.UnsignedByte,
                             pixels);
-                    } else
+                    }
+                    else
                     {
                         Log.Error($"Could not load texture for face {i} at path: {pathToFace}");
 
@@ -173,6 +175,14 @@ namespace RE.Core.World.Components
                 }
             }
             return data;
+        }
+        public override JsonNode GetSaveData()
+        {
+            JsonObject root = new();
+            var args = new JsonArray();
+            args.Add(path);
+            root.Add("args", args);
+            return root;
         }
     }
 }

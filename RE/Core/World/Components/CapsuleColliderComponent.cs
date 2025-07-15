@@ -1,4 +1,5 @@
-﻿using BulletSharp;
+﻿using System.Text.Json.Nodes;
+using BulletSharp;
 
 namespace RE.Core.World.Components
 {
@@ -9,6 +10,11 @@ namespace RE.Core.World.Components
             var scale = Owner.Transform.Scale;
             CollisionShape shape = new CapsuleShape(MathF.Max(scale.X, scale.Z), scale.Y);
             return shape;
+        }
+        public override JsonNode GetSaveData()
+        {
+            JsonObject root = new();
+            return root;
         }
     }
 }

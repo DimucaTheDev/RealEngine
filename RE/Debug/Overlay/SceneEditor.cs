@@ -1,9 +1,9 @@
 ﻿using System.Globalization;
-using System.Numerics;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
 using ImGuiNET;
+using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using RE.Core;
 using RE.Core.Scripting;
@@ -13,6 +13,9 @@ using RE.Rendering;
 using RE.Utils;
 using Serilog;
 using static ImGuiNET.ImGui;
+using Vector2 = System.Numerics.Vector2;
+using Vector3 = System.Numerics.Vector3;
+using Vector4 = System.Numerics.Vector4;
 
 namespace RE.Debug.Overlay
 {
@@ -90,7 +93,16 @@ namespace RE.Debug.Overlay
             ImGuiWindowFlags flags = ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoCollapse;
 
             Begin("Scene Hierarchy", flags);
-            //add button
+
+            if (Button("remove"))
+            {
+                _scene.GameObjects.Remove(_selectedObject!);
+            }
+            if (Button("Save"))
+            {
+                SceneManager.SaveScene(_scene, "assets/maps/test123");
+            }
+
             Separator();
             foreach (var obj in SceneManager.CurrentScene.GameObjects.Where(s => s.Parent == null))
             {
@@ -133,10 +145,18 @@ namespace RE.Debug.Overlay
                 TableNextRow();
                 TableSetColumnIndex(0);
                 Text("Name:");
-                var name = _selectedObject.Name ?? "";
                 TableSetColumnIndex(1);
-                InputText("##name", ref name, 255);
-
+                {
+                    if (Button(_selectedObject.Name ?? "<unnamed>"))
+                    {
+                        OpenPopup("prop_new_value");
+                        val_str = _selectedObject.Name ?? "<unnamed>";
+                        _p = typeof(GameObject).GetProperty("Name")!;
+                        hash = _p.GetHashCode();
+                    }
+                    if (typeof(GameObject).GetProperty("Name")?.GetHashCode() == hash)
+                        DrawValueChangePopup(_p, _selectedObject);
+                }
                 TableNextRow();
                 TableSetColumnIndex(0);
                 Text("Position:");
@@ -147,8 +167,44 @@ namespace RE.Debug.Overlay
                         OpenPopup("prop_new_value");
                         (val_x, val_y, val_z) = _selectedObject.Transform.Position;
                         _p = typeof(Transform).GetProperty("Position")!;
+                        hash = _p.GetHashCode();
                     }
-                    DrawValueChangePopup(_p, _selectedObject.Transform);
+                    if (typeof(Transform).GetProperty("Position")?.GetHashCode() == hash)
+                        DrawValueChangePopup(_p, _selectedObject.Transform);
+                }
+                TableNextRow();
+                TableSetColumnIndex(0);
+                Text("Rotation:");
+                TableSetColumnIndex(1);
+                {
+                    var transformRotation = _selectedObject.Transform.Rotation;
+                    var v = new OpenTK.Mathematics.Vector3(MathHelper.RadiansToDegrees(transformRotation.X),
+                        MathHelper.RadiansToDegrees(transformRotation.Y),
+                        MathHelper.RadiansToDegrees(radians: transformRotation.Z));
+                    if (Button(v.ToString()))
+                    {
+                        OpenPopup("prop_new_value");
+                        (val_x, val_y, val_z) = v;
+                        _p = typeof(Transform).GetProperty("Rotation")!;
+                        hash = _p.GetHashCode();
+                    }
+                    if (typeof(Transform).GetProperty("Rotation")!?.GetHashCode() == hash)
+                        DrawValueChangePopup(_p, _selectedObject.Transform);
+                }
+                TableNextRow();
+                TableSetColumnIndex(0);
+                Text("Scale:");
+                TableSetColumnIndex(1);
+                {
+                    if (Button(_selectedObject.Transform.Scale.ToString()))
+                    {
+                        OpenPopup("prop_new_value");
+                        (val_x, val_y, val_z) = _selectedObject.Transform.Scale;
+                        _p = typeof(Transform).GetProperty("Scale")!;
+                        hash = _p.GetHashCode();
+                    }
+                    if (typeof(Transform).GetProperty("Scale")?.GetHashCode() == hash)
+                        DrawValueChangePopup(_p, _selectedObject.Transform);
                 }
 
 
@@ -223,7 +279,7 @@ namespace RE.Debug.Overlay
                                 else if (Button(prop.GetValue(com)?.ToString() ?? "<null>"))
                                 {
                                     OpenPopup("prop_new_value");
-
+                                    hash = prop.GetHashCode();
 
                                     //set reference values to prop's value
                                     if (prop.PropertyType == typeof(OpenTK.Mathematics.Vector3))
@@ -241,7 +297,7 @@ namespace RE.Debug.Overlay
                                     EndTooltip();
                                 }
 
-                                if (!attr!.IsReadOnly)
+                                if (!attr!.IsReadOnly && prop.GetHashCode() == hash)
                                     DrawValueChangePopup(prop, com);
                             }
                         }
@@ -255,6 +311,7 @@ namespace RE.Debug.Overlay
 
         private float val_x = 0, val_y = 0, val_z = 0;
         private string val_str = "";
+        private int hash;
 
         private void DrawValueChangePopup(PropertyInfo prop, object instance)
         {
@@ -305,7 +362,7 @@ namespace RE.Debug.Overlay
                         CloseCurrentPopup();
                     }
                 }
-                else if (prop.PropertyType == typeof(OpenTK.Mathematics.Vector3))
+                else if (prop.PropertyType == typeof(OpenTK.Mathematics.Vector3) || prop.PropertyType == typeof(Quaternion))
                 {
                     DragFloat("X", ref val_x, 0.05f);
                     DragFloat("Y", ref val_y, 0.05f);
@@ -313,7 +370,17 @@ namespace RE.Debug.Overlay
 
                     if (Button("Apply"))
                     {
-                        var val = new OpenTK.Mathematics.Vector3(val_x, val_y, val_z);
+                        object val;
+                        if (prop.PropertyType != typeof(Quaternion))
+                            val = new OpenTK.Mathematics.Vector3(val_x, val_y, val_z);
+                        else
+                        {
+                            var eulerRad = new OpenTK.Mathematics.Vector3(
+                                MathHelper.DegreesToRadians(val_x),
+                                MathHelper.DegreesToRadians(val_y),
+                                MathHelper.DegreesToRadians(val_z));
+                            val = Quaternion.FromEulerAngles(eulerRad);
+                        }
                         prop.SetValue(instance, val);
                         CloseCurrentPopup();
                     }

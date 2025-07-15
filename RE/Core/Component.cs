@@ -1,4 +1,5 @@
-﻿using OpenTK.Windowing.Common;
+﻿using System.Text.Json.Nodes;
+using OpenTK.Windowing.Common;
 using RE.Core.World;
 
 namespace RE.Core
@@ -17,6 +18,8 @@ namespace RE.Core
         {
             return (T)Owner.Components.FirstOrDefault(s => s is T)!;
         }
+
+        public abstract JsonNode GetSaveData();
 
         public virtual void Start() { }
         public virtual void OnSceneLoading(Scene scene) { }

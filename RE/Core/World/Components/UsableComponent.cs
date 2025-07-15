@@ -1,4 +1,5 @@
-﻿using OpenTK.Mathematics;
+﻿using System.Text.Json.Nodes;
+using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using RE.Core.Scripting;
 using RE.Debug;
@@ -12,7 +13,7 @@ namespace RE.Core.World.Components
 
         public Action? OnUsed;
         public UsableComponent() { }
-        public UsableComponent(string command) => OnUsed += () => CommandHandler.ExecuteCommand(command);
+        public UsableComponent(string command) => Command = command;
 
         [EditorProperty(IsReadOnly = true)] public string Subscribers => $"{OnUsed?.GetInvocationList().Length} Total";
         [EditorProperty(DisplayedName = "Invoke Command")] public string Command { get; set; }
@@ -27,6 +28,18 @@ namespace RE.Core.World.Components
         {
             _spriteClick.Position = Owner.Transform.Position + (0, Owner.Transform.Scale.Y * 2, 0);
             _spriteClick.Render(args);
+        }
+        public override JsonNode GetSaveData()
+        {
+            JsonObject root = new();
+            if (Command != null!)
+            {
+                var args = new JsonArray();
+                args.Add(Command);
+                root.Add("args", args);
+            }
+
+            return root;
         }
     }
 }

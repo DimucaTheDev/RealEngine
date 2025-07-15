@@ -1,4 +1,5 @@
-﻿using BulletSharp;
+﻿using System.Text.Json.Nodes;
+using BulletSharp;
 using OpenTK.Mathematics;
 
 namespace RE.Core.World.Components
@@ -56,6 +57,11 @@ namespace RE.Core.World.Components
                 );
             }
             return result;
+        }
+        public override JsonNode GetSaveData()
+        {
+            JsonObject root = new();
+            return root;
         }
     }
 }

@@ -1,4 +1,5 @@
-﻿using BulletSharp;
+﻿using System.Text.Json.Nodes;
+using BulletSharp;
 using ImGuiNET;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
@@ -44,6 +45,7 @@ namespace RE.Core.World.Components
         {
             _camera = Camera.Instance;
             _playerGameObject = new GameObject(Owner);
+            _playerGameObject.DoNotSave = true;
             _playerGameObject.Transform.Scale = new Vector3(0.75f, _standHeight, 0.75f);
             _playerGameObject.Components.Add(new CapsuleColliderComponent());
             var rigidBodyComponent = new RigidBodyComponent();
@@ -434,6 +436,11 @@ namespace RE.Core.World.Components
             _spriteSpawnpoint.Position = Owner.Transform.Position;
 
             _spriteSpawnpoint.Render(args);
+        }
+        public override JsonNode GetSaveData()
+        {
+            JsonObject root = new();
+            return root;
         }
     }
 }

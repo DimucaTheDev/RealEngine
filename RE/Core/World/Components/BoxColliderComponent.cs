@@ -1,4 +1,5 @@
-﻿using BulletSharp;
+﻿using System.Text.Json.Nodes;
+using BulletSharp;
 
 namespace RE.Core.World.Components
 {
@@ -13,6 +14,11 @@ namespace RE.Core.World.Components
             );
             CollisionShape boxShape = new BoxShape(halfExtents);
             return boxShape;
+        }
+        public override JsonNode GetSaveData()
+        {
+            JsonObject root = new();
+            return root;
         }
     }
 }
