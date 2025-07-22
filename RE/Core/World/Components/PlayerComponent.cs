@@ -60,9 +60,9 @@ namespace RE.Core.World.Components
             _playerGameObject.Components.Add(rigidBodyComponent);
 
             SceneManager.CurrentScene.GameObjects.Add(_playerGameObject);
-            rigidBodyComponent.GetRigidBody().AngularFactor = BulletSharp.Math.Vector3.Zero;
-            rigidBodyComponent.GetRigidBody().ActivationState = ActivationState.DisableDeactivation;
-            rigidBodyComponent.GetRigidBody().Gravity = new BulletSharp.Math.Vector3(0, -25f, 0);
+            rigidBodyComponent.RigidBody.AngularFactor = BulletSharp.Math.Vector3.Zero;
+            rigidBodyComponent.RigidBody.ActivationState = ActivationState.DisableDeactivation;
+            rigidBodyComponent.RigidBody.Gravity = new BulletSharp.Math.Vector3(0, -25f, 0);
 
             _spriteSpawnpoint = new SpriteRenderer(Vector3.Zero, "assets/sprites/editor/spawn.png", scale: 1);
         }
@@ -123,7 +123,7 @@ namespace RE.Core.World.Components
                     return;
                 }
 
-                var rbN = _playerGameObject.GetComponent<RigidBodyComponent>()?.GetRigidBody();
+                var rbN = _playerGameObject.GetComponent<RigidBodyComponent>()?.RigidBody;
                 if (rbN == null)
                     return;
 

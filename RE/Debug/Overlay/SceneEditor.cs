@@ -22,6 +22,13 @@ namespace RE.Debug.Overlay
 {
     internal partial class SceneEditor : Renderable
     {
+        private class Node
+        {
+            public string Name;
+            public Dictionary<string, Node> Children = new();
+            public List<Type> Types = new();
+        }
+
         public static SceneEditor Instance = new();
         public static bool Enabled = false;
 
@@ -34,6 +41,8 @@ namespace RE.Debug.Overlay
         private bool _popupOpen = false;
         private List<Type> _customPopups = new();
         private Dictionary<string, List<Type>> _componentDict = new();
+        private Node _rootNode = new();
+
         private static OpenTK.Mathematics.Vector4 _outlineColor = new(1, 0, 0, 1);
 
         static SceneEditor()
@@ -56,7 +65,6 @@ namespace RE.Debug.Overlay
                     Color4 color = (Color4)propertyInfo.GetValue(null)!;
                     _outlineColor = new(color.R, color.G, color.B, color.A);
                     selectedObjectOutline.OutlineColor = _outlineColor;
-
                 }
             };
         }
@@ -74,7 +82,7 @@ namespace RE.Debug.Overlay
 
             _scene = SceneManager.CurrentScene;//SceneManager.ParseScene(SceneManager.CurrentScene.Name!/*костыль*/); // TODO: set json path to scene's property
             //SceneManager.LoadScene(_scene, true);
-
+            _selectedObject = null;
             IsVisible = true;
 
             foreach (var type in Assembly.GetExecutingAssembly().GetTypes().Where(t => typeof(IEditorPopup).IsAssignableFrom(t)))
@@ -90,6 +98,25 @@ namespace RE.Debug.Overlay
                     return attr?.Group ?? "Other";
                 })
                 .ToDictionary(g => g.Key, g => g.ToList());
+            _rootNode = new Node();
+            foreach (var entry in _componentDict)
+            {
+                string[] pathSegments = entry.Key.Split('/');
+                Node currentNode = _rootNode;
+                for (int i = 0; i < pathSegments.Length; i++)
+                {
+                    string segment = pathSegments[i];
+                    if (!currentNode.Children.TryGetValue(segment, out Node nextNode))
+                    {
+                        nextNode = new Node { Name = segment };
+                        currentNode.Children.Add(segment, nextNode);
+                    }
+                    currentNode = nextNode;
+                }
+                // If the path refers to a group that has types directly, add them
+                // This assumes _componentDict stores the types at the *leaf* of the group path
+                currentNode.Types.AddRange(entry.Value);
+            }
         }
 
         public void Disable()
@@ -154,6 +181,7 @@ namespace RE.Debug.Overlay
             if (Button("remove"))
             {
                 _scene.GameObjects.Remove(_selectedObject!);
+                _selectedObject = null;
             }
             if (Button("Save"))
             {
@@ -217,17 +245,19 @@ namespace RE.Debug.Overlay
                 TableNextRow();
                 TableSetColumnIndex(0);
                 Text("Position:");
+                var f = BindingFlags.NonPublic | BindingFlags.Instance;
+
                 TableSetColumnIndex(1);
                 {
                     if (Button(_selectedObject.Transform.Position.ToString()))
                     {
                         OpenPopup("prop_new_value");
                         (val_x, val_y, val_z) = _selectedObject.Transform.Position;
-                        _p = typeof(Transform).GetProperty("Position")!;
+                        _p = GetType().GetProperty("obj_Position", f)!;
                         hash = _p.GetHashCode();
                     }
-                    if (typeof(Transform).GetProperty("Position")?.GetHashCode() == hash)
-                        DrawValueChangePopup(_p, _selectedObject.Transform);
+                    if (GetType().GetProperty("obj_Position", f)?.GetHashCode() == hash)
+                        DrawValueChangePopup(_p, this);
                 }
                 TableNextRow();
                 TableSetColumnIndex(0);
@@ -242,11 +272,11 @@ namespace RE.Debug.Overlay
                     {
                         OpenPopup("prop_new_value");
                         (val_x, val_y, val_z) = v;
-                        _p = typeof(Transform).GetProperty("Rotation")!;
+                        _p = GetType().GetProperty("obj_Rotation", f)!;
                         hash = _p.GetHashCode();
                     }
-                    if (typeof(Transform).GetProperty("Rotation")!?.GetHashCode() == hash)
-                        DrawValueChangePopup(_p, _selectedObject.Transform);
+                    if (GetType().GetProperty("obj_Rotation", f)!?.GetHashCode() == hash)
+                        DrawValueChangePopup(_p, this);
                 }
                 TableNextRow();
                 TableSetColumnIndex(0);
@@ -263,19 +293,20 @@ namespace RE.Debug.Overlay
                     if (typeof(Transform).GetProperty("Scale")?.GetHashCode() == hash)
                         DrawValueChangePopup(_p, _selectedObject.Transform);
                 }
-
-
                 TableNextRow();
                 TableSetColumnIndex(0);
                 Text("Components:");
                 TableSetColumnIndex(1);
-                DrawComponents(_selectedObject);
 
+                if (_selectedObject != null)
+                    DrawComponents(_selectedObject);
 
                 EndTable();
             }
             End();
         }
+        private OpenTK.Mathematics.Vector3 obj_Position { get => _selectedObject.Transform.Position; set => _selectedObject.SetPosition(value); }
+        private OpenTK.Mathematics.Quaternion obj_Rotation { get => _selectedObject.Transform.Rotation; set => _selectedObject.SetRotation(value); }
 
         private PropertyInfo _p;
         //refactor_me
@@ -314,10 +345,7 @@ namespace RE.Debug.Overlay
                             SetCursorPosX(GetCursorPosX() + (cellWidth - buttonWidth) / 2f);
                             if (Button("Reset"))
                             {
-                                obj.Components.Remove(com);
-                                var v = (Component)Activator.CreateInstance(com.GetType())!;
-                                obj.Components.Add(v);
-                                v.Start();
+                                com.OnReset();
                             }
                         }
                         TableSetColumnIndex(1);
@@ -419,24 +447,88 @@ namespace RE.Debug.Overlay
             if (Button("Add Component"))
             {
                 OpenPopup("new_component");
+                _searchComponent = "";
             }
             if (BeginPopup("new_component"))
             {
                 BeginChild("ComponentListChild", new Vector2(200, 300), ImGuiChildFlags.AlwaysAutoResize);
 
-                foreach (var group in _componentDict.OrderBy(g => g.Key))
+                float fullWidth = GetContentRegionAvail().X;
+                PushItemWidth(fullWidth);
+                InputText("", ref _searchComponent, 512);
+                PopItemWidth();
+
+                Separator();
+                if (string.IsNullOrWhiteSpace(_searchComponent))
                 {
-                    string[] path = group.Key.Split('/');
-                    RenderGroupRecursive(path, 0, group.Value);
+                    RenderNodeRecursive(_rootNode);
                 }
+                else
+                {
+                    foreach (var c in _componentDict.Values)
+                        foreach (var type in c.Where(s => s.Name.Contains(_searchComponent, StringComparison.InvariantCultureIgnoreCase)))
+                        {
+                            DrawButton(type);
+                        }
+                }
+
                 EndChild();
                 EndPopup();
             }
         }
 
+        private string _searchComponent;
 
+        void RenderNodeRecursive(Node node)
+        {
+            foreach (var childEntry in node.Children.OrderBy(c => c.Key))
+            {
+                Node childNode = childEntry.Value;
+                if (TreeNode(childNode.Name))
+                {
+                    RenderNodeRecursive(childNode);
+                    TreePop();
+                }
+            }
+            foreach (var type in node.Types.OrderBy(t => t.Name))
+            {
+                DrawButton(type);
+            }
+        }
 
+        void DrawButton(Type type)
+        {
+            bool disabled = _selectedObject!.Components.Any(s => s.GetType() == type);
+            BeginDisabled(disabled);
+            if (Button(AddSpacesToCamelCase(type.Name.Replace("Component", ""))))
+            {
+                var c = Activator.CreateInstance(type);
+                _selectedObject!.Components.Add((Component)c!);
+                CloseCurrentPopup();
+            }
+            EndDisabled();
 
+            if (IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
+            {
+                if (BeginTooltip())
+                {
+                    if (disabled)
+                    {
+                        Text($"Object already contains {type.Name}");
+                        Separator();
+                    }
+                    var a = type.GetCustomAttribute<ComponentInfo>();
+                    if (a is { Description: not null })
+                    {
+                        Text($"{a.Description}");
+                        Separator();
+                    }
+                    Text($"Full Name: {type.FullName}");
+                    Text($"Assembly:  {type.Assembly.FullName}");
+                    EndTooltip();
+                }
+            }
+        }
         void RenderGroupRecursive(string[] path, int depth, List<Type> types)
         {
             if (depth >= path.Length)
@@ -482,7 +574,7 @@ namespace RE.Debug.Overlay
         private static string val_str = "";
         private static int hash;
 
-        public static void DrawValueChangePopup(PropertyInfo prop, object instance)
+        public void DrawValueChangePopup(PropertyInfo prop, object instance)
         {
             // https://youtu.be/hVHEpfgvpCA
 
@@ -520,6 +612,7 @@ namespace RE.Debug.Overlay
                     {
                         prop.SetValue(instance, val_str);
                         CloseCurrentPopup();
+                        UpdateSelection();
                     }
                 }
                 else if (prop.PropertyType == typeof(string) && instance is not MeshComponent or UsableComponent)
@@ -551,6 +644,8 @@ namespace RE.Debug.Overlay
                             val = Quaternion.FromEulerAngles(eulerRad);
                         }
                         prop.SetValue(instance, val);
+                        UpdateSelection();
+
                         CloseCurrentPopup();
                     }
                 }
@@ -565,6 +660,8 @@ namespace RE.Debug.Overlay
                         var val = new Vector3(val_x, val_y, val_z);
                         prop.SetValue(instance, val);
                         CloseCurrentPopup();
+                        UpdateSelection();
+
                     }
                 }
                 else if (prop.PropertyType == typeof(int))
@@ -653,33 +750,7 @@ namespace RE.Debug.Overlay
             if (IsItemClicked())
             {
                 _selectedObject = obj;
-
-                var mesh = _selectedObject.GetComponent<MeshComponent>();
-
-                if (mesh == null!)
-                {
-                    selectedObjectOutline.StopRender();
-                    selectedObjectArrow.Render();
-                    selectedObjectArrow.Position = _selectedObject.Transform.Position
-                                                   + (0, 1.2f, 0)
-                                                   + (0, MathF.Sin(Time.ElapsedTime * 3) / 4, 0);
-                }
-                else
-                {
-                    selectedObjectArrow.StopRender();
-                    selectedObjectOutline.Render();
-
-                    selectedObjectOutline.Position = _selectedObject.Transform.Position;
-                    selectedObjectOutline.Rotation = _selectedObject.Transform.Rotation;
-                    selectedObjectOutline.Scale = _selectedObject.Transform.Scale;
-                    var f = 0.05f;
-                    selectedObjectOutline.Scale += (f, f, f);
-
-                    if (mesh != null!)
-                    {
-                        selectedObjectOutline.Path = mesh.Path;
-                    }
-                }
+                UpdateSelection();
             }
 
             if (hasVisibleChildren && nodeOpen)
@@ -688,6 +759,35 @@ namespace RE.Debug.Overlay
                     DrawObjectTree(child);
 
                 TreePop();
+            }
+        }
+        void UpdateSelection()
+        {
+            var mesh = _selectedObject.GetComponent<MeshComponent>();
+
+            if (mesh == null!)
+            {
+                selectedObjectOutline.StopRender();
+                selectedObjectArrow.Render();
+                selectedObjectArrow.Position = _selectedObject.Transform.Position
+                                               + (0, 1.2f, 0)
+                                               + (0, MathF.Sin(Time.ElapsedTime * 3) / 4, 0);
+            }
+            else
+            {
+                selectedObjectArrow.StopRender();
+                selectedObjectOutline.Render();
+
+                selectedObjectOutline.Position = _selectedObject.Transform.Position;
+                selectedObjectOutline.Rotation = _selectedObject.Transform.Rotation;
+                selectedObjectOutline.Scale = _selectedObject.Transform.Scale;
+                var f = 0.05f;
+                selectedObjectOutline.Scale += (f, f, f);
+
+                if (mesh != null!)
+                {
+                    selectedObjectOutline.Path = mesh.Path;
+                }
             }
         }
         private string AddSpacesToCamelCase(string text)

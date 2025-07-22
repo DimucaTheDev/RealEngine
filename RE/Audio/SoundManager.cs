@@ -1,17 +1,32 @@
-﻿using NAudio.Wave;
+﻿using System.Collections.ObjectModel;
+using System.Runtime.InteropServices;
+using System.Text.Json;
+using NAudio.Wave;
 using OpenTK.Audio.OpenAL;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using RE.Core;
 using RE.Rendering;
 using Serilog;
-using System.Collections.ObjectModel;
-using System.Text.Json;
 
 namespace RE.Audio
 {
     internal static class SoundManager
     {
+        public static class ALCExt
+        {
+            public const int ALC_HRTF_SOFT = 0x1992;
+            public const int ALC_HRTF_ID_SOFT = 0x1996;
+            public const int ALC_HRTF_STATUS_SOFT = 0x1993;
+            public const int ALC_HRTF_ENABLED_SOFT = 0x1994;
+            public const int ALC_HRTF_DISABLED_SOFT = 0x1995;
+
+            public const int ALC_HRTF_DEFAULT_SOFT = 0;
+            public const int ALC_HRTF_ENABLED = 1;
+            public const int ALC_HRTF_DISABLED = 0;
+        }
+
+
         public static ReadOnlyDictionary<string, List<string>> SoundMap;
 
         private static readonly Dictionary<string, List<string>> _soundMap = new();
@@ -22,13 +37,19 @@ namespace RE.Audio
 
         public static ReadOnlyCollection<Sound> ActiveSounds => _activeSounds.AsReadOnly();
 
+        [DllImport("openal32.dll", CallingConvention = CallingConvention.Cdecl)]
+        private static extern void alcGetIntegerv(IntPtr device, int param, int size, int[] data);
+
         public static void Init()
         {
             Game.Instance.UpdateFrame += Update;
 
             _device = ALC.OpenDevice(null);
-            _context = ALC.CreateContext(_device, (int[])null!);
+            _context = ALC.CreateContext(_device, new[] { ALCExt.ALC_HRTF_SOFT, ALCExt.ALC_HRTF_ENABLED, 0 });
             ALC.MakeContextCurrent(_context);
+
+            int[] r = { -999 };
+            alcGetIntegerv(_device, 0x1992 /* ALC_HRTF_STATUS_SOFT */, 1, r);
 
             var path = Path.Combine("Assets", "soundmap.json");
             var json = File.ReadAllText(path);
@@ -135,7 +156,8 @@ namespace RE.Audio
         //you can use Sound.Dispose(), but this method will also remove sound from the active list
         public static void DisposeSound(Sound? sound)
         {
-            if (sound == null) return;
+            if (sound == null)
+                return;
             sound.Dispose();
             _activeSounds.Remove(sound);
         }
@@ -147,7 +169,6 @@ namespace RE.Audio
             }
             _activeSounds.Clear();
         }
-        //todo: warn if sound cant be played in 3d
         public static unsafe int Load(string path)
         {
             using var reader = new WaveFileReader(path);
@@ -170,7 +191,6 @@ namespace RE.Audio
                 (2, 16) => ALFormat.Stereo16,
                 _ => throw new NotSupportedException($"Unsupported WAV format: {numChannels}ch, {bitsPerSample}bit")
             };
-
             // Читаем все аудиоданные в буфер
             byte[] data = new byte[reader.Length];
             int bytesRead = reader.Read(data, 0, data.Length);
@@ -182,6 +202,10 @@ namespace RE.Audio
             fixed (byte* ptr = data)
             {
                 AL.BufferData(buffer, formatAL, (IntPtr)ptr, data.Length, sampleRate);
+            }
+            if (numChannels != 1)
+            {
+                Log.Warning($"Sound has {numChannels} channels. 3D is unsupported");
             }
 
             return buffer;

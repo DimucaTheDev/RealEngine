@@ -27,7 +27,7 @@ namespace RE.Core.World.Components
             var rigid = GetComponent<RigidBodyComponent>();
             if (rigid?.IsPhysicsObjectInitialized ?? false)
             {
-                _rigidBody = rigid.GetRigidBody();
+                _rigidBody = rigid.RigidBody;
                 _rigidBody.CollisionShape = _collisionShape;
                 rigid.Mass = rigid.Mass;
             }
@@ -65,6 +65,11 @@ namespace RE.Core.World.Components
             }
 
             base.OnDestroy();
+        }
+
+        public override void OnReset()
+        {
+            throw new NotImplementedException("fuky waky >_<");
         }
 
         public override void Render(FrameEventArgs args)

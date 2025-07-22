@@ -37,13 +37,13 @@ namespace RE.Core.World.Components
 
         public override void Update(FrameEventArgs args)
         {
-            _modelRenderer.Position = Owner.Transform.Position;
-            _modelRenderer.Rotation = Owner.Transform.Rotation;
-            _modelRenderer.Scale = Owner.Transform.Scale;
         }
 
         public override void Render(FrameEventArgs args)
         {
+            _modelRenderer.Position = Owner.Transform.Position;
+            _modelRenderer.Rotation = Owner.Transform.Rotation;
+            _modelRenderer.Scale = Owner.Transform.Scale;
             if (_started)
                 _modelRenderer.Render(args);
         }

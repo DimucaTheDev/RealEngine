@@ -71,11 +71,11 @@ public class Camera
                 SceneManager.CurrentScene.GameObjects.Add(obj);
 
                 BulletSharp.Math.Vector3 cameraFrontBullet = new BulletSharp.Math.Vector3(cameraFrontOpenTK.X, cameraFrontOpenTK.Y, cameraFrontOpenTK.Z);
-                rb.GetRigidBody().Restitution = 0.2f;
-                rb.GetRigidBody().Friction = 1;
+                rb.RigidBody.Restitution = 0.2f;
+                rb.RigidBody.Friction = 1;
                 float impulseStrength = 5.0f;
                 BulletSharp.Math.Vector3 impulseVector = cameraFrontBullet * impulseStrength;
-                rb.GetRigidBody().ApplyImpulse(impulseVector, BulletSharp.Math.Vector3.Zero);
+                rb.RigidBody.ApplyImpulse(impulseVector, BulletSharp.Math.Vector3.Zero);
 
                 obj.SetPosition(2 * cameraFrontOpenTK + Instance.Position);
 

@@ -12,13 +12,23 @@ namespace RE.Core.World.Testing
     {
         private GameObject _door;
         private bool shouldOpen, used;
+        private bool _wasOpen = false;
+        private Sound sound;
 
         [EditorProperty("State")] public float State { get; set; }
 
+        public override void OnComponentAdded()
+        {
+            Start();
+        }
+
         public override void Start()
         {
+            if (_door != null!)
+                return;
             _door = new GameObject();
             _door.DoNotSave = true;
+            _door.DoNotShowInEditor = true;
             _door.Parent = Owner;
             _door.Transform = (Transform)Owner.Transform.Clone();
             _door.Components.Add(new BoxColliderComponent());
@@ -28,7 +38,7 @@ namespace RE.Core.World.Testing
                 OnUsed = () =>
                 {
                     sound?.Stop();
-                    sound = SoundManager.Play("doors/doormove", new SoundPlaybackSettings()
+                    sound = SoundManager.Play("doors/doormove", new SoundPlaybackSettings
                     {
                         VariantIndex = 0,
                         DisposeOnStop = true,
@@ -43,8 +53,6 @@ namespace RE.Core.World.Testing
             SceneManager.CurrentScene.GameObjects.Add(_door);
         }
 
-        private bool _wasOpen = false; // предыдущее логическое состояние
-        private Sound sound;
 
         public override void Update(FrameEventArgs args)
         {
@@ -64,13 +72,10 @@ namespace RE.Core.World.Testing
                 }
             }
 
-            // Ограничиваем State в допустимом диапазоне
             State = Math.Clamp(State, 0f, 1f);
 
-            // Обновляем позицию двери
             _door.SetPosition(Owner.Transform.Position + new Vector3(0, State * Owner.Transform.Scale.Y * 2, 0));
 
-            // Проверяем переходы состояний
             if (!_wasOpen && State >= 0.85f)
             {
                 OnOpened();

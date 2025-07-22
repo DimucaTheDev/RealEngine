@@ -26,6 +26,7 @@ namespace RE.Core.World.Components
             Game.Instance.RenderFrame += c.Render;
 
             _components.Add(c);
+            c.OnComponentAdded();
         }
 
         public void Remove(Component c)

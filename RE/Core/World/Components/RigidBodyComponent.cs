@@ -11,7 +11,7 @@ namespace RE.Core.World.Components
     [ComponentInfo("Physics", Description = "Represents a dynamic physics body with mass and velocity")]
     internal class RigidBodyComponent : Component, IPhysicsComponent
     {
-        private RigidBody _rigidBody;
+        public RigidBody RigidBody;
 
         public float Mass
         {
@@ -20,28 +20,28 @@ namespace RE.Core.World.Components
             {
                 if (IsPhysicsObjectInitialized)
                 {
-                    PhysicsManager.DynamicsWorld.RemoveRigidBody(_rigidBody);
+                    PhysicsManager.DynamicsWorld.RemoveRigidBody(RigidBody);
 
                     float newMass = value;
                     Vector3 localInertia = Vector3.Zero;
 
                     if (newMass != 0.0f)
                     {
-                        _rigidBody.CollisionShape.CalculateLocalInertia(newMass, out localInertia);
+                        RigidBody.CollisionShape.CalculateLocalInertia(newMass, out localInertia);
                     }
 
-                    _rigidBody.SetMassProps(newMass, localInertia);
-                    _rigidBody.LinearVelocity = Vector3.Zero;
-                    _rigidBody.AngularVelocity = Vector3.Zero;
+                    RigidBody.SetMassProps(newMass, localInertia);
+                    RigidBody.LinearVelocity = Vector3.Zero;
+                    RigidBody.AngularVelocity = Vector3.Zero;
 
-                    PhysicsManager.DynamicsWorld.AddRigidBody(_rigidBody);
+                    PhysicsManager.DynamicsWorld.AddRigidBody(RigidBody);
                 }
 
                 field = value;
             }
         }
 
-        public bool IsPhysicsObjectInitialized => _rigidBody != null;
+        public bool IsPhysicsObjectInitialized => RigidBody != null;
 
         public RigidBodyComponent() => Mass = 1;
         public RigidBodyComponent(float mass) => Mass = mass;
@@ -49,18 +49,18 @@ namespace RE.Core.World.Components
         public override void Start()
         {
             TryInitializePhysics();
-            _rigidBody.Activate();
+            RigidBody.Activate();
         }
 
         public void TryInitializePhysics()
         {
-            if (_rigidBody != null!)
+            if (RigidBody != null!)
                 return;
 
             var collider = GetComponent<ColliderComponent>();
             if (collider?.IsPhysicsObjectInitialized ?? false)
             {
-                _rigidBody = collider.RigidBody;
+                RigidBody = collider.RigidBody;
                 Mass = Mass;
             }
             else
@@ -79,18 +79,18 @@ namespace RE.Core.World.Components
                 var motionState = new DefaultMotionState(startTransform);
                 var rbInfo = new RigidBodyConstructionInfo(Mass, motionState,
                     collider?.CollisionShape ?? new BoxShape(0.5f), localInertia);
-                _rigidBody = new RigidBody(rbInfo) { UserObject = this };
+                RigidBody = new RigidBody(rbInfo) { UserObject = this };
 
-                PhysicsManager.DynamicsWorld.AddRigidBody(_rigidBody);
+                PhysicsManager.DynamicsWorld.AddRigidBody(RigidBody);
             }
         }
 
         public override void Update(FrameEventArgs args)
         {
-            if (_rigidBody == null || _rigidBody.MotionState == null || Mass == 0f)
+            if (RigidBody == null || RigidBody.MotionState == null || Mass == 0f)
                 return;
 
-            _rigidBody.GetWorldTransform(out var bulletTransform);
+            RigidBody.GetWorldTransform(out var bulletTransform);
             Owner.Transform.Position = new OpenTK.Mathematics.Vector3(bulletTransform.Origin.X,
                 bulletTransform.Origin.Y, bulletTransform.Origin.Z);
 
@@ -101,18 +101,19 @@ namespace RE.Core.World.Components
 
         public override void OnDestroy()
         {
-            if (_rigidBody != null!)
+            if (RigidBody != null!)
             {
-                PhysicsManager.DynamicsWorld.RemoveRigidBody(_rigidBody);
-                _rigidBody.Dispose();
-                _rigidBody = null!;
+                PhysicsManager.DynamicsWorld.RemoveRigidBody(RigidBody);
+                RigidBody.Dispose();
+                RigidBody = null!;
             }
 
             base.OnDestroy();
         }
-
-        public RigidBody GetRigidBody() => _rigidBody;
-
+        public override void OnReset()
+        {
+            throw new NotImplementedException("fuky waky >_<");
+        }
         public override JsonNode GetSaveData()
         {
             JsonObject root = new();

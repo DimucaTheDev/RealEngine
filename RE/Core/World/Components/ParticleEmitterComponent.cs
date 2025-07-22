@@ -38,9 +38,15 @@ namespace RE.Core.World.Components
             open = true;
         }
 
+        public override void OnComponentAdded()
+        {
+            Start();
+        }
+
         public override void Start()
         {
-            _spriteRenderer = new SpriteRenderer(Vector3.Zero, "assets/sprites/editor/emitter.png", scale: 0.75f);
+            if (_spriteRenderer == null!)
+                _spriteRenderer = new SpriteRenderer(Vector3.Zero, "assets/sprites/editor/emitter.png", scale: 0.75f);
         }
 
         public override void Render(FrameEventArgs args)
@@ -213,7 +219,10 @@ namespace RE.Core.World.Components
 
         public PopupSettings GetPopupSettings()
         {
-            return new() { Width = 400, Height = 300, Title = $"Particle Editor (0x{Owner.Id:x}, {Owner.Name})" };
+            if (Owner != null!)
+                return new() { Width = 400, Height = 300, Title = $"Particle Editor (0x{Owner.Id:x}, {Owner.Name})" };
+            else
+                return new PopupSettings();
         }
 
 

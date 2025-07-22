@@ -105,7 +105,8 @@ namespace RE.Core.World.Physics
                             {
                                 if (((Component)obj.UserObject).Owner.Parent?.GetComponent<PlayerComponent>() != null!)
                                     rb.Gravity = new(0, (((float)e) / -9.81f) * -25f, 0);
-                            } else
+                            }
+                            else
                                 rb.Gravity = new(0, (float)e!, 0);
                         }
                     }
@@ -180,7 +181,9 @@ namespace RE.Core.World.Physics
             if (!_init)
                 return;
             if (!SceneEditor.Enabled)
+            {
                 DynamicsWorld.StepSimulation(deltaTime, 10, 1f / 60f);
+            }
 
         }
         public static void Dispose()

@@ -22,10 +22,12 @@ namespace RE.Core
 
         public abstract JsonNode GetSaveData();
 
+        public virtual void OnComponentAdded() { }
         public virtual void Start() { }
         public virtual void OnSceneLoading(Scene scene) { }
         public virtual void Update(FrameEventArgs args) { }
         public virtual void Render(FrameEventArgs args) { }
         public virtual void OnDestroy() { }
+        public virtual void OnReset() { }
     }
 }

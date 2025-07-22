@@ -33,14 +33,14 @@ namespace RE.Core.World
         public Scene Scene { get; set; }
         public IReadOnlyList<GameObject> Children => Scene.GameObjects.Where(s => s.Parent == this).ToList().AsReadOnly();
 
-
+        public void SetPosition() => SetPosition(Transform.Position);
         public void SetPosition(Vector3 position)
         {
             Transform.Position = position;
             var rigidBodyComponent = GetComponent<RigidBodyComponent>();
-            if (rigidBodyComponent != null! && rigidBodyComponent.GetRigidBody() != null!)
+            if (rigidBodyComponent != null! && rigidBodyComponent.RigidBody != null!)
             {
-                var rigidBody = rigidBodyComponent.GetRigidBody();
+                var rigidBody = rigidBodyComponent.RigidBody;
                 var transform = rigidBody.WorldTransform;
                 transform.Origin = position.ToBulletVector3();
                 rigidBody.WorldTransform = transform;
@@ -59,13 +59,14 @@ namespace RE.Core.World
             }
         }
 
+        public void SetRotation() => SetRotation(Transform.Rotation);
         public void SetRotation(Quaternion q)
         {
             Transform.Rotation = q;
             var rigidBodyComponent = GetComponent<RigidBodyComponent>();
             if (rigidBodyComponent != null!)
             {
-                var rigidBody = rigidBodyComponent.GetRigidBody();
+                var rigidBody = rigidBodyComponent.RigidBody;
                 var transform = rigidBody.WorldTransform;
                 transform.Basis = BulletSharp.Math.Matrix.RotationQuaternion(
                     q.ToBulletQuaternion()
