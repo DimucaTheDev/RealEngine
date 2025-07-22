@@ -28,6 +28,7 @@ namespace RE.Core.World
         public string? Name { get; set; }
         public int Id { get; private set; }
         public bool DoNotSave { get; set; } = false;
+        public bool DoNotShowInEditor { get; set; } = false;
 
         public Scene Scene { get; set; }
         public IReadOnlyList<GameObject> Children => Scene.GameObjects.Where(s => s.Parent == this).ToList().AsReadOnly();
@@ -37,13 +38,24 @@ namespace RE.Core.World
         {
             Transform.Position = position;
             var rigidBodyComponent = GetComponent<RigidBodyComponent>();
-            if (rigidBodyComponent != null!)
+            if (rigidBodyComponent != null! && rigidBodyComponent.GetRigidBody() != null!)
             {
                 var rigidBody = rigidBodyComponent.GetRigidBody();
                 var transform = rigidBody.WorldTransform;
                 transform.Origin = position.ToBulletVector3();
                 rigidBody.WorldTransform = transform;
                 rigidBody.MotionState?.SetWorldTransform(ref transform);
+                return;
+            }
+            var colliderComponent = GetComponent<ColliderComponent>();
+            if (colliderComponent != null! && colliderComponent.RigidBody != null!)
+            {
+                var rigidBody = colliderComponent.RigidBody;
+                var transform = rigidBody.WorldTransform;
+                transform.Origin = position.ToBulletVector3();
+                rigidBody.WorldTransform = transform;
+                rigidBody.MotionState?.SetWorldTransform(ref transform);
+                return;
             }
         }
 
@@ -64,9 +76,9 @@ namespace RE.Core.World
             }
         }
 
-        public T GetComponent<T>() where T : Component
+        public T? GetComponent<T>() where T : Component
         {
-            return (T)Components.FirstOrDefault(s => s is T)!;
+            return Components.OfType<T>().FirstOrDefault();
         }
     }
 }

@@ -15,12 +15,15 @@ namespace RE.Rendering.Renderables
         private bool constantSize;
         private float scale;
 
+        private static Dictionary<string, (int texture, int width, int height)> TextureCache = new();
+
+
         public Vector3 Position { get; set; }
         public override RenderLayer RenderLayer => RenderLayer.World;
         public override bool IsVisible { get; set; } = true;
 
         public SpriteRenderer(Vector3 position, string spritePath = "Assets/Sprites/Editor/blank.png",
-            bool constantSize = false, float scale = .25f)
+            bool constantSize = false, float scale = 1f)
         {
             Position = position;
             this.constantSize = constantSize;
@@ -71,7 +74,7 @@ namespace RE.Rendering.Renderables
             Vector3 camPos = Camera.Instance.Position;
             Vector3 lookDir = Vector3.Normalize(camPos - Position);
 
-            Vector3 up = Vector3.UnitY; // предположим, что Y - вверх
+            Vector3 up = Vector3.UnitY;
             Vector3 right = Vector3.Normalize(Vector3.Cross(up, lookDir));
             Vector3 billboardUp = Vector3.Cross(lookDir, right);
 
@@ -80,24 +83,20 @@ namespace RE.Rendering.Renderables
 
             float w = 1f;
             float h = w / aspectRatio;
-            Matrix4 translateToCenter = Matrix4.CreateTranslation(-w / 2f, -h / 2f, 0f);
 
-            float baseSize = 1.0f; // условный "экранный" размер
+            float baseSize = 1.0f;
             float distance = (Position - Camera.Instance.Position).Length;
             float scale = distance * baseSize;
 
             float size = 1.0f;
 
+            Matrix4 translateToCenter = Matrix4.CreateTranslation(-0.5f, -0.5f, 0f);
+            float finalScale = constantSize ? scale * this.scale : size * this.scale;
             Matrix4 model =
                 translateToCenter *
-                Matrix4.CreateScale(w, -h, 1) * // сохраняем 1 по Z
-                Matrix4.CreateScale(constantSize ? scale * this.scale : size) *
+                Matrix4.CreateScale(finalScale, -finalScale / aspectRatio, 1f) *
                 Camera.Instance.GetBillboard(Position) *
                 Matrix4.CreateTranslation(Position);
-
-
-
-
 
             Matrix4 view = Camera.Instance.GetViewMatrix();
             Matrix4 projection = Camera.Instance.GetProjectionMatrix();
@@ -118,11 +117,19 @@ namespace RE.Rendering.Renderables
             GL.DeleteVertexArray(_vao);
             GL.DeleteBuffer(_vbo);
             GL.DeleteProgram(_shaderProgram);
-            GL.DeleteTexture(_texture);
+
+            //this comment prevents lagyshit-9000 from happening in particle renderer
+            //GL.DeleteTexture(_texture); 
         }
 
         private int LoadTexture(string path)
         {
+            if (TextureCache.TryGetValue(path, out var t))
+            {
+                texWidth = t.width;
+                texHeight = t.height;
+                return t.texture;
+            }
             var image = ImageResult.FromStream(File.OpenRead(path), ColorComponents.RedGreenBlueAlpha);
             (texWidth, texHeight) = (image.Width, image.Height);
             int tex = GL.GenTexture();
@@ -132,6 +139,8 @@ namespace RE.Rendering.Renderables
             GL.GenerateMipmap(GenerateMipmapTarget.Texture2D);
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Linear);
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
+
+            TextureCache.Add(path, (tex, image.Width, image.Height));
             return tex;
         }
 

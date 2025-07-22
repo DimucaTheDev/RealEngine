@@ -141,7 +141,8 @@ internal class Game : GameWindow
             Log.Debug("Switching to windowed mode");
             WindowState = WindowState.Normal;
             WindowBorder = WindowBorder.Resizable;
-        } else
+        }
+        else
         {
             Log.Debug("Switching to fullscreen mode");
             WindowState = WindowState.Fullscreen;

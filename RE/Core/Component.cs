@@ -14,10 +14,11 @@ namespace RE.Core
         }
         public GameObject Owner { get; internal set; }
 
-        public T GetComponent<T>() where T : Component
+        public T? GetComponent<T>() where T : Component
         {
-            return (T)Owner.Components.FirstOrDefault(s => s is T)!;
+            return Owner.Components.OfType<T>().FirstOrDefault();
         }
+
 
         public abstract JsonNode GetSaveData();
 

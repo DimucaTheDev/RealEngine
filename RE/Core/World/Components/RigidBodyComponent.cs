@@ -2,11 +2,13 @@
 using BulletSharp;
 using BulletSharp.Math;
 using OpenTK.Windowing.Common;
+using RE.Core.Scripting;
 using RE.Core.World.Physics;
 using RE.Utils;
 
 namespace RE.Core.World.Components
 {
+    [ComponentInfo("Physics", Description = "Represents a dynamic physics body with mass and velocity")]
     internal class RigidBodyComponent : Component, IPhysicsComponent
     {
         private RigidBody _rigidBody;

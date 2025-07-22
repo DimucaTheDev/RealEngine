@@ -5,6 +5,7 @@ using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using OpenTK.Windowing.GraphicsLibraryFramework;
 using RE.Audio;
+using RE.Core.Scripting;
 using RE.Core.World.Physics;
 using RE.Debug;
 using RE.Debug.Overlay;
@@ -15,6 +16,7 @@ using Serilog;
 
 namespace RE.Core.World.Components
 {
+    [ComponentInfo("World/Player", Description = "Handles player logic")]
     internal class PlayerComponent : Component, ISceneRenderer
     {
         private Camera _camera;
@@ -29,7 +31,7 @@ namespace RE.Core.World.Components
         private float _currentCameraYOffset = 1.45f;
         private float _targetCameraYOffset = 1.45f;
         private bool wasGrounded;
-
+        private float _soundCooldown;
 
         float _bobAmount = 0.05f;
         float _bobSpeed = 10f;
@@ -44,11 +46,17 @@ namespace RE.Core.World.Components
         public override void Start()
         {
             _camera = Camera.Instance;
-            _playerGameObject = new GameObject(Owner);
-            _playerGameObject.DoNotSave = true;
-            _playerGameObject.Transform.Scale = new Vector3(0.75f, _standHeight, 0.75f);
-            _playerGameObject.Components.Add(new CapsuleColliderComponent());
+            _playerGameObject = new GameObject(Owner)
+            {
+                DoNotShowInEditor = true,
+                DoNotSave = true,
+                Transform =
+                {
+                    Scale = new Vector3(0.75f, _standHeight, 0.75f)
+                }
+            };
             var rigidBodyComponent = new RigidBodyComponent();
+            _playerGameObject.Components.Add(new CapsuleColliderComponent());
             _playerGameObject.Components.Add(rigidBodyComponent);
 
             SceneManager.CurrentScene.GameObjects.Add(_playerGameObject);
@@ -56,13 +64,14 @@ namespace RE.Core.World.Components
             rigidBodyComponent.GetRigidBody().ActivationState = ActivationState.DisableDeactivation;
             rigidBodyComponent.GetRigidBody().Gravity = new BulletSharp.Math.Vector3(0, -25f, 0);
 
-            _spriteSpawnpoint = new SpriteRenderer(Vector3.Zero, "assets/sprites/editor/spawn.png", scale: 3);
+            _spriteSpawnpoint = new SpriteRenderer(Vector3.Zero, "assets/sprites/editor/spawn.png", scale: 1);
         }
 
         public override void OnSceneLoading(Scene scene)
         {
             _playerGameObject.SetPosition(Owner.Transform.Position);
         }
+
 
         public override void Update(FrameEventArgs args)
         {
@@ -73,7 +82,6 @@ namespace RE.Core.World.Components
                 if (ConsoleWindow.Instance!.IsVisible)
                 {
                     ConsoleWindow.Instance!.IsVisible = false;
-                    ConsoleWindow.Instance.Focus();
                     Game.Instance.CursorState = CursorState.Grabbed;
                 }
                 else
@@ -85,11 +93,12 @@ namespace RE.Core.World.Components
             }
 
 
-            if (!(Game.Instance.CursorState != CursorState.Grabbed || ImGui.GetIO().WantCaptureMouse))
+
+            if (!((Game.Instance.CursorState != CursorState.Grabbed || ImGui.GetIO().WantCaptureMouse)))
             {
                 if (SceneEditor.Enabled)
                 {
-                    var p = Camera.Instance.Position;
+                    var p = _camera.Position;
 
                     var speed = 7f * Time.DeltaTime;
 
@@ -110,10 +119,9 @@ namespace RE.Core.World.Components
                         Camera.Instance.FirstMove = true;
                         Game.Instance.CursorState = CursorState.Normal;
                     }
-                    Camera.Instance.Position = (p);
+                    _camera.Position = (p);
                     return;
                 }
-
 
                 var rbN = _playerGameObject.GetComponent<RigidBodyComponent>()?.GetRigidBody();
                 if (rbN == null)
@@ -248,8 +256,7 @@ namespace RE.Core.World.Components
 
                 if (input.IsKeyPressed(Keys.E))
                 {
-                    float rayLength = 3f;
-                    // Ray starts from camera position and goes forward
+                    float rayLength = 4f;
                     BulletSharp.Math.Vector3 rayFrom = _camera.Position.ToBulletVector3();
                     BulletSharp.Math.Vector3 rayTo = (_camera.Position + _camera.Front * rayLength).ToBulletVector3();
 
@@ -260,8 +267,7 @@ namespace RE.Core.World.Components
                     if (callback.HasHit)
                     {
                         Log.Debug($"Ray hit object at distance: {callback.ClosestHitFraction * rayLength}");
-                        Log.Debug(
-                            $"Hit object's UserObject type: {callback.CollisionObject.UserObject?.GetType().Name ?? "null"}");
+                        Log.Debug($"Hit object's UserObject type: {callback.CollisionObject.UserObject?.GetType().Name ?? "null"}");
 
                         if (callback.CollisionObject.UserObject is Component controller)
                         {
@@ -333,12 +339,17 @@ namespace RE.Core.World.Components
                 }
 
                 // UpdateCameraPosition((float)args.Time, currentHorizontalVelocity.LengthSquared > 1e-6, sprintKeyDown, _isCrouching);
-                _targetCameraYOffset = _isCrouching ? _crouchCameraOffset : _standCameraOffset;
-                _currentCameraYOffset = MathHelper.Lerp(_currentCameraYOffset, _targetCameraYOffset,
-                    (float)(Time.DeltaTime * _cameraLerpSpeed));
+
+            }
+            _targetCameraYOffset = _isCrouching ? _crouchCameraOffset : _standCameraOffset;
+            _currentCameraYOffset = MathHelper.Lerp(_currentCameraYOffset, _targetCameraYOffset,
+                (float)(Time.DeltaTime * _cameraLerpSpeed));
+            if (!SceneEditor.Enabled)
+            {
                 var basePosition = _playerGameObject.Transform.Position;
                 _camera.Position = new Vector3(basePosition.X, basePosition.Y + _currentCameraYOffset, basePosition.Z);
             }
+
         }
         bool IsGrounded(Vector3 rel)
         {

@@ -7,6 +7,7 @@ using RE.Rendering.Text;
 
 namespace RE.Core.World.Components
 {
+    [ComponentInfo("Text", Description = "Shows a text that always faces camera")]
     internal class BillboardTextComponent(string text) : Component
     {
         private FloatingText _text = new(text, Vector3.Zero, new FreeTypeFont(64, "assets/fonts/consola.ttf"));

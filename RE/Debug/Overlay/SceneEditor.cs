@@ -32,7 +32,8 @@ namespace RE.Debug.Overlay
         private Scene _scene;
         private GameObject? _selectedObject;
         private bool _popupOpen = false;
-
+        private List<Type> _customPopups = new();
+        private Dictionary<string, List<Type>> _componentDict = new();
         private static OpenTK.Mathematics.Vector4 _outlineColor = new(1, 0, 0, 1);
 
         static SceneEditor()
@@ -75,17 +76,36 @@ namespace RE.Debug.Overlay
             //SceneManager.LoadScene(_scene, true);
 
             IsVisible = true;
+
+            foreach (var type in Assembly.GetExecutingAssembly().GetTypes().Where(t => typeof(IEditorPopup).IsAssignableFrom(t)))
+            {
+                _customPopups.Add(type);
+            }
+            _componentDict = Assembly.GetExecutingAssembly()
+                .GetTypes()
+                .Where(t => !t.IsAbstract && typeof(Component).IsAssignableFrom(t))
+                .GroupBy(type =>
+                {
+                    var attr = type.GetCustomAttribute<ComponentInfo>();
+                    return attr?.Group ?? "Other";
+                })
+                .ToDictionary(g => g.Key, g => g.ToList());
         }
 
         public void Disable()
         {
             Enabled = false;
             IsVisible = false;
-            foreach (var o in _scene.GameObjects)
+            selectedObjectArrow?.StopRender();
+            selectedObjectOutline?.StopRender();
+            if (_scene?.GameObjects != null)
             {
-                foreach (var c in o.Components)
+                foreach (var o in _scene?.GameObjects!)
                 {
-                    c.OnSceneLoading(_scene);
+                    foreach (var c in o.Components)
+                    {
+                        c.OnSceneLoading(_scene);
+                    }
                 }
             }
             //SceneManager.LoadScene(_scene);
@@ -141,7 +161,7 @@ namespace RE.Debug.Overlay
             }
 
             Separator();
-            foreach (var obj in SceneManager.CurrentScene.GameObjects.Where(s => s.Parent == null).ToList())
+            foreach (var obj in SceneManager.CurrentScene.GameObjects.Where(s => s is { DoNotShowInEditor: false, Parent: null }).ToList())
             {
                 DrawObjectTree(obj);
             }
@@ -263,8 +283,22 @@ namespace RE.Debug.Overlay
         {
             foreach (var com in obj.Components.ToList())
             {
-                if (TreeNodeEx(AddSpacesToCamelCase(com.GetType().Name.Replace("Component", "")), ImGuiTreeNodeFlags.OpenOnArrow))
+                if (TreeNodeEx(AddSpacesToCamelCase(com.GetType().Name.Replace("Component", "")),
+                        ImGuiTreeNodeFlags.OpenOnArrow))
                 {
+                    BindingFlags flags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance |
+                                         BindingFlags.Static;
+
+                    foreach (var method in com.GetType().GetMethods(flags)
+                                 .Where(s => s.GetCustomAttribute<EditorButton>() != null))
+                    {
+                        if (Button(AddSpacesToCamelCase(method.GetCustomAttribute<EditorButton>()?.ShownText ??
+                                                        method.Name)))
+                        {
+                            method.Invoke(com, null);
+                        }
+                    }
+
                     if (BeginTable(com.GetHashCode().ToString(), 2, ImGuiTableFlags.Borders | ImGuiTableFlags.RowBg))
                     {
                         TableSetupColumn("##a");
@@ -274,7 +308,8 @@ namespace RE.Debug.Overlay
                         TableSetColumnIndex(0);
                         {
                             float cellWidth = GetContentRegionAvail().X; // ширина доступной области
-                            float buttonWidth = CalcTextSize("Reset").X + GetStyle().FramePadding.X * 2; // ширина кнопки
+                            float buttonWidth =
+                                CalcTextSize("Reset").X + GetStyle().FramePadding.X * 2; // ширина кнопки
 
                             SetCursorPosX(GetCursorPosX() + (cellWidth - buttonWidth) / 2f);
                             if (Button("Reset"))
@@ -298,7 +333,7 @@ namespace RE.Debug.Overlay
                             }
                         }
 
-                        foreach (var prop in com.GetType().GetProperties()
+                        foreach (var prop in com.GetType().GetProperties(flags)
                                      .Where(s => s.GetCustomAttribute<EditorProperty>() != null))
                         {
                             EditorProperty attr;
@@ -313,6 +348,16 @@ namespace RE.Debug.Overlay
                             {
                                 if (attr!.IsReadOnly)
                                     Text(prop.GetValue(com)?.ToString() ?? "<null>");
+                                else if (prop.PropertyType == typeof(bool))
+                                {
+                                    Checkbox("", ref val_b);
+                                    if (val_b != val_b_temp)
+                                    {
+                                        prop.SetValue(com, val_b);
+                                    }
+
+                                    val_b_temp = val_b;
+                                }
                                 else if (Button(prop.GetValue(com)?.ToString() ?? "<null>"))
                                 {
                                     OpenPopup("prop_new_value");
@@ -323,8 +368,15 @@ namespace RE.Debug.Overlay
                                     {
                                         (val_x, val_y, val_z) = ((OpenTK.Mathematics.Vector3)prop.GetValue(com)!);
                                     }
+
                                     if (prop.PropertyType == typeof(string))
                                         val_str = prop.GetValue(com)?.ToString() ?? "<null>";
+                                    if (prop.PropertyType == typeof(float))
+                                        val_f = (float)(prop.GetValue(com) ?? 0);
+                                    if (prop.PropertyType == typeof(int))
+                                        val_i = (int)(prop.GetValue(com) ?? 0);
+                                    if (prop.PropertyType == typeof(bool))
+                                        val_b = (bool)(prop.GetValue(com) ?? false);
                                 }
 
                                 if (IsItemHovered())
@@ -338,19 +390,99 @@ namespace RE.Debug.Overlay
                                     DrawValueChangePopup(prop, com);
                             }
                         }
+
                         EndTable();
+                    }
+
+
+                    if (com is IEditorPopup popup)
+                    {
+                        var s = popup.GetPopupSettings();
+                        SetNextWindowSize(new Vector2(s.Width, s.Height));
+
+                        PushStyleColor(ImGuiCol.Border, (Vector4)new OpenTK.Mathematics.Vector4(1f, 1f, 1f, 1f)); // белый
+                        PushStyleVar(ImGuiStyleVar.WindowBorderSize, 1.0f);
+
+                        if (popup.ShouldRenderPopup() && Begin(s.Title))
+                        {
+                            popup.RenderPopup();
+                            End();
+                        }
+
+                        PopStyleVar();
+                        PopStyleColor();
                     }
                     TreePop();
                 }
             }
-            Button("Add Component");
+
+            if (Button("Add Component"))
+            {
+                OpenPopup("new_component");
+            }
+            if (BeginPopup("new_component"))
+            {
+                BeginChild("ComponentListChild", new Vector2(200, 300), ImGuiChildFlags.AlwaysAutoResize);
+
+                foreach (var group in _componentDict.OrderBy(g => g.Key))
+                {
+                    string[] path = group.Key.Split('/');
+                    RenderGroupRecursive(path, 0, group.Value);
+                }
+                EndChild();
+                EndPopup();
+            }
         }
 
-        private float val_x = 0, val_y = 0, val_z = 0;
-        private string val_str = "";
-        private int hash;
 
-        private void DrawValueChangePopup(PropertyInfo prop, object instance)
+
+
+        void RenderGroupRecursive(string[] path, int depth, List<Type> types)
+        {
+            if (depth >= path.Length)
+            {
+                foreach (var type in types.OrderBy(t => t.Name))
+                {
+                    if (Button(AddSpacesToCamelCase(type.Name.Replace("Component", ""))))
+                    {
+                        var c = Activator.CreateInstance(type);
+                        _selectedObject!.Components.Add((Component)c!);
+                        CloseCurrentPopup();
+                    }
+
+                    if (IsItemHovered())
+                    {
+                        if (BeginTooltip())
+                        {
+                            var a = type.GetCustomAttribute<ComponentInfo>();
+                            if (a is { Description: not null })
+                            {
+                                Text($"{a.Description}");
+                                Separator();
+                            }
+                            Text($"Full Name: {type.FullName}");
+                            Text($"Assembly:  {type.Assembly.FullName}");
+                            EndTooltip();
+                        }
+                    }
+                }
+                return;
+            }
+
+            if (TreeNode(path[depth]))
+            {
+                RenderGroupRecursive(path, depth + 1, types);
+                TreePop();
+            }
+        }
+
+        private static int val_i = 0;
+        private static bool val_b = false, val_b_temp;
+        private static float val_x = 0, val_y = 0, val_z = 0, val_f = 0;
+        private static string val_str = "";
+        private static int hash;
+
+        public static void DrawValueChangePopup(PropertyInfo prop, object instance)
         {
             // https://youtu.be/hVHEpfgvpCA
 
@@ -435,6 +567,41 @@ namespace RE.Debug.Overlay
                         CloseCurrentPopup();
                     }
                 }
+                else if (prop.PropertyType == typeof(int))
+                {
+                    var l = prop.GetCustomAttribute<ValueLimit>();
+                    if (l != null)
+                        DragInt($"Value[{l.Min}; {l.Max}]:", ref val_i, 1, (int)l.Min, (int)l.Max);
+                    else
+                        DragInt("Value:", ref val_i, 0.05f, int.MinValue, int.MaxValue);
+                    if (Button("Apply"))
+                    {
+                        prop.SetValue(instance, val_i);
+                        CloseCurrentPopup();
+                    }
+                }
+                else if (prop.PropertyType == typeof(float))
+                {
+                    var l = prop.GetCustomAttribute<ValueLimit>();
+                    if (l != null)
+                        DragFloat($"Value[{l.Min}; {l.Max}]:", ref val_f, 0.05f, (float)l.Min, (float)l.Max);
+                    else
+                        DragFloat("Value:", ref val_f, 0.05f, float.MinValue, float.MaxValue);
+                    if (Button("Apply"))
+                    {
+                        prop.SetValue(instance, val_f);
+                        CloseCurrentPopup();
+                    }
+                }
+                else if (prop.PropertyType == typeof(bool))
+                {
+                    Checkbox("Value:", ref val_b);
+                    if (Button("Apply"))
+                    {
+                        prop.SetValue(instance, val_b);
+                        CloseCurrentPopup();
+                    }
+                }
                 else
                 {
                     throw new();
@@ -450,6 +617,7 @@ namespace RE.Debug.Overlay
             }
         }
 
+        //todo
         private object ConvertFromString(string str, Type type)
         {
             if (type == typeof(OpenTK.Mathematics.Vector3))
@@ -467,7 +635,6 @@ namespace RE.Debug.Overlay
             if (type == typeof(Vector3)) //Sys.Math
                 return ((OpenTK.Mathematics.Vector3)ConvertFromString(str, typeof(OpenTK.Mathematics.Vector3))!).ToSystemVector3();
 
-
             throw new NotImplementedException(type.Name);
         }
 
@@ -475,9 +642,11 @@ namespace RE.Debug.Overlay
         private static SpriteRenderer selectedObjectArrow = new(OpenTK.Mathematics.Vector3.PositiveInfinity, "assets/sprites/editor/arrow_down.png");
         private void DrawObjectTree(GameObject obj)
         {
-            ImGuiTreeNodeFlags flags = obj.Children.Count == 0
-                ? ImGuiTreeNodeFlags.Leaf | ImGuiTreeNodeFlags.NoTreePushOnOpen
-                : ImGuiTreeNodeFlags.OpenOnArrow | ImGuiTreeNodeFlags.OpenOnDoubleClick;
+            bool hasVisibleChildren = obj.Children.Any(s => !s.DoNotShowInEditor);
+
+            ImGuiTreeNodeFlags flags = hasVisibleChildren
+                ? ImGuiTreeNodeFlags.OpenOnArrow | ImGuiTreeNodeFlags.OpenOnDoubleClick
+                : ImGuiTreeNodeFlags.Leaf | ImGuiTreeNodeFlags.NoTreePushOnOpen;
 
             bool nodeOpen = TreeNodeEx((nint)obj.GetHashCode(), flags, $"[0x{obj.Id:x}] {obj.Name ?? "<unnamed>"}");
 
@@ -513,9 +682,9 @@ namespace RE.Debug.Overlay
                 }
             }
 
-            if (nodeOpen && obj.Children.Count > 0)
+            if (hasVisibleChildren && nodeOpen)
             {
-                foreach (var child in obj.Children)
+                foreach (var child in obj.Children.Where(s => !s.DoNotShowInEditor))
                     DrawObjectTree(child);
 
                 TreePop();

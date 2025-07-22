@@ -1,8 +1,10 @@
 ﻿using System.Text.Json.Nodes;
 using BulletSharp;
+using RE.Core.Scripting;
 
 namespace RE.Core.World.Components
 {
+    [ComponentInfo("Physics/Collision")]
     internal class BoxColliderComponent : ColliderComponent
     {
         public override CollisionShape CreateCollisionShape()

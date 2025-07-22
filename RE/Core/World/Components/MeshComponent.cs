@@ -5,6 +5,7 @@ using RE.Rendering.Renderables;
 
 namespace RE.Core.World.Components
 {
+    [ComponentInfo("World", Description = $"MeshComponent renders object's model, specified by the '{nameof(Path)}' property")]
     internal class MeshComponent : Component
     {
         protected ModelRenderer _modelRenderer;

@@ -1,12 +1,14 @@
 ﻿using System.Text.Json.Nodes;
 using OpenTK.Graphics.OpenGL4;
 using OpenTK.Windowing.Common;
+using RE.Core.Scripting;
 using RE.Rendering;
 using Serilog;
 using SixLabors.ImageSharp.Processing;
 
 namespace RE.Core.World.Components
 {
+    [ComponentInfo("World", Description = $"Renders Skybox with 6 images located in '{nameof(Path)}':\r\n/right.png\r\n/left.png\r\n/top.png\r\n/bottom.png\r\n/front.png\r\n/back.png\r\n")]
     internal class SkyboxComponent(string path) : Component
     {
         private static int _vao, _vbo, _handle;
@@ -36,42 +38,22 @@ namespace RE.Core.World.Components
             "/back.png"     // GL_TEXTURE_CUBE_MAP_NEGATIVE_Z
         ];
 
-        private string path = path;
+        [EditorProperty("SkyBox Path")]
+        public string Path
+        {
+            get;
+            set
+            {
+                field = value;
+                LoadSkybox();
+            }
+        } = path;
 
         public SkyboxComponent() : this("") { }
 
-        public override void Start()
+        private void LoadSkybox()
         {
-            var vertexSource = File.ReadAllText("Assets/shaders/skybox.vert");
-            var fragmentSource = File.ReadAllText("Assets/shaders/skybox.frag");
-
-            var vertexShader = GL.CreateShader(ShaderType.VertexShader);
-            GL.ShaderSource(vertexShader, vertexSource);
-            GL.CompileShader(vertexShader);
-
-            var fragmentShader = GL.CreateShader(ShaderType.FragmentShader);
-            GL.ShaderSource(fragmentShader, fragmentSource);
-            GL.CompileShader(fragmentShader);
-
-            _handle = GL.CreateProgram();
-            GL.AttachShader(_handle, vertexShader);
-            GL.AttachShader(_handle, fragmentShader);
-            GL.LinkProgram(_handle);
-
-            GL.DeleteShader(vertexShader);
-            GL.DeleteShader(fragmentShader);
-
-            _vao = GL.GenVertexArray();
-            _vbo = GL.GenBuffer();
-
-            GL.BindVertexArray(_vao);
-            GL.BindBuffer(BufferTarget.ArrayBuffer, _vbo);
-            GL.BufferData(BufferTarget.ArrayBuffer, _cubeVertices.Length * sizeof(float), _cubeVertices,
-                BufferUsageHint.StaticDraw);
-
-            GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, 3 * sizeof(float), 0);
-            GL.EnableVertexAttribArray(0);
-
+            GL.DeleteTexture(_cubemap);
             _cubemap = GL.GenTexture();
             GL.BindTexture(TextureTarget.TextureCubeMap, _cubemap);
 
@@ -79,8 +61,7 @@ namespace RE.Core.World.Components
             {
                 for (int i = 0; i < faces.Length; i++)
                 {
-                    var pathToFace = path + faces[i];
-
+                    var pathToFace = Path + faces[i];
                     if (File.Exists(pathToFace))
                     {
                         using var image =
@@ -120,6 +101,41 @@ namespace RE.Core.World.Components
             GL.TexParameter(TextureTarget.TextureCubeMap, TextureParameterName.TextureWrapS, (int)TextureWrapMode.ClampToEdge);
             GL.TexParameter(TextureTarget.TextureCubeMap, TextureParameterName.TextureWrapT, (int)TextureWrapMode.ClampToEdge);
             GL.TexParameter(TextureTarget.TextureCubeMap, TextureParameterName.TextureWrapR, (int)TextureWrapMode.ClampToEdge);
+        }
+
+        public override void Start()
+        {
+            var vertexSource = File.ReadAllText("Assets/shaders/skybox.vert");
+            var fragmentSource = File.ReadAllText("Assets/shaders/skybox.frag");
+
+            var vertexShader = GL.CreateShader(ShaderType.VertexShader);
+            GL.ShaderSource(vertexShader, vertexSource);
+            GL.CompileShader(vertexShader);
+
+            var fragmentShader = GL.CreateShader(ShaderType.FragmentShader);
+            GL.ShaderSource(fragmentShader, fragmentSource);
+            GL.CompileShader(fragmentShader);
+
+            _handle = GL.CreateProgram();
+            GL.AttachShader(_handle, vertexShader);
+            GL.AttachShader(_handle, fragmentShader);
+            GL.LinkProgram(_handle);
+
+            GL.DeleteShader(vertexShader);
+            GL.DeleteShader(fragmentShader);
+
+            _vao = GL.GenVertexArray();
+            _vbo = GL.GenBuffer();
+
+            GL.BindVertexArray(_vao);
+            GL.BindBuffer(BufferTarget.ArrayBuffer, _vbo);
+            GL.BufferData(BufferTarget.ArrayBuffer, _cubeVertices.Length * sizeof(float), _cubeVertices,
+                BufferUsageHint.StaticDraw);
+
+            GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, 3 * sizeof(float), 0);
+            GL.EnableVertexAttribArray(0);
+
+            LoadSkybox();
         }
 
         public override void Render(FrameEventArgs args)
@@ -179,8 +195,10 @@ namespace RE.Core.World.Components
         public override JsonNode GetSaveData()
         {
             JsonObject root = new();
-            var args = new JsonArray();
-            args.Add(path);
+            JsonArray args =
+            [
+                Path
+            ];
             root.Add("args", args);
             return root;
         }

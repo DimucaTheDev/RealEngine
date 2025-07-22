@@ -177,6 +177,7 @@ namespace RE.Core.Scripting
                     Log.Information($"Current level: {SceneManager.CurrentScene.Name ?? "<unnamed>"}");
                 else
                 {
+                    SceneEditor.Instance?.Disable();
                     var name = args[0];
                     if (!File.Exists($"assets/maps/{name}/data.json"))
                     {

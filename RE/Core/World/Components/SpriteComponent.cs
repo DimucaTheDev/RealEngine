@@ -1,10 +1,12 @@
 ﻿using System.Text.Json.Nodes;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
+using RE.Core.Scripting;
 using RE.Rendering.Renderables;
 
 namespace RE.Core.World.Components
 {
+    [ComponentInfo("World", Description = "Renders 2D sprite in world that")]
     internal class SpriteComponent(string path, float size = 0.25f) : Component
     {
         public SpriteComponent() : this("Assets/sprites/editor/blank.png") { }

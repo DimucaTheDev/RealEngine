@@ -7,6 +7,7 @@ using RE.Rendering.Renderables;
 
 namespace RE.Core.World.Components
 {
+    [ComponentInfo("World/Scripting", Description = "Triggers actions or commands when the player presses 'E' while looking at the object")]
     internal class UsableComponent : Component, ISceneRenderer
     {
         private SpriteRenderer _spriteClick;
@@ -20,13 +21,13 @@ namespace RE.Core.World.Components
 
         public override void Start()
         {
-            _spriteClick = new SpriteRenderer(Vector3.Zero, "assets/sprites/editor/use.png", scale: .5f, constantSize: false);
+            _spriteClick = new SpriteRenderer(Vector3.Zero, "assets/sprites/editor/use.png");
             OnUsed += () => CommandHandler.ExecuteCommand(Command);
         }
 
         public void DebugRender(FrameEventArgs args)
         {
-            _spriteClick.Position = Owner.Transform.Position + (0, Owner.Transform.Scale.Y * 2, 0);
+            _spriteClick.Position = Owner.Transform.Position + (0, Owner.Transform.Scale.Y + 0.3f, 0);
             _spriteClick.Render(args);
         }
         public override JsonNode GetSaveData()

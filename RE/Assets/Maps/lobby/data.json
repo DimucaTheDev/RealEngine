@@ -27,6 +27,25 @@
         "transform": {
             "position": [
                 0,
+                1,
+                0
+            ]
+        },
+        "components": {
+            "ParticleEmitter": {}
+        }
+    },
+    {
+        "name": "skybox",
+        "components": {
+            "Skybox": {"args":["assets/skybox/space"]}
+        }
+    },
+    {
+        "name": "Floor",
+        "transform": {
+            "position": [
+                0,
                 0,
                 0
             ],
@@ -145,7 +164,11 @@
                 "args": [
                     "Test 2"
                 ],
-                "PositionOffset": [0,1,0]
+                "PositionOffset": [
+                    0,
+                    1,
+                    0
+                ]
             }
         }
     },
@@ -177,7 +200,7 @@
             "BoxCollider": {},
             "Usable": {
                 "args": [
-                    "level test3"
+                    "level test123"
                 ]
             }
         }
