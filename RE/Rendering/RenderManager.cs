@@ -1,10 +1,10 @@
-﻿using OpenTK.Mathematics;
+﻿using System.Numerics;
+using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using RE.Core;
 using RE.Debug;
 using RE.Libs.Grille.ImGuiTK;
 using RE.Utils;
-using System.Numerics;
 using Quaternion = OpenTK.Mathematics.Quaternion;
 using Vector3 = OpenTK.Mathematics.Vector3;
 using Vector4 = OpenTK.Mathematics.Vector4;
@@ -141,7 +141,7 @@ public class RenderManager
     public static bool IsObbInFrustum(Vector3 position, Vector3 scale, Quaternion rotation)
     {
         return true; // doesnt work
-
+#pragma warning disable CS0162 
         var localCorners = new Vector3[]
         {
             new(-0.5f, -0.5f, -0.5f),

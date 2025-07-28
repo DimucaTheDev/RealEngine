@@ -18,6 +18,11 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+	  <Compile Remove="Assets\GenerateSoundMap.cs" />
+	  <Compile Remove="Assets\GenerateStaticModel.cs" />
+	</ItemGroup>
+
+	<ItemGroup>
 		<Resource Include="Assets\RealEngine.ico" />
 		<Resource Include="RealEngine.ico" />
 	</ItemGroup>
@@ -60,6 +65,16 @@
 	<ItemGroup>
 		<Folder Include="Assets\Audio\" />
 		<Folder Include="Assets\Cfg\" />
+	</ItemGroup>
+
+
+	<ItemGroup>
+	  <None Include="Assets\GenerateSoundMap.cs">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
+	  <None Include="Assets\GenerateStaticModel.cs">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
 	</ItemGroup>
 
 	<!--

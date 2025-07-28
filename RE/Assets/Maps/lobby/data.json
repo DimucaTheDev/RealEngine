@@ -1,235 +1,234 @@
-[
-    {
-        "name": "player",
-        "transform": {
-            "position": [
-                0,
-                2,
-                0
-            ],
-            "rotation": [
-                0,
-                0,
-                0
-            ],
-            "scale": [
-                1,
-                1,
-                1
-            ]
-        },
-        "components": {
-            "PlayerComponent": {}
-        }
+[ 
+  {
+    "name": "player",
+    "transform": {
+      "position": [
+        0,
+        2,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
     },
-    {
-        "name": "Floor",
-        "transform": {
-            "position": [
-                0,
-                1,
-                0
-            ]
-        },
-        "components": {
-            "ParticleEmitter": {}
-        }
-    },
-    {
-        "name": "skybox",
-        "components": {
-            "Skybox": {"args":["assets/skybox/space"]}
-        }
-    },
-    {
-        "name": "Floor",
-        "transform": {
-            "position": [
-                0,
-                0,
-                0
-            ],
-            "rotation": [
-                0,
-                0,
-                0
-            ],
-            "scale": [
-                5,
-                0.1,
-                5
-            ]
-        },
-        "components": {
-            "MeshComponent": {
-                "args": [
-                    "assets/models/cub.fbx"
-                ]
-            },
-            "BoxCollider": {}
-        }
-    },
-    {
-        "name": "test 1",
-        "transform": {
-            "position": [
-                -4,
-                3,
-                -4
-            ],
-            "rotation": [
-                0,
-                0,
-                0
-            ],
-            "scale": [
-                0.5,
-                0.5,
-                0.5
-            ]
-        },
-        "components": {
-            "MeshComponent": {
-                "args": [
-                    "assets/models/button.fbx"
-                ]
-            },
-            "BoxCollider": {},
-            "Usable": {
-                "args": [
-                    "level test"
-                ]
-            }
-        }
-    },
-    {
-        "name": "test 1 text",
-        "transform": {
-            "position": [
-                -4,
-                4,
-                -4
-            ],
-            "rotation": [
-                0,
-                0,
-                0
-            ],
-            "scale": [
-                1,
-                1,
-                1
-            ]
-        },
-        "components": {
-            "BillboardText": {
-                "args": [
-                    "Test 1"
-                ]
-            }
-        }
-    },
-    {
-        "name": "test 1",
-        "transform": {
-            "position": [
-                -2,
-                3,
-                -4
-            ],
-            "rotation": [
-                0,
-                0,
-                0
-            ],
-            "scale": [
-                0.5,
-                0.5,
-                0.5
-            ]
-        },
-        "components": {
-            "MeshComponent": {
-                "args": [
-                    "assets/models/button.fbx"
-                ]
-            },
-            "BoxCollider": {},
-            "Usable": {
-                "args": [
-                    "level test2"
-                ]
-            },
-            "BillboardText": {
-                "args": [
-                    "Test 2"
-                ],
-                "PositionOffset": [
-                    0,
-                    1,
-                    0
-                ]
-            }
-        }
-    },
-    {
-        "name": "test 1",
-        "transform": {
-            "position": [
-                0,
-                3,
-                -4
-            ],
-            "rotation": [
-                0,
-                0,
-                0
-            ],
-            "scale": [
-                0.5,
-                0.5,
-                0.5
-            ]
-        },
-        "components": {
-            "MeshComponent": {
-                "args": [
-                    "assets/models/button.fbx"
-                ]
-            },
-            "BoxCollider": {},
-            "Usable": {
-                "args": [
-                    "level test123"
-                ]
-            }
-        }
-    },
-    {
-        "name": "test 1 text",
-        "transform": {
-            "position": [
-                0,
-                4,
-                -4
-            ],
-            "rotation": [
-                0,
-                0,
-                0
-            ],
-            "scale": [
-                1,
-                1,
-                1
-            ]
-        },
-        "components": {
-            "BillboardText": {
-                "args": [
-                    "Test 3"
-                ]
-            }
-        }
+    "components": {
+      "PlayerComponent": {}
     }
+  },
+  {
+    "name": "Floor",
+    "transform": {
+      "position": [
+        0,
+        1,
+        0
+      ]
+    },
+    "components": {
+    }
+  },
+  {
+    "name": "skybox",
+    "components": {
+      //"Skybox": { "args": [ "assets/skybox/space" ] }
+    }
+  },
+  {
+    "name": "Floor",
+    "transform": {
+      "position": [
+        0,
+        0,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        5,
+        0.1,
+        5
+      ]
+    },
+    "components": {
+      "MeshComponent": {
+        "args": [
+          "assets/models/cub.smdl"
+        ]
+      },
+      "BoxCollider": {}
+    }
+  },
+  {
+    "name": "test 1",
+    "transform": {
+      "position": [
+        -4,
+        3,
+        -4
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.5,
+        0.5,
+        0.5
+      ]
+    },
+    "components": {
+      "MeshComponent": {
+        "args": [
+          "assets/models/button.smdl"
+        ]
+      },
+      "BoxCollider": {},
+      "Usable": {
+        "args": [
+          "level test"
+        ]
+      }
+    }
+  },
+  {
+    "name": "test 1 text",
+    "transform": {
+      "position": [
+        -4,
+        4,
+        -4
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "components": {
+      "BillboardText": {
+        "args": [
+          "Test 1"
+        ]
+      }
+    }
+  },
+  {
+    "name": "test 1",
+    "transform": {
+      "position": [
+        -2,
+        3,
+        -4
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.5,
+        0.5,
+        0.5
+      ]
+    },
+    "components": {
+      "MeshComponent": {
+        "args": [
+          "assets/models/button.smdl"
+        ]
+      },
+      "BoxCollider": {},
+      "Usable": {
+        "args": [
+          "level test2"
+        ]
+      },
+      "BillboardText": {
+        "args": [
+          "Test 2"
+        ],
+        "PositionOffset": [
+          0,
+          1,
+          0
+        ]
+      }
+    }
+  },
+  {
+    "name": "test 1",
+    "transform": {
+      "position": [
+        0,
+        3,
+        -4
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.5,
+        0.5,
+        0.5
+      ]
+    },
+    "components": {
+      "MeshComponent": {
+        "args": [
+          "assets/models/button.smdl"
+        ]
+      },
+      "BoxCollider": {},
+      "Usable": {
+        "args": [
+          "level test123"
+        ]
+      }
+    }
+  },
+  {
+    "name": "test 1 text",
+    "transform": {
+      "position": [
+        0,
+        4,
+        -4
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "components": {
+      "BillboardText": {
+        "args": [
+          "Test 3"
+        ]
+      }
+    }
+  }
 ]

@@ -96,7 +96,8 @@ namespace RE.Core.World
             scene.Name = name; //TODO: get name from manifest
 
             string dataPath = Path.Combine("Assets", "Maps", name, $"data.json");
-            JsonDocument doc = JsonDocument.Parse(File.ReadAllText(dataPath));
+            JsonDocument doc = JsonDocument.Parse(File.ReadAllText(dataPath),
+                new JsonDocumentOptions() { CommentHandling = JsonCommentHandling.Skip });
             foreach (var obj in doc.RootElement.EnumerateArray())
             {
                 GameObject gameObject = new GameObject();

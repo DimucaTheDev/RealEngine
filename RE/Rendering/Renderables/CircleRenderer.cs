@@ -1,4 +1,5 @@
-﻿using OpenTK.Graphics.OpenGL4;
+﻿using System.Runtime.InteropServices;
+using OpenTK.Graphics.OpenGL4;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using RE.Utils;
@@ -95,13 +96,13 @@ public class CircleRenderer : Renderable
 
         GL.BindVertexArray(_vao);
         GL.BindBuffer(BufferTarget.ArrayBuffer, _vbo);
-        RenderCircle(viewMatrix, projectionMatrix, Vector3.UnitX, Vector3.UnitY); // XY
-        RenderCircle(viewMatrix, projectionMatrix, Vector3.UnitY, Vector3.UnitZ); // YZ
-        RenderCircle(viewMatrix, projectionMatrix, Vector3.UnitX, Vector3.UnitZ); // XZ 
+        RenderCircle(Vector3.UnitX, Vector3.UnitY); // XY
+        RenderCircle(Vector3.UnitY, Vector3.UnitZ); // YZ
+        RenderCircle(Vector3.UnitX, Vector3.UnitZ); // XZ 
 
         GL.BindVertexArray(0);
     }
-    private void RenderCircle(Matrix4 view, Matrix4 proj, Vector3 axis1, Vector3 axis2)
+    private void RenderCircle(Vector3 axis1, Vector3 axis2)
     {
         if (_vertices == null || _vertices.Length != Segments + 1)
             _vertices = new Vector3[Segments + 1];
@@ -135,6 +136,8 @@ public class CircleRenderer : Renderable
         }
     }
 
+    [DllImport("NativeLibrary")]
+    internal static extern unsafe void NativeFunctionWithCallback(delegate* unmanaged[Swift]<int, int> callback);
 
     public void Dispose()
     {

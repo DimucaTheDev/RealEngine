@@ -273,7 +273,7 @@ namespace RE.Core.World.Components
                         {
                             if (controller.GetComponent<UsableComponent>() != null!)
                             {
-                                controller.GetComponent<UsableComponent>().OnUsed?.Invoke();
+                                controller.GetComponent<UsableComponent>()!.OnUsed?.Invoke();
                                 SoundManager.Play("buttons/blip", new SoundPlaybackSettings()
                                 {
                                     InWorld = false,

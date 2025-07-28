@@ -45,7 +45,8 @@ public unsafe class GLState
 
     public void Backup()
     {
-        if (!StateBackupEnabled) return;
+        if (!StateBackupEnabled)
+            return;
 
         prevVAO = GL.GetInteger(GetPName.VertexArrayBinding);
         prevArrayBuffer = GL.GetInteger(GetPName.ArrayBufferBinding);
@@ -80,12 +81,12 @@ public unsafe class GLState
 
         if (GLVersion <= 310 || CompatibilityProfile)
         {
-            GL.PolygonMode(MaterialFace.Front, PolygonMode.Fill);
-            GL.PolygonMode(MaterialFace.Back, PolygonMode.Fill);
+            GL.PolygonMode(TriangleFace.Front, PolygonMode.Fill);
+            GL.PolygonMode(TriangleFace.Back, PolygonMode.Fill);
         }
         else
         {
-            GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Fill);
+            GL.PolygonMode(TriangleFace.FrontAndBack, PolygonMode.Fill);
         }
 
         GL.Enable(EnableCap.Blend);
@@ -98,7 +99,8 @@ public unsafe class GLState
 
     public void Restore()
     {
-        if (!StateBackupEnabled) return;
+        if (!StateBackupEnabled)
+            return;
 
         // Reset state
         GL.BindTexture(TextureTarget.Texture2D, prevTexture02D);
@@ -112,8 +114,10 @@ public unsafe class GLState
 
         void Set(EnableCap cap, bool value)
         {
-            if (value) GL.Enable(cap);
-            else GL.Disable(cap);
+            if (value)
+                GL.Enable(cap);
+            else
+                GL.Disable(cap);
         }
 
         Set(EnableCap.Blend, prevBlendEnabled);
@@ -123,12 +127,12 @@ public unsafe class GLState
 
         if (GLVersion <= 310 || CompatibilityProfile)
         {
-            GL.PolygonMode(MaterialFace.Front, (PolygonMode)prevPolygonMode[0]);
-            GL.PolygonMode(MaterialFace.Back, (PolygonMode)prevPolygonMode[1]);
+            GL.PolygonMode(TriangleFace.Front, (PolygonMode)prevPolygonMode[0]);
+            GL.PolygonMode(TriangleFace.Back, (PolygonMode)prevPolygonMode[1]);
         }
         else
         {
-            GL.PolygonMode(MaterialFace.FrontAndBack, (PolygonMode)prevPolygonMode[0]);
+            GL.PolygonMode(TriangleFace.FrontAndBack, (PolygonMode)prevPolygonMode[0]);
         }
     }
 }

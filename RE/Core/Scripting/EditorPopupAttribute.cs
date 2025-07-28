@@ -1,7 +1,7 @@
 ﻿namespace RE.Core.Scripting
 {
     [AttributeUsage(AttributeTargets.Method)]
-    internal class EditorPopup(string id) : Attribute
+    internal class EditorPopupAttribute(string id) : Attribute
     {
         public string Id { get; } = id;
         public bool Modal { get; set; } = false;

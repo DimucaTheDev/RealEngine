@@ -1,8 +1,10 @@
 ﻿using System.Diagnostics;
+using System.Globalization;
 using Assimp;
 using OpenTK.Graphics.OpenGL4;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
+using RE.Rendering.Renderables.ModelFormat;
 using RE.Rendering.Text;
 using RE.Utils;
 using Serilog;
@@ -37,12 +39,10 @@ namespace RE.Rendering.Renderables
                 field = value;
             }
         }
-
         public Vector4 OutlineColor { get; set; }
         public bool Outline { get; set; }
         public override RenderLayer RenderLayer => RenderLayer.World;
         public override bool IsVisible { get; set; } = true;
-
         public Vector3 Position
         {
             get => field;
@@ -55,7 +55,6 @@ namespace RE.Rendering.Renderables
                 field = value;
             }
         }
-
         public bool ShouldCull { get; set; } = true;
         public Quaternion Rotation { get; set; }
         public Vector3 Scale { get; set; }
@@ -71,7 +70,6 @@ namespace RE.Rendering.Renderables
             Scale = Vector3.One;
             Name = $"0x{Random.Shared.Next():x}";
             InitShader();
-
         }
         public ModelRenderer(string path, Vector3? pos = null, Quaternion? rot = null, Vector3? scale = null, string? name = null)
         {
@@ -158,127 +156,215 @@ namespace RE.Rendering.Renderables
 
         private bool LoadModel(string path)
         {
-            // Define separate lists for rendering vertices (with UVs) and physics vertices (only positions)
             var renderVertices = new List<float>();
-            var physicsVerticesTemp = new List<float>(); // This will hold only X, Y, Z
+            var physicsVerticesTemp = new List<float>();
             var indices = new List<uint>();
 
             if (_meshCache.TryGetValue(path, out var meshData))
             {
                 (_vao, _vbo, _ebo, _indexCount, renderVertices, PhysicsIndices) = meshData;
-                PhysicsVertices = new float[renderVertices.Count / 5 * 3]; // Calculate size for XYZ only
+                PhysicsVertices = new float[renderVertices.Count / 5 * 3];
                 for (int i = 0, j = 0; i < renderVertices.Count; i += 5, j += 3)
                 {
-                    PhysicsVertices[j] = renderVertices[i];     // X
-                    PhysicsVertices[j + 1] = renderVertices[i + 1]; // Y
-                    PhysicsVertices[j + 2] = renderVertices[i + 2]; // Z
+                    PhysicsVertices[j] = renderVertices[i];
+                    PhysicsVertices[j + 1] = renderVertices[i + 1];
+                    PhysicsVertices[j + 2] = renderVertices[i + 2];
                 }
 
                 _texture = GetOrLoadTexture(path);
                 return true;
             }
 
-            using AssimpContext importer = new AssimpContext();
-            Scene scene;
-            try
+            if (path.EndsWith(".smdl", true, CultureInfo.InvariantCulture))
             {
-                scene = importer.ImportFile(path,
-                     PostProcessSteps.Triangulate | PostProcessSteps.GenerateNormals | PostProcessSteps.FlipUVs);
+                var data = StaticModelLoader.LoadModel(path);
+
+
+                Name = data.Name;
+
+                for (int i = 0; i < data.Vertices.Length; i++)
+                {
+                    var v = data.Vertices[i];
+
+                    v = Vector3.Transform(v, Quaternion.FromAxisAngle(Vector3.UnitX, MathHelper.DegreesToRadians(-90.0f)));
+
+                    renderVertices.Add(v.X);
+                    renderVertices.Add(v.Y);
+                    renderVertices.Add(v.Z);
+
+                    if (data.UVs != null && i < data.UVs.Length)
+                    {
+                        renderVertices.Add(data.UVs[i].X);
+                        renderVertices.Add(data.UVs[i].Y);
+                    }
+                    else
+                    {
+                        renderVertices.Add(0.0f);
+                        renderVertices.Add(0.0f);
+                    }
+
+                    physicsVerticesTemp.Add(v.X);
+                    physicsVerticesTemp.Add(v.Y);
+                    physicsVerticesTemp.Add(v.Z);
+                }
+
+                foreach (var index in data.Indices)
+                {
+                    indices.Add((uint)index);
+                }
+
+                _indexCount = indices.Count;
+
+                _vao = (uint)GL.GenVertexArray();
+                _vbo = (uint)GL.GenBuffer();
+                _ebo = (uint)GL.GenBuffer();
+
+                GL.BindVertexArray(_vao);
+
+                GL.BindBuffer(BufferTarget.ArrayBuffer, _vbo);
+                GL.BufferData(BufferTarget.ArrayBuffer, renderVertices.Count * sizeof(float), renderVertices.ToArray(), BufferUsageHint.StaticDraw);
+
+                GL.BindBuffer(BufferTarget.ElementArrayBuffer, _ebo);
+                GL.BufferData(BufferTarget.ElementArrayBuffer, indices.Count * sizeof(uint), indices.ToArray(), BufferUsageHint.StaticDraw);
+
+                GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, 5 * sizeof(float), 0);
+                GL.EnableVertexAttribArray(0);
+                GL.VertexAttribPointer(1, 2, VertexAttribPointerType.Float, false, 5 * sizeof(float), 3 * sizeof(float));
+                GL.EnableVertexAttribArray(1);
+
+                GL.BindVertexArray(0);
+
+                _meshCache[path] = (_vao, _vbo, _ebo, _indexCount, renderVertices, indices.Select(s => (int)s).ToList());
+
+                PhysicsVertices = physicsVerticesTemp.ToArray();
+                PhysicsIndices = indices.Select(i => (int)i).ToList();
+                _texture = GetOrLoadTexture(path);
+
+                return true;
             }
-            catch (Exception ex)
+            else
             {
-                Log.Error(ex, $"Failed to load model {Name} at {path}");
-                _exception = ex.Message;
-                return false;
+                using AssimpContext importer = new AssimpContext();
+                Scene scene;
+                try
+                {
+                    scene = importer.ImportFile(path,
+                        PostProcessSteps.Triangulate | PostProcessSteps.GenerateNormals | PostProcessSteps.FlipUVs);
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, $"Failed to load model {Name} at {path}");
+                    _exception = ex.Message;
+                    return false;
+                }
+
+                if (string.IsNullOrEmpty(scene.RootNode.Name))
+                    Name = scene.RootNode.Name;
+
+                if (!scene.Meshes.Any())
+                    return false;
+
+
+                var mesh = scene.Meshes[0];
+
+                var min = new Vector3D(float.MaxValue, float.MaxValue, float.MaxValue);
+                var max = new Vector3D(float.MinValue, float.MinValue, float.MinValue);
+
+                for (int i = 0; i < mesh.VertexCount; i++)
+                {
+                    var v = mesh.Vertices[i];
+                    min.X = Math.Min(min.X, v.X);
+                    min.Y = Math.Min(min.Y, v.Y);
+                    min.Z = Math.Min(min.Z, v.Z);
+
+                    max.X = Math.Max(max.X, v.X);
+                    max.Y = Math.Max(max.Y, v.Y);
+                    max.Z = Math.Max(max.Z, v.Z);
+                }
+
+                var center = (min + max) * 0.5f;
+
+                Quaternion correctionRotation =
+                    Quaternion.FromAxisAngle(Vector3.UnitX, MathHelper.DegreesToRadians(-90.0f));
+
+                for (int i = 0; i < mesh.VertexCount; i++)
+                {
+                    var pos = mesh.Vertices[i] - center;
+                    Vector3 opentkPos = new Vector3(pos.X, pos.Y, pos.Z);
+
+                    opentkPos = Vector3.Transform(opentkPos, correctionRotation);
+
+                    var uv = mesh.HasTextureCoords(0)
+                        ? mesh.TextureCoordinateChannels[0][i]
+                        : new Vector3D(0, 0, 0);
+
+                    renderVertices.AddRange([opentkPos.X, opentkPos.Y, opentkPos.Z, uv.X, uv.Y]);
+
+                    physicsVerticesTemp.AddRange([opentkPos.X, opentkPos.Y, opentkPos.Z]);
+                }
+
+
+                foreach (var face in mesh.Faces)
+                    indices.AddRange(face.Indices.Select(i => (uint)i));
+
+                _indexCount = indices.Count;
+
+                _vao = (uint)GL.GenVertexArray();
+                _vbo = (uint)GL.GenBuffer();
+                _ebo = (uint)GL.GenBuffer();
+
+                GL.BindVertexArray(_vao);
+                GL.BindBuffer(BufferTarget.ArrayBuffer, _vbo);
+                GL.BufferData(BufferTarget.ArrayBuffer, renderVertices.Count * sizeof(float), renderVertices.ToArray(),
+                    BufferUsageHint.StaticDraw);
+
+                GL.BindBuffer(BufferTarget.ElementArrayBuffer, _ebo);
+                GL.BufferData(BufferTarget.ElementArrayBuffer, indices.Count * sizeof(uint), indices.ToArray(),
+                    BufferUsageHint.StaticDraw);
+
+                GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, 5 * sizeof(float), 0);
+                GL.EnableVertexAttribArray(0);
+                GL.VertexAttribPointer(1, 2, VertexAttribPointerType.Float, false, 5 * sizeof(float),
+                    3 * sizeof(float));
+                GL.EnableVertexAttribArray(1);
+                GL.BindVertexArray(0);
+
+                _meshCache[path] = ((uint)_vao, (uint)_vbo, (uint)_ebo, _indexCount, renderVertices,
+                    indices.Select(s => (int)s).ToList());
+
+                PhysicsVertices = physicsVerticesTemp.ToArray();
+                PhysicsIndices = indices.Select(i => (int)i).ToList();
+                _texture = GetOrLoadTexture(path, scene);
+                return true;
             }
-
-            if (string.IsNullOrEmpty(scene.RootNode.Name))
-                Name = scene.RootNode.Name;
-
-            if (!scene.Meshes.Any())
-                return false;
-
-
-            var mesh = scene.Meshes[0];
-
-            var min = new Vector3D(float.MaxValue, float.MaxValue, float.MaxValue);
-            var max = new Vector3D(float.MinValue, float.MinValue, float.MinValue);
-
-            for (int i = 0; i < mesh.VertexCount; i++)
-            {
-                var v = mesh.Vertices[i];
-                min.X = Math.Min(min.X, v.X);
-                min.Y = Math.Min(min.Y, v.Y);
-                min.Z = Math.Min(min.Z, v.Z);
-
-                max.X = Math.Max(max.X, v.X);
-                max.Y = Math.Max(max.Y, v.Y);
-                max.Z = Math.Max(max.Z, v.Z);
-            }
-
-            var center = (min + max) * 0.5f;
-
-            Quaternion correctionRotation = Quaternion.FromAxisAngle(Vector3.UnitX, MathHelper.DegreesToRadians(-90.0f));
-
-            for (int i = 0; i < mesh.VertexCount; i++)
-            {
-                var pos = mesh.Vertices[i] - center;
-                // Convert Assimp.Vector3D to OpenTK.Mathematics.Vector3
-                Vector3 opentkPos = new Vector3(pos.X, pos.Y, pos.Z);
-
-                // Apply correction rotation to the vertex position using Quaternion.Transform
-                opentkPos = Vector3.Transform(opentkPos, correctionRotation);
-
-                var uv = mesh.HasTextureCoords(0) ? mesh.TextureCoordinateChannels[0][i] : new Vector3D(0, 0, 0); // Corrected namespace for Assimp.Vector3D
-
-                // Add to rendering vertices (position + UV)
-                renderVertices.AddRange([opentkPos.X, opentkPos.Y, opentkPos.Z, uv.X, uv.Y]);
-
-                // Add to physics vertices (position only)
-                physicsVerticesTemp.AddRange([opentkPos.X, opentkPos.Y, opentkPos.Z]);
-            }
-
-
-            foreach (var face in mesh.Faces)
-                indices.AddRange(face.Indices.Select(i => (uint)i));
-
-            _indexCount = indices.Count;
-
-            _vao = (uint)GL.GenVertexArray();
-            _vbo = (uint)GL.GenBuffer();
-            _ebo = (uint)GL.GenBuffer();
-
-            GL.BindVertexArray(_vao);
-            GL.BindBuffer(BufferTarget.ArrayBuffer, _vbo);
-            GL.BufferData(BufferTarget.ArrayBuffer, renderVertices.Count * sizeof(float), renderVertices.ToArray(), BufferUsageHint.StaticDraw);
-
-            GL.BindBuffer(BufferTarget.ElementArrayBuffer, _ebo);
-            GL.BufferData(BufferTarget.ElementArrayBuffer, indices.Count * sizeof(uint), indices.ToArray(), BufferUsageHint.StaticDraw);
-
-            GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, 5 * sizeof(float), 0);
-            GL.EnableVertexAttribArray(0);
-            GL.VertexAttribPointer(1, 2, VertexAttribPointerType.Float, false, 5 * sizeof(float), 3 * sizeof(float));
-            GL.EnableVertexAttribArray(1);
-            GL.BindVertexArray(0);
-
-            // Store renderVertices (with UVs) in the cache for rendering
-            _meshCache[path] = ((uint)_vao, (uint)_vbo, (uint)_ebo, _indexCount, renderVertices, indices.Select(s => (int)s).ToList());
-
-            // Assign the physics-only vertices to PhysicsVertices
-            PhysicsVertices = physicsVerticesTemp.ToArray(); // This now correctly contains only X, Y, Z
-            PhysicsIndices = indices.Select(i => (int)i).ToList(); // Convert from uint[] to int[]
-
-            _texture = GetOrLoadTexture(path); // Uncomment this line if you want to load actual textures
-            return true;
         }
 
-        private uint GetOrLoadTexture(string path)
+        private uint GetOrLoadTexture(string path, Scene? scene = null)
         {
             if (_textureCache.TryGetValue(path, out var texId))
-                return texId;//CreateMissingTexture();
+                return texId; //CreateMissingTexture();
 
-            var assimpContext = new AssimpContext();
-            var importFile = assimpContext.ImportFile(path);
+            if (path.EndsWith(".smdl", true, CultureInfo.InvariantCulture))
+            {
+                if (!File.Exists(path + ".png"))
+                    return CreateMissingTexture();
+                var readAllBytes = File.ReadAllBytes(path + ".png");
+                var t = ImageResult.FromMemory(readAllBytes, ColorComponents.RedGreenBlueAlpha);
+                var lt = LoadTexture(t);
+                _textureCache[path] = lt;
+
+                return lt;
+            }
+
+            Scene importFile = scene!;
+
+            if (scene == null)
+            {
+                using var assimpContext = new AssimpContext();
+                importFile = assimpContext.ImportFile(path);
+            }
+
+
             var mat = importFile.Materials.FirstOrDefault();
             string? texPath = mat?.TextureDiffuse.FilePath;
 
@@ -295,9 +381,12 @@ namespace RE.Rendering.Renderables
             }
             else
             {
+                Log.Warning($"No texture for {path}");
                 texId = CreateMissingTexture();
             }
-            assimpContext.Dispose();
+
+            importFile.Clear();
+
             _textureCache[path] = texId;
             return texId;
         }
@@ -312,7 +401,6 @@ namespace RE.Rendering.Renderables
 
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
-
             GL.GenerateMipmap(GenerateMipmapTarget.Texture2D);
             return texID;
         }

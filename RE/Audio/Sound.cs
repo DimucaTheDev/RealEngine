@@ -114,7 +114,7 @@ namespace RE.Audio
                         var lengthInSamples = size * 8 / (channels * bits);
                         _length = (float)lengthInSamples / frequency;
                     }
-                    catch (DivideByZeroException e)
+                    catch (DivideByZeroException)
                     {
                         Log.Error($"Unable to obtain 'channels', 'bits' or 'size'. Is _buffer({_buffer}) correct?");
                     }
@@ -244,7 +244,8 @@ namespace RE.Audio
             Stopped += () => _sprite.ChangeTexture("Assets/sprites/editor/speaker.png");
             Stopped += () =>
             {
-                if (DisposeOnStop) SoundManager.DisposeSound(this);
+                if (DisposeOnStop)
+                    SoundManager.DisposeSound(this);
             };
             Paused += () => _sprite.ChangeTexture("Assets/sprites/editor/speaker.png");
             Resumed += () => _sprite.ChangeTexture("Assets/sprites/editor/speaker_play.png");
@@ -292,7 +293,8 @@ namespace RE.Audio
 
         public void Dispose()
         {
-            if (_disposed) return;
+            if (_disposed)
+                return;
             _sprite.Dispose();
             _crRefDis.Dispose();
             _crMaxDis.Dispose();

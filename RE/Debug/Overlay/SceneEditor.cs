@@ -94,7 +94,7 @@ namespace RE.Debug.Overlay
                 .Where(t => !t.IsAbstract && typeof(Component).IsAssignableFrom(t))
                 .GroupBy(type =>
                 {
-                    var attr = type.GetCustomAttribute<ComponentInfo>();
+                    var attr = type.GetCustomAttribute<ComponentInfoAttribute>();
                     return attr?.Group ?? "Other";
                 })
                 .ToDictionary(g => g.Key, g => g.ToList());
@@ -321,9 +321,9 @@ namespace RE.Debug.Overlay
                                          BindingFlags.Static;
 
                     foreach (var method in com.GetType().GetMethods(flags)
-                                 .Where(s => s.GetCustomAttribute<EditorButton>() != null))
+                                 .Where(s => s.GetCustomAttribute<EditorButtonAttribute>() != null))
                     {
-                        if (Button(AddSpacesToCamelCase(method.GetCustomAttribute<EditorButton>()?.ShownText ??
+                        if (Button(AddSpacesToCamelCase(method.GetCustomAttribute<EditorButtonAttribute>()?.ShownText ??
                                                         method.Name)))
                         {
                             method.Invoke(com, null);
@@ -362,13 +362,13 @@ namespace RE.Debug.Overlay
                         }
 
                         foreach (var prop in com.GetType().GetProperties(flags)
-                                     .Where(s => s.GetCustomAttribute<EditorProperty>() != null))
+                                     .Where(s => s.GetCustomAttribute<EditorPropertyAttribute>() != null))
                         {
-                            EditorProperty attr;
+                            EditorPropertyAttribute attr;
                             TableNextRow();
                             TableSetColumnIndex(0);
                             {
-                                attr = prop.GetCustomAttribute<EditorProperty>()!;
+                                attr = prop.GetCustomAttribute<EditorPropertyAttribute>()!;
                                 string name = attr?.DisplayedName ?? AddSpacesToCamelCase(prop.Name);
                                 Text(name);
                             }
@@ -517,7 +517,7 @@ namespace RE.Debug.Overlay
                         Text($"Object already contains {type.Name}");
                         Separator();
                     }
-                    var a = type.GetCustomAttribute<ComponentInfo>();
+                    var a = type.GetCustomAttribute<ComponentInfoAttribute>();
                     if (a is { Description: not null })
                     {
                         Text($"{a.Description}");
@@ -546,7 +546,7 @@ namespace RE.Debug.Overlay
                     {
                         if (BeginTooltip())
                         {
-                            var a = type.GetCustomAttribute<ComponentInfo>();
+                            var a = type.GetCustomAttribute<ComponentInfoAttribute>();
                             if (a is { Description: not null })
                             {
                                 Text($"{a.Description}");
@@ -666,7 +666,7 @@ namespace RE.Debug.Overlay
                 }
                 else if (prop.PropertyType == typeof(int))
                 {
-                    var l = prop.GetCustomAttribute<ValueLimit>();
+                    var l = prop.GetCustomAttribute<ValueLimitAttribute>();
                     if (l != null)
                         DragInt($"Value[{l.Min}; {l.Max}]:", ref val_i, 1, (int)l.Min, (int)l.Max);
                     else
@@ -679,7 +679,7 @@ namespace RE.Debug.Overlay
                 }
                 else if (prop.PropertyType == typeof(float))
                 {
-                    var l = prop.GetCustomAttribute<ValueLimit>();
+                    var l = prop.GetCustomAttribute<ValueLimitAttribute>();
                     if (l != null)
                         DragFloat($"Value[{l.Min}; {l.Max}]:", ref val_f, 0.05f, (float)l.Min, (float)l.Max);
                     else
