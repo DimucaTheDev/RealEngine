@@ -44,6 +44,8 @@ namespace RE.Debug.Overlay
         private Node _rootNode = new();
 
         private static OpenTK.Mathematics.Vector4 _outlineColor = new(1, 0, 0, 1);
+        private static readonly ModelRenderer SelectedObjectOutline = new() { Outline = true };
+        private static readonly SpriteRenderer SelectedObjectArrow = new(OpenTK.Mathematics.Vector3.PositiveInfinity, "assets/sprites/editor/arrow_down.png");
 
         static SceneEditor()
         {
@@ -64,7 +66,7 @@ namespace RE.Debug.Overlay
 
                     Color4 color = (Color4)propertyInfo.GetValue(null)!;
                     _outlineColor = new(color.R, color.G, color.B, color.A);
-                    selectedObjectOutline.OutlineColor = _outlineColor;
+                    SelectedObjectOutline.OutlineColor = _outlineColor;
                 }
             };
         }
@@ -123,8 +125,8 @@ namespace RE.Debug.Overlay
         {
             Enabled = false;
             IsVisible = false;
-            selectedObjectArrow?.StopRender();
-            selectedObjectOutline?.StopRender();
+            SelectedObjectArrow?.StopRender();
+            SelectedObjectOutline?.StopRender();
             if (_scene?.GameObjects != null)
             {
                 foreach (var o in _scene?.GameObjects!)
@@ -141,10 +143,10 @@ namespace RE.Debug.Overlay
 
         public override void Render(FrameEventArgs args)
         {
-            if (selectedObjectArrow != null!)
+            if (SelectedObjectArrow != null!)
             {
                 if (_selectedObject != null)
-                    selectedObjectArrow.Position = _selectedObject.Transform.Position
+                    SelectedObjectArrow.Position = _selectedObject.Transform.Position
                                                    //+ (0, _selectedObject.Transform.Scale.Y, 0)
                                                    + (0, 1.2f, 0)
                                                    + (0, MathF.Sin(Time.ElapsedTime * 3) / 4, 0);
@@ -178,11 +180,37 @@ namespace RE.Debug.Overlay
 
             Begin("Scene Hierarchy", flags);
 
-            if (Button("remove"))
+            if (Button("[+]"))
+            {
+                var newObject = new GameObject();
+                SceneManager.CurrentScene.GameObjects.Add(newObject);
+                _selectedObject = newObject;
+            }
+
+            if (IsItemHovered())
+            {
+                BeginTooltip();
+                Text("Create new empty object");
+                EndTooltip();
+            }
+
+            SameLine();
+
+            BeginDisabled(_selectedObject == null);
+            if (Button("[-]"))
             {
                 _scene.GameObjects.Remove(_selectedObject!);
                 _selectedObject = null;
+                SelectedObjectArrow!.StopRender();
             }
+            if (IsItemHovered())
+            {
+                BeginTooltip();
+                Text("Remove selected object object");
+                EndTooltip();
+            }
+            EndDisabled();
+
             if (Button("Save"))
             {
                 SceneManager.SaveScene(_scene, "assets/maps/test123");
@@ -735,8 +763,6 @@ namespace RE.Debug.Overlay
             throw new NotImplementedException(type.Name);
         }
 
-        private static ModelRenderer selectedObjectOutline = new() { Outline = true };
-        private static SpriteRenderer selectedObjectArrow = new(OpenTK.Mathematics.Vector3.PositiveInfinity, "assets/sprites/editor/arrow_down.png");
         private void DrawObjectTree(GameObject obj)
         {
             bool hasVisibleChildren = obj.Children.Any(s => !s.DoNotShowInEditor);
@@ -767,26 +793,26 @@ namespace RE.Debug.Overlay
 
             if (mesh == null!)
             {
-                selectedObjectOutline.StopRender();
-                selectedObjectArrow.Render();
-                selectedObjectArrow.Position = _selectedObject.Transform.Position
+                SelectedObjectOutline.StopRender();
+                SelectedObjectArrow.Render();
+                SelectedObjectArrow.Position = _selectedObject.Transform.Position
                                                + (0, 1.2f, 0)
                                                + (0, MathF.Sin(Time.ElapsedTime * 3) / 4, 0);
             }
             else
             {
-                selectedObjectArrow.StopRender();
-                selectedObjectOutline.Render();
+                SelectedObjectArrow.StopRender();
+                SelectedObjectOutline.Render();
 
-                selectedObjectOutline.Position = _selectedObject.Transform.Position;
-                selectedObjectOutline.Rotation = _selectedObject.Transform.Rotation;
-                selectedObjectOutline.Scale = _selectedObject.Transform.Scale;
+                SelectedObjectOutline.Position = _selectedObject.Transform.Position;
+                SelectedObjectOutline.Rotation = _selectedObject.Transform.Rotation;
+                SelectedObjectOutline.Scale = _selectedObject.Transform.Scale;
                 var f = 0.05f;
-                selectedObjectOutline.Scale += (f, f, f);
+                SelectedObjectOutline.Scale += (f, f, f);
 
                 if (mesh != null!)
                 {
-                    selectedObjectOutline.Path = mesh.Path;
+                    SelectedObjectOutline.Path = mesh.Path;
                 }
             }
         }

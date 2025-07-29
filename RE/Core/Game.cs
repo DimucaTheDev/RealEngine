@@ -88,17 +88,15 @@ internal class Game : GameWindow
         TextRenderer.Init();
         Initializer.Init();
 
-        Initializer.AddStep(("Initializing Debug Overlay", DebugOverlay.Init));
-        Initializer.AddStep(("Initializing Debug Renderer", () =>
-                {
-                    // LineManager.Main!.Init();
-                    LineManager.Main.Render();
-                }
+        Initializer.AddStep(("Bootstrapping...", () =>
+        {
+            DebugOverlay.Init();
+            LineManager.Main!.Render();
+            ConsoleWindow.Init();
+            SoundManager.Init();
+            PhysicsManager.Init();
+        }
         ));
-        Initializer.AddStep(("Initializing ConsoleWindow", ConsoleWindow.Init));
-        // Initializer.AddStep(("Initializing Skybox", SkyboxRenderer.Init));
-        Initializer.AddStep(("Initializing SoundManager", SoundManager.Init));
-        Initializer.AddStep(("Initializing Physics Manager", PhysicsManager.Init));
         Initializer.AddStep(("Registering Commands", CommandHandler.RegisterAllCommands));
         Initializer.AddStep(("Running default.cfg", () => { CommandHandler.ExecuteCommand("source assets/cfg/default.cfg"); }
         ));

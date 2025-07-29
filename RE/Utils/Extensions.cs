@@ -31,7 +31,7 @@ namespace RE.Utils
                    list.Contains(r);
         }
 
-        public static void StopRender<T>(this T r) where T : Renderable
+        public static void StopRender<T>(this T r) where T : Renderable?
         {
             RenderManager.RemoveRenderable(r);
         }

@@ -73,7 +73,8 @@ namespace RE.Core
         }
         public static void AddStep((string label, Action action) step)
         {
-            if (!_initSteps.Any()) SetupScreen();
+            if (!_initSteps.Any())
+                SetupScreen();
 
             _initDone = false;
             _initSteps.Enqueue(step);
