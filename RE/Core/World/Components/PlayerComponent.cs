@@ -13,6 +13,7 @@ using RE.Rendering;
 using RE.Rendering.Renderables;
 using RE.Utils;
 using Serilog;
+using Camera = RE.Rendering.Camera;
 
 namespace RE.Core.World.Components
 {
@@ -127,84 +128,93 @@ namespace RE.Core.World.Components
                 if (rbN == null)
                     return;
 
-                #region dirmisch
+                #region HL2-like Movement
 
-                Vector3 moveDirection = Vector3.Zero;
+                var rb = _playerGameObject.GetComponent<RigidBodyComponent>()?.RigidBody;
+                if (rb == null)
+                    return;
+
+                Vector3 moveDir = Vector3.Zero;
+                var camForward = (_camera.Front with { Y = 0 }).Normalized();
+                var camRight = Vector3.Normalize(Vector3.Cross(camForward, _camera.Up));
 
                 if (input.IsKeyDown(Keys.W))
-                    moveDirection += (_camera.Front with { Y = 0 });
+                    moveDir += camForward;
                 if (input.IsKeyDown(Keys.S))
-                    moveDirection -= (_camera.Front with { Y = 0 });
-                if (input.IsKeyDown(Keys.A))
-                    moveDirection -= (Vector3.Cross(_camera.Front, _camera.Up));
+                    moveDir -= camForward;
                 if (input.IsKeyDown(Keys.D))
-                    moveDirection += (Vector3.Cross(_camera.Front, _camera.Up));
+                    moveDir += camRight;
+                if (input.IsKeyDown(Keys.A))
+                    moveDir -= camRight;
 
-                moveDirection = moveDirection.Normalized();
+                if (moveDir.LengthSquared > 1e-5f)
+                    moveDir = moveDir.Normalized();
 
-                if (moveDirection.LengthSquared > 1e-6)
+                bool crouching = _isCrouching;
+                bool sprinting = input.IsKeyDown(Keys.LeftShift);
+                float maxSpeed = crouching ? 5f : (sprinting ? 13.5f : 10f);
+
+                float accel = 120f;
+                float friction = 8f;
+
+                Vector3 currentVel = new((float)rb.LinearVelocity.X, 0, (float)rb.LinearVelocity.Z);
+                Vector3 targetVel = moveDir * maxSpeed;
+
+                if (moveDir.LengthSquared > 0.001f)
                 {
-                    moveDirection = moveDirection.Normalized();
-                }
+                    Vector3 velDelta = targetVel - currentVel;
 
-                bool crouchKeyDown = input.IsKeyDown(Keys.LeftControl);
-                bool sprintKeyDown = input.IsKeyDown(Keys.LeftShift);
-
-                float maxSpeed = _isCrouching ? 5f : (sprintKeyDown ? 13.5f : 10f);
-                float acceleration = 20f;
-                float friction = 1f;
-
-                Vector3 currentHorizontalVelocity = new Vector3(
-                    (float)rbN.LinearVelocity.X,
-                    0, (float)rbN.LinearVelocity.Z
-                );
-
-                // SECRET UFO MESSAGE: YA NE EBU CHO ZDES PROISHODIT
-
-                Vector3 desiredHorizontalVelocity = moveDirection * maxSpeed;
-
-                Vector3 velocityDifference = desiredHorizontalVelocity - currentHorizontalVelocity;
-
-                if (moveDirection.LengthSquared > 1e-6)
-                {
-                    Vector3 accelerationVector = velocityDifference * acceleration * Time.DeltaTime;
-
-                    if (accelerationVector.LengthSquared > velocityDifference.LengthSquared)
+                    if (velDelta.LengthSquared > 1e-6f)
                     {
-                        accelerationVector = velocityDifference;
-                    }
+                        Vector3 accelStep = velDelta.Normalized() * accel * Time.DeltaTime;
 
-                    currentHorizontalVelocity += accelerationVector;
+                        if (accelStep.LengthSquared > velDelta.LengthSquared)
+                            accelStep = velDelta;
 
-                    if (currentHorizontalVelocity.LengthSquared > maxSpeed * maxSpeed)
-                    {
-                        currentHorizontalVelocity = currentHorizontalVelocity.Normalized() * maxSpeed;
+                        currentVel += accelStep;
                     }
                 }
                 else
                 {
-                    float currentSpeed = currentHorizontalVelocity.Length;
-                    if (currentSpeed > 0)
+                    float speed = currentVel.Length;
+                    if (speed > 0)
                     {
-                        float drop = currentSpeed * friction * Time.DeltaTime;
-                        float newSpeed = MathF.Max(0, currentSpeed - drop);
-                        currentHorizontalVelocity = currentHorizontalVelocity.Normalized() * newSpeed;
+                        float drop = speed * friction * Time.DeltaTime;
+                        float newSpeed = MathF.Max(0, speed - drop);
+
+                        if (newSpeed > 0)
+                            currentVel = currentVel.Normalized() * newSpeed;
+                        else
+                            currentVel = Vector3.Zero;
                     }
                 }
+
 
                 bool grounded = IsGrounded();
                 bool justLanded = grounded && !wasGrounded;
 
-                if (!justLanded)
+                if (grounded && !wasGrounded)
                 {
-                    rbN.LinearVelocity = new BulletSharp.Math.Vector3(
-                        currentHorizontalVelocity.X,
-                        (float)rbN.LinearVelocity.Y,
-                        currentHorizontalVelocity.Z
-                    );
+                    var lv = rb.LinearVelocity;
+                    rb.LinearVelocity = new BulletSharp.Math.Vector3(currentVel.X, 0, currentVel.Z);
+                }
+                else
+                {
+                    rb.LinearVelocity = new BulletSharp.Math.Vector3(currentVel.X, rb.LinearVelocity.Y, currentVel.Z);
                 }
 
+                wasGrounded = grounded;
 
+                if (input.IsKeyDown(Keys.Space) && grounded && _jumpCd <= 0)
+                {
+                    rb.ApplyCentralImpulse(9f * BulletSharp.Math.Vector3.UnitY);
+                    _jumpCd = 0.3f;
+                }
+
+                if (_jumpCd > 0f)
+                    _jumpCd -= Time.DeltaTime;
+
+                var crouchKeyDown = input.IsKeyDown(Keys.LeftControl);
                 if (crouchKeyDown != _isCrouching)
                 {
                     float newHeight = crouchKeyDown ? _crouchHeight : _standHeight;
@@ -217,7 +227,6 @@ namespace RE.Core.World.Components
                         var capsuleCollider = _playerGameObject.GetComponent<CapsuleColliderComponent>();
                         if (capsuleCollider != null)
                         {
-                            var rb = capsuleCollider.RigidBody;
                             var transform = rb.WorldTransform;
 
                             rb.CollisionShape = capsuleCollider.CreateCollisionShape();
@@ -232,27 +241,8 @@ namespace RE.Core.World.Components
                     }
                 }
 
-                if (grounded && !wasGrounded)
-                {
-                    var v = rbN.LinearVelocity;
-                    rbN.LinearVelocity = new BulletSharp.Math.Vector3(v.X, 0, v.Z);
-                }
-
-                wasGrounded = grounded;
-
-                if (input.IsKeyDown(Keys.Space) && grounded && _jumpCd <= 0)
-                {
-                    rbN.ApplyCentralImpulse(9 * BulletSharp.Math.Vector3.UnitY);
-                    _jumpCd = 0.3f;
-                }
-
-
-                if (_jumpCd >= 0)
-                    _jumpCd -= (float)args.Time;
-
-
-
                 #endregion
+
 
                 if (input.IsKeyPressed(Keys.E))
                 {
@@ -337,9 +327,6 @@ namespace RE.Core.World.Components
                     Game.Instance.CursorState = CursorState.Normal;
                     _camera.FirstMove = true;
                 }
-
-                // UpdateCameraPosition((float)args.Time, currentHorizontalVelocity.LengthSquared > 1e-6, sprintKeyDown, _isCrouching);
-
             }
             _targetCameraYOffset = _isCrouching ? _crouchCameraOffset : _standCameraOffset;
             _currentCameraYOffset = MathHelper.Lerp(_currentCameraYOffset, _targetCameraYOffset,

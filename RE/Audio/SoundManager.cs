@@ -1,5 +1,4 @@
 ﻿using System.Collections.ObjectModel;
-using System.Runtime.InteropServices;
 using System.Text.Json;
 using NAudio.Wave;
 using OpenTK.Audio.OpenAL;
@@ -13,7 +12,7 @@ namespace RE.Audio
 {
     internal static class SoundManager
     {
-        public static class ALCExt
+        private static class ALCExt
         {
             public const int ALC_HRTF_SOFT = 0x1992;
             public const int ALC_HRTF_ID_SOFT = 0x1996;
@@ -37,8 +36,6 @@ namespace RE.Audio
 
         public static ReadOnlyCollection<Sound> ActiveSounds => _activeSounds.AsReadOnly();
 
-        [DllImport("openal32.dll", CallingConvention = CallingConvention.Cdecl)]
-        private static extern void alcGetIntegerv(IntPtr device, int param, int size, int[] data);
 
         public static void Init()
         {
@@ -48,8 +45,6 @@ namespace RE.Audio
             _context = ALC.CreateContext(_device, new[] { ALCExt.ALC_HRTF_SOFT, ALCExt.ALC_HRTF_ENABLED, 0 });
             ALC.MakeContextCurrent(_context);
 
-            int[] r = { -999 };
-            alcGetIntegerv(_device, 0x1992 /* ALC_HRTF_STATUS_SOFT */, 1, r);
 
             var path = Path.Combine("Assets", "soundmap.json");
             var json = File.ReadAllText(path);

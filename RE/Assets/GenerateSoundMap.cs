@@ -1,5 +1,7 @@
 ﻿#!/usr/bin/env dotnet
 
+#:property JsonSerializerIsReflectionEnabledByDefault=true
+
 // Hey! This file is NOT a source code of the game, but a tool/script to generate soundmap.json file.
 // You should run this file using ' dotnet run ./GenerateSoundMap.cs ' command in the terminal from the /Assets folder.
 // :)
@@ -8,6 +10,7 @@
 using System;
 using System.IO;
 using System.Text.Json;
+using System.Text.Json.Serialization.Metadata;
 using System.Text.RegularExpressions;
 
 if (!Directory.Exists("Audio"))
@@ -42,6 +45,7 @@ foreach (var sound in map)
 {
     sound.Value.Sort(comparer);
 }
+ 
 File.WriteAllText("soundmap.json", JsonSerializer.Serialize(map));
 
 class NaturalComparer : IComparer<string>
