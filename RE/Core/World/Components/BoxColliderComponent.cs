@@ -1,6 +1,7 @@
 ﻿using System.Text.Json.Nodes;
 using BulletSharp;
 using RE.Core.Scripting;
+using RE.Utils;
 
 namespace RE.Core.World.Components
 {
@@ -14,7 +15,7 @@ namespace RE.Core.World.Components
                 Owner.Transform.Scale.Y * 1,// 0.5f,
                 Owner.Transform.Scale.Z * 1 // 0.5f
             );
-            CollisionShape boxShape = new BoxShape(halfExtents);
+            CollisionShape boxShape = new BoxShape(halfExtents * Multiplier.ToBulletVector3());
             return boxShape;
         }
         public override JsonNode GetSaveData()

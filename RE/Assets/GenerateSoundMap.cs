@@ -1,11 +1,12 @@
 ﻿#!/usr/bin/env dotnet
 
 #:property JsonSerializerIsReflectionEnabledByDefault=true
+#pragma warning disable
 
 // Hey! This file is NOT a source code of the game, but a tool/script to generate soundmap.json file.
 // You should run this file using ' dotnet run ./GenerateSoundMap.cs ' command in the terminal from the /Assets folder.
 // :)
-// Btw this requires .NET 10(preview 4+), but if you can run the game, you should have it installed already.
+// Btw this requires .NET 10(preview 6+), but if you can run the game, you should have it installed already.
 
 using System;
 using System.IO;

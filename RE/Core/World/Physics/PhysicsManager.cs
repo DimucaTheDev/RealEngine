@@ -21,7 +21,7 @@ namespace RE.Core.World.Physics
         private static int _currentScheduler = 0;
 
         public static DiscreteDynamicsWorldMultiThreaded DynamicsWorld = null!;
-
+        public static bool EnableSimulation = true;
 
         public static void NextTaskScheduler()
         {
@@ -125,7 +125,7 @@ namespace RE.Core.World.Physics
             {
                 var obj = DynamicsWorld.CollisionObjectArray[i];
 
-                if (obj is RigidBody body && body.MotionState != null && !body.IsStaticObject)
+                if (obj is RigidBody { MotionState: not null, IsStaticObject: false } body)
                 {
                     Vector3 bodyPos = body.CenterOfMassPosition.ToOpenTkVector3();
 
@@ -150,17 +150,12 @@ namespace RE.Core.World.Physics
 
                         if (rayCallback.HasHit)
                         {
-                            for (int k = 0; k < rayCallback.CollisionObjects.Count; k++)
+                            foreach (var hitObj in rayCallback.CollisionObjects)
                             {
-                                var hitObj = rayCallback.CollisionObjects[k]; // change i to k for correct index
-
-                                if (hitObj is RigidBody rb)
+                                if (hitObj is RigidBody { IsStaticObject: true })
                                 {
-                                    if (rb.IsStaticObject)
-                                    {
-                                        blocked = true;
-                                        break; // static object
-                                    }
+                                    blocked = true;
+                                    break; // static object
                                 }
                             }
                         }
@@ -170,7 +165,6 @@ namespace RE.Core.World.Physics
                             body.Activate();
                             body.ApplyImpulse(impulse.ToBulletVector3(), Vector3.Zero.ToBulletVector3());
                         }
-
                     }
                 }
             }
@@ -182,16 +176,16 @@ namespace RE.Core.World.Physics
                 return;
             if (!SceneEditor.Enabled)
             {
-                DynamicsWorld.StepSimulation(deltaTime, 10, 1f / 60f);
+                DynamicsWorld.StepSimulation(deltaTime, EnableSimulation ? 5 : 0, Time.DeltaTime);
             }
 
         }
         public static void Dispose()
         {
-            DynamicsWorld.Dispose();
-            _parallelSolver.Dispose();
             _broadphase.Dispose();
             _dispatcher.Dispose();
+            DynamicsWorld.Dispose();
+            _parallelSolver.Dispose();
             CollisionConfiguration.Dispose();
         }
     }

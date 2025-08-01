@@ -1,6 +1,7 @@
 ﻿using BulletSharp;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
+using RE.Core.Scripting;
 using RE.Core.World.Physics;
 using RE.Debug;
 using RE.Utils;
@@ -15,6 +16,17 @@ namespace RE.Core.World.Components
         public CollisionShape CollisionShape => _collisionShape;
         public RigidBody RigidBody => _rigidBody;
         public bool IsPhysicsObjectInitialized => _collisionShape != null;
+
+        [EditorProperty]
+        public Vector3 Multiplier
+        {
+            get;
+            set
+            {
+                field = value;
+                Start();
+            }
+        } = Vector3.One;
 
         public override void Start()
         {
@@ -74,8 +86,8 @@ namespace RE.Core.World.Components
 
         public override void Render(FrameEventArgs args)
         {
-            //if (_rigidBody is { IsInWorld: true })
-            //    DrawRigidBodyBounds(_rigidBody, LineManager.Main!);
+            if (_rigidBody is { IsInWorld: true } && Variables.GetVariable("renderColliderBorders") is true)
+                DrawRigidBodyBounds(_rigidBody, LineManager.Main!);
         }
 
         void DrawRigidBodyBounds(RigidBody body, LineManager lineManager)
@@ -129,7 +141,7 @@ namespace RE.Core.World.Components
                     var start = worldCorners[edges[i, 0]];
                     var end = worldCorners[edges[i, 1]];
                     var c = new Vector4(1, 0, 0, 1);
-                    lineManager.AddLine(start, end, c, c, (int)((float)1 / 70 * 1000));
+                    lineManager.RenderLine(start, end, c, c);
                 }
             }
             else
@@ -155,7 +167,7 @@ namespace RE.Core.World.Components
                 {
                     var start = aabbWorldCorners[edges[i, 0]];
                     var end = aabbWorldCorners[edges[i, 1]];
-                    lineManager.AddLine(start, end, new(0.5f, 0.5f, 0.5f, 1), new(0.5f, 0.5f, 0.5f, 1), (int)((float)1 / 70 * 1000));
+                    lineManager.RenderLine(start, end, new(0.5f, 0.5f, 0.5f, 1), new(0.5f, 0.5f, 0.5f, 1));
                 }
             }
         }

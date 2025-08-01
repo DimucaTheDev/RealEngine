@@ -105,14 +105,21 @@ namespace RE.Core.Scripting
             });
             RegisterHandler("vars", _ =>
             {
-                Log.Information(new string('-', 31));
-                Log.Information($"{"NAME",-15}|{"VALUE",15}");
-                Log.Information(new string('-', 15) + "+" + new string('-', 15));
+                int l = Math.Max(15, Variables.GlobalVariables.Keys.Select(s => s.Length).Max());
+                int valueWidth = 15;
+                int totalWidth = l + valueWidth + 1;
+                string horizontalLine = new string('-', totalWidth);
+
+                Log.Information(horizontalLine);
+                Log.Information($"{"NAME".PadRight(l)}|{"VALUE".PadLeft(valueWidth)}");
+                Log.Information(new string('-', l) + "+" + new string('-', valueWidth));
+
                 foreach (var variable in Variables.GlobalVariables)
                 {
-                    Log.Information($"{variable.Key,-15}|{Format(variable.Value),15}");
+                    Log.Information($"{variable.Key.PadRight(l)}|{Format(variable.Value).PadLeft(valueWidth)}");
                 }
-                Log.Information(new string('-', 31));
+                Log.Information(horizontalLine);
+
             });
             RegisterHandler("clear", _ =>
             {

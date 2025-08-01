@@ -27,6 +27,7 @@ namespace RE.Core.World
         public GameObject? Parent { get; set; }
         public string? Name { get; set; }
         public int Id { get; private set; }
+        public string? Tag { get; set; }
         public bool DoNotSave { get; set; } = false;
         public bool DoNotShowInEditor { get; set; } = false;
 
@@ -37,27 +38,19 @@ namespace RE.Core.World
         public void SetPosition(Vector3 position)
         {
             Transform.Position = position;
-            var rigidBodyComponent = GetComponent<RigidBodyComponent>();
-            if (rigidBodyComponent != null! && rigidBodyComponent.RigidBody != null!)
-            {
-                var rigidBody = rigidBodyComponent.RigidBody;
-                var transform = rigidBody.WorldTransform;
-                transform.Origin = position.ToBulletVector3();
-                rigidBody.WorldTransform = transform;
-                rigidBody.MotionState?.SetWorldTransform(ref transform);
+
+            var rigidBody = GetComponent<RigidBodyComponent>()?.RigidBody
+                            ?? GetComponent<ColliderComponent>()?.RigidBody;
+
+            if (rigidBody == null)
                 return;
-            }
-            var colliderComponent = GetComponent<ColliderComponent>();
-            if (colliderComponent != null! && colliderComponent.RigidBody != null!)
-            {
-                var rigidBody = colliderComponent.RigidBody;
-                var transform = rigidBody.WorldTransform;
-                transform.Origin = position.ToBulletVector3();
-                rigidBody.WorldTransform = transform;
-                rigidBody.MotionState?.SetWorldTransform(ref transform);
-                return;
-            }
+
+            var transform = rigidBody.WorldTransform;
+            transform.Origin = position.ToBulletVector3();
+            rigidBody.WorldTransform = transform;
+            rigidBody.MotionState?.SetWorldTransform(ref transform);
         }
+
 
         public void SetRotation() => SetRotation(Transform.Rotation);
         public void SetRotation(Quaternion q)

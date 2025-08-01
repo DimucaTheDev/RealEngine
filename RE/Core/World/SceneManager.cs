@@ -2,6 +2,8 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using OpenTK.Mathematics;
+using RE.Core.Scripting;
+using RE.Core.World.Components;
 using Serilog;
 using Quaternion = OpenTK.Mathematics.Quaternion;
 
@@ -39,6 +41,21 @@ namespace RE.Core.World
                 CurrentScene = scene;
 
                 CurrentScene.Load();
+
+                if (CurrentScene.GameObjects.Any(s => s.Tag == "configurator"))
+                {
+                    var g = CurrentScene.GameObjects.First(s => s.Tag == "configurator");
+                    var u = new UsableComponent();
+                    g.Components.Add(u);
+                    u.OnUsed += () =>
+                    {
+                        Variables.SetVariable("renderColliderBorders", !((bool)Variables.GetVariable("renderColliderBorders")!));
+                        g.GetComponent<BillboardTextComponent>().Text =
+                            "Render Collider Borders: " + ((Variables.GetVariable("renderColliderBorders") is true)
+                                ? "ON"
+                                : "OFF");
+                    };
+                }
             }
             ));
         }
@@ -48,7 +65,7 @@ namespace RE.Core.World
             var root = new JsonArray();
             foreach (var obj in scene.GameObjects.Where(s => !s.DoNotSave))
             {
-                JsonObject o = new JsonObject { { "name", obj.Name } };
+                JsonObject o = new JsonObject { { "name", obj.Name }, { "tag", obj.Tag } };
                 root.Add(o);
                 var transform = obj.Transform;
                 JsonObject trObj = new()
@@ -97,7 +114,7 @@ namespace RE.Core.World
 
             string dataPath = Path.Combine("Assets", "Maps", name, $"data.json");
             JsonDocument doc = JsonDocument.Parse(File.ReadAllText(dataPath),
-                new JsonDocumentOptions() { CommentHandling = JsonCommentHandling.Skip });
+                new JsonDocumentOptions() { CommentHandling = JsonCommentHandling.Skip, AllowTrailingCommas = true });
             foreach (var obj in doc.RootElement.EnumerateArray())
             {
                 GameObject gameObject = new GameObject();
@@ -105,8 +122,12 @@ namespace RE.Core.World
                 gameObject.Name =
                     obj.TryGetProperty("name", out JsonElement nameProperty)
                     ? nameProperty.GetString()!
-                    : Random.Shared.Next().ToString(); //TODO
+                    : Random.Shared.Next().ToString();
 
+                gameObject.Tag =
+                    obj.TryGetProperty("tag", out JsonElement tagProperty)
+                        ? tagProperty.GetString()!
+                        : null;
 
                 if (obj.TryGetProperty("transform", out var transformElement))
                 {

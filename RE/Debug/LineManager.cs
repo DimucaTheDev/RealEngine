@@ -1,10 +1,10 @@
-﻿using OpenTK.Graphics.OpenGL4;
+﻿using System.Diagnostics;
+using System.Runtime.InteropServices;
+using OpenTK.Graphics.OpenGL4;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using RE.Core;
 using RE.Rendering;
-using System.Diagnostics;
-using System.Runtime.InteropServices;
 
 namespace RE.Debug;
 
@@ -81,6 +81,30 @@ public class LineManager : Renderable
         GL.BindVertexArray(0);
     }
 
+    public void RenderLine(Vector3 start, Vector3 end, Vector4 colorStart, Vector4 colorEnd)
+    {
+        GL.UseProgram(_shader);
+        var view = Camera.Instance.GetViewMatrix();
+        var proj = Camera.Instance.GetProjectionMatrix();
+
+        GL.UniformMatrix4(GL.GetUniformLocation(_shader, "uView"), false, ref view);
+        GL.UniformMatrix4(GL.GetUniformLocation(_shader, "uProjection"), false, ref proj);
+
+        // Собираем массив вершин из _lines
+        var vertexData = new Vertex[2];
+        vertexData[0] = new Vertex { Position = start, Color = colorStart };
+        vertexData[1] = new Vertex { Position = end, Color = colorEnd };
+
+
+        GL.BindVertexArray(_vao);
+        GL.BindBuffer(BufferTarget.ArrayBuffer, _vbo);
+        GL.BufferData(BufferTarget.ArrayBuffer, vertexData.Length * Marshal.SizeOf<Vertex>(), vertexData,
+            BufferUsageHint.DynamicDraw);
+
+        GL.DrawArrays(PrimitiveType.Lines, 0, vertexData.Length);
+        GL.BindVertexArray(0);
+    }
+
     [Conditional("DEBUG")]
     public void Init()
     {
@@ -128,9 +152,6 @@ public class LineManager : Renderable
         //    if (!_inited)
         //        throw new InvalidOperationException("LineManager is not initialized. Call Init() first.");
 
-#if RELEASE
-        return 0;
-#endif
 
         var id = _nextId++;
         _lines.Add(new LineEntry
@@ -155,11 +176,13 @@ public class LineManager : Renderable
 
     public void ProcessRemovals()
     {
-        if (_toRemove.Count == 0) return;
+        if (_toRemove.Count == 0)
+            return;
         _lines.RemoveAll(l => _toRemove.Contains(l.Id));
         _lines.TrimExcess();
         _toRemove.Clear();
-        if (!_lines.Any()) _nextId = 0;
+        if (!_lines.Any())
+            _nextId = 0;
     }
 
     public void RemoveLine(int id)
