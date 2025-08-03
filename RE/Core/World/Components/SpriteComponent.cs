@@ -11,21 +11,23 @@ namespace RE.Core.World.Components
     {
         public SpriteComponent() : this("Assets/sprites/editor/blank.png") { }
 
-        private SpriteRenderer _sprite = new SpriteRenderer(Vector3.Zero, path, scale: size, constantSize: false);
+        public readonly SpriteRenderer Sprite = new(Vector3.Zero, path, scale: size, constantSize: false);
+
+        [EditorProperty] public float Scale { get => Sprite.Scale; set => Sprite.Scale = value; }
 
         public override void Update(FrameEventArgs args)
         {
-            _sprite.Position = Owner.Transform.Position;
+            Sprite.Position = Owner.Transform.Position;
         }
 
         public override void Render(FrameEventArgs args)
         {
-            _sprite.Render(args);
+            Sprite.Render(args);
         }
 
         public override void OnDestroy()
         {
-            _sprite.Dispose();
+            Sprite.Dispose();
         }
         public override JsonNode GetSaveData()
         {

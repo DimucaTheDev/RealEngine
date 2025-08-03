@@ -363,24 +363,31 @@ namespace RE.Core.World.Components
 
             if (_holdedObject != null)
             {
-                const float smoothSpeed = 10f;
-                var targetPos = _camera.Position + _camera.Front * 4;
-
                 var rigidBodyComponent = _holdedObject.GetComponent<RigidBodyComponent>();
                 var rigidBody = rigidBodyComponent?.RigidBody;
 
                 if (rigidBody != null)
                 {
                     var mass = rigidBodyComponent.Mass;
+                    Vector3 currentPos = _holdedObject.Transform.Position; // Gets the current position of the object being held.
+                    Vector3 rawTargetPos = _camera.Position + _camera.Front * 4; // Calculates a raw target position 4 units in front of the camera.
+                    _smoothedTargetPos = Vector3.Lerp(_smoothedTargetPos, rawTargetPos, 0.2f); // Smoothly interpolates the _smoothedTargetPos towards the rawTargetPos.
 
-                    Vector3 currentPos = _holdedObject.Transform.Position;
-                    Vector3 direction = targetPos - currentPos;
+                    Vector3 direction = _smoothedTargetPos - currentPos;
+                    Vector3 currentVelocity = rigidBody.LinearVelocity.ToOpenTkVector3();
 
-                    float speedFactor = 1f / MathF.Max(mass, 0.01f);
-                    float effectiveSpeed = smoothSpeed * speedFactor;
+                    float stiffness = 800f;
+                    float damping = 80f;
 
-                    Vector3 velocity = direction * effectiveSpeed;
-                    rigidBody.LinearVelocity = velocity.ToBulletVector3();
+                    Vector3 force = (direction * stiffness - currentVelocity * damping);
+
+                    float maxForce = 100f * mass;
+                    if (force.Length > maxForce)
+                        force = Vector3.Normalize(force) * maxForce;
+
+                    rigidBody.ApplyCentralForce(force.ToBulletVector3());
+
+
 
 
                     var currentOrientation = rigidBody.Orientation;
@@ -411,6 +418,7 @@ namespace RE.Core.World.Components
                 _camera.Position = new Vector3(basePosition.X, basePosition.Y + _currentCameraYOffset, basePosition.Z);
             }
         }
+        private Vector3 _smoothedTargetPos = Vector3.Zero;
         bool IsGrounded(Vector3 rel)
         {
             float currentHeight = _isCrouching ? _crouchHeight : _standHeight;

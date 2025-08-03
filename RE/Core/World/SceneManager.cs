@@ -196,8 +196,13 @@ namespace RE.Core.World
                             var propertyName = prop.Name;
                             var propertyInfo = type.GetProperty(propertyName, BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
 
-                            object? propertyValue = null!;
+                            if (propertyInfo == null)
+                            {
+                                Log.Error($"Property '{propertyName}' not found on type '{type.Name}'");
+                                continue;
+                            }
 
+                            object? propertyValue = null!;
                             if (propertyInfo!.PropertyType == typeof(Vector3)) //float[] -> Vec3(xyz)
                             {
                                 var arr = prop.Value.EnumerateArray().Select(s => s.GetSingle()).ToList();

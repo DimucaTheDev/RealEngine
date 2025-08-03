@@ -27,6 +27,8 @@ namespace RE.Core.World.Components
 
         public void DebugRender(FrameEventArgs args)
         {
+            if (_spriteClick! == null!)
+                return;
             _spriteClick.Position = Owner.Transform.Position + (0, Owner.Transform.Scale.Y + 0.3f, 0);
             _spriteClick.Render(args);
         }

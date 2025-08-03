@@ -1,4 +1,4 @@
-﻿using OpenTK.Audio.OpenAL;
+﻿using FmodAudio;
 using OpenTK.Mathematics;
 using RE.Core;
 using RE.Rendering.Renderables;
@@ -16,14 +16,15 @@ namespace RE.Audio
             Stopped
         }
 
-        private readonly int _source, _buffer;
         private bool _disposed;
         private float? _length = null!;
         private Time.ScheduledTask? _task;
         private readonly CircleRenderer _crRefDis;
         private readonly CircleRenderer _crMaxDis;
         private readonly SpriteRenderer _sprite;
-        private float? _volumeCached = null;
+
+        private float _maxDistance, _refDistance;
+        private Vector3 _position;
 
         public event Action? Playing;
         public event Action? Paused;
@@ -31,12 +32,11 @@ namespace RE.Audio
         public event Action? Resumed;
         public event Action<float>? VolumeChanged;
 
-        public int Source => _source;
-        public int Buffer => _buffer;
-
+        public FmodAudio.Sound FmodSound { get; private set; }
+        public FmodAudio.Channel FmodChannel { get; private set; }
         public float Volume //add max volume for 
         {
-            get => _volumeCached ??= AL.GetSource(_source, ALSourcef.Gain);
+            get => FmodChannel.Volume;
             set
             {
                 if (value < 0)
@@ -44,42 +44,41 @@ namespace RE.Audio
                     Log.Warning("Volume cant be negative. Clamping to 0");
                     value = 0;
                 }
+                FmodChannel.Volume = value;
                 VolumeChanged?.Invoke(value);
-                _volumeCached = value;
-                AL.Source(_source, ALSourcef.Gain, value);
             }
         }
 
         public float Offset
         {
-            get => AL.GetSource(_source, ALSourcef.SecOffset);
-            set => AL.Source(_source, ALSourcef.SecOffset, value);
+            get => FmodChannel.GetPosition(TimeUnit.MS) / 1000f;
+            set => FmodChannel.SetPosition(TimeUnit.MS, (uint)(value * 1000f));
         }
 
         public bool Loop
         {
-            get => AL.GetSource(_source, ALSourceb.Looping);
+            get => (FmodChannel.Mode & Mode.Loop_Normal) != 0;
             set
             {
                 if (value)
                     _task.TerminateIfScheduled();
                 else if (IsPlaying)
                     _task = Time.Schedule((int)((Length - Offset) * 1000), () => Stopped?.Invoke());
-                AL.Source(_source, ALSourceb.Looping, value);
+                FmodChannel.Mode = value ? Mode.Loop_Normal : Mode.Loop_Off;
             }
         }
 
         public float Pitch
         {
-            get => AL.GetSource(_source, ALSourcef.Pitch);
+            get => FmodChannel.Pitch;
             set
             {
-                if (value < 0.5f || value > 2.0f)
+                if (value < 0 || value > 10.0f)
                 {
-                    Log.Warning($"Pitch value must be between 0.5 and 2.0! Clamping to {Math.Clamp(value, 0.5f, 2.0f)}");
-                    value = Math.Clamp(value, 0.5f, 2.0f);
+                    Log.Warning($"Pitch value must be between 0 and 10! Clamping to {Math.Clamp(value, 0f, 10f)}");
+                    value = Math.Clamp(value, 0f, 10f);
                 }
-                AL.Source(_source, ALSourcef.Pitch, value);
+                FmodChannel.Pitch = value;
             }
         }
 
@@ -87,15 +86,24 @@ namespace RE.Audio
         {
             get
             {
-                AL.GetSource(_source, ALSource3f.Position, out float x, out float y, out float z);
-                return new Vector3(x, y, z);
+                if (IsRelative)
+                    return _position;
+                FmodChannel.Get3DAttributes(out var pos, out _, out _);
+                return pos.ToOpenTkVector3();
             }
             set
             {
+                _position = value;
+
+                if (IsRelative)
+                    return;
+
                 _crMaxDis.Center = value;
                 _crRefDis.Center = value;
                 _sprite.Position = value;
-                AL.Source(_source, ALSource3f.Position, value.X, value.Y, value.Z);
+                var zero = Vector3.Zero.ToSystemVector3();
+                var pos = value.ToSystemVector3();
+                FmodChannel.Set3DAttributes(in pos, in zero, in zero);
             }
         }
 
@@ -107,75 +115,98 @@ namespace RE.Audio
                 {
                     try
                     {
-                        var size = AL.GetBuffer(_buffer, ALGetBufferi.Size);
-                        var channels = AL.GetBuffer(_buffer, ALGetBufferi.Channels);
-                        var bits = AL.GetBuffer(_buffer, ALGetBufferi.Bits);
-                        var frequency = AL.GetBuffer(_buffer, ALGetBufferi.Frequency);
-                        var lengthInSamples = size * 8 / (channels * bits);
-                        _length = (float)lengthInSamples / frequency;
+                        var pcm = FmodSound.GetLength(TimeUnit.PCM);
+                        var frequency = FmodChannel.Frequency;
+                        _length = pcm / frequency;
                     }
                     catch (DivideByZeroException)
                     {
-                        Log.Error($"Unable to obtain 'channels', 'bits' or 'size'. Is _buffer({_buffer}) correct?");
+                        Log.Error($" Something is off... i cant get frequency!!!");
                     }
                 }
                 return _length ?? 0;
             }
         }
 
+        /// <summary>
+        /// <c>true</c> if 2D. <c>false</c> if 3D.
+        /// </summary>
         public bool IsRelative
         {
-            get => AL.GetSource(_source, ALSourceb.SourceRelative);
+            get => (FmodChannel.Mode & Mode._2D) != 0;
             set
             {
-                if (value)
+                var mode = FmodChannel.Mode;
+
+                if (!value)
                 {
-                    if (ShowDebugInfo)
-                    {
-                        _crMaxDis.StopRender();
-                        _crRefDis.StopRender();
-                    }
+                    mode &= ~Mode._2D;
+                    mode |= Mode._3D;
+
+                    //Refresh values
+
+                    MaxDistance = _maxDistance;
+                    ReferenceDistance = _refDistance;
+                    Position = _position;
                 }
                 else
                 {
-                    if (ShowDebugInfo)
-                    {
-                        _crMaxDis.Render();
-                        _crRefDis.Render();
-                    }
+                    mode &= ~(Mode._3D | Mode._3D_CustomRolloff | Mode._3D_HeadRelative |
+                              Mode._3D_IgnoreGeometry | Mode._3D_InverseRolloff | Mode._3D_InverseTaperedRolloff |
+                              Mode._3D_LinearRolloff | Mode._3D_LinearSquareRolloff | Mode._3D_WorldRelative);
+                    mode |= Mode._2D;
                 }
-                AL.Source(_source, ALSourceb.SourceRelative, value);
+
+                FmodChannel.Mode = mode;
+
+
             }
         }
 
         public float MaxDistance
         {
-            get => AL.GetSource(_source, ALSourcef.MaxDistance);
+            get
+            {
+                if (IsRelative)
+                    return _maxDistance;
+                FmodChannel.Get3DMinMaxDistance(out _, out var distance);
+                return distance;
+            }
             set
             {
+                if (value == 0)
+                {
+                    Log.Error("MaxDistance=0 bruh");
+                    return;
+                }
+                _maxDistance = value;
+
+                if (IsRelative)
+                    return;
+
                 _crMaxDis.Radius = value;
-                AL.Source(_source, ALSourcef.MaxDistance, value);
+                _maxDistance = value;
+                FmodChannel.Set3DMinMaxDistance(ReferenceDistance, value);
             }
         }
 
         public float ReferenceDistance
         {
-            get => AL.GetSource(_source, ALSourcef.ReferenceDistance);
-            set
+            get
             {
-                _crRefDis.Radius = value;
-                AL.Source(_source, ALSourcef.ReferenceDistance, value);
+                if (IsRelative)
+                    return _refDistance;
+                FmodChannel.Get3DMinMaxDistance(out var distance, out _);
+                return distance;
             }
-        }
-
-        public float RollOff
-        {
-            get => AL.GetSource(_source, ALSourcef.RolloffFactor);
             set
             {
-                if (UseLinearFading && value != 0)
-                    Log.Warning($"Setting {nameof(RollOff)} value to {value}, but {nameof(UseLinearFading)} is true");
-                AL.Source(_source, ALSourcef.RolloffFactor, value);
+                _refDistance = value;
+                if (IsRelative)
+                    return;
+
+                _crRefDis.Radius = value;
+                FmodChannel.Set3DMinMaxDistance(value, MaxDistance);
             }
         }
 
@@ -199,33 +230,28 @@ namespace RE.Audio
             }
         }
 
-        public bool DisposeOnStop { get; set; }
-        public bool UseLinearFading { get; set; } = true;
-
         public SoundState State
         {
             get
             {
-                var state = (ALSourceState)AL.GetSource(_source, ALGetSourcei.SourceState);
-                return state switch
-                {
-                    ALSourceState.Playing => SoundState.Playing,
-                    ALSourceState.Paused => SoundState.Paused,
-                    _ => SoundState.Stopped
-                };
+                if (FmodChannel.IsPlaying)
+                    return SoundState.Playing;
+                if (FmodChannel.Paused)
+                    return SoundState.Paused;
+                return SoundState.Stopped;
             }
         }
 
+        public bool DisposeOnStop { get; set; }
         public bool IsPlaying => State == SoundState.Playing;
         public bool IsPaused => State == SoundState.Paused;
         public bool IsStopped => State == SoundState.Stopped;
+        public bool IsReady => FmodChannel != null! && FmodSound != null!;
 
-        internal Sound(int source)
+        internal Sound(FmodAudio.Sound source)
         {
-            _source = source;
-            if (!AL.IsSource(_source))
-                Log.Error($"Invalid OpenAL source specified: {_source}");
-            _buffer = AL.GetSource(_source, ALGetSourcei.Buffer);
+            FmodSound = source;
+            FmodChannel = SoundManager.FmodSystem.PlaySound(source, paused: true)!;
 
             _sprite = new SpriteRenderer(Position, "Assets/Sprites/Editor/speaker.png");
             _crMaxDis = new CircleRenderer(Vector3.Zero, 0);
@@ -233,12 +259,13 @@ namespace RE.Audio
 
             MaxDistance = 10;
             ReferenceDistance = 1;
-            RollOff = 0f;
             Volume = 1.0f;
             Pitch = 1.0f;
             IsRelative = false;
             Position = Vector3.Zero;
             ShowDebugInfo = false;
+            Loop = false;
+            //DisposeOnStop = true;
 
             Playing += () => _sprite.ChangeTexture("Assets/sprites/editor/speaker_play.png");
             Stopped += () => _sprite.ChangeTexture("Assets/sprites/editor/speaker.png");
@@ -259,32 +286,53 @@ namespace RE.Audio
 
         internal void Play()
         {
-            Playing?.Invoke();
-            AL.SourcePlay(_source);
+            if (FmodChannel == null)
+            {
+                Log.Error("Performing action on disposed/non init-ed sound instance");
+                return;
+            }
 
+            Playing?.Invoke();
+            FmodChannel.Paused = false;
             _task.TerminateIfScheduled();
             if (!Loop)
                 _task = Time.Schedule((int)(Length * 1000), () => Stopped?.Invoke());
         }
         public void Pause()
         {
-            _task.TerminateIfScheduled();
+            if (FmodChannel == null)
+            {
+                Log.Error("Performing action on disposed/non init-ed sound instance");
+                return;
+            }
 
-            AL.SourcePause(_source);
+            _task.TerminateIfScheduled();
+            FmodChannel.Paused = true;
             Paused?.Invoke();
         }
         public void Stop()
         {
+            if (FmodChannel == null)
+            {
+                Log.Error("Performing action on disposed/non init-ed sound instance");
+                return;
+            }
+
             _task.TerminateIfScheduled();
-            AL.SourceStop(_source);
+            FmodChannel.Stop();
             Stopped?.Invoke();
         }
         public void Resume()
         {
+            if (FmodChannel == null)
+            {
+                Log.Error("Performing action on disposed/non init-ed sound instance");
+                return;
+            }
             if (!IsPlaying)
             {
                 _task?.TerminateIfScheduled();
-                AL.SourcePlay(_source);
+                FmodChannel.Paused = false;
                 if (!Loop)
                     _task = Time.Schedule((int)((Length - Offset) * 1000), () => Stopped?.Invoke());
                 Resumed?.Invoke();
@@ -295,10 +343,10 @@ namespace RE.Audio
         {
             if (_disposed)
                 return;
+            FmodChannel = null!;
             _sprite.Dispose();
             _crRefDis.Dispose();
             _crMaxDis.Dispose();
-            AL.DeleteSource(_source);
             _disposed = true;
         }
     }

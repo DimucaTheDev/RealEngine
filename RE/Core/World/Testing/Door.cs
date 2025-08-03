@@ -37,7 +37,8 @@ namespace RE.Core.World.Testing
             {
                 OnUsed = () =>
                 {
-                    sound?.Stop();
+                    if (sound?.IsReady ?? false)
+                        sound.Stop();
                     sound = SoundManager.Play("doors/doormove", new SoundPlaybackSettings
                     {
                         VariantIndex = 0,

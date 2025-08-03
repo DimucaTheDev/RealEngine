@@ -8,30 +8,30 @@ namespace RE.Core.World.Components
     [ComponentInfo("World", Description = $"MeshComponent renders object's model, specified by the '{nameof(Path)}' property")]
     internal class MeshComponent : Component
     {
-        protected ModelRenderer _modelRenderer;
+        public readonly ModelRenderer ModelRenderer;
         private bool _started;
 
         public MeshComponent()
         {
-            _modelRenderer = new ModelRenderer();
+            ModelRenderer = new ModelRenderer();
         }
         public MeshComponent(string modelPath)
         {
-            _modelRenderer = new ModelRenderer(modelPath);
+            ModelRenderer = new ModelRenderer(modelPath);
         }
 
-        public ModelRenderer GetModelRenderer() => _modelRenderer;
+        public ModelRenderer GetModelRenderer() => ModelRenderer;
 
         [EditorProperty("Model Path")]
         public string Path
         {
-            get => _modelRenderer.Path;
-            set => _modelRenderer.Path = value;
+            get => ModelRenderer.Path;
+            set => ModelRenderer.Path = value;
         }
 
         public override void Start()
         {
-            _modelRenderer.AddedToRenderList();
+            ModelRenderer.AddedToRenderList();
             _started = true;
         }
 
@@ -41,16 +41,16 @@ namespace RE.Core.World.Components
 
         public override void Render(FrameEventArgs args)
         {
-            _modelRenderer.Position = Owner.Transform.Position;
-            _modelRenderer.Rotation = Owner.Transform.Rotation;
-            _modelRenderer.Scale = Owner.Transform.Scale;
+            ModelRenderer.Position = Owner.Transform.Position;
+            ModelRenderer.Rotation = Owner.Transform.Rotation;
+            ModelRenderer.Scale = Owner.Transform.Scale;
             if (_started)
-                _modelRenderer.Render(args);
+                ModelRenderer.Render(args);
         }
 
         public override void OnDestroy()
         {
-            _modelRenderer.RemovedFromRenderList();
+            ModelRenderer.RemovedFromRenderList();
             _started = false;
         }
 

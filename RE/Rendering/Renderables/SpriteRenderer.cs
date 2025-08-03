@@ -13,7 +13,6 @@ namespace RE.Rendering.Renderables
         private int _texture;
         private float texWidth = 0, texHeight = 0;
         private bool constantSize;
-        private float scale;
 
         private static Dictionary<string, (int texture, int width, int height)> TextureCache = new();
 
@@ -21,13 +20,15 @@ namespace RE.Rendering.Renderables
         public Vector3 Position { get; set; }
         public override RenderLayer RenderLayer => RenderLayer.World;
         public override bool IsVisible { get; set; } = true;
+        public string Path { get; set; }
+        public float Scale { get; set; }
 
         public SpriteRenderer(Vector3 position, string spritePath = "Assets/Sprites/Editor/blank.png",
             bool constantSize = false, float scale = 1f)
         {
             Position = position;
             this.constantSize = constantSize;
-            this.scale = scale;
+            Scale = scale;
 
             // Вершины quad (позиция + UV)
             float[] vertices = {
@@ -91,7 +92,7 @@ namespace RE.Rendering.Renderables
             float size = 1.0f;
 
             Matrix4 translateToCenter = Matrix4.CreateTranslation(-0.5f, -0.5f, 0f);
-            float finalScale = constantSize ? scale * this.scale : size * this.scale;
+            float finalScale = constantSize ? scale * Scale : size * Scale;
             Matrix4 model =
                 translateToCenter *
                 Matrix4.CreateScale(finalScale, -finalScale / aspectRatio, 1f) *
@@ -110,7 +111,14 @@ namespace RE.Rendering.Renderables
             GL.DrawElements(PrimitiveType.Triangles, 6, DrawElementsType.UnsignedInt, 0);
         }
 
-        public void ChangeTexture(string path) => _texture = LoadTexture(path);
+        public void SetTexture(uint id) => _texture = (int)id;
+        public void ChangeTexture(string path)
+        {
+            if (Path == path)
+                return;
+            _texture = LoadTexture(path);
+        }
+
         public void Dispose()
         {
             this.StopRender();
@@ -124,6 +132,7 @@ namespace RE.Rendering.Renderables
 
         private int LoadTexture(string path)
         {
+            Path = path;
             if (TextureCache.TryGetValue(path, out var t))
             {
                 texWidth = t.width;

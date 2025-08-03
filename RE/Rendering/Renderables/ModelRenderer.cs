@@ -36,6 +36,7 @@ namespace RE.Rendering.Renderables
             set
             {
                 TryLoad(value);
+                InitShader();
                 field = value;
             }
         }
@@ -137,6 +138,12 @@ namespace RE.Rendering.Renderables
 
             }
         }
+
+        public void SetTexture(uint texture)
+        {
+            _texture = texture;
+        }
+
         public override void AddedToRenderList()
         {
             if (!modelLoaded)
@@ -177,7 +184,12 @@ namespace RE.Rendering.Renderables
 
             if (path.EndsWith(".smdl", true, CultureInfo.InvariantCulture))
             {
-                var data = StaticModelLoader.LoadModel(path);
+                var m = StaticModelLoader.TryLoadModel(path, out var data);
+                if (m != null)
+                {
+                    _exception = m.Message;
+                    return false;
+                }
 
 
                 Name = data.Name;
@@ -342,12 +354,13 @@ namespace RE.Rendering.Renderables
         private uint GetOrLoadTexture(string path, Scene? scene = null)
         {
             if (_textureCache.TryGetValue(path, out var texId))
-                return texId; //CreateMissingTexture();
+                return texId;
 
             if (path.EndsWith(".smdl", true, CultureInfo.InvariantCulture))
             {
                 if (!File.Exists(path + ".png"))
-                    return CreateMissingTexture();
+                    return Util.CreateMissingTexture();
+
                 var readAllBytes = File.ReadAllBytes(path + ".png");
                 var t = ImageResult.FromMemory(readAllBytes, ColorComponents.RedGreenBlueAlpha);
                 var lt = LoadTexture(t);
@@ -382,7 +395,7 @@ namespace RE.Rendering.Renderables
             else
             {
                 Log.Warning($"No texture for {path}");
-                texId = CreateMissingTexture();
+                texId = Util.CreateMissingTexture();
             }
 
             importFile.Clear();
@@ -402,43 +415,6 @@ namespace RE.Rendering.Renderables
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
             GL.GenerateMipmap(GenerateMipmapTarget.Texture2D);
-            return texID;
-        }
-
-        private uint CreateMissingTexture()
-        {
-            const int size = 100;
-            uint texID = (uint)GL.GenTexture();
-            GL.BindTexture(TextureTarget.Texture2D, texID);
-
-            byte[] data = new byte[size * size * 4];
-
-            byte[] r =
-            {
-                (byte)Random.Shared.Next(255), (byte)Random.Shared.Next(255), (byte)Random.Shared.Next(255), 255
-            };
-
-            byte[] purple = [255, 0, 255, 255];
-            byte[] black = [0, 0, 0, 255];
-
-            for (int y = 0; y < size; y++)
-            {
-                for (int x = 0; x < size; x++)
-                {
-                    bool isPurple = (x + y) % 2 == 0;
-                    byte[] color = isPurple ? purple : black;
-
-                    int index = (y * size + x) * 4;
-                    System.Buffer.BlockCopy(color, 0, data, index, 4);
-                }
-            }
-
-            GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba,
-                size, size, 0, PixelFormat.Rgba, PixelType.UnsignedByte, data);
-
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
-
             return texID;
         }
 

@@ -629,7 +629,7 @@ namespace RE.Debug.Overlay
                         open.CustomPlaces.Add(Path.GetFullPath("assets/maps"));
                         open.InitialDirectory = Path.GetFullPath("assets/models");
                         open.Multiselect = false;
-                        open.Filter = "FBX File|*.fbx";
+                        open.Filter = "FBX File|*.fbx|SMDL File|*.smdl";
                         open.ShowDialog();
                         val_str = open.FileName;
                     }

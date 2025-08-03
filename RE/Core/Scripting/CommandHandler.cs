@@ -171,12 +171,24 @@ namespace RE.Core.Scripting
             });
             RegisterHandler("frustum", args =>
             {
-                if (args[0] == "create")
-                    RenderManager.CreateCameraFrustum();
-                else if (args[0] == "destroy")
-                    RenderManager.RemoveCameraFrustum();
-                else
+                if (!args.Any())
+                {
                     Log.Error("Usage: frustum create|destroy");
+                    return;
+                }
+
+                switch (args.First())
+                {
+                    case "create":
+                        RenderManager.CreateCameraFrustum();
+                        break;
+                    case "destroy":
+                        RenderManager.RemoveCameraFrustum();
+                        break;
+                    default:
+                        Log.Error("Usage: frustum create|destroy");
+                        break;
+                }
             });
             RegisterHandler("level", args =>
             {

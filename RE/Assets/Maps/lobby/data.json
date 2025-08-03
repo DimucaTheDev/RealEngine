@@ -1,4 +1,4 @@
-[ 
+[
   {
     "name": "player",
     "transform": {
@@ -23,15 +23,16 @@
     }
   },
   {
-    "name": "Floor",
+    "name": "Pistol",
     "transform": {
       "position": [
         0,
-        1,
+        2,
         0
       ]
     },
     "components": {
+
     }
   },
   {
@@ -66,6 +67,29 @@
         ]
       },
       "BoxCollider": {}
+    }
+  },
+  {
+    "name": "Video",
+    "transform": {
+      "position": [
+        0,
+        2,
+        0
+      ]
+    },
+    "components": {
+      "Sprite": {
+        "Scale": 3
+      },
+     // "Video": {},
+      "BillboardText": {
+        "PositionOffset": [
+          0,
+          1.7,
+          0
+        ]
+      }
     }
   },
   {

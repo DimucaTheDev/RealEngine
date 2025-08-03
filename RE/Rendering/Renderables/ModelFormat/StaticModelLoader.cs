@@ -5,21 +5,29 @@ namespace RE.Rendering.Renderables.ModelFormat
 {
     internal static class StaticModelLoader
     {
-        public static StaticModelData LoadModel(string modelPath)
+        public static Exception? TryLoadModel(string modelPath, out StaticModelData data)
         {
-            using var fileStream = new FileStream(modelPath, FileMode.Open, FileAccess.Read);
-            using var reader = new BinaryReader(fileStream, Encoding.UTF8, false);
-            if (reader.ReadString() != "SMDL") //file header
+            try
             {
-                throw new InvalidDataException("The file is not a valid Static Model.");
+                using var fileStream = new FileStream(modelPath, FileMode.Open, FileAccess.Read);
+                using var reader = new BinaryReader(fileStream, Encoding.UTF8, false);
+                if (reader.ReadString() != "SMDL") //file header
+                {
+                    throw new InvalidDataException("The file is not a valid Static Model.");
+                }
+                switch (reader.ReadInt16())
+                {
+                    case 1:
+                        data = Version1(reader);
+                        return null!;
+                    default:
+                        throw new NotSupportedException("Unsupported Static Model version.");
+                }
             }
-
-            switch (reader.ReadInt16())
+            catch (Exception e)
             {
-                case 1:
-                    return Version1(reader);
-                default:
-                    throw new NotSupportedException("Unsupported Static Model version.");
+                data = null!;
+                return e;
             }
         }
         private static StaticModelData Version1(BinaryReader reader)

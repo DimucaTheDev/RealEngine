@@ -21,7 +21,7 @@ if (importFile == null!)
 var e = Path.ChangeExtension(args[0], "smdl");
 ExportToSmdl(importFile, importFile.RootNode.Name ?? "Unnamed", e);
 
-Console.WriteLine($"Exported to {e}");
+Console.WriteLine($"\nExported to {e}");
 
 return;
 
@@ -84,10 +84,32 @@ void ExportToSmdl(Scene scene, string name, string outputPath)
         writer.Write(0); // no uvs
         Console.WriteLine("No UVs present for this model.");
     }
-
+        
 
     int[] flatIndices = mesh.Faces.SelectMany(f => f.Indices).ToArray();
     writer.Write(flatIndices.Length);
     foreach (var i in flatIndices)
-        writer.Write(i); 
+        writer.Write(i);
+
+    
+
+    if (scene.Textures.Any())
+    {
+        var tex = scene.Textures.First();
+        File.WriteAllBytes(outputPath + ".png", tex.CompressedData);
+        Console.Write($"\nTexture exported to {outputPath+".png"}");
+    }
+    return;
+    // Not implemented
+    if (scene.Textures.Any())
+    {
+        var tex = scene.Textures.First();
+        writer.Write(tex.CompressedData.Length);
+        writer.Write(tex.CompressedData);
+    }
+    else
+    {
+        writer.Write(0); // no textures
+        Console.WriteLine("No textures present for this model.");
+    }
 }

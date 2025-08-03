@@ -7,5 +7,10 @@
         ]
       }
     }
+  },
+  {
+    "components": {
+      "Player": {}
+    }
   }
 ]

@@ -170,7 +170,7 @@ internal class Game : GameWindow
     }
     public static WindowIcon? LoadIcon()
     {
-        var path = "Assets/RealEngine.ico";
+        var path = "Assets/RealEngine2.ico";
         if (!File.Exists(path))
         {
             Log.Warning($"Icon file not found: {path}");

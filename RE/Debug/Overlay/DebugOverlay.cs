@@ -25,6 +25,7 @@ internal class DebugOverlay : Renderable
 
     public override void Render(FrameEventArgs args)
     {
+        return;
         Begin("123");
         if (Button("gc"))
             GC.Collect();
@@ -91,7 +92,7 @@ internal class DebugOverlay : Renderable
                 s.Paused += () => Log.Information("Sound paused");
                 s.Playing += () => Log.Information("Sound playing");
                 s.Resumed += () => Log.Information("Sound resumed");
-                Log.Debug($"{s.Source} p:{s.Pitch} l:{s.Length} v:{s.Volume}");
+                Log.Debug($"{s.FmodChannel.Index} p:{s.Pitch} l:{s.Length} v:{s.Volume}");
             }
             EndDisabled();
             Text($"{MathF.Round(s?.Offset ?? 0, 1):F1}/{MathF.Round(s?.Length ?? 0, 1):F1}");
