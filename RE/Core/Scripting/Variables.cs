@@ -4,7 +4,7 @@
     {
         public static Dictionary<string, object?> GlobalVariables { get; } = new();
 
-        public static event Action<string, object?> VariableChanged;
+        public static event Action<string, object?>? VariableChanged;
 
         public static void SetVariable(string key, object value)
         {

@@ -11,6 +11,8 @@ namespace RE.Core.Assets
     }
     public class AssetManager
     {
+        public static List<DynamicAsset> LoadedAssets = [];
+
         public static bool PreLoad(string asset)
         {
             var ext = Path.GetExtension(asset).ToLowerInvariant();
@@ -37,6 +39,14 @@ namespace RE.Core.Assets
 
 
             return true;
+        }
+
+        public static void UnloadAll()
+        {
+            foreach (var asset in LoadedAssets.ToList())
+            {
+                asset.OnUnload();
+            }
         }
     }
 }

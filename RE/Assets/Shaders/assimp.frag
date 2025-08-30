@@ -12,5 +12,5 @@ void main()
         return;
     }
     FragColor = texture(tex, TexCoord);
-    if(FragColor.w==0)discard;
+    //if(FragColor.w==0)discard;
 }

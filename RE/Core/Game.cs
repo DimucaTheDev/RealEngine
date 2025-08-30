@@ -1,5 +1,7 @@
 ﻿using System.Drawing;
 using System.Drawing.Imaging;
+using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Windows.Forms;
 using OpenTK.Graphics.OpenGL;
 using OpenTK.Mathematics;
@@ -7,6 +9,7 @@ using OpenTK.Windowing.Common;
 using OpenTK.Windowing.Common.Input;
 using OpenTK.Windowing.Desktop;
 using RE.Audio;
+using RE.Core.Assets;
 using RE.Core.Scripting;
 using RE.Core.World.Physics;
 using RE.Debug;
@@ -21,6 +24,7 @@ using SixLabors.ImageSharp.Processing;
 using Camera = RE.Rendering.Camera;
 using Color = System.Drawing.Color;
 using Image = OpenTK.Windowing.Common.Input.Image;
+using Keys = OpenTK.Windowing.GraphicsLibraryFramework.Keys;
 using PixelFormat = OpenTK.Graphics.OpenGL.PixelFormat;
 using Rectangle = System.Drawing.Rectangle;
 using TextRenderer = RE.Rendering.Text.TextRenderer;
@@ -31,36 +35,50 @@ internal class Game : GameWindow
 {
     private Game(GameWindowSettings gws, NativeWindowSettings nws) : base(gws, nws) { }
 
-    public static Game Instance { get; private set; }
-    public const int FpsLock = 165;
+    public static Game Instance { get; private set; } = null!;
+    public static readonly DateTime BuildDate =
+        Assembly.GetExecutingAssembly().GetCustomAttribute<BuildDateAttribute>()?.DateTime.ToLocalTime() ??
+        DateTime.MinValue;
+    public static readonly string CommitHash = Assembly.GetExecutingAssembly().GetCustomAttribute<GitCommitAttribute>()?.CommitHash ?? "unknown";
+    public const int FpsLock = 165; // fixme: fpsLock above 200 may cause physics issues
+    public const string ProductName = "Real Engine";
 
-    private static readonly Dictionary<nint, string> _loadedLibs = new();
+    private static readonly Dictionary<nint, string> LoadedLibs = new();
 
+    private static bool Wireframe
+    {
+        get => (bool)(Variables.GetVariable("wireframe") ?? false);
+        set => Variables.SetVariable("wireframe", value);
+    }
     public static void Start()
     {
         Thread.CurrentThread.Name = "Render Thread";
         Environment.CurrentDirectory = AppContext.BaseDirectory;
 
         Log.Logger = new LoggerConfiguration()
-            .MinimumLevel.Debug()
+            .MinimumLevel.Verbose()
             .Enrich.WithThreadName()
             .WriteTo.Sink(new GameLogger("[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}"))
             .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss.fff} {Level:u3}] [{ThreadName}] {Message:lj}{NewLine}{Exception}")
             .CreateLogger();
+
         Log.Information("Hello, World!");
+        Log.Information($"{ProductName}; build {BuildDate}; commit {CommitHash[..7]}");
 
         foreach (var lib in Directory.GetFiles("Dll", "*.dll"))
         {
             nint handle;
-            _loadedLibs.Add(handle = WinApi.LoadLibrary(lib), lib);
-            Log.Debug($"Loaded DLL \"{Path.GetFileName(lib)}\": 0x{handle:X} ");
+            LoadedLibs.Add(handle = WinApi.LoadLibrary(lib), lib);
+            var fName = Path.GetFileName(lib);
+            var errCode = Marshal.GetLastWin32Error();
+            Log.Debug($"Loaded DLL \"{fName}\": 0x{handle:X}\t| Code: {errCode}{(errCode != 0 ? $"\t| {Marshal.GetLastPInvokeErrorMessage()}" : "")}");
         }
 
         using var game = new Game(
             new GameWindowSettings { UpdateFrequency = FpsLock },
             new NativeWindowSettings
             {
-                Title = "Real Engine",
+                Title = ProductName,
                 ClientSize = new Vector2i(1280, 720),
                 Location = new Vector2i(Screen.PrimaryScreen!.Bounds.Width / 2 - 640, Screen.PrimaryScreen.Bounds.Height / 2 - 360),
                 Icon = LoadIcon(),
@@ -113,7 +131,9 @@ internal class Game : GameWindow
     protected override void OnRenderFrame(FrameEventArgs args)
     {
         if (Initializer.Render(args))
+        {
             return;
+        }
 
         GL.Viewport(0, 0, ClientSize.X, ClientSize.Y);
         GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
@@ -125,6 +145,10 @@ internal class Game : GameWindow
         //GL.Enable(EnableCap.CullFace);
         //GL.CullFace(CullFaceMode.Back);
         //GL.FrontFace(FrontFaceDirection.Ccw);
+
+        if (KeyboardState.IsKeyPressed(Keys.F3))
+            Wireframe = !Wireframe;
+        GL.PolygonMode(TriangleFace.FrontAndBack, Wireframe ? PolygonMode.Line : PolygonMode.Fill);
 
         base.OnRenderFrame(args);
 
@@ -150,7 +174,9 @@ internal class Game : GameWindow
     protected override void OnUnload()
     {
         base.OnUnload();
-        foreach (var lib in _loadedLibs)
+
+        AssetManager.UnloadAll();
+        foreach (var lib in LoadedLibs)
         {
             Log.Debug($"Unloading library \"{lib.Value}\"");
             WinApi.FreeLibrary(lib.Key);
@@ -178,8 +204,8 @@ internal class Game : GameWindow
         }
         try
         {
-            using var icon = new Icon(path); // Загружаем иконку
-            using var bitmap = icon.ToBitmap(); // Преобразуем в Bitmap
+            using var icon = new Icon(path);
+            using var bitmap = icon.ToBitmap();
 
             var data = new byte[bitmap.Width * bitmap.Height * 4];
             var bitmapData = bitmap.LockBits(
@@ -190,7 +216,6 @@ internal class Game : GameWindow
             System.Runtime.InteropServices.Marshal.Copy(bitmapData.Scan0, data, 0, data.Length);
             bitmap.UnlockBits(bitmapData);
 
-            // OpenTK требует RGBA, а System.Drawing выдает ARGB => нужно конвертировать
             for (int i = 0; i < data.Length; i += 4)
             {
                 byte a = data[i + 3];

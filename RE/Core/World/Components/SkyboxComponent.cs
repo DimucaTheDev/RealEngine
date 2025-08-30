@@ -1,6 +1,7 @@
 ﻿using System.Text.Json.Nodes;
 using OpenTK.Graphics.OpenGL4;
 using OpenTK.Windowing.Common;
+using RE.Core.Assets;
 using RE.Core.Scripting;
 using RE.Rendering;
 using Serilog;
@@ -11,7 +12,9 @@ namespace RE.Core.World.Components
     [ComponentInfo("World", Description = $"Renders Skybox with 6 images located in '{nameof(Path)}':\r\n/right.png\r\n/left.png\r\n/top.png\r\n/bottom.png\r\n/front.png\r\n/back.png\r\n")]
     internal class SkyboxComponent(string path) : Component
     {
-        private static int _vao, _vbo, _handle;
+        private ShaderProgram _program;
+
+        private static int _vao, _vbo;
         private static readonly float[] _cubeVertices =
         [
             -1, 1, -1, -1, -1, -1, 1, -1, -1,
@@ -105,24 +108,10 @@ namespace RE.Core.World.Components
 
         public override void Start()
         {
-            var vertexSource = File.ReadAllText("Assets/shaders/skybox.vert");
-            var fragmentSource = File.ReadAllText("Assets/shaders/skybox.frag");
+            _program = new ShaderProgram();
 
-            var vertexShader = GL.CreateShader(ShaderType.VertexShader);
-            GL.ShaderSource(vertexShader, vertexSource);
-            GL.CompileShader(vertexShader);
-
-            var fragmentShader = GL.CreateShader(ShaderType.FragmentShader);
-            GL.ShaderSource(fragmentShader, fragmentSource);
-            GL.CompileShader(fragmentShader);
-
-            _handle = GL.CreateProgram();
-            GL.AttachShader(_handle, vertexShader);
-            GL.AttachShader(_handle, fragmentShader);
-            GL.LinkProgram(_handle);
-
-            GL.DeleteShader(vertexShader);
-            GL.DeleteShader(fragmentShader);
+            _program.AttachShader("Assets/shaders/skybox.vert");
+            _program.AttachShader("Assets/shaders/skybox.frag");
 
             _vao = GL.GenVertexArray();
             _vbo = GL.GenBuffer();
@@ -140,24 +129,25 @@ namespace RE.Core.World.Components
 
         public override void Render(FrameEventArgs args)
         {
-            GL.DepthMask(false); // не пишем в z-buffer
+            GL.DepthMask(false);
 
-            GL.UseProgram(_handle);
+            _program.Use();
+
             var view = Camera.Instance.GetViewMatrix();
             var proj = Camera.Instance.GetProjectionMatrix();
+
             view.Row3.X = 0;
             view.Row3.Y = 0;
             view.Row3.Z = 0;
-            GL.UniformMatrix4(GL.GetUniformLocation(_handle, "view"), false, ref view);
-            GL.UniformMatrix4(GL.GetUniformLocation(_handle, "projection"), false, ref proj); // added ref
+
+            _program.SetValue("view", view);
+            _program.SetValue("projection", proj);
+            _program.SetValue("skybox", 0);
 
             GL.BindVertexArray(_vao);
 
             GL.ActiveTexture(TextureUnit.Texture0);
             GL.BindTexture(TextureTarget.TextureCubeMap, _cubemap);
-            GL.Uniform1(GL.GetUniformLocation(_handle, "skybox"), 0);
-
-
             GL.DrawArrays(PrimitiveType.Triangles, 0, 36);
 
             GL.DepthMask(true);

@@ -45,6 +45,8 @@ namespace RE.Core.World.Components
 
         SpriteRenderer _spriteSpawnpoint;
 
+        [EditorProperty] public string InteractDenySound { get; set; } = "common/wpn_denyselect";
+
         public override void Start()
         {
             _camera = Camera.Instance;
@@ -272,8 +274,8 @@ namespace RE.Core.World.Components
 
                     if (callback.HasHit)
                     {
-                        Log.Debug($"Ray hit object at distance: {callback.ClosestHitFraction * rayLength}");
-                        Log.Debug($"Hit object's UserObject type: {callback.CollisionObject.UserObject?.GetType().Name ?? "null"}");
+                        // Log.Debug($"Ray hit object at distance: {callback.ClosestHitFraction * rayLength}");
+                        // Log.Debug($"Hit object's UserObject type: {callback.CollisionObject.UserObject?.GetType().Name ?? "null"}");
 
                         if (!wasHolding && callback.CollisionObject.UserObject is Component controller)
                         {
@@ -297,33 +299,36 @@ namespace RE.Core.World.Components
                             }
                             else
                             {
-                                SoundManager.Play("common/wpn_denyselect", new SoundPlaybackSettings()
+                                if (!string.IsNullOrWhiteSpace(InteractDenySound))
+                                    SoundManager.Play(InteractDenySound, new SoundPlaybackSettings()
+                                    {
+                                        InWorld = false,
+                                        Pitch = 1,
+                                        Volume = .25f
+                                    });
+                            }
+                        }
+                        else
+                        {
+                            if (!string.IsNullOrWhiteSpace(InteractDenySound))
+                                SoundManager.Play(InteractDenySound, new SoundPlaybackSettings()
                                 {
                                     InWorld = false,
                                     Pitch = 1,
                                     Volume = .25f
                                 });
-                            }
-                        }
-                        else
-                        {
-                            SoundManager.Play("common/wpn_denyselect", new SoundPlaybackSettings()
-                            {
-                                InWorld = false,
-                                Pitch = 1,
-                                Volume = .25f
-                            });
                             Log.Debug("Ray hit an object, but its UserObject is not a Controller.");
                         }
                     }
                     else
                     {
-                        SoundManager.Play("common/wpn_denyselect", new SoundPlaybackSettings()
-                        {
-                            InWorld = false,
-                            Pitch = 1,
-                            Volume = .25f
-                        });
+                        if (!string.IsNullOrWhiteSpace(InteractDenySound))
+                            SoundManager.Play(InteractDenySound, new SoundPlaybackSettings()
+                            {
+                                InWorld = false,
+                                Pitch = 1,
+                                Volume = .25f
+                            });
                     }
                 }
 

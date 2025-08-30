@@ -6,7 +6,7 @@ namespace RE.Core
 {
     internal class GameLogger(string outputTemplate) : ILogEventSink
     {
-        private readonly MessageTemplateTextFormatter _formatter = new(outputTemplate, null);
+        private readonly MessageTemplateTextFormatter _formatter = new(outputTemplate);
         public static string Log = string.Empty;
 
         public void Emit(LogEvent logEvent)

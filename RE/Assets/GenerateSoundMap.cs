@@ -22,7 +22,11 @@ if (!Directory.Exists("Audio"))
 }
 
 var path = "Audio";
-var files = Directory.GetFiles(path, "*.wav", System.IO.SearchOption.AllDirectories);
+List<string> files = new();
+var wavs = Directory.GetFiles(path, "*.wav", System.IO.SearchOption.AllDirectories);
+var oggs = Directory.GetFiles(path, "*.ogg", System.IO.SearchOption.AllDirectories);
+files.AddRange(wavs);
+files.AddRange(oggs);
 Dictionary<string, List<string>> map = new();
 
 foreach (var file in files)

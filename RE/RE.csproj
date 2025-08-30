@@ -18,8 +18,29 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-	  <Compile Remove="Assets\GenerateSoundMap.cs" />
-	  <Compile Remove="Assets\GenerateStaticModel.cs" />
+		<AssemblyAttribute Include="RE.Utils.BuildDateAttribute">
+			<_Parameter1>$([System.DateTime]::UtcNow.ToString("yyyyMMddHHmmss"))</_Parameter1>
+		</AssemblyAttribute>
+	</ItemGroup>
+
+	<Target Name="AddGitCommitHash" BeforeTargets="CoreGenerateAssemblyInfo">
+		<Exec Command="git rev-parse HEAD" ConsoleToMSBuild="true" ContinueOnError="true">
+			<Output TaskParameter="ConsoleOutput" PropertyName="GitCommitHash" />
+		</Exec>
+
+		<ItemGroup>
+			<AssemblyAttribute Include="RE.Utils.GitCommitAttribute">
+				<_Parameter1>$(GitCommitHash)</_Parameter1>
+			</AssemblyAttribute>
+		</ItemGroup>
+	</Target>
+
+
+
+
+	<ItemGroup>
+		<Compile Remove="Assets\GenerateSoundMap.cs" />
+		<Compile Remove="Assets\GenerateStaticModel.cs" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -53,7 +74,7 @@
 
 	<ItemGroup>
 		<None Update="Assets\**">
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
 		</None>
 	</ItemGroup>
 
@@ -68,25 +89,16 @@
 	<ItemGroup>
 		<Folder Include="Assets\Audio\" />
 		<Folder Include="Assets\Cfg\" />
-		<Folder Include="Assets\Maps\Новая папка\" />
 	</ItemGroup>
 
 
 	<ItemGroup>
-	  <None Include="Assets\GenerateSoundMap.cs">
-	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-	  </None>
-	  <None Include="Assets\GenerateStaticModel.cs">
-	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-	  </None>
+		<None Include="Assets\GenerateSoundMap.cs">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+		<None Include="Assets\GenerateStaticModel.cs">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
 	</ItemGroup>
-
-	<!--
-	<ItemGroup>
-	  <Reference Include="BulletSharp">
-	    <HintPath>Dll\BulletSharp.dll</HintPath>
-	  </Reference>
-	</ItemGroup>
--->
 
 </Project>

@@ -31,6 +31,11 @@ namespace RE.Core.World
             _objects.Remove(g);
         }
 
+        public GameObject FindByTag(string tag) =>
+            _objects.First(g => g.Tag!.Equals(tag, StringComparison.InvariantCultureIgnoreCase));
+        public GameObject FindByName(string name) =>
+            _objects.First(g => g.Name!.Equals(name, StringComparison.InvariantCultureIgnoreCase));
+
         public IEnumerator<GameObject> GetEnumerator() => _objects.GetEnumerator();
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
     }

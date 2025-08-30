@@ -8,6 +8,7 @@ public static class Time
     private static bool _initialized;
     private static readonly List<ScheduledTask> _scheduled = new();
     private static readonly List<ScheduledTask> _scheduledFrames = new();
+    private static List<(Func<float, bool> check, Action<float> action)> updateUntil = new();
 
     public static DateTime StartTime { get; private set; } = DateTime.Now;
     public static DateTime LastUpdate { get; private set; } = StartTime;
@@ -55,7 +56,8 @@ public static class Time
 
     public static void Update(FrameEventArgs args)
     {
-        if (!_initialized) Init();
+        if (!_initialized)
+            Init();
         LastUpdate = DateTime.Now;
         DeltaTime = (float)args.Time;
         ElapsedFrames++;
@@ -66,13 +68,29 @@ public static class Time
                 try
                 {
                     _scheduled[i].Action?.Invoke();
-                    _scheduled.RemoveAt(i);
                 }
                 catch (Exception ex)
                 {
                     Log.Error($"[Timer] Exception: {ex}");
                 }
+                finally
+                {
+                    _scheduled.RemoveAt(i);
+                }
             }
+
+        for (int i = updateUntil.Count - 1; i >= 0; i--)
+        {
+            var (predicate, action) = updateUntil[i];
+            action((float)args.Time);
+            if (predicate((float)args.Time))
+                updateUntil.RemoveAt(i);
+        }
+    }
+
+    public static void OnUpdateUntil(Func<float, bool> predicate, Action<float> action)
+    {
+        updateUntil.Add((predicate, action));
     }
 
     public class ScheduledTask(double targetTime, Action action)

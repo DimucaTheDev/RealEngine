@@ -17,17 +17,16 @@ namespace RE.Rendering.Renderables
     [DebuggerDisplay("{Name}")]
     public class ModelRenderer : Renderable, ICullable
     {
-        private static readonly FreeTypeFont _font = new(32, "Assets/Fonts/consola.ttf");
-
+        private static readonly FreeTypeFont Font = new(32, "Assets/Fonts/consola.ttf");
+        private static readonly Dictionary<string, uint> TextureCache = new();
         private static Dictionary<string, (uint vao, uint vbo, uint ebo, int indexCount, List<float> vertices, List<int> indices)> _meshCache = new();
-        private static readonly Dictionary<string, uint> _textureCache = new();
         private static int _sharedShader;
         private static bool _shaderInitialized = false;
         private uint _vao, _vbo, _ebo, _texture;
         private int _indexCount;
         private FloatingText? _noModelText;
         private SpriteRenderer? _noModelSprite;
-        private bool modelLoaded = false;
+        private bool _modelLoaded = false;
         private string? _exception;
 
         public string Path
@@ -86,10 +85,10 @@ namespace RE.Rendering.Renderables
 
         public bool TryLoad(string path)
         {
-            if (!(modelLoaded = LoadModel(path)))
+            if (!(_modelLoaded = LoadModel(path)))
             {
                 _noModelSprite = new SpriteRenderer(Position, "Assets/Sprites/Editor/no_model.png");
-                _noModelText = new FloatingText($"[{Name}]\n{path}\n{_exception}", Position + new Vector3(0, .5f, 0), _font, true);
+                _noModelText = new FloatingText($"[{Name}]\n{path}\n{_exception}", Position + new Vector3(0, .5f, 0), Font, true);
                 _noModelSprite.Render();
                 _noModelText.Render();
                 return false;
@@ -146,7 +145,7 @@ namespace RE.Rendering.Renderables
 
         public override void AddedToRenderList()
         {
-            if (!modelLoaded)
+            if (!_modelLoaded)
             {
                 _noModelSprite?.Render();
                 _noModelText?.Render();
@@ -353,7 +352,7 @@ namespace RE.Rendering.Renderables
 
         private uint GetOrLoadTexture(string path, Scene? scene = null)
         {
-            if (_textureCache.TryGetValue(path, out var texId))
+            if (TextureCache.TryGetValue(path, out var texId))
                 return texId;
 
             if (path.EndsWith(".smdl", true, CultureInfo.InvariantCulture))
@@ -364,7 +363,7 @@ namespace RE.Rendering.Renderables
                 var readAllBytes = File.ReadAllBytes(path + ".png");
                 var t = ImageResult.FromMemory(readAllBytes, ColorComponents.RedGreenBlueAlpha);
                 var lt = LoadTexture(t);
-                _textureCache[path] = lt;
+                TextureCache[path] = lt;
 
                 return lt;
             }
@@ -400,14 +399,14 @@ namespace RE.Rendering.Renderables
 
             importFile.Clear();
 
-            _textureCache[path] = texId;
+            TextureCache[path] = texId;
             return texId;
         }
 
         private uint LoadTexture(ImageResult img)
         {
-            uint texID = (uint)GL.GenTexture();
-            GL.BindTexture(TextureTarget.Texture2D, texID);
+            uint texId = (uint)GL.GenTexture();
+            GL.BindTexture(TextureTarget.Texture2D, texId);
 
             GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba,
                 img.Width, img.Height, 0, PixelFormat.Rgba, PixelType.UnsignedByte, img.Data);
@@ -415,7 +414,7 @@ namespace RE.Rendering.Renderables
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
             GL.GenerateMipmap(GenerateMipmapTarget.Texture2D);
-            return texID;
+            return texId;
         }
 
         private void InitShader()

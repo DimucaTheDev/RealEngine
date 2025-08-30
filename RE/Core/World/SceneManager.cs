@@ -2,8 +2,6 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using OpenTK.Mathematics;
-using RE.Core.Scripting;
-using RE.Core.World.Components;
 using Serilog;
 using Quaternion = OpenTK.Mathematics.Quaternion;
 
@@ -13,8 +11,9 @@ namespace RE.Core.World
     {
         public static Scene CurrentScene { get; private set; }
 
-        public static void LoadScene(Scene scene) => LoadScene(scene, true);
-        public static void LoadScene(Scene scene, bool disposeCurrent)
+        public static void LoadScene(Scene scene) => LoadScene(scene, true, null);
+        public static void LoadScene(Scene scene, bool disposeCurrent) => LoadScene(scene, disposeCurrent, null);
+        public static void LoadScene(Scene scene, bool disposeCurrent, Action? afterLoaded)
         {
             Initializer.AddStep(($"Loading level \"{scene.Name ?? "<unnamed>"}\"", () =>
             {
@@ -24,38 +23,7 @@ namespace RE.Core.World
                 }
                 CurrentScene = scene;
                 CurrentScene.Load();
-            }
-            ));
-        }
-
-        public static void LoadScene(string name)
-        {
-            Initializer.AddStep(($"Loading level \"{name}\"", () =>
-            {
-                if (CurrentScene != null!)
-                {
-                    CurrentScene.Dispose();
-                }
-
-                var scene = ParseScene(name);
-                CurrentScene = scene;
-
-                CurrentScene.Load();
-
-                if (CurrentScene.GameObjects.Any(s => s.Tag == "configurator"))
-                {
-                    var g = CurrentScene.GameObjects.First(s => s.Tag == "configurator");
-                    var u = new UsableComponent();
-                    g.Components.Add(u);
-                    u.OnUsed += () =>
-                    {
-                        Variables.SetVariable("renderColliderBorders", !((bool)Variables.GetVariable("renderColliderBorders")!));
-                        g.GetComponent<BillboardTextComponent>().Text =
-                            "Render Collider Borders: " + ((Variables.GetVariable("renderColliderBorders") is true)
-                                ? "ON"
-                                : "OFF");
-                    };
-                }
+                afterLoaded?.Invoke();
             }
             ));
         }
@@ -115,7 +83,14 @@ namespace RE.Core.World
             string dataPath = Path.Combine("Assets", "Maps", name, $"data.json");
             JsonDocument doc = JsonDocument.Parse(File.ReadAllText(dataPath),
                 new JsonDocumentOptions() { CommentHandling = JsonCommentHandling.Skip, AllowTrailingCommas = true });
-            foreach (var obj in doc.RootElement.EnumerateArray())
+
+            if (!(doc.RootElement.TryGetProperty("objects", out var objProp) && objProp.EnumerateArray().Any()))
+            {
+                Log.Warning("Scene does not contain any object.");
+            }
+            var objs = objProp.EnumerateArray();
+
+            foreach (var obj in objs)
             {
                 GameObject gameObject = new GameObject();
 

@@ -55,6 +55,7 @@ namespace RE.Audio
             FmodSystem.Update();
             FmodSystem.Set3DListenerAttributes(0, in pos, in vel, in forward, in up);
 
+            return; //i dunno code below is kinda useless with FMOD
             foreach (var sound in _activeSounds.Where(s => s is { IsRelative: false }))
             {
                 break; //fixme:
@@ -82,7 +83,7 @@ namespace RE.Audio
                 sound.FmodChannel.Volume = gain * sound.Volume;
             }
         }
-        public static Sound Get(string id, int? n = null, bool in3d = false, bool loop = false)
+        public static Sound Get(string id, int? n = null)
         {
             if (!_soundMap.TryGetValue(id, out var files) || files.Count == 0)
             {
@@ -94,8 +95,7 @@ namespace RE.Audio
 
             if (!_buffers.TryGetValue(file, out FmodAudio.Sound fmodSound))
             {
-                var flags = (in3d ? Mode._3D : Mode._2D) | (loop ? Mode.Loop_Normal : Mode.Loop_Off);
-                fmodSound = FmodSystem.CreateSound(file, flags);
+                fmodSound = FmodSystem.CreateSound(file);
                 _buffers[file] = fmodSound;
             }
 
@@ -115,13 +115,15 @@ namespace RE.Audio
 
             var variant = settings.VariantIndex ?? Random.Shared.Next(files.Count);
 
-            var sound = Get(id, variant, settings.InWorld, settings.Loop);
+            var sound = Get(id, variant);
 
             sound.Volume = settings.Volume;
             sound.Pitch = settings.Pitch;
             sound.Position = settings.SourcePosition ?? Vector3.Zero;
             sound.DisposeOnStop = settings.DisposeOnStop;
             sound.ShowDebugInfo = true;//settings.ShowDebugInfo;
+            sound.Loop = settings.Loop;
+            sound.IsRelative = !settings.InWorld;
 
             if (settings.InWorld)
             {
@@ -136,6 +138,7 @@ namespace RE.Audio
                 sound.IsRelative = true;
             }
             sound.Play();
+            //Log.Debug($"Playing sound {id}:{variant}");
             return sound;
         }
 

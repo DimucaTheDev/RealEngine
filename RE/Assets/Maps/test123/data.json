@@ -4,7 +4,7 @@
       "name": "player",
       "transform": {
         "position": [
-          0,
+          5.85,
           2,
           0
         ],
@@ -37,9 +37,9 @@
           0
         ],
         "scale": [
-          5,
+          7.5,
           0.1,
-          5
+          4.45
         ]
       },
       "components": {
@@ -48,16 +48,16 @@
             "assets/models/cub.fbx"
           ]
         },
-        "BoxCollider": {}
+        "BoxColliderComponent": {}
       }
     },
     {
-      "name": "Floor",
+      "name": "Door",
       "transform": {
         "position": [
           0,
-          3,
-          0
+          2.9901688,
+          1.65
         ],
         "rotation": [
           0,
@@ -71,7 +71,34 @@
         ]
       },
       "components": {
-        "Door": {}
+        "Door": {
+          "State": 0.8505558
+        }
+      }
+    },
+    {
+      "name": "Door",
+      "transform": {
+        "position": [
+          0,
+          2.9897096,
+          -2.1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          0.1,
+          3,
+          2
+        ]
+      },
+      "components": {
+        "Door": {
+          "State": 0.4
+        }
       }
     },
     {
@@ -99,7 +126,7 @@
             "assets/models/cub.fbx"
           ]
         },
-        "BoxCollider": {}
+        "BoxColliderComponent": {}
       }
     }
   ]

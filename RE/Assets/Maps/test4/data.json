@@ -1,16 +1,18 @@
-[
-  {
-    "components": {
-      "Skybox": {
-        "args": [
-          "assets/skybox/space"
-        ]
+{
+  "objects": [
+    {
+      "components": {
+        "Skybox": {
+          "args": [
+            "assets/skybox/space"
+          ]
+        }
+      }
+    },
+    {
+      "components": {
+        "Player": {}
       }
     }
-  },
-  {
-    "components": {
-      "Player": {}
-    }
-  }
-]
+  ]
+}

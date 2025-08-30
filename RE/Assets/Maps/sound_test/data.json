@@ -1,0 +1,32 @@
+{
+  "objects": [
+    {
+      "name": "Test component",
+      "transform": { "position": [ 0, 2, 0 ] },
+      "components": {
+        "MusicTesting": {}
+      }
+    },
+    {
+      "name": "state",
+      "transform": { "position": [ 3, 5, 0 ] },
+      "components": {
+        "BillboardText": {}
+      }
+    },
+    {
+      "name": "floor",
+      "transform": {
+        "scale": [ 10, 0.1, 10 ]
+      },
+      "components": {
+        "MeshComponent": {
+          "args": [
+            "assets/models/cub.smdl"
+          ]
+        },
+        "BoxCollider": {}
+      }
+    }
+  ]
+}

@@ -11,7 +11,7 @@ namespace RE.Core.Scripting
 {
     internal class CommandHandler
     {
-        public static event Action<string, List<string>, string?> CommandExecuted;
+        public static event Action<string, List<string>, string?>? CommandExecuted;
 
         private static int recursionDepth = 0;
         private const int MaxRecursionDepth = 1000;
@@ -47,11 +47,14 @@ namespace RE.Core.Scripting
                     value = value.Substring(1, value.Length - 2);
                 result[i] = value;
             }
-            ExecuteCommand(result[0], command, result[1..].ToList());
-        }
-        public static void ExecuteCommand(string command, string full = "", params List<string> args)
-        {
-            CommandExecuted?.Invoke(command, args, full);
+            try
+            {
+                CommandExecuted?.Invoke(result[0], result[1..].ToList(), command);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, $"Error executing command \"{command} {string.Join(' ', result[1..].ToList())}\"");
+            }
         }
         public static void RegisterHandler(string name, Action<List<string>> handler)
         {
@@ -90,6 +93,7 @@ namespace RE.Core.Scripting
                     else if (list[1].Equals("null", StringComparison.OrdinalIgnoreCase))
                         value = null!;
                     Variables.SetVariable(key, value);
+                    Log.Information($"'{key}' set to {Format(value)}");
                 }
                 else
                 {
@@ -204,7 +208,10 @@ namespace RE.Core.Scripting
                         return;
                     }
                     Log.Information($"Loading {name}... ");
-                    SceneManager.LoadScene(name);
+                    SceneManager.LoadScene(SceneManager.ParseScene(name), true, () =>
+                    {
+                        SoundManager.Play("end_flash", new SoundPlaybackSettings() { DisposeOnStop = true, InWorld = false });
+                    });
                 }
             });
             RegisterHandler("editor", args =>

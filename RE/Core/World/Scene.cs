@@ -13,9 +13,14 @@
             {
                 foreach (var component in obj.Components)
                 {
-                    //see GameObjectList.Add()
-
                     component.OnSceneLoading(this);
+                }
+            }
+            foreach (var obj in GameObjects)
+            {
+                foreach (var component in obj.Components)
+                {
+                    component.OnSceneLoaded(this);
                 }
             }
         }

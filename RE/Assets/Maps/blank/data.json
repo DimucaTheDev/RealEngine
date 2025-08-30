@@ -1,5 +1,7 @@
-[
-  {
-    "components": {"Player": {} }
-  }
-]
+{
+  "objects": [
+    {
+      "components": { "Player": {} }
+    }
+  ]
+}

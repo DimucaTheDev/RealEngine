@@ -1,4 +1,5 @@
-﻿using FmodAudio;
+﻿using System.Diagnostics.CodeAnalysis;
+using FmodAudio;
 using OpenTK.Mathematics;
 using RE.Core;
 using RE.Rendering.Renderables;
@@ -36,9 +37,22 @@ namespace RE.Audio
         public FmodAudio.Channel FmodChannel { get; private set; }
         public float Volume //add max volume for 
         {
-            get => FmodChannel.Volume;
+            get
+            {
+                if (!IsReady)
+                {
+                    Log.Error("Sound is not ready");
+                    return default;
+                }
+                return FmodChannel.Volume;
+            }
             set
             {
+                if (!IsReady)
+                {
+                    Log.Error("Sound is not ready");
+                    return;
+                }
                 if (value < 0)
                 {
                     Log.Warning("Volume cant be negative. Clamping to 0");
@@ -51,28 +65,74 @@ namespace RE.Audio
 
         public float Offset
         {
-            get => FmodChannel.GetPosition(TimeUnit.MS) / 1000f;
-            set => FmodChannel.SetPosition(TimeUnit.MS, (uint)(value * 1000f));
+            get
+            {
+                if (!IsReady)
+                {
+                    Log.Error("Sound is not ready");
+                    return default;
+                }
+                return FmodChannel.GetPosition(TimeUnit.MS) / 1000f;
+            }
+            set
+            {
+                if (!IsReady)
+                {
+                    Log.Error("Sound is not ready");
+                    return;
+                }
+                FmodChannel.SetPosition(TimeUnit.MS, (uint)(value * 1000f));
+            }
         }
 
         public bool Loop
         {
-            get => (FmodChannel.Mode & Mode.Loop_Normal) != 0;
+            get
+            {
+                if (!IsReady)
+                {
+                    Log.Error("Sound is not ready");
+                    return default;
+                }
+                return (FmodChannel.Mode & Mode.Loop_Normal) != 0;
+            }
             set
             {
+                if (!IsReady)
+                {
+                    Log.Error("Sound is not ready");
+                    return;
+                }
                 if (value)
                     _task.TerminateIfScheduled();
                 else if (IsPlaying)
+                {
+                    _task?.TerminateIfScheduled();
                     _task = Time.Schedule((int)((Length - Offset) * 1000), () => Stopped?.Invoke());
+                }
+
                 FmodChannel.Mode = value ? Mode.Loop_Normal : Mode.Loop_Off;
             }
         }
 
         public float Pitch
         {
-            get => FmodChannel.Pitch;
+            get
+            {
+                if (!IsReady)
+                {
+                    Log.Error("Sound is not ready");
+                    return default;
+                }
+                return FmodChannel.Pitch;
+            }
             set
             {
+                if (!IsReady)
+                {
+                    Log.Error("Sound is not ready");
+                    return;
+                }
                 if (value < 0 || value > 10.0f)
                 {
                     Log.Warning($"Pitch value must be between 0 and 10! Clamping to {Math.Clamp(value, 0f, 10f)}");
@@ -86,6 +146,11 @@ namespace RE.Audio
         {
             get
             {
+                if (!IsReady)
+                {
+                    Log.Error("Sound is not ready");
+                    return default;
+                }
                 if (IsRelative)
                     return _position;
                 FmodChannel.Get3DAttributes(out var pos, out _, out _);
@@ -93,6 +158,12 @@ namespace RE.Audio
             }
             set
             {
+                if (!IsReady)
+                {
+                    Log.Error("Sound is not ready");
+                    return;
+                }
+
                 _position = value;
 
                 if (IsRelative)
@@ -111,6 +182,11 @@ namespace RE.Audio
         {
             get
             {
+                if (!IsReady)
+                {
+                    Log.Error("Sound is not ready");
+                    return default;
+                }
                 if (_length == null)
                 {
                     try
@@ -133,9 +209,23 @@ namespace RE.Audio
         /// </summary>
         public bool IsRelative
         {
-            get => (FmodChannel.Mode & Mode._2D) != 0;
+            get
+            {
+                if (!IsReady)
+                {
+                    Log.Error("Sound is not ready");
+                    return default;
+                }
+                return (FmodChannel.Mode & Mode._2D) != 0;
+            }
             set
             {
+                if (!IsReady)
+                {
+                    Log.Error("Sound is not ready");
+                    return;
+                }
+
                 var mode = FmodChannel.Mode;
 
                 if (!value)
@@ -158,8 +248,6 @@ namespace RE.Audio
                 }
 
                 FmodChannel.Mode = mode;
-
-
             }
         }
 
@@ -167,6 +255,11 @@ namespace RE.Audio
         {
             get
             {
+                if (!IsReady)
+                {
+                    Log.Error("Sound is not ready");
+                    return default;
+                }
                 if (IsRelative)
                     return _maxDistance;
                 FmodChannel.Get3DMinMaxDistance(out _, out var distance);
@@ -174,6 +267,11 @@ namespace RE.Audio
             }
             set
             {
+                if (!IsReady)
+                {
+                    Log.Error("Sound is not ready");
+                    return;
+                }
                 if (value == 0)
                 {
                     Log.Error("MaxDistance=0 bruh");
@@ -194,6 +292,11 @@ namespace RE.Audio
         {
             get
             {
+                if (!IsReady)
+                {
+                    Log.Error("Sound is not ready");
+                    return default;
+                }
                 if (IsRelative)
                     return _refDistance;
                 FmodChannel.Get3DMinMaxDistance(out var distance, out _);
@@ -201,6 +304,11 @@ namespace RE.Audio
             }
             set
             {
+                if (!IsReady)
+                {
+                    Log.Error("Sound is not ready");
+                    return;
+                }
                 _refDistance = value;
                 if (IsRelative)
                     return;
@@ -234,6 +342,11 @@ namespace RE.Audio
         {
             get
             {
+                if (!IsReady)
+                {
+                    Log.Error("Sound is not ready");
+                    return default;
+                }
                 if (FmodChannel.IsPlaying)
                     return SoundState.Playing;
                 if (FmodChannel.Paused)
@@ -246,7 +359,7 @@ namespace RE.Audio
         public bool IsPlaying => State == SoundState.Playing;
         public bool IsPaused => State == SoundState.Paused;
         public bool IsStopped => State == SoundState.Stopped;
-        public bool IsReady => FmodChannel != null! && FmodSound != null!;
+        public bool IsReady => FmodChannel != null! && FmodSound != null! && !_disposed && IsHandleValid();
 
         internal Sound(FmodAudio.Sound source)
         {
@@ -286,7 +399,7 @@ namespace RE.Audio
 
         internal void Play()
         {
-            if (FmodChannel == null)
+            if (!IsReady)
             {
                 Log.Error("Performing action on disposed/non init-ed sound instance");
                 return;
@@ -300,7 +413,7 @@ namespace RE.Audio
         }
         public void Pause()
         {
-            if (FmodChannel == null)
+            if (!IsReady)
             {
                 Log.Error("Performing action on disposed/non init-ed sound instance");
                 return;
@@ -312,7 +425,7 @@ namespace RE.Audio
         }
         public void Stop()
         {
-            if (FmodChannel == null)
+            if (!IsReady)
             {
                 Log.Error("Performing action on disposed/non init-ed sound instance");
                 return;
@@ -324,7 +437,7 @@ namespace RE.Audio
         }
         public void Resume()
         {
-            if (FmodChannel == null)
+            if (!IsReady)
             {
                 Log.Error("Performing action on disposed/non init-ed sound instance");
                 return;
@@ -343,11 +456,28 @@ namespace RE.Audio
         {
             if (_disposed)
                 return;
+            if (IsHandleValid())
+                FmodChannel.Stop();
             FmodChannel = null!;
             _sprite.Dispose();
             _crRefDis.Dispose();
             _crMaxDis.Dispose();
             _disposed = true;
+        }
+
+        [SuppressMessage("ReSharper", "UnusedVariable")]
+        private bool IsHandleValid()
+        {
+            try
+            {
+                var test = FmodChannel.Audibility;
+                return true;
+            }
+            catch (FmodException e)
+            {
+                Log.Error(e, "Invalid FMOD handle! Exception: ");
+                return false;
+            }
         }
     }
 }
