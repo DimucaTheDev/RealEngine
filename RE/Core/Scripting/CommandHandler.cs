@@ -53,7 +53,7 @@ namespace RE.Core.Scripting
             }
             catch (Exception ex)
             {
-                Log.Error(ex, $"Error executing command \"{command} {string.Join(' ', result[1..].ToList())}\"");
+                Log.Error(ex, "Error executing command \"{Command} {Args}\"", command, string.Join(' ', result[1..].ToList()));
             }
         }
         public static void RegisterHandler(string name, Action<List<string>> handler)
@@ -93,7 +93,7 @@ namespace RE.Core.Scripting
                     else if (list[1].Equals("null", StringComparison.OrdinalIgnoreCase))
                         value = null!;
                     Variables.SetVariable(key, value);
-                    Log.Information($"'{key}' set to {Format(value)}");
+                    Log.Information("'{Key}' set to {Value}", key, Format(value));
                 }
                 else
                 {
@@ -120,7 +120,7 @@ namespace RE.Core.Scripting
 
                 foreach (var variable in Variables.GlobalVariables)
                 {
-                    Log.Information($"{variable.Key.PadRight(l)}|{Format(variable.Value).PadLeft(valueWidth)}");
+                    Log.Information("{Name}|{Value}", variable.Key.PadRight(l), Format(variable.Value).PadLeft(valueWidth));
                 }
                 Log.Information(horizontalLine);
 
@@ -137,7 +137,7 @@ namespace RE.Core.Scripting
                 {
                     if (list.Count < 2)
                     {
-                        Log.Error("Usage: sound play <name> [volume] [inWorld] [maxDistance] [referenceDistance]");
+                        Log.Error("Usage: {Usage}", "sound play <name> [volume] [inWorld] [maxDistance] [referenceDistance]");
                         return;
                     }
                     string name = list[1];
@@ -160,7 +160,7 @@ namespace RE.Core.Scripting
                 if (!File.Exists(list[0]))
                 {
                     Console.WriteLine(Path.GetFullPath("."));
-                    Log.Error($"File not found: {list[0]}");
+                    Log.Error("File not found: {FilePath}", list[0]);
                     return;
                 }
                 string src = File.ReadAllText(list[0]);
@@ -177,7 +177,7 @@ namespace RE.Core.Scripting
             {
                 if (!args.Any())
                 {
-                    Log.Error("Usage: frustum create|destroy");
+                    Log.Error("Usage: {Usage}", "frustum create|destroy");
                     return;
                 }
 
@@ -190,24 +190,24 @@ namespace RE.Core.Scripting
                         RenderManager.RemoveCameraFrustum();
                         break;
                     default:
-                        Log.Error("Usage: frustum create|destroy");
+                        Log.Error("Usage: {Usage}", "frustum create|destroy");
                         break;
                 }
             });
             RegisterHandler("level", args =>
             {
                 if (args.Count == 0)
-                    Log.Information($"Current level: {SceneManager.CurrentScene.Name ?? "<unnamed>"}");
+                    Log.Information("Current level: {Level}", SceneManager.CurrentScene.Name ?? "<unnamed>");
                 else
                 {
                     SceneEditor.Instance?.Disable();
                     var name = args[0];
                     if (!File.Exists($"assets/maps/{name}/data.json"))
                     {
-                        Log.Error($"File not found: assets/maps/{name}/data.json");
+                        Log.Error("File not found: {FilePath}", $"assets/maps/{name}/data.json");
                         return;
                     }
-                    Log.Information($"Loading {name}... ");
+                    Log.Information("Loading {Level}... ", name);
                     SceneManager.LoadScene(SceneManager.ParseScene(name), true, () =>
                     {
                         SoundManager.Play("end_flash", new SoundPlaybackSettings() { DisposeOnStop = true, InWorld = false });

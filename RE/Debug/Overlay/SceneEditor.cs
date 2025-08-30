@@ -60,7 +60,7 @@ namespace RE.Debug.Overlay
                     {
                         var props = typeof(Color4).GetProperties(BindingFlags.Static | BindingFlags.Public)
                             .Where(prop => prop.PropertyType == typeof(Color4));
-                        Log.Error($"incorrect color '{e}'. Possible values: {string.Join("; ", props.Select(s => s.Name))}");
+                        Log.Error("incorrect color '{Color}'. Possible values: {PossibleValues}", e, string.Join("; ", props.Select(s => s.Name)));
                         return;
                     }
 
@@ -80,7 +80,7 @@ namespace RE.Debug.Overlay
             }
             Enabled = true;
 
-            Log.Information($"Starting Scene Editor for \"{SceneManager.CurrentScene.Name}\"...");
+            Log.Information("Starting Scene Editor for \"{SceneName}\"...", SceneManager.CurrentScene.Name);
 
             _scene = SceneManager.CurrentScene;//SceneManager.ParseScene(SceneManager.CurrentScene.Name!/*костыль*/); // TODO: set json path to scene's property
             //SceneManager.LoadScene(_scene, true);
@@ -794,7 +794,7 @@ namespace RE.Debug.Overlay
             if (mesh == null!)
             {
                 SelectedObjectOutline.StopRender();
-                SelectedObjectArrow.Render();
+                SelectedObjectArrow.StartRender();
                 SelectedObjectArrow.Position = _selectedObject.Transform.Position
                                                + (0, 1.2f, 0)
                                                + (0, MathF.Sin(Time.ElapsedTime * 3) / 4, 0);
@@ -802,7 +802,7 @@ namespace RE.Debug.Overlay
             else
             {
                 SelectedObjectArrow.StopRender();
-                SelectedObjectOutline.Render();
+                SelectedObjectOutline.StartRender();
 
                 SelectedObjectOutline.Position = _selectedObject.Transform.Position;
                 SelectedObjectOutline.Rotation = _selectedObject.Transform.Rotation;

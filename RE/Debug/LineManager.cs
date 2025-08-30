@@ -1,5 +1,4 @@
-﻿using System.Diagnostics;
-using System.Runtime.InteropServices;
+﻿using System.Runtime.InteropServices;
 using OpenTK.Graphics.OpenGL4;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
@@ -105,7 +104,6 @@ public class LineManager : Renderable
         GL.BindVertexArray(0);
     }
 
-    [Conditional("DEBUG")]
     public void Init()
     {
         var vertexShaderSource = File.ReadAllText("Assets/shaders/line.vert");

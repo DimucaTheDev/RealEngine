@@ -8,7 +8,10 @@ namespace RE.Core.Assets
         {
             AssetPath = path;
             AssetManager.LoadedAssets.Add(this);
-            Log.Verbose($"  new dyn.asset:  {GetType().Name}<{GetHashCode()}> {(!string.IsNullOrWhiteSpace(AssetPath) ? $"///\t{AssetPath}" : "")}");
+            if (string.IsNullOrWhiteSpace(AssetPath))
+                Log.Verbose("  new dyn.asset:  {Name}<{HashCode}>", GetType().Name, GetHashCode());
+            else
+                Log.Verbose("  new dyn.asset:  {Name}<{HashCode}> ///\t{Path}", GetType().Name, GetHashCode(), AssetPath);
         }
         public string? AssetPath { get; }
 
@@ -16,7 +19,10 @@ namespace RE.Core.Assets
 
         public virtual void OnUnload()
         {
-            Log.Verbose($"  dyn.asset unload: {GetType().Name}<{GetHashCode()}> {(!string.IsNullOrWhiteSpace(AssetPath) ? $"///\t{AssetPath}" : "")}");
+            if (string.IsNullOrWhiteSpace(AssetPath))
+                Log.Verbose("  dyn.asset unload:  {Name}<{HashCode}>", GetType().Name, GetHashCode());
+            else
+                Log.Verbose("  dyn.asset unload:  {Name}<{HashCode}> ///\t{Path}", GetType().Name, GetHashCode(), AssetPath);
             AssetManager.LoadedAssets.Remove(this);
         }
     }

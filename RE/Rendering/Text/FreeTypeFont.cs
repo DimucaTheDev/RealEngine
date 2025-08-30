@@ -1,8 +1,8 @@
-﻿using OpenTK.Graphics.OpenGL4;
+﻿using System.Collections.ObjectModel;
+using OpenTK.Graphics.OpenGL4;
 using OpenTK.Mathematics;
 using Serilog;
 using SharpFont;
-using System.Collections.ObjectModel;
 
 namespace RE.Rendering.Text;
 
@@ -39,7 +39,7 @@ public class FreeTypeFont
             try
             {
                 // load glyph
-                //face.LoadGlyph(c, LoadFlags.Render, LoadTarget.Normal);
+                //face.LoadGlyph(c, LoadFlags.StartRender, LoadTarget.Normal);
                 face.LoadChar(c, LoadFlags.Render, LoadTarget.Normal);
                 var glyph = face.Glyph;
                 var bitmap = glyph.Bitmap;
@@ -67,7 +67,7 @@ public class FreeTypeFont
             }
             catch (Exception ex)
             {
-                Log.Error("Error Initializing font!", ex);
+                Log.Error("Error Initializing font: {Error}", ex);
             }
 
         // bind default texture
@@ -124,7 +124,8 @@ public class FreeTypeFont
     }
     public void RenderText(string text, float x, float y, float scale, Vector2 dir)
     {
-        if (string.IsNullOrWhiteSpace(text)) return;
+        if (string.IsNullOrWhiteSpace(text))
+            return;
 
         var line = 0;
         if (text.IndexOf('\n') > -1)
@@ -166,10 +167,10 @@ public class FreeTypeFont
             var modelM = scaleM * transRelM * rotateM * transOriginM; // OpenTK `*`-operator is reversed
             GL.UniformMatrix4(0, false, ref modelM);
 
-            // Render glyph texture over quad
+            // StartRender glyph texture over quad
             GL.BindTexture(TextureTarget.Texture2D, ch.TextureID);
 
-            // Render quad
+            // StartRender quad
             GL.DrawArrays(PrimitiveType.Triangles, 0, 6);
         }
 

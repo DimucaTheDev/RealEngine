@@ -40,7 +40,7 @@ public class RenderManager
         Renderables.Clear();
         FrustumRenderer.Init();
         FrustumRenderer.Clear();
-        Initializer.InitializationCompleted += () => FrustumRenderer.Render();
+        Initializer.InitializationCompleted += () => FrustumRenderer.StartRender();
         foreach (RenderLayer layer in Enum.GetValues(typeof(RenderLayer)))
             Renderables[layer] = new Dictionary<Type, List<Renderable>>();
     }

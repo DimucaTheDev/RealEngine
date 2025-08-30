@@ -170,6 +170,6 @@ internal class DebugOverlay : Renderable
     {
         Instance ??= new DebugOverlay();
 
-        SceneEditor.Instance.Render();
+        SceneEditor.Instance.StartRender();
     }
 }

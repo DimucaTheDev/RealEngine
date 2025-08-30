@@ -67,7 +67,7 @@ namespace RE.Core.World
                     Directory.CreateDirectory(path);
                 File.WriteAllText(savedTo = Path.Combine(path, "data.json"), jsonString);
             }
-            Log.Information($"Saved level to '{savedTo}'");
+            Log.Information("Saved level to '{Path}'", savedTo);
         }
 
         public static Scene ParseScene(string name)
@@ -173,7 +173,7 @@ namespace RE.Core.World
 
                             if (propertyInfo == null)
                             {
-                                Log.Error($"Property '{propertyName}' not found on type '{type.Name}'");
+                                Log.Error("Property '{PropertyName}' not found on type '{TypeName}'", propertyName, type.Name);
                                 continue;
                             }
 

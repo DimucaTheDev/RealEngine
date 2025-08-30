@@ -52,7 +52,7 @@ internal class Game : GameWindow
     }
     public static void Start()
     {
-        Thread.CurrentThread.Name = "Render Thread";
+        Thread.CurrentThread.Name = "StartRender Thread";
         Environment.CurrentDirectory = AppContext.BaseDirectory;
 
         Log.Logger = new LoggerConfiguration()
@@ -63,7 +63,7 @@ internal class Game : GameWindow
             .CreateLogger();
 
         Log.Information("Hello, World!");
-        Log.Information($"{ProductName}; build {BuildDate}; commit {CommitHash[..7]}");
+        Log.Information("{ProductName}; build {BuildDate:dd.MM.yyyy HH:mm:ss}; commit {CommitHash}", ProductName, BuildDate, CommitHash[..7]);
 
         foreach (var lib in Directory.GetFiles("Dll", "*.dll"))
         {
@@ -71,7 +71,11 @@ internal class Game : GameWindow
             LoadedLibs.Add(handle = WinApi.LoadLibrary(lib), lib);
             var fName = Path.GetFileName(lib);
             var errCode = Marshal.GetLastWin32Error();
-            Log.Debug($"Loaded DLL \"{fName}\": 0x{handle:X}\t| Code: {errCode}{(errCode != 0 ? $"\t| {Marshal.GetLastPInvokeErrorMessage()}" : "")}");
+
+            if (errCode == 0)
+                Log.Debug("Loaded DLL {FileName,-15}: 0x{Handle,-16:x} Code: {ErrorCode}", fName, handle, errCode);
+            else
+                Log.Debug("Loaded DLL {FileName,-15}: 0x{Handle,-16:x} Code: {ErrorCode}, {ErrorMessage}", fName, handle, errCode, Marshal.GetLastPInvokeErrorMessage());
         }
 
         using var game = new Game(
@@ -109,7 +113,7 @@ internal class Game : GameWindow
         Initializer.AddStep(("Bootstrapping...", () =>
         {
             DebugOverlay.Init();
-            LineManager.Main!.Render();
+            LineManager.Main!.StartRender();
             ConsoleWindow.Init();
             SoundManager.Init();
             PhysicsManager.Init();
@@ -178,7 +182,7 @@ internal class Game : GameWindow
         AssetManager.UnloadAll();
         foreach (var lib in LoadedLibs)
         {
-            Log.Debug($"Unloading library \"{lib.Value}\"");
+            Log.Debug("Unloading library {Library}", lib.Value);
             WinApi.FreeLibrary(lib.Key);
         }
     }
@@ -199,7 +203,7 @@ internal class Game : GameWindow
         var path = "Assets/RealEngine2.ico";
         if (!File.Exists(path))
         {
-            Log.Warning($"Icon file not found: {path}");
+            Log.Warning("Icon file not found: {IconPath}", path);
             return null;
         }
         try

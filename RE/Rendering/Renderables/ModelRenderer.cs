@@ -89,8 +89,8 @@ namespace RE.Rendering.Renderables
             {
                 _noModelSprite = new SpriteRenderer(Position, "Assets/Sprites/Editor/no_model.png");
                 _noModelText = new FloatingText($"[{Name}]\n{path}\n{_exception}", Position + new Vector3(0, .5f, 0), Font, true);
-                _noModelSprite.Render();
-                _noModelText.Render();
+                _noModelSprite.StartRender();
+                _noModelText.StartRender();
                 return false;
             }
             return true;
@@ -147,8 +147,8 @@ namespace RE.Rendering.Renderables
         {
             if (!_modelLoaded)
             {
-                _noModelSprite?.Render();
-                _noModelText?.Render();
+                _noModelSprite?.StartRender();
+                _noModelText?.StartRender();
             }
         }
 
@@ -264,7 +264,7 @@ namespace RE.Rendering.Renderables
                 }
                 catch (Exception ex)
                 {
-                    Log.Error(ex, $"Failed to load model {Name} at {path}");
+                    Log.Error(ex, "Failed to load model {ModelName} at {Path}", Name, path);
                     _exception = ex.Message;
                     return false;
                 }
@@ -393,7 +393,7 @@ namespace RE.Rendering.Renderables
             }
             else
             {
-                Log.Warning($"No texture for {path}");
+                Log.Warning("No texture for {Path}", path);
                 texId = Util.CreateMissingTexture();
             }
 

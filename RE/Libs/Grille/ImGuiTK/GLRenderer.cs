@@ -1,7 +1,7 @@
-﻿using ImGuiNET;
+﻿using System.Runtime.CompilerServices;
+using ImGuiNET;
 using OpenTK.Graphics.OpenGL4;
 using Serilog;
-using System.Runtime.CompilerServices;
 using ErrorCode = OpenTK.Graphics.OpenGL4.ErrorCode;
 
 namespace RE.Libs.Grille.ImGuiTK;
@@ -31,7 +31,8 @@ public class GLRenderer : IDisposable
 
     public void RenderImDrawData(ImDrawDataPtr draw_data)
     {
-        if (draw_data.CmdListsCount == 0) return;
+        if (draw_data.CmdListsCount == 0)
+            return;
 
         State.Setup();
         Objects.Bind();
@@ -44,7 +45,7 @@ public class GLRenderer : IDisposable
 
         draw_data.ScaleClipRects(io.DisplayFramebufferScale);
 
-        // Render command lists
+        // StartRender command lists
         for (var n = 0; n < draw_data.CmdListsCount; n++)
         {
             var cmd_list = draw_data.CmdLists[n];
@@ -60,7 +61,8 @@ public class GLRenderer : IDisposable
             for (var cmd_i = 0; cmd_i < cmd_list.CmdBuffer.Size; cmd_i++)
             {
                 var pcmd = cmd_list.CmdBuffer[cmd_i];
-                if (pcmd.UserCallback != nint.Zero) throw new NotImplementedException();
+                if (pcmd.UserCallback != nint.Zero)
+                    throw new NotImplementedException();
 
                 GL.ActiveTexture(TextureUnit.Texture0);
                 GL.BindTexture(TextureTarget.Texture2D, (int)pcmd.TextureId);
@@ -90,10 +92,12 @@ public class GLRenderer : IDisposable
 
     private void CheckGLError(string title)
     {
-        if (!DebugPrintEnabled) return;
+        if (!DebugPrintEnabled)
+            return;
 
         ErrorCode error;
         var i = 1;
-        while ((error = GL.GetError()) != ErrorCode.NoError) Log.Error($"{title} ({i++}): {error}");
+        while ((error = GL.GetError()) != ErrorCode.NoError)
+            Log.Error("{Title} ({Index}): {Error}", title, i++, error);
     }
 }

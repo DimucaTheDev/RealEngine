@@ -31,7 +31,7 @@ public static class Time
         else if (_scheduledFrames.Contains(task))
             _scheduledFrames.Remove(task);
         else
-            Log.Warning($"Tried to remove a task that was not scheduled: {task.Action.Method.Name}");
+            Log.Warning("Tried to remove a task that was not scheduled: {MethodName}", task.Action.Method.Name);
     }
 
     [Obsolete("Doesnt work!!!!", true)]
@@ -44,7 +44,7 @@ public static class Time
     {
         if (_initialized)
         {
-            Log.Warning($"Tried to init {nameof(Time)} again!");
+            Log.Warning("Tried to init {Name} again!", nameof(Time));
             return;
         }
 
@@ -71,7 +71,7 @@ public static class Time
                 }
                 catch (Exception ex)
                 {
-                    Log.Error($"[Timer] Exception: {ex}");
+                    Log.Error(ex, "[Timer] Exception: {Exception}", ex);
                 }
                 finally
                 {

@@ -35,7 +35,7 @@ namespace RE.Core.Assets
             int location = GL.GetUniformLocation(this, name);
             if (location == -1)
             {
-                Log.Error(new InvalidOperationException(), $"Unknown uniform location: {name}");
+                Log.Error(new InvalidOperationException(), "Unknown uniform location: {Name}", name);
                 return;
             }
 

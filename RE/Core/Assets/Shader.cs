@@ -26,11 +26,11 @@ namespace RE.Core.Assets
 
             if (GL.GetError() != ErrorCode.NoError)
             {
-                Log.Error(new Exception(GL.GetShaderInfoLog(Handle)), $"Cant compile shader id:{Handle} src:{AssetPath!}");
+                Log.Error(new Exception(GL.GetShaderInfoLog(Handle)), "Cant compile shader id:{Handle} src:{AssetPath}", Handle, AssetPath);
             }
             else
             {
-                Log.Debug($"Compiled shader id:{Handle} src:{AssetPath!}");
+                Log.Debug("Compiled shader id:{Handle} src:{AssetPath}", Handle, AssetPath);
             }
         }
 

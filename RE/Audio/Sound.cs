@@ -135,7 +135,7 @@ namespace RE.Audio
                 }
                 if (value < 0 || value > 10.0f)
                 {
-                    Log.Warning($"Pitch value must be between 0 and 10! Clamping to {Math.Clamp(value, 0f, 10f)}");
+                    Log.Warning("Pitch value must be between 0 and 10! Clamping to {Clamped}", Math.Clamp(value, 0f, 10f));
                     value = Math.Clamp(value, 0f, 10f);
                 }
                 FmodChannel.Pitch = value;
@@ -274,7 +274,7 @@ namespace RE.Audio
                 }
                 if (value == 0)
                 {
-                    Log.Error("MaxDistance=0 bruh");
+                    Log.Error("MaxDistance={Zero} bruh", 0);
                     return;
                 }
                 _maxDistance = value;
@@ -325,9 +325,9 @@ namespace RE.Audio
             {
                 if (value)
                 {
-                    _crMaxDis.Render();
-                    _crRefDis.Render();
-                    _sprite.Render();
+                    _crMaxDis.StartRender();
+                    _crRefDis.StartRender();
+                    _sprite.StartRender();
                 }
                 else
                 {

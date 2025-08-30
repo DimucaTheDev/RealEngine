@@ -349,7 +349,7 @@ namespace RE.Core.World.Components
                 if (input.IsKeyPressed(Keys.F2))
                 {
                     var p = Game.TakeScreenshot();
-                    Log.Information($"Screenshot saved to {p}");
+                    Log.Information("Screenshot saved to {Path}", p);
                 }
 
                 if (input.IsKeyDown(Keys.Escape))

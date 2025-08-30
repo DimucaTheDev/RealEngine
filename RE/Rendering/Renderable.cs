@@ -7,7 +7,7 @@
         public bool UseCulling { get; set; } = true;
         public abstract void Render(OpenTK.Windowing.Common.FrameEventArgs args);
 
-        // called when Extensions.Render() is called
+        // called when Extensions.StartRender() is called
         public virtual void AddedToRenderList() { }
         public virtual void RemovedFromRenderList() { }
 

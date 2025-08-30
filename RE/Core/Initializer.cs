@@ -47,9 +47,9 @@ namespace RE.Core
             _textCurrentStep.Color = new Vector4(1f, 1f, 1f, 1f);
             _textSteps.Color = new Vector4(1f, 1f, 1f, 1f);
 
-            _textCurrentStep.Render();
-            _textSteps.Render();
-            _textTitle.Render();
+            _textCurrentStep.StartRender();
+            _textSteps.StartRender();
+            _textTitle.StartRender();
 
             InitializationCompleted += () =>
             {
@@ -66,10 +66,10 @@ namespace RE.Core
 
         private static void SetupScreen()
         {
-            _textPastSteps.ForEach(s => s.Render());
-            _textCurrentStep.Render();
-            _textSteps.Render();
-            _textTitle.Render();
+            _textPastSteps.ForEach(s => s.StartRender());
+            _textCurrentStep.StartRender();
+            _textSteps.StartRender();
+            _textTitle.StartRender();
         }
         public static void AddStep((string label, Action action) step)
         {
@@ -95,7 +95,7 @@ namespace RE.Core
                     if (!string.IsNullOrEmpty(_currentStep))
                     {
                         var pastText = new ScreenText(_currentStep, Vector2.Zero, font, new Vector4(Vector3.One, .175f));
-                        pastText.Render();
+                        pastText.StartRender();
                         _textPastSteps.Insert(0, pastText);
 
                         if (_textPastSteps.Count > MaxSteps)

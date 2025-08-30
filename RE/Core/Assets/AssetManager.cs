@@ -30,10 +30,10 @@ namespace RE.Core.Assets
         }
         public static bool PreLoad(string asset, AssetType type)
         {
-            Log.Debug("Preloading " + asset);
+            Log.Debug("Preloading {Asset}", asset);
             if (!File.Exists(asset))
             {
-                Log.Error("Asset file does not exist: " + asset);
+                Log.Error("Asset file does not exist: {Asset}", asset);
                 return false;
             }
 

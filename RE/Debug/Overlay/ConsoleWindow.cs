@@ -66,7 +66,7 @@ namespace RE.Debug.Overlay
                 {
                     if (!string.IsNullOrWhiteSpace(_inputBuffer))
                     {
-                        Log.Information(">>> " + _inputBuffer);
+                        Log.Information(">>> {Input}", _inputBuffer);
                         CommandHandler.ExecuteCommand(_inputBuffer);
                         _inputBuffer = string.Empty;
                         _scrollToBottom = true;

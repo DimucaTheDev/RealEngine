@@ -28,7 +28,7 @@ namespace RE.Audio
             FmodSystem = Fmod.CreateSystem();
             FmodSystem.Init(256);
 
-            Log.Information($"FMOD Version: {FmodSystem.Version}");
+            Log.Information("FMOD Version: {FmodVersion}", FmodSystem.Version);
 
 
             var path = Path.Combine("Assets", "soundmap.json");
@@ -40,7 +40,7 @@ namespace RE.Audio
                 _soundMap[kvp.Key] = kvp.Value;
             }
             SoundMap = new ReadOnlyDictionary<string, List<string>>(_soundMap);
-            Log.Information($"Mapped {_soundMap.Count} sounds.");
+            Log.Information("Mapped {Count} sounds.", _soundMap.Count);
         }
         public static void Update(FrameEventArgs args)
         {
@@ -87,7 +87,7 @@ namespace RE.Audio
         {
             if (!_soundMap.TryGetValue(id, out var files) || files.Count == 0)
             {
-                Log.Error($"Sound ID {id} not found in the sound map.");
+                Log.Error("Sound ID {Id} not found in the sound map.", id);
                 return null!;
             }
 
@@ -109,7 +109,7 @@ namespace RE.Audio
         {
             if (!_soundMap.TryGetValue(id, out var files) || files.Count == 0)
             {
-                Log.Error($"Sound ID {id} not found in the sound map.");
+                Log.Error("Sound ID {Id} not found in the sound map.", id);
                 return null!;
             }
 

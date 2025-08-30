@@ -23,7 +23,7 @@ namespace RE.Utils
         }
         public static void Terminate(this Time.ScheduledTask task) => Time.RemoveTask(task);
         // Renderable
-        public static void Render<T>(this T r) where T : Renderable => RenderManager.AddRenderable(r);
+        public static void StartRender<T>(this T r) where T : Renderable => RenderManager.AddRenderable(r);
         public static bool IsRendering<T>(this T r) where T : Renderable
         {
             return RenderManager.Renderables.TryGetValue(r.RenderLayer, out var types) &&
