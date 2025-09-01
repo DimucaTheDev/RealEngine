@@ -4,7 +4,7 @@ using Log = Serilog.Log;
 
 namespace RE.Core.Assets
 {
-    internal class ShaderProgram() : DynamicAsset(null!)
+    internal class ShaderProgram : DynamicAsset
     {
         public int Handle { get; private set; } = GL.CreateProgram();
 

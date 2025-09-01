@@ -1,70 +1,36 @@
 ﻿using BulletSharp;
 using OpenTK.Mathematics;
+using RE.Core.Assets;
 using RE.Core.Scripting;
 using RE.Core.World.Components;
 using RE.Debug.Overlay;
 using RE.Utils;
 using Log = Serilog.Log;
 using TaskScheduler = BulletSharp.TaskScheduler;
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
 
 namespace RE.Core.World.Physics
 {
-    internal static class PhysicsManager
+    internal class PhysicsManager() : DynamicAsset(null)
     {
+        private static readonly List<TaskScheduler> Schedulers = [];
+        private static bool _init;
+        private static int _currentScheduler;
         private static ConstraintSolverPoolMultiThreaded _solverPool;
         private static SequentialImpulseConstraintSolverMultiThreaded _parallelSolver;
         private static DbvtBroadphase _broadphase;
         private static CollisionDispatcherMultiThreaded _dispatcher;
-        private static CollisionConfiguration CollisionConfiguration;
-        private static bool _init = false;
-        private static List<TaskScheduler> _schedulers = new List<TaskScheduler>();
-        private static int _currentScheduler = 0;
+        private static CollisionConfiguration _collisionConfiguration;
 
         public static DiscreteDynamicsWorldMultiThreaded DynamicsWorld = null!;
         public static bool EnableSimulation = true;
 
-        public static void NextTaskScheduler()
-        {
-            _currentScheduler++;
-            if (_currentScheduler >= _schedulers.Count)
-            {
-                _currentScheduler = 0;
-            }
-            TaskScheduler scheduler = _schedulers[_currentScheduler];
-            scheduler.NumThreads = scheduler.MaxNumThreads;
-            Threads.TaskScheduler = scheduler;
-        }
-        private static void CreateSchedulers()
-        {
-            var args = Environment.GetCommandLineArgs();
-            if (args.Contains("-s"))
-            {
-                Log.Information("Using Sequential Task Scheduler");
-                AddScheduler(Threads.GetSequentialTaskScheduler());
-            }
-            if (args.Contains("-mpt"))
-            {
-                Log.Information("Using Multi-Processing Task Scheduler");
-                AddScheduler(Threads.GetOpenMPTaskScheduler());
-            }
-            if (args.Contains("-tbb"))
-            {
-                Log.Information("Using TBB Task Scheduler");
-                AddScheduler(Threads.GetTbbTaskScheduler());
-            }
+        public static void Init() => new PhysicsManager().OnLoad();
 
-            AddScheduler(Threads.GetPplTaskScheduler());
-        }
-        private static void AddScheduler(TaskScheduler scheduler)
+        public override void OnLoad()
         {
-            if (scheduler != null)
-            {
-                _schedulers.Add(scheduler);
-            }
-        }
+            base.OnLoad();
 
-        public static void Init()
-        {
             if (_init)
             {
                 Log.Warning("Physics Manager is already initialized!");
@@ -74,21 +40,20 @@ namespace RE.Core.World.Physics
             CreateSchedulers();
             NextTaskScheduler();
 
-            using (var collisionConfigurationInfo = new DefaultCollisionConstructionInfo
+            using (var collisionConfigurationInfo = new DefaultCollisionConstructionInfo())
             {
-                DefaultMaxPersistentManifoldPoolSize = 80000,
-                DefaultMaxCollisionAlgorithmPoolSize = 80000
-            })
-            {
-                CollisionConfiguration = new DefaultCollisionConfiguration(collisionConfigurationInfo);
+                collisionConfigurationInfo.DefaultMaxPersistentManifoldPoolSize = 80000; // magic number?
+                collisionConfigurationInfo.DefaultMaxCollisionAlgorithmPoolSize = 80000;
+                _collisionConfiguration = new DefaultCollisionConfiguration(collisionConfigurationInfo);
             }
 
-            _dispatcher = new CollisionDispatcherMultiThreaded(CollisionConfiguration);
+            _dispatcher = new CollisionDispatcherMultiThreaded(_collisionConfiguration);
             _broadphase = new DbvtBroadphase();
             _solverPool = new ConstraintSolverPoolMultiThreaded(8);
             _parallelSolver = new SequentialImpulseConstraintSolverMultiThreaded();
+
             DynamicsWorld = new DiscreteDynamicsWorldMultiThreaded(_dispatcher, _broadphase, _solverPool,
-                _parallelSolver, CollisionConfiguration);
+                _parallelSolver, _collisionConfiguration);
             DynamicsWorld.SolverInfo.SolverMode = SolverModes.Simd | SolverModes.UseWarmStarting;
             DynamicsWorld.Gravity = new BulletSharp.Math.Vector3(0, -9.81f, 0);
 
@@ -104,14 +69,15 @@ namespace RE.Core.World.Physics
                             if (obj.UserObject is RigidBodyComponent or ColliderComponent)
                             {
                                 if (((Component)obj.UserObject).Owner.Parent?.GetComponent<PlayerComponent>() != null!)
-                                    rb.Gravity = new(0, (((float)e) / -9.81f) * -25f, 0);
+                                    rb.Gravity = new(0, (float)e / -9.81f * -25f, 0);
                             }
                             else
-                                rb.Gravity = new(0, (float)e!, 0);
+                                rb.Gravity = new(0, (float)e, 0);
                         }
                     }
                 }
             };
+            Log.Debug("Physics Manager initialized");
             _init = true;
         }
 
@@ -178,15 +144,57 @@ namespace RE.Core.World.Physics
             {
                 DynamicsWorld.StepSimulation(deltaTime, EnableSimulation ? 5 : 0, Time.DeltaTime);
             }
-
         }
-        public static void Dispose()
+
+        public override void OnUnload()
         {
+            base.OnUnload();
+
             _broadphase.Dispose();
             _dispatcher.Dispose();
             DynamicsWorld.Dispose();
             _parallelSolver.Dispose();
-            CollisionConfiguration.Dispose();
+            _collisionConfiguration.Dispose();
+        }
+
+        private static void NextTaskScheduler()
+        {
+            _currentScheduler++;
+            if (_currentScheduler >= Schedulers.Count)
+            {
+                _currentScheduler = 0;
+            }
+            var scheduler = Schedulers[_currentScheduler];
+            scheduler.NumThreads = scheduler.MaxNumThreads;
+            Threads.TaskScheduler = scheduler;
+        }
+
+        private static void CreateSchedulers()
+        {
+            var args = Environment.GetCommandLineArgs();
+            if (args.Contains("-s"))
+            {
+                Log.Information("Using Sequential Task Scheduler");
+                AddScheduler(Threads.GetSequentialTaskScheduler());
+            }
+            if (args.Contains("-mpt"))
+            {
+                Log.Information("Using Multi-Processing Task Scheduler");
+                AddScheduler(Threads.GetOpenMPTaskScheduler());
+            }
+            if (args.Contains("-tbb"))
+            {
+                Log.Information("Using TBB Task Scheduler");
+                AddScheduler(Threads.GetTbbTaskScheduler());
+            }
+
+            Log.Debug("Using PPL Task Scheduler");
+            AddScheduler(Threads.GetPplTaskScheduler());
+        }
+
+        private static void AddScheduler(TaskScheduler scheduler)
+        {
+            Schedulers.Add(scheduler);
         }
     }
 }

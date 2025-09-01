@@ -4,6 +4,8 @@ namespace RE.Core.Assets
 {
     public abstract class DynamicAsset
     {
+        public string? AssetPath { get; }
+
         protected DynamicAsset(string path)
         {
             AssetPath = path;
@@ -13,7 +15,6 @@ namespace RE.Core.Assets
             else
                 Log.Verbose("  new dyn.asset:  {Name}<{HashCode}> ///\t{Path}", GetType().Name, GetHashCode(), AssetPath);
         }
-        public string? AssetPath { get; }
 
         public virtual void OnLoad() { }
 
