@@ -1,6 +1,7 @@
 ﻿using OpenTK.Graphics.OpenGL4;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
+using RE.Core.Assets;
 using RE.Rendering.Text;
 using RE.Utils;
 
@@ -11,7 +12,7 @@ public class FloatingText : Renderable
     private readonly Dictionary<uint, Character> _characters;
     private readonly int _vao;
     private readonly int _vbo;
-    private readonly int _shaderProgram;
+    private readonly ShaderProgram _shaderProgram;
     private readonly int _whiteTexture;
     private readonly bool _bottomToTop;
     private float _scale => Scale * 0.005f;
@@ -24,13 +25,10 @@ public class FloatingText : Renderable
     public float Scale { get; set; }
     public string Text { get; set; }
 
-    public static FloatingText I;
-
     public FloatingText(string content, Vector3 pos, FreeTypeFont font, bool bottomToTop = false)
         : this(content, pos, font, 1, Color4.White, new(0.3f, 0.3f, 0.3f, .5f), bottomToTop) { }
     public FloatingText(string content, Vector3 pos, FreeTypeFont font, float scale, Color4 foregroundColor, Color4 backgroundColor, bool bottomToTop)
     {
-        I = this;
         Position = pos;
         Text = content;
         Scale = scale;
@@ -39,7 +37,10 @@ public class FloatingText : Renderable
         ForegroundColor = foregroundColor;
         BackgroundColor = backgroundColor;
         _characters = font.CharacterMap.ToDictionary();
-        _shaderProgram = LoadShaderProgram();
+
+        _shaderProgram = new ShaderProgram();
+        _shaderProgram.AttachShader("Assets/shaders/text_3d.vert");
+        _shaderProgram.AttachShader("Assets/shaders/text_3d.frag");
 
 
         float[] vertices = {
@@ -68,10 +69,10 @@ public class FloatingText : Renderable
 
         _whiteTexture = CreateWhiteTexture();
 
-        GL.Enable(EnableCap.DepthTest);
-        GL.DepthFunc(DepthFunction.Less);
-        GL.Enable(EnableCap.Blend);
-        GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
+        // GL.Enable(EnableCap.DepthTest);
+        // GL.DepthFunc(DepthFunction.Less);
+        // GL.Enable(EnableCap.Blend);
+        // GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
     }
 
     private static int CreateWhiteTexture()
@@ -86,36 +87,15 @@ public class FloatingText : Renderable
         GL.BindTexture(TextureTarget.Texture2D, 0);
         return tex;
     }
-    private static int LoadShaderProgram()
-    {
-        string vertexSource = File.ReadAllText("Assets/shaders/text_3d.vert");
-        string fragmentSource = File.ReadAllText("Assets/shaders/text_3d.frag");
-
-        int vertexShader = GL.CreateShader(ShaderType.VertexShader);
-        GL.ShaderSource(vertexShader, vertexSource);
-        GL.CompileShader(vertexShader);
-
-        int fragmentShader = GL.CreateShader(ShaderType.FragmentShader);
-        GL.ShaderSource(fragmentShader, fragmentSource);
-        GL.CompileShader(fragmentShader);
-
-        int program = GL.CreateProgram();
-        GL.AttachShader(program, vertexShader);
-        GL.AttachShader(program, fragmentShader);
-        GL.LinkProgram(program);
-
-        GL.DeleteShader(vertexShader);
-        GL.DeleteShader(fragmentShader);
-
-        return program;
-    }
 
     public override void Render(FrameEventArgs args)
     {
         if (string.IsNullOrEmpty(Text))
             return;
 
-        GL.UseProgram(_shaderProgram);
+        _shaderProgram.Use();
+
+        //fixme: "nuck z-buffer" ahh gl 🙏😭
 
         var camPos = Camera.Instance.Position;
         var view = Camera.Instance.GetViewMatrix();
@@ -153,27 +133,23 @@ public class FloatingText : Renderable
         float bgHeight = totalTextHeight + padY;
         Vector3 bgOffset = new Vector3(-bgWidth / 2f, bgHeight / 2f - 0.045f, 0f);
 
-        var modelBG = Matrix4.CreateScale(bgWidth, bgHeight, 1f)
+        var modelBg = Matrix4.CreateScale(bgWidth, bgHeight, 1f)
                       * Matrix4.CreateTranslation(bgOffset)
                       * Camera.Instance.GetBillboard(bgPos)
                       * Matrix4.CreateTranslation(bgPos)
                       * Matrix4.CreateTranslation(0, _bottomToTop ? bgHeight / 2 : 0, 0);
 
-        int locM = GL.GetUniformLocation(_shaderProgram, "uModel");
-        int locV = GL.GetUniformLocation(_shaderProgram, "uView");
-        int locP = GL.GetUniformLocation(_shaderProgram, "uProjection");
-        int locC = GL.GetUniformLocation(_shaderProgram, "uColor");
+        _shaderProgram.SetValue("uModel", modelBg);
+        _shaderProgram.SetValue("uView", view);
+        _shaderProgram.SetValue("uProjection", projection);
+        _shaderProgram.SetValue("uColor", BackgroundColor);
 
-        GL.UniformMatrix4(locM, false, ref modelBG);
-        GL.UniformMatrix4(locV, false, ref view);
-        GL.UniformMatrix4(locP, false, ref projection);
-        GL.Uniform4(locC, BackgroundColor);
 
         GL.BindVertexArray(_vao);
         GL.BindTexture(TextureTarget.Texture2D, _whiteTexture);
         GL.DrawArrays(PrimitiveType.Triangles, 0, 6);
 
-        GL.Uniform4(locC, ForegroundColor);
+        _shaderProgram.SetValue("uColor", ForegroundColor);
         for (int i = 0; i < lines.Length; i++)
         {
             string line = lines[i];
@@ -199,7 +175,8 @@ public class FloatingText : Renderable
                                 * Matrix4.CreateTranslation(Position)
                                 * Matrix4.CreateTranslation(0, _bottomToTop ? bgHeight / 2 : 0, 0);
 
-                GL.UniformMatrix4(locM, false, ref modelCh);
+                _shaderProgram.SetValue("uModel", modelCh);
+
                 GL.BindTexture(TextureTarget.Texture2D, ch.TextureID);
                 GL.DrawArrays(PrimitiveType.Triangles, 0, 6);
 
@@ -217,6 +194,5 @@ public class FloatingText : Renderable
         this.StopRender();
         GL.DeleteVertexArray(_vao);
         GL.DeleteBuffer(_vbo);
-        GL.DeleteProgram(_shaderProgram);
     }
 }

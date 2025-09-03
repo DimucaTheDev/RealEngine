@@ -10,7 +10,8 @@ namespace RE.Core.World.Components
     [ComponentInfo("Text", Description = "Shows a text that always faces camera")]
     internal class BillboardTextComponent(string text) : Component
     {
-        private FloatingText _text = new(text, Vector3.Zero, new FreeTypeFont(64, "assets/fonts/consola.ttf"));
+        private readonly FloatingText _text = new(text, Vector3.Zero, new FreeTypeFont(64, "assets/fonts/consola.ttf"));
+
         public BillboardTextComponent() : this("Billboard Text") { }
 
         [EditorProperty] public Vector3 PositionOffset { get; set; }
@@ -34,8 +35,7 @@ namespace RE.Core.World.Components
         public override JsonNode GetSaveData()
         {
             JsonObject root = new();
-            var args = new JsonArray();
-            args.Add(Text);
+            var args = new JsonArray { Text };
             root.Add("args", args);
             return root;
         }

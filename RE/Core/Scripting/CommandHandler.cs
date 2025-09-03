@@ -5,15 +5,19 @@ using RE.Audio;
 using RE.Core.World;
 using RE.Debug.Overlay;
 using RE.Rendering;
+using RE.Utils;
 using Serilog;
 
 namespace RE.Core.Scripting
 {
     internal class CommandHandler
     {
+        //mb i should make a Command class with description, args, etc
+
         public static event Action<string, List<string>, string?>? CommandExecuted;
 
         private static int recursionDepth = 0;
+        private static readonly Dictionary<string, string> CommandDescriptions = [];
         private const int MaxRecursionDepth = 1000;
 
         public static void ExecuteCommandSafe(string line)
@@ -56,8 +60,14 @@ namespace RE.Core.Scripting
                 Log.Error(ex, "Error executing command \"{Command} {Args}\"", command, string.Join(' ', result[1..].ToList()));
             }
         }
-        public static void RegisterHandler(string name, Action<List<string>> handler)
+        public static void RegisterHandler(string name, Action<List<string>> handler, string description = "")
         {
+            if (!CommandDescriptions.TryAdd(name, description))
+            {
+                Log.Warning("Command {Command} is already registered!", name);
+                return;
+            }
+
             CommandExecuted += (cmd, args, _) =>
             {
                 if (cmd.Equals(name, StringComparison.OrdinalIgnoreCase))
@@ -66,7 +76,7 @@ namespace RE.Core.Scripting
                 }
             };
         }
-        public static void RegisterSingleArgHandler(string name, Action<string> handler)
+        public static void RegisterSingleArgHandler(string name, Action<string> handler, string description = "")
         {
             CommandExecuted += (cmd, args, full) =>
             {
@@ -79,6 +89,14 @@ namespace RE.Core.Scripting
 
         public static void RegisterAllCommands()
         {
+            RegisterHandler("help", _ =>
+            {
+                Log.Information("Available commands:");
+                foreach (var command in CommandDescriptions)
+                {
+                    Log.Information(" - {Command}: {Description}", command.Key, command.Value);
+                }
+            }, "Get all commands");
             RegisterHandler("var", list =>
             {
                 //todo: list support for args > 2
@@ -106,7 +124,7 @@ namespace RE.Core.Scripting
 
                     Log.Information(content);
                 }
-            });
+            }, "Set a value to the variable");
             RegisterHandler("vars", _ =>
             {
                 int l = Math.Max(15, Variables.GlobalVariables.Keys.Select(s => s.Length).Max());
@@ -124,13 +142,20 @@ namespace RE.Core.Scripting
                 }
                 Log.Information(horizontalLine);
 
-            });
+            }, "Get all variables in formatted table");
             RegisterHandler("clear", _ =>
             {
                 GameLogger.Log = "";
-            });
+            }, "Clear the log");
             RegisterHandler("sound", list =>
             {
+                if (list.Count == 0)
+                {
+                    Log.Error("Usage: {Usage}", "sound play <name> [volume] [inWorld] [maxDistance] [referenceDistance]");
+                    Log.Error("Usage: {Usage}", "sound stopall");
+                    return;
+                }
+
                 if (list[0] == "stopall")
                     SoundManager.StopAll();
                 if (list[0] == "play") // sound play <name> [volume] [inWorld] [maxDistance] [referenceDistance]
@@ -153,10 +178,16 @@ namespace RE.Core.Scripting
                         ReferenceDistance = referenceDistance
                     });
                 }
-            });
-            RegisterHandler("exit", _ => Game.Instance.Close());
+            }, "Play or stop sound. Enter command with no arguments to see more info");
+            RegisterHandler("exit", _ => Game.Instance.Close(), "Close the game");
             RegisterHandler("source", list =>
             {
+                if (list.Count == 0)
+                {
+                    Log.Error("No script specified!");
+                    return;
+                }
+
                 if (!File.Exists(list[0]))
                 {
                     Console.WriteLine(Path.GetFullPath("."));
@@ -168,11 +199,11 @@ namespace RE.Core.Scripting
                 {
                     ExecuteCommandSafe(line);
                 }
-            });
+            }, "Run script in selected path");
             RegisterSingleArgHandler("echo", c =>
             {
                 Log.Information(new string(c[c.IndexOf(' ')..].SkipWhile(s => s == ' ').ToArray()));
-            });
+            }, "Prints to log with Info level");
             RegisterHandler("frustum", args =>
             {
                 if (!args.Any())
@@ -193,7 +224,7 @@ namespace RE.Core.Scripting
                         Log.Error("Usage: {Usage}", "frustum create|destroy");
                         break;
                 }
-            });
+            }, "Renders or removes camera frustum");
             RegisterHandler("level", args =>
             {
                 if (args.Count == 0)
@@ -213,7 +244,7 @@ namespace RE.Core.Scripting
                         SoundManager.Play("end_flash", new SoundPlaybackSettings() { DisposeOnStop = true, InWorld = false });
                     });
                 }
-            });
+            }, "Print level name or loads new one");
             RegisterHandler("editor", args =>
             {
                 var ov = SceneEditor.Instance;
@@ -221,6 +252,10 @@ namespace RE.Core.Scripting
                     ov.Enable();
                 else
                     ov.Disable();
+            }, "Starts or closes the scene editor for current level");
+            RegisterHandler("credits", _ =>
+            {
+                WinApi.MessageBox(0, "Made with ❤️ by DimucaTheDev", "About", 0x40);
             });
         }
 

@@ -9,9 +9,9 @@ using RE.Utils;
 namespace RE.Core.World.Components
 {
     [ComponentInfo("Physics", Description = "Represents a dynamic physics body with mass and velocity")]
-    internal class RigidBodyComponent : Component, IPhysicsComponent
+    internal class RigidBodyComponent(float mass) : Component, IPhysicsComponent
     {
-        public RigidBody RigidBody;
+        public RigidBody RigidBody = null!;
 
         public float Mass
         {
@@ -39,12 +39,11 @@ namespace RE.Core.World.Components
 
                 field = value;
             }
-        }
+        } = mass;
 
         public bool IsPhysicsObjectInitialized => RigidBody != null;
 
-        public RigidBodyComponent() => Mass = 1;
-        public RigidBodyComponent(float mass) => Mass = mass;
+        public RigidBodyComponent() : this(1) { }
 
         public override void Start()
         {

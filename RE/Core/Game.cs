@@ -162,11 +162,12 @@ internal class Game : GameWindow
         GL.DepthFunc(DepthFunction.Lequal);
         GL.Enable(EnableCap.DepthTest);
         GL.Enable(EnableCap.Blend);
-        GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
+        //GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
         GL.ClearColor(Color.CadetBlue);
         //GL.Enable(EnableCap.CullFace);
         //GL.CullFace(CullFaceMode.Back);
         //GL.FrontFace(FrontFaceDirection.Ccw);
+
 
         if (KeyboardState.IsKeyPressed(Keys.F3))
             Wireframe = !Wireframe;
@@ -204,24 +205,29 @@ internal class Game : GameWindow
             WinApi.FreeLibrary(lib.Key);
         }
     }
-    public static string TakeScreenshot() => TakeScreenshot($"re_{DateTime.Now:yyyy-MM-dd_HH-mm-ss}.png");
+    public static string TakeScreenshot() => TakeScreenshot(Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.MyPictures), ProductName,
+        $"re_{DateTime.Now:yyyy-MM-dd_HH-mm-ss}.png"));
     public static unsafe string TakeScreenshot(string fileName)
     {
-        byte[] a = new byte[Instance.ClientSize.X * Instance.ClientSize.Y * 3];
+        var a = new byte[Instance.ClientSize.X * Instance.ClientSize.Y * 3];
         fixed (byte* ptr = a)
             GL.ReadPixels(0, 0, Instance.ClientSize.X, Instance.ClientSize.Y, PixelFormat.Rgb, PixelType.UnsignedByte, (IntPtr)ptr);
         Image<Rgb24> image = SixLabors.ImageSharp.Image.LoadPixelData<Rgb24>(a, Instance.ClientSize.X, Instance.ClientSize.Y);
         image.Mutate(s => s.Flip(FlipMode.Vertical));
+
+        Directory.CreateDirectory(Path.GetDirectoryName(fileName)!);
+
         image.SaveAsPng(fileName);
         image.Dispose();
         return Path.GetFullPath(fileName);
     }
-    public static WindowIcon? LoadIcon()
+    private static WindowIcon? LoadIcon()
     {
         var path = "Assets/RealEngine2.ico";
         if (!File.Exists(path))
         {
-            Log.Warning("Icon file not found: {IconPath}", path);
+            Log.Error("Icon file not found: {IconPath}", path);
             return null;
         }
         try

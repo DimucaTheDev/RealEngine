@@ -19,7 +19,7 @@ namespace RE.Rendering.Renderables
     {
         private static readonly FreeTypeFont Font = new(32, "Assets/Fonts/consola.ttf");
         private static readonly Dictionary<string, uint> TextureCache = new();
-        private static Dictionary<string, (uint vao, uint vbo, uint ebo, int indexCount, List<float> vertices, List<int> indices)> _meshCache = new();
+        private static readonly Dictionary<string, (uint vao, uint vbo, uint ebo, int indexCount, List<float> vertices, List<int> indices)> MeshCache = new();
         private static int _sharedShader;
         private static bool _shaderInitialized = false;
         private uint _vao, _vbo, _ebo, _texture;
@@ -166,7 +166,7 @@ namespace RE.Rendering.Renderables
             var physicsVerticesTemp = new List<float>();
             var indices = new List<uint>();
 
-            if (_meshCache.TryGetValue(path, out var meshData))
+            if (MeshCache.TryGetValue(path, out var meshData))
             {
                 (_vao, _vbo, _ebo, _indexCount, renderVertices, PhysicsIndices) = meshData;
                 PhysicsVertices = new float[renderVertices.Count / 5 * 3];
@@ -245,7 +245,7 @@ namespace RE.Rendering.Renderables
 
                 GL.BindVertexArray(0);
 
-                _meshCache[path] = (_vao, _vbo, _ebo, _indexCount, renderVertices, indices.Select(s => (int)s).ToList());
+                MeshCache[path] = (_vao, _vbo, _ebo, _indexCount, renderVertices, indices.Select(s => (int)s).ToList());
 
                 PhysicsVertices = physicsVerticesTemp.ToArray();
                 PhysicsIndices = indices.Select(i => (int)i).ToList();
@@ -340,7 +340,7 @@ namespace RE.Rendering.Renderables
                 GL.EnableVertexAttribArray(1);
                 GL.BindVertexArray(0);
 
-                _meshCache[path] = ((uint)_vao, (uint)_vbo, (uint)_ebo, _indexCount, renderVertices,
+                MeshCache[path] = ((uint)_vao, (uint)_vbo, (uint)_ebo, _indexCount, renderVertices,
                     indices.Select(s => (int)s).ToList());
 
                 PhysicsVertices = physicsVerticesTemp.ToArray();

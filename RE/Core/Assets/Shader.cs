@@ -5,6 +5,9 @@ namespace RE.Core.Assets
 {
     internal class Shader : DynamicAsset
     {
+        private static readonly List<Shader> CompiledShaders = [];
+
+
         public Shader(string path) : base(path)
         {
             OnLoad();
@@ -13,6 +16,13 @@ namespace RE.Core.Assets
         public int Handle { get; private set; }
         public sealed override void OnLoad()
         {
+            if (CompiledShaders.Any(s => s.AssetPath == AssetPath))
+            {
+                Handle = CompiledShaders.First(s => s.AssetPath == AssetPath).Handle;
+                //do not recompile shader again
+                return;
+            }
+
             Handle = GL.CreateShader(Path.GetExtension(AssetPath!).ToLower() switch
             {
                 ".vert" => ShaderType.VertexShader,
@@ -31,6 +41,7 @@ namespace RE.Core.Assets
             else
             {
                 Log.Debug("Compiled shader id:{Handle} src:{AssetPath}", Handle, AssetPath);
+                CompiledShaders.Add(this);
             }
         }
 

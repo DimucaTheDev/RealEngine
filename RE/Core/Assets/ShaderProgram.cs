@@ -9,7 +9,7 @@ namespace RE.Core.Assets
         public int Handle { get; private set; } = GL.CreateProgram();
 
         private bool _linked;
-        private readonly List<int> _linkedShaders = [];
+        private readonly List<Shader> _linkedShaders = [];
 
         public void AttachShader(string path) => AttachShader(new Shader(path));
         public void AttachShader(Shader shader)
@@ -24,7 +24,7 @@ namespace RE.Core.Assets
             {
                 GL.LinkProgram(this);
 
-                _linkedShaders.ForEach(GL.DeleteShader);
+                _linkedShaders.ForEach(s => GL.DeleteShader(s));
                 _linked = true;
             }
             GL.UseProgram(this);
@@ -65,6 +65,9 @@ namespace RE.Core.Assets
                     break;
                 case Vector4 v4:
                     GL.Uniform4(location, v4);
+                    break;
+                case Color4 c4:
+                    GL.Uniform4(location, c4);
                     break;
 
                 case Matrix2 m2:

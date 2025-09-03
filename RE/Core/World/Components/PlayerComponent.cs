@@ -79,6 +79,7 @@ namespace RE.Core.World.Components
 
         public override void Update(FrameEventArgs args)
         {
+
             var input = Game.Instance.KeyboardState;
 
             if (input.IsKeyPressed(Keys.GraveAccent))
@@ -267,6 +268,7 @@ namespace RE.Core.World.Components
                     {
                         var rigidBody = _holdedObject.GetComponent<RigidBodyComponent>()?.RigidBody
                                         ?? _holdedObject.GetComponent<ColliderComponent>()?.RigidBody;
+
                         if (rigidBody != null)
                             rigidBody.Activate(true);
                         _holdedObject = null;
@@ -292,6 +294,7 @@ namespace RE.Core.World.Components
                             else if (controller.GetComponent<RigidBodyComponent>() != null)
                             {
                                 _holdedObject = controller.Owner;
+
                                 var rigidBody = _holdedObject!.GetComponent<RigidBodyComponent>()?.RigidBody
                                                 ?? _holdedObject.GetComponent<ColliderComponent>()?.RigidBody;
                                 if (rigidBody != null)
