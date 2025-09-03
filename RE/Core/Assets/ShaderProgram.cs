@@ -94,7 +94,6 @@ namespace RE.Core.Assets
             _linkedShaders.Clear();
         }
 
-
         public static implicit operator int(ShaderProgram s) => s.Handle;
     }
 }

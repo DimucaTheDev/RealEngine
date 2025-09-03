@@ -6,6 +6,7 @@ namespace RE.Core.Assets
     {
         public string? AssetPath { get; }
 
+        protected DynamicAsset() : this(null!) { }
         protected DynamicAsset(string path)
         {
             AssetPath = path;

@@ -11,7 +11,7 @@ using TaskScheduler = BulletSharp.TaskScheduler;
 
 namespace RE.Core.World.Physics
 {
-    internal class PhysicsManager() : DynamicAsset(null)
+    internal class PhysicsManager : DynamicAsset
     {
         private static readonly List<TaskScheduler> Schedulers = [];
         private static bool _init;
@@ -83,10 +83,6 @@ namespace RE.Core.World.Physics
 
         public static void Explode(Vector3 pos, float radius, float force)
         {
-            Vector3 explosionCenter = pos;
-            float explosionRadius = radius;
-            float explosionForce = force;
-
             for (int i = 0; i < DynamicsWorld.NumCollisionObjects; i++)
             {
                 var obj = DynamicsWorld.CollisionObjectArray[i];
@@ -95,18 +91,18 @@ namespace RE.Core.World.Physics
                 {
                     Vector3 bodyPos = body.CenterOfMassPosition.ToOpenTkVector3();
 
-                    Vector3 dir = bodyPos - explosionCenter;
+                    Vector3 dir = bodyPos - pos;
                     float distance = dir.Length;
 
-                    if (distance < explosionRadius && distance > 0.001f)
+                    if (distance < radius && distance > 0.001f)
                     {
                         dir.Normalize();
 
-                        float attenuation = 1.0f - distance / explosionRadius;
-                        float forceMagnitude = explosionForce * attenuation;
+                        float attenuation = 1.0f - distance / radius;
+                        float forceMagnitude = force * attenuation;
 
                         Vector3 impulse = dir * forceMagnitude;
-                        var from = explosionCenter.ToBulletVector3();
+                        var from = pos.ToBulletVector3();
                         var to = bodyPos.ToBulletVector3();
                         var rayCallback = new AllHitsRayResultCallback(from, to);
 
@@ -150,9 +146,9 @@ namespace RE.Core.World.Physics
         {
             base.OnUnload();
 
+            DynamicsWorld.Dispose();
             _broadphase.Dispose();
             _dispatcher.Dispose();
-            DynamicsWorld.Dispose();
             _parallelSolver.Dispose();
             _collisionConfiguration.Dispose();
         }
