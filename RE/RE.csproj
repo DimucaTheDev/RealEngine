@@ -56,19 +56,15 @@
 		<PackageReference Include="FmodAudio" Version="2.2.5" />
 		<PackageReference Include="freetype" Version="2.8.0.1" />
 		<PackageReference Include="ImGui.NET" Version="1.90.0.1" />
-		<PackageReference Include="NAudio" Version="2.2.1" />
-		<PackageReference Include="NVorbis" Version="0.10.5" />
 		<PackageReference Include="OpenCvSharp4" Version="4.11.0.20250507" />
 		<PackageReference Include="OpenCvSharp4.runtime.win" Version="4.11.0.20250507" />
 		<PackageReference Include="OpenTK" Version="4.9.4" />
 		<PackageReference Include="Serilog" Version="4.3.0" />
 		<PackageReference Include="Serilog.Enrichers.Thread" Version="4.0.0" />
 		<PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
-		<PackageReference Include="Serilog.Sinks.TextWriter" Version="3.0.0" />
 		<PackageReference Include="SixLabors.ImageSharp" Version="3.1.11" />
 		<PackageReference Include="SpaceWizards.SharpFont" Version="1.0.2" />
 		<PackageReference Include="StbImageSharp" Version="2.30.15" />
-		<PackageReference Include="System.Drawing.Common" Version="9.0.7" />
 	</ItemGroup>
 
 
