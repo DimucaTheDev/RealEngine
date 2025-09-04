@@ -16,9 +16,9 @@
                     component.OnSceneLoading(this);
                 }
             }
-            foreach (var obj in GameObjects)
+            foreach (var obj in GameObjects.ToList())
             {
-                foreach (var component in obj.Components)
+                foreach (var component in obj.Components.ToList())
                 {
                     component.OnSceneLoaded(this);
                 }

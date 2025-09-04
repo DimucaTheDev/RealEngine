@@ -2,6 +2,7 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using OpenTK.Mathematics;
+using RE.Core.PluginSystem;
 using Serilog;
 using Quaternion = OpenTK.Mathematics.Quaternion;
 
@@ -72,132 +73,146 @@ namespace RE.Core.World
 
         public static Scene ParseScene(string name)
         {
-            var assemblyTypes = Assembly.GetExecutingAssembly().GetTypes();
-
-            var temp = CurrentScene; // КОСТЫЛЬ
-
-            Scene scene = new Scene();
-            CurrentScene = scene;
-            scene.Name = name; //TODO: get name from manifest
-
-            string dataPath = Path.Combine("Assets", "Maps", name, $"data.json");
-            JsonDocument doc = JsonDocument.Parse(File.ReadAllText(dataPath),
-                new JsonDocumentOptions() { CommentHandling = JsonCommentHandling.Skip, AllowTrailingCommas = true });
-
-            if (!(doc.RootElement.TryGetProperty("objects", out var objProp) && objProp.EnumerateArray().Any()))
+            try
             {
-                Log.Warning("Scene does not contain any object.");
-            }
-            var objs = objProp.EnumerateArray();
+                var assemblyTypes = new[] { Assembly.GetExecutingAssembly() }
+                    .Concat(PluginManager.Plugins.Select(s => s.PluginInformation.Assembly))
+                    .SelectMany(assembly => assembly.GetTypes())
+                    .Distinct()
+                    .Where(type => typeof(Component).IsAssignableFrom(type) && !type.IsAbstract)
+                    .ToList();
 
-            foreach (var obj in objs)
-            {
-                GameObject gameObject = new GameObject();
 
-                gameObject.Name =
-                    obj.TryGetProperty("name", out JsonElement nameProperty)
-                    ? nameProperty.GetString()!
-                    : Random.Shared.Next().ToString();
+                var temp = CurrentScene; // КОСТЫЛЬ
 
-                gameObject.Tag =
-                    obj.TryGetProperty("tag", out JsonElement tagProperty)
-                        ? tagProperty.GetString()!
-                        : null;
+                Scene scene = new Scene();
+                CurrentScene = scene;
+                scene.Name = name; //TODO: get name from manifest
 
-                if (obj.TryGetProperty("transform", out var transformElement))
+                string dataPath = Path.Combine("Assets", "Maps", name, $"data.json");
+                JsonDocument doc = JsonDocument.Parse(File.ReadAllText(dataPath),
+                    new JsonDocumentOptions() { CommentHandling = JsonCommentHandling.Skip, AllowTrailingCommas = true });
+
+                if (!(doc.RootElement.TryGetProperty("objects", out var objProp) && objProp.EnumerateArray().Any()))
                 {
-
-                    if (transformElement.TryGetProperty("position", out var positionElement))
-                    {
-                        var array = positionElement.EnumerateArray().Select(s => s.GetSingle()).ToList();
-                        gameObject.Transform.Position = new Vector3(array[0], array[1], array[2]);
-                    }
-
-                    if (transformElement.TryGetProperty("rotation", out var rotationElement))
-                    {
-                        var array = rotationElement.EnumerateArray().Select(s => s.GetSingle())
-                            .Select(MathHelper.DegreesToRadians).ToList();
-                        gameObject.Transform.Rotation = new Quaternion(array[0], array[1], array[2]);
-                    }
-
-                    if (transformElement.TryGetProperty("scale", out var scaleElement))
-                    {
-                        var array = scaleElement.EnumerateArray().Select(s => s.GetSingle()).ToList();
-                        gameObject.Transform.Scale = new Vector3(array[0], array[1], array[2]);
-                    }
+                    Log.Warning("Scene does not contain any objects.");
                 }
+                var objs = objProp.EnumerateArray();
 
-                if (obj.TryGetProperty("components", out var components))
+                foreach (var obj in objs)
                 {
-                    foreach (var component in components.EnumerateObject())
+                    GameObject gameObject = new GameObject();
+
+                    gameObject.Name =
+                        obj.TryGetProperty("name", out JsonElement nameProperty)
+                        ? nameProperty.GetString()!
+                        : Random.Shared.Next().ToString();
+
+                    gameObject.Tag =
+                        obj.TryGetProperty("tag", out JsonElement tagProperty)
+                            ? tagProperty.GetString()!
+                            : null;
+
+                    if (obj.TryGetProperty("transform", out var transformElement))
                     {
-                        var type = assemblyTypes
-                            .First(s => s.Name.ToLower().Replace("component", "") == component.Name.ToLower().Replace("component", ""));
 
-                        object instance;
-
-                        if (component.Value.TryGetProperty("args", out var argsElement) && argsElement.ValueKind == JsonValueKind.Array)
+                        if (transformElement.TryGetProperty("position", out var positionElement))
                         {
-                            var ctors = type.GetConstructors();
-                            ConstructorInfo? matchingCtor = ctors.FirstOrDefault(c => c.GetParameters().Length == argsElement.GetArrayLength());
-
-                            if (matchingCtor == null)
-                                throw new InvalidOperationException($"No constructor with {argsElement.GetArrayLength()} arguments found for {type.Name}");
-
-                            var paramInfos = matchingCtor.GetParameters();
-                            var parsedArgs = new object?[paramInfos.Length];
-
-                            for (int i = 0; i < paramInfos.Length; i++)
-                            {
-                                var paramType = paramInfos[i].ParameterType;
-                                var argElement = argsElement[i];
-
-                                parsedArgs[i] = JsonSerializer.Deserialize(argElement.GetRawText(), paramType)
-                                                ?? throw new InvalidOperationException($"Failed to deserialize argument {i} to {paramType}");
-                            }
-                            instance = Activator.CreateInstance(type, parsedArgs)!;
+                            var array = positionElement.EnumerateArray().Select(s => s.GetSingle()).ToList();
+                            gameObject.Transform.Position = new Vector3(array[0], array[1], array[2]);
                         }
-                        else
-                            instance = Activator.CreateInstance(type)!;
 
-                        Component c = (Component)instance;
-                        gameObject.Components.Add(c);
-
-                        foreach (var prop in component.Value.EnumerateObject())
+                        if (transformElement.TryGetProperty("rotation", out var rotationElement))
                         {
-                            if (prop.Name.ToLower() == "args")
-                                continue;
+                            var array = rotationElement.EnumerateArray().Select(s => s.GetSingle())
+                                .Select(MathHelper.DegreesToRadians).ToList();
+                            gameObject.Transform.Rotation = new Quaternion(array[0], array[1], array[2]);
+                        }
 
-                            var propertyName = prop.Name;
-                            var propertyInfo = type.GetProperty(propertyName, BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
+                        if (transformElement.TryGetProperty("scale", out var scaleElement))
+                        {
+                            var array = scaleElement.EnumerateArray().Select(s => s.GetSingle()).ToList();
+                            gameObject.Transform.Scale = new Vector3(array[0], array[1], array[2]);
+                        }
+                    }
 
-                            if (propertyInfo == null)
+                    if (obj.TryGetProperty("components", out var components))
+                    {
+                        foreach (var component in components.EnumerateObject())
+                        {
+                            var type = assemblyTypes
+                                .First(s => s.Name.ToLower().Replace("component", "") == component.Name.ToLower().Replace("component", ""));
+
+                            object instance;
+
+                            if (component.Value.TryGetProperty("args", out var argsElement) && argsElement.ValueKind == JsonValueKind.Array)
                             {
-                                Log.Error("Property '{PropertyName}' not found on type '{TypeName}'", propertyName, type.Name);
-                                continue;
-                            }
+                                var ctors = type.GetConstructors();
+                                ConstructorInfo? matchingCtor = ctors.FirstOrDefault(c => c.GetParameters().Length == argsElement.GetArrayLength());
 
-                            object? propertyValue = null!;
-                            if (propertyInfo!.PropertyType == typeof(Vector3)) //float[] -> Vec3(xyz)
-                            {
-                                var arr = prop.Value.EnumerateArray().Select(s => s.GetSingle()).ToList();
-                                propertyValue = new Vector3(arr[0], arr[1], arr[2]);
+                                if (matchingCtor == null)
+                                    throw new InvalidOperationException($"No constructor with {argsElement.GetArrayLength()} arguments found for {type.Name}");
+
+                                var paramInfos = matchingCtor.GetParameters();
+                                var parsedArgs = new object?[paramInfos.Length];
+
+                                for (int i = 0; i < paramInfos.Length; i++)
+                                {
+                                    var paramType = paramInfos[i].ParameterType;
+                                    var argElement = argsElement[i];
+
+                                    parsedArgs[i] = JsonSerializer.Deserialize(argElement.GetRawText(), paramType)
+                                                    ?? throw new InvalidOperationException($"Failed to deserialize argument {i} to {paramType}");
+                                }
+                                instance = Activator.CreateInstance(type, parsedArgs)!;
                             }
                             else
-                                propertyValue = prop.Value.Deserialize(propertyInfo!.PropertyType);
+                                instance = Activator.CreateInstance(type)!;
 
-                            if (propertyInfo != null! && propertyInfo.CanWrite)
+                            Component c = (Component)instance;
+                            gameObject.Components.Add(c);
+
+                            foreach (var prop in component.Value.EnumerateObject())
                             {
-                                propertyInfo.SetValue(instance, propertyValue);
+                                if (prop.Name.ToLower() == "args")
+                                    continue;
+
+                                var propertyName = prop.Name;
+                                var propertyInfo = type.GetProperty(propertyName, BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
+
+                                if (propertyInfo == null)
+                                {
+                                    Log.Error("Property '{PropertyName}' not found on type '{TypeName}'", propertyName, type.Name);
+                                    continue;
+                                }
+
+                                object? propertyValue = null!;
+                                if (propertyInfo!.PropertyType == typeof(Vector3)) //float[] -> Vec3(xyz)
+                                {
+                                    var arr = prop.Value.EnumerateArray().Select(s => s.GetSingle()).ToList();
+                                    propertyValue = new Vector3(arr[0], arr[1], arr[2]);
+                                }
+                                else
+                                    propertyValue = prop.Value.Deserialize(propertyInfo!.PropertyType);
+
+                                if (propertyInfo != null! && propertyInfo.CanWrite)
+                                {
+                                    propertyInfo.SetValue(instance, propertyValue);
+                                }
                             }
                         }
                     }
+                    scene.GameObjects.Add(gameObject);
                 }
-                scene.GameObjects.Add(gameObject);
-            }
 
-            CurrentScene = temp;
-            return scene;
+                CurrentScene = temp;
+                return scene;
+            }
+            catch (Exception e)
+            {
+                Log.Error(e, "Failed to deserialize scene");
+                throw;
+            }
         }
     }
 }

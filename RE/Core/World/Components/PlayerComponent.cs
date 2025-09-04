@@ -14,6 +14,7 @@ using RE.Rendering.Renderables;
 using RE.Utils;
 using Serilog;
 using Camera = RE.Rendering.Camera;
+using Keys = OpenTK.Windowing.GraphicsLibraryFramework.Keys;
 
 namespace RE.Core.World.Components
 {
@@ -34,6 +35,7 @@ namespace RE.Core.World.Components
         private bool wasGrounded;
         private float _soundCooldown;
         private GameObject? _holdedObject;
+        private float _objMass;
 
         float _bobAmount = 0.05f;
         float _bobSpeed = 10f;
@@ -96,7 +98,6 @@ namespace RE.Core.World.Components
                     _camera.FirstMove = true;
                 }
             }
-
 
 
             if (!((Game.Instance.CursorState != CursorState.Grabbed || ImGui.GetIO().WantCaptureMouse)))
@@ -268,7 +269,8 @@ namespace RE.Core.World.Components
                     {
                         var rigidBody = _holdedObject.GetComponent<RigidBodyComponent>()?.RigidBody
                                         ?? _holdedObject.GetComponent<ColliderComponent>()?.RigidBody;
-
+                        if (_holdedObject.GetComponent<RigidBodyComponent>() != null)
+                            _holdedObject.GetComponent<RigidBodyComponent>().Mass = _objMass;
                         if (rigidBody != null)
                             rigidBody.Activate(true);
                         _holdedObject = null;
@@ -294,6 +296,12 @@ namespace RE.Core.World.Components
                             else if (controller.GetComponent<RigidBodyComponent>() != null)
                             {
                                 _holdedObject = controller.Owner;
+                                if (_holdedObject.GetComponent<RigidBodyComponent>() != null)
+                                {
+                                    var rigidBodyComponent = _holdedObject.GetComponent<RigidBodyComponent>();
+                                    _objMass = rigidBodyComponent!.Mass;
+                                    rigidBodyComponent.Mass = 1;
+                                }
 
                                 var rigidBody = _holdedObject!.GetComponent<RigidBodyComponent>()?.RigidBody
                                                 ?? _holdedObject.GetComponent<ColliderComponent>()?.RigidBody;
@@ -413,6 +421,8 @@ namespace RE.Core.World.Components
 
                     if (Game.Instance.MouseState.IsButtonPressed(MouseButton.Button1))
                     {
+                        if (_holdedObject.GetComponent<RigidBodyComponent>() != null)
+                            _holdedObject.GetComponent<RigidBodyComponent>().Mass = _objMass;
                         rigidBody.ApplyImpulse(_camera.Front.ToBulletVector3() * 7, BulletSharp.Math.Vector3.Zero);
                         _holdedObject = null;
                     }

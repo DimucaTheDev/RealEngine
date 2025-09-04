@@ -8,6 +8,7 @@ using OpenTK.Windowing.Common.Input;
 using OpenTK.Windowing.Desktop;
 using RE.Audio;
 using RE.Core.Assets;
+using RE.Core.PluginSystem;
 using RE.Core.Scripting;
 using RE.Core.World.Physics;
 using RE.Debug;
@@ -53,35 +54,12 @@ internal class Game : GameWindow
         Thread.CurrentThread.Name = "Render Thread";
         Environment.CurrentDirectory = AppContext.BaseDirectory;
 
-        string logTemplatePath = "Assets/logTemplate.txt";
-        string[] args = Environment.GetCommandLineArgs();
+        SetupLogger();
 
-        for (int i = 0; i < args.Length; i++)
-        {
-            if (args[i] == "-log" && i + 1 < args.Length)
-            {
-                logTemplatePath = args[i + 1];
-                break;
-            }
-        }
-        var hasTemplate = File.Exists(logTemplatePath);
-        var consoleTemplate = hasTemplate ? File.ReadAllText(logTemplatePath) :
-            "[{Timestamp:HH:mm:ss.fff} {Level:u3}] [{ThreadName}] {Message:lj}{NewLine}{Exception}";
-
-        Log.Logger = new LoggerConfiguration()
-            .MinimumLevel.Verbose()
-            .Enrich.WithThreadName()
-            .WriteTo.Sink(new GameLogger("[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}"))
-            .WriteTo.Console(outputTemplate: consoleTemplate)
-            .CreateLogger();
-
-        Log.Information("Hello, World!");
-        if (hasTemplate)
-            Log.Information("Using log template from: {LogTemplatePath}", logTemplatePath);
         Log.Information("{ProductName}; build {BuildDate:dd.MM.yyyy HH:mm:ss}; commit {CommitHash}", ProductName, BuildDate, CommitHash[..7]);
         Log.Information("Startup args: {@Args}", Environment.GetCommandLineArgs()[1..]);
 
-        foreach (var lib in Directory.GetFiles("Dll", "*.dll"))
+        foreach (var lib in Directory.GetFiles("Dll\\WIN32", "*.dll"))
         {
             nint handle;
             LoadedLibs.Add(handle = WinApi.LoadLibrary(lib), lib);
@@ -94,11 +72,13 @@ internal class Game : GameWindow
                 Log.Debug("Loaded DLL {FileName,-15}: 0x{Handle,-16:x} Code: {ErrorCode}, {ErrorMessage}", fName, handle, errCode, Marshal.GetLastPInvokeErrorMessage());
         }
 
+        PluginManager.ResolvePlugins();
+
         using var game = new Game(
             new GameWindowSettings { UpdateFrequency = FpsLock },
             new NativeWindowSettings
             {
-                Title = ProductName,
+                Title = $"{ProductName} - {BuildDate:g} - {CommitHash}",
                 ClientSize = new Vector2i(1280, 720),
                 Location = new Vector2i(Screen.PrimaryScreen!.Bounds.Width / 2 - 640, Screen.PrimaryScreen.Bounds.Height / 2 - 360),
                 Icon = LoadIcon(),
@@ -197,6 +177,8 @@ internal class Game : GameWindow
         base.OnUnload();
 
         AssetManager.UnloadAll();
+        PluginManager.UnloadPlugins();
+
         foreach (var lib in LoadedLibs)
         {
             Log.Debug("Unloading library {Library}", lib.Value);
@@ -219,6 +201,35 @@ internal class Game : GameWindow
         image.SaveAsPng(fileName);
         image.Dispose();
         return Path.GetFullPath(fileName);
+    }
+
+    private static void SetupLogger()
+    {
+        string logTemplatePath = "Assets/logTemplate.txt";
+        string[] args = Environment.GetCommandLineArgs();
+
+        for (int i = 0; i < args.Length; i++)
+        {
+            if (args[i] == "-log" && i + 1 < args.Length)
+            {
+                logTemplatePath = args[i + 1];
+                break;
+            }
+        }
+        var hasTemplate = File.Exists(logTemplatePath);
+        var consoleTemplate = hasTemplate ? File.ReadAllText(logTemplatePath) :
+            "[{Timestamp:HH:mm:ss.fff} {Level:u3}] [{ThreadName}] {Message:lj}{NewLine}{Exception}";
+
+        Log.Logger = new LoggerConfiguration()
+            .MinimumLevel.Verbose()
+            .Enrich.WithThreadName()
+            .WriteTo.Sink(new GameLogger("[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}"))
+            .WriteTo.Console(outputTemplate: consoleTemplate)
+            .CreateLogger();
+
+        Log.Information("Hello, World!");
+        if (hasTemplate)
+            Log.Information("Using log template from: {LogTemplatePath}", logTemplatePath);
     }
     private static WindowIcon? LoadIcon()
     {

@@ -1,11 +1,11 @@
 ﻿using System.Globalization;
 using System.Reflection;
 using System.Text.RegularExpressions;
-using System.Windows.Forms;
 using ImGuiNET;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using RE.Core;
+using RE.Core.PluginSystem;
 using RE.Core.Scripting;
 using RE.Core.World;
 using RE.Core.World.Components;
@@ -91,8 +91,10 @@ namespace RE.Debug.Overlay
             {
                 _customPopups.Add(type);
             }
-            _componentDict = Assembly.GetExecutingAssembly()
-                .GetTypes()
+            _componentDict = new[] { Assembly.GetExecutingAssembly() }
+                .Concat(PluginManager.Plugins.Select(s => s.PluginInformation.Assembly))
+                .SelectMany(assembly => assembly.GetTypes())
+                .Distinct()
                 .Where(t => !t.IsAbstract && typeof(Component).IsAssignableFrom(t))
                 .GroupBy(type =>
                 {

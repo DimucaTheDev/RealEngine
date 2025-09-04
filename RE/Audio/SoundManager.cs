@@ -24,7 +24,7 @@ namespace RE.Audio
         {
             Game.Instance.UpdateFrame += Update;
 
-            Fmod.SetLibraryLocation("Dll");
+            Fmod.SetLibraryLocation("Dll/Win32");
             FmodSystem = Fmod.CreateSystem();
             FmodSystem.Init(256);
 

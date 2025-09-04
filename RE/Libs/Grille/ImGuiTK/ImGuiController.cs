@@ -5,6 +5,7 @@ using OpenTK.Windowing.Desktop;
 using OpenTK.Windowing.GraphicsLibraryFramework;
 using RE.Core;
 using RE.Utils;
+using Keys = OpenTK.Windowing.GraphicsLibraryFramework.Keys;
 using Vector2 = System.Numerics.Vector2;
 
 namespace RE.Libs.Grille.ImGuiTK;

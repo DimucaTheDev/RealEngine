@@ -1,6 +1,15 @@
 {
   "objects": [
     {
+      "name": "test component",
+      "transform": {
+        "position": [ 3, 3, 0 ]
+      },
+      "components": {
+        "TestComponent": {}
+      }
+    },
+    {
       "name": "player",
       "transform": {
         "position": [
@@ -249,7 +258,10 @@
             "assets/models/button.smdl"
           ]
         },
-        "BillboardText": { "args": [ "Sound Testing" ], "PositionOffset": [0,1,0]  },
+        "BillboardText": {
+          "args": [ "Sound Testing" ],
+          "PositionOffset": [ 0, 1, 0 ]
+        },
         "BoxCollider": {},
         "Usable": {
           "args": [
