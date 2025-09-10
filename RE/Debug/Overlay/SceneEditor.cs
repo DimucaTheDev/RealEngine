@@ -1,7 +1,10 @@
-﻿using System.Globalization;
+﻿using System.Diagnostics;
+using System.Drawing.Imaging;
+using System.Globalization;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using ImGuiNET;
+using OpenTK.Graphics.OpenGL;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using RE.Core;
@@ -14,6 +17,7 @@ using RE.Rendering.Renderables;
 using RE.Utils;
 using Serilog;
 using static ImGuiNET.ImGui;
+using PixelFormat = OpenTK.Graphics.OpenGL.PixelFormat;
 using Vector2 = System.Numerics.Vector2;
 using Vector3 = System.Numerics.Vector3;
 using Vector4 = System.Numerics.Vector4;
@@ -25,8 +29,8 @@ namespace RE.Debug.Overlay
         private class Node
         {
             public string Name;
-            public Dictionary<string, Node> Children = new();
-            public List<Type> Types = new();
+            public readonly Dictionary<string, Node> Children = new();
+            public readonly List<Type> Types = new();
         }
 
         public static SceneEditor Instance = new();
@@ -39,13 +43,17 @@ namespace RE.Debug.Overlay
         private Scene _scene;
         private GameObject? _selectedObject;
         private bool _popupOpen = false;
+        private bool _renderAbout = false;
         private List<Type> _customPopups = new();
         private Dictionary<string, List<Type>> _componentDict = new();
         private Node _rootNode = new();
 
-        private static OpenTK.Mathematics.Vector4 _outlineColor = new(1, 0, 0, 1);
+        private static readonly ImFontPtr _bigFont;
         private static readonly ModelRenderer SelectedObjectOutline = new() { Outline = true };
-        private static readonly SpriteRenderer SelectedObjectArrow = new(OpenTK.Mathematics.Vector3.PositiveInfinity, "assets/sprites/editor/arrow_down.png");
+        private static readonly SpriteRenderer SelectedObjectArrow = new(OpenTK.Mathematics.Vector3.PositiveInfinity,
+            "assets/sprites/editor/arrow_down.png");
+
+        private static readonly int LogoImage;
 
         static SceneEditor()
         {
@@ -65,10 +73,81 @@ namespace RE.Debug.Overlay
                     }
 
                     Color4 color = (Color4)propertyInfo.GetValue(null)!;
-                    _outlineColor = new(color.R, color.G, color.B, color.A);
-                    SelectedObjectOutline.OutlineColor = _outlineColor;
+                    OpenTK.Mathematics.Vector4 outlineColor = new(color.R, color.G, color.B, color.A);
+                    SelectedObjectOutline.OutlineColor = outlineColor;
                 }
             };
+            string iconPath = Path.GetFullPath($"Assets/RealEngine{(Random.Shared.Next(100) > 50 ? "2" : "")}.ico");
+
+            GL.BindTexture(TextureTarget.Texture2D, LogoImage);
+
+            if (File.Exists(iconPath))
+            {
+                using var icon = new Icon(iconPath, new Size(0, 0));
+
+                Size maxSize = new Size(0, 0);
+                using Icon tmp = new Icon(iconPath, new Size(512, 512));
+                if (tmp.Width > maxSize.Width && tmp.Height > maxSize.Height)
+                    maxSize = new Size(tmp.Width, tmp.Height);
+
+                using var bestIcon = new Icon(iconPath, maxSize);
+                using Bitmap bmp = bestIcon.ToBitmap();
+
+
+                var data = bmp.LockBits(new Rectangle(0, 0, bmp.Width, bmp.Height),
+                    ImageLockMode.ReadOnly,
+                    System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+
+                GL.TexImage2D(TextureTarget.Texture2D,
+                    level: 0,
+                    internalformat: PixelInternalFormat.Rgba,
+                    width: data.Width,
+                    height: data.Height,
+                    border: 0,
+                    format: PixelFormat.Bgra,
+                    type: PixelType.UnsignedByte,
+                    pixels: data.Scan0);
+
+                bmp.UnlockBits(data);
+
+                GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
+                GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
+                GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)TextureWrapMode.ClampToEdge);
+                GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)TextureWrapMode.ClampToEdge);
+
+                GL.GenerateMipmap(GenerateMipmapTarget.Texture2D);
+            }
+            else
+            {
+                LogoImage = (int)Util.CreateMissingTexture(6);
+            }
+            GL.BindTexture(TextureTarget.Texture2D, 0);
+
+            unsafe
+            {
+                // making big cansolaz font
+                var io = ImGui.GetIO();
+                io.Fonts.AddFontDefault();
+                _bigFont = io.Fonts.AddFontFromFileTTF("Assets/Fonts/consola.ttf", 60);
+
+                byte* pixels;
+                int width, height, bytesPerPixel;
+                io.Fonts.GetTexDataAsRGBA32(out pixels, out width, out height, out bytesPerPixel);
+
+                int fontTex = GL.GenTexture();
+                GL.BindTexture(TextureTarget.Texture2D, fontTex);
+                GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba, width, height,
+                    0, PixelFormat.Rgba, PixelType.UnsignedByte, (IntPtr)pixels);
+
+                GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Linear);
+                GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Linear);
+                GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)TextureWrapMode.ClampToEdge);
+                GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)TextureWrapMode.ClampToEdge);
+
+                io.Fonts.SetTexID((IntPtr)fontTex);
+
+                GL.BindTexture(TextureTarget.Texture2D, 0);
+            }
         }
 
         public void Enable()
@@ -92,7 +171,7 @@ namespace RE.Debug.Overlay
                 _customPopups.Add(type);
             }
             _componentDict = new[] { Assembly.GetExecutingAssembly() }
-                .Concat(PluginManager.Plugins.Select(s => s.PluginInformation.Assembly))
+                .Concat(PluginManager.LoadedPlugins.Select(s => s.PluginInformation.Assembly))
                 .SelectMany(assembly => assembly.GetTypes())
                 .Distinct()
                 .Where(t => !t.IsAbstract && typeof(Component).IsAssignableFrom(t))
@@ -135,7 +214,7 @@ namespace RE.Debug.Overlay
                 {
                     foreach (var c in o.Components)
                     {
-                        c.OnSceneLoading(_scene);
+                        c.OnSceneLoading(_scene); // maybe start()?
                     }
                 }
             }
@@ -178,9 +257,37 @@ namespace RE.Debug.Overlay
             SetNextWindowPos(hierarchyWindowPos, ImGuiCond.Always);
             SetNextWindowSize(hierarchyWindowSize, ImGuiCond.Always);
 
-            ImGuiWindowFlags flags = ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoCollapse;
+            ImGuiWindowFlags flags = ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.MenuBar;
 
             Begin("Scene Hierarchy", flags);
+
+            if (BeginMenuBar())
+            {
+                if (BeginMenu("Editor"))
+                {
+                    Text(_scene.Name);
+                    EndMenu();
+                }
+
+                if (BeginMenu("Help"))
+                {
+                    if (MenuItem("Open Docs"))
+                    {
+                        Process.Start("explorer", "https://youtu.be/MAgroYfCwdI");
+                    }
+
+                    Separator();
+
+                    if (MenuItem("About"))
+                    {
+                        _renderAbout = true;
+                    }
+
+                    EndMenu();
+                }
+                EndMenuBar();
+            }
+            //SetNextWindowSize(new Vector2(400, 300), ImGuiCond.FirstUseEver);
 
             if (Button("[+]"))
             {
@@ -215,6 +322,7 @@ namespace RE.Debug.Overlay
 
             if (Button("Save"))
             {
+                throw new();
                 SceneManager.SaveScene(_scene, "assets/maps/test123");
             }
 
@@ -225,13 +333,78 @@ namespace RE.Debug.Overlay
             }
             End();
 
+            if (_renderAbout)
+            {
+                OpenPopup("About");
+                _renderAbout = false;
+            }
+            DrawAbout();
+
+
             Vector2 inspectorWindowPos = new Vector2(viewport.WorkPos.X + totalWorkWidth - sidebarWidth, viewport.WorkPos.Y + totalWorkHeight / 2);
             Vector2 inspectorWindowSize = new Vector2(sidebarWidth, totalWorkHeight / 2);
 
             SetNextWindowPos(inspectorWindowPos, ImGuiCond.Always);
             SetNextWindowSize(inspectorWindowSize, ImGuiCond.Always);
 
-            DrawInspector(); // 
+            DrawInspector();
+        }
+        private void DrawAbout()
+        {
+            SetNextWindowSize(new Vector2(500, 400), ImGuiCond.FirstUseEver);
+            if (BeginPopupModal("About"))
+            {
+                Image((IntPtr)LogoImage, new Vector2(100, 100));
+                SameLine();
+
+                float textHeight = ImGui.GetTextLineHeightWithSpacing();
+                float imageHeight = 60;
+                float yOffset = (imageHeight - textHeight) * 0.5f;
+
+                SetCursorPosY(GetCursorPosY() + yOffset);
+
+                PushFont(_bigFont);
+                Text(Game.ProductName);
+                PopFont();
+
+                Separator();
+
+                BeginChild("re_info", GetContentRegionAvail(), ImGuiChildFlags.None, ImGuiWindowFlags.AlwaysVerticalScrollbar);
+
+                Text($"Build date: {Game.BuildDate}");
+                Text($"Version: {Assembly.GetExecutingAssembly().GetCustomAttribute<AssemblyVersionAttribute>()?.Version ?? "<undefined>"}");
+                Text($"Commit: {Game.CommitHash}");
+                Separator();
+                NewLine();
+                Text("Small 3D game engine with component-like system.");
+                Text("Made by DimucaTheDev with Love");
+                NewLine();
+                Text("GitHub:");
+                SameLine();
+                if (Button("DimucaTheDev/RealEngine"))
+                    Process.Start("explorer", "https://github.com/dimucathedev/realengine");
+                NewLine();
+                Separator();
+                NewLine();
+                Text("Plugins:");
+                foreach (var plugin in PluginManager.LoadedPlugins)
+                {
+                    NewLine();
+                    Text($"\t{plugin.PluginInformation.Name} ({plugin.PluginInformation.Version}) by {plugin.PluginInformation.Author ?? "<unknown>"}");
+                    if (IsItemHovered())
+                    {
+                        if (BeginItemTooltip())
+                        {
+                            Text(plugin.PluginInformation.Assembly.FullName);
+                            EndTooltip();
+                        }
+                    }
+                }
+                if(Button("Close")) 
+                    CloseCurrentPopup();
+                EndChild();
+                EndPopup();
+            }
         }
 
         private void DrawInspector()

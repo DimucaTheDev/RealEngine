@@ -218,14 +218,15 @@ internal class Game : GameWindow
         }
         var hasTemplate = File.Exists(logTemplatePath);
         var consoleTemplate = hasTemplate ? File.ReadAllText(logTemplatePath) :
-            "[{Timestamp:HH:mm:ss.fff} {Level:u3}] [{ThreadName}] {Message:lj}{NewLine}{Exception}";
+            "[{Timestamp:HH:mm:ss.fff} {Level:u3}] [{ThreadName}] [{SourceContext:Name}] {Message:lj}{NewLine}{Exception}";
 
         Log.Logger = new LoggerConfiguration()
-            .MinimumLevel.Verbose()
+            .MinimumLevel.Debug()
             .Enrich.WithThreadName()
             .WriteTo.Sink(new GameLogger("[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}"))
             .WriteTo.Console(outputTemplate: consoleTemplate)
-            .CreateLogger();
+            .CreateLogger()
+            .ForContext("SourceContext", "Engine");
 
         Log.Information("Hello, World!");
         if (hasTemplate)

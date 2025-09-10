@@ -18,7 +18,7 @@ namespace TestPlugin
 
         public override void OnLoad()
         {
-            Log.Information("Loading testing plugin omg!");
+            Logger.Information("Loading testing plugin omg!");
         }
     }
 }

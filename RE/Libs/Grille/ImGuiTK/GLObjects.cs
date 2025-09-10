@@ -182,7 +182,7 @@ public class GLObjects : IDisposable
         if (success == 0)
         {
             var info = GL.GetProgramInfoLog(program);
-            Log.Debug($"GL.LinkProgram had info log [{name}]:\n{info}");
+            Log.Debug("GL.LinkProgram had info log [{Name}]:\n{Info}", name, info);
         }
 
         GL.DetachShader(program, vertex);
@@ -205,7 +205,7 @@ public class GLObjects : IDisposable
         if (success == 0)
         {
             var info = GL.GetShaderInfoLog(shader);
-            Log.Debug($"GL.CompileShader for shader '{name}' [{type}] had info log:\n{info}");
+            Log.Debug("GL.CompileShader for shader '{Name}' [{ShaderType}] had info log:\n{Info}", name, type, info);
         }
 
         return shader;

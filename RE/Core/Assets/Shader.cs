@@ -30,6 +30,12 @@ namespace RE.Core.Assets
                 ".geom" => ShaderType.GeometryShader,
                 _ => throw new NotSupportedException("Unknown shader type!")
             });
+            if (!File.Exists(AssetPath))
+            {
+                Log.Error("Shader {Path} does not exist!", AssetPath);
+                GL.DeleteShader(Handle);
+                return;
+            }
             var content = File.ReadAllText(AssetPath!);
             GL.ShaderSource(Handle, content);
             GL.CompileShader(Handle);

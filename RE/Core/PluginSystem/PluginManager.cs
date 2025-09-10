@@ -5,7 +5,7 @@ namespace RE.Core.PluginSystem
 {
     internal class PluginManager
     {
-        public static IReadOnlyList<Plugin> Plugins { get; private set; } = [];
+        public static IReadOnlyList<Plugin> LoadedPlugins { get; private set; } = [];
 
         public static void ResolvePlugins()
         {
@@ -20,7 +20,7 @@ namespace RE.Core.PluginSystem
                 {
                     assembly = Assembly.LoadFrom(dll);
 
-                    var pluginTypes = assembly.GetTypes().Where(t => t.IsSubclassOf(typeof(Plugin)) && !t.IsAbstract);
+                    var pluginTypes = assembly.GetTypes().Where(t => t.IsSubclassOf(typeof(Plugin)) && !t.IsAbstract).ToList();
                     if (!pluginTypes.Any())
                     {
                         Log.Warning("Assembly does not have any Plugin types: {AssemblyName}", assembly.GetName().Name);
@@ -40,9 +40,9 @@ namespace RE.Core.PluginSystem
                 Log.Information("Resolved assembly {Name}", assembly.GetName().Name);
             }
 
-            Plugins = SortPlugins(plugins);
+            LoadedPlugins = SortPlugins(plugins);
 
-            foreach (var plugin in Plugins)
+            foreach (var plugin in LoadedPlugins)
             {
                 try
                 {
@@ -56,12 +56,13 @@ namespace RE.Core.PluginSystem
                 }
             }
 
-            Log.Information("Loaded {PluginCount} plugins: {@Plugins}", Plugins.Count, Plugins.Select(s => $"{s.PluginInformation.Name} ({s.PluginInformation.Version})"));
+            Log.Information("Loaded {PluginCount} plugins: {@LoadedPlugins}", LoadedPlugins.Count,
+                LoadedPlugins.Select(s => $"{s.PluginInformation.Name} ({s.PluginInformation.Version})"));
         }
 
         public static void UnloadPlugins()
         {
-            foreach (var plugin in Plugins.Reverse())
+            foreach (var plugin in LoadedPlugins.Reverse())
             {
                 try
                 {
@@ -74,7 +75,7 @@ namespace RE.Core.PluginSystem
                         plugin.PluginInformation.Name);
                 }
             }
-            Plugins = [];
+            LoadedPlugins = [];
         }
 
         static List<Plugin> SortPlugins(List<Plugin> plugins)

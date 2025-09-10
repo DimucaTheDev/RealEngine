@@ -35,7 +35,8 @@ namespace RE.Audio
 
         public FmodAudio.Sound FmodSound { get; private set; }
         public FmodAudio.Channel FmodChannel { get; private set; }
-        public float Volume //add max volume for 
+
+        public float Volume
         {
             get
             {

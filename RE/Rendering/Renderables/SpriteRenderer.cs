@@ -1,20 +1,24 @@
-﻿using OpenTK.Graphics.OpenGL4;
+﻿using Microsoft.VisualBasic.Logging;
+using OpenTK.Graphics.OpenGL4;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
+using RE.Core.Assets;
 using RE.Utils;
 using StbImageSharp;
+using Log = Serilog.Log;
 
 namespace RE.Rendering.Renderables
 {
     public class SpriteRenderer : Renderable
     {
-        private int _vao, _vbo;
-        private int _shaderProgram;
+        private readonly int _vao;
+        private readonly int _vbo; 
         private int _texture;
-        private float texWidth = 0, texHeight = 0;
-        private bool constantSize;
+        private float _texWidth = 0, _texHeight = 0;
+        private readonly bool _constantSize;
+        private readonly ShaderProgram _shaderProgram;
 
-        private static Dictionary<string, (int texture, int width, int height)> TextureCache = new();
+        private static readonly Dictionary<string, (int texture, int width, int height)> TextureCache = new();
 
 
         public Vector3 Position { get; set; }
@@ -27,10 +31,9 @@ namespace RE.Rendering.Renderables
             bool constantSize = false, float scale = 1f)
         {
             Position = position;
-            this.constantSize = constantSize;
+            this._constantSize = constantSize;
             Scale = scale;
 
-            // Вершины quad (позиция + UV)
             float[] vertices = {
             // pos      // uv
             0f, 0f,     0f, 0f,
@@ -44,7 +47,6 @@ namespace RE.Rendering.Renderables
             2, 3, 0
         };
 
-            // VAO/VBO
             _vao = GL.GenVertexArray();
             _vbo = GL.GenBuffer();
             int ebo = GL.GenBuffer();
@@ -64,43 +66,46 @@ namespace RE.Rendering.Renderables
 
             GL.BindVertexArray(0);
 
-            _shaderProgram = CreateShader();
+            _shaderProgram = new ShaderProgram();
+            _shaderProgram.AttachShader("Assets/shaders/sprite.vert");
+            _shaderProgram.AttachShader("Assets/Shaders/sprite.frag");
+
             _texture = LoadTexture(spritePath);
         }
 
         public override void Render(FrameEventArgs args)
         {
-            GL.UseProgram(_shaderProgram);
+            _shaderProgram.Use();
 
-            Vector3 camPos = Camera.Instance.Position;
-            Vector3 lookDir = Vector3.Normalize(camPos - Position);
+            var camPos = Camera.Instance.Position;
+            var lookDir = Vector3.Normalize(camPos - Position);
 
-            Vector3 up = Vector3.UnitY;
-            Vector3 right = Vector3.Normalize(Vector3.Cross(up, lookDir));
-            Vector3 billboardUp = Vector3.Cross(lookDir, right);
+            var up = Vector3.UnitY;
+            var right = Vector3.Normalize(Vector3.Cross(up, lookDir));
+            var billboardUp = Vector3.Cross(lookDir, right);
 
-            float aspectRatio = texWidth / texHeight;
+            var aspectRatio = _texWidth / _texHeight;
 
 
-            float w = 1f;
-            float h = w / aspectRatio;
+            var w = 1f;
+            var h = w / aspectRatio;
 
-            float baseSize = 1.0f;
-            float distance = (Position - Camera.Instance.Position).Length;
-            float scale = distance * baseSize;
+            var baseSize = 1.0f;
+            var distance = (Position - Camera.Instance.Position).Length;
+            var scale = distance * baseSize;
 
-            float size = 1.0f;
+            var size = 1.0f;
 
-            Matrix4 translateToCenter = Matrix4.CreateTranslation(-0.5f, -0.5f, 0f);
-            float finalScale = constantSize ? scale * Scale : size * Scale;
-            Matrix4 model =
+            var translateToCenter = Matrix4.CreateTranslation(-0.5f, -0.5f, 0f);
+            var finalScale = _constantSize ? scale * Scale : size * Scale;
+            var model =
                 translateToCenter *
                 Matrix4.CreateScale(finalScale, -finalScale / aspectRatio, 1f) *
                 Camera.Instance.GetBillboard(Position) *
                 Matrix4.CreateTranslation(Position);
 
-            Matrix4 view = Camera.Instance.GetViewMatrix();
-            Matrix4 projection = Camera.Instance.GetProjectionMatrix();
+            var view = Camera.Instance.GetViewMatrix();
+            var projection = Camera.Instance.GetProjectionMatrix();
 
             GL.UniformMatrix4(GL.GetUniformLocation(_shaderProgram, "uModel"), false, ref model);
             GL.UniformMatrix4(GL.GetUniformLocation(_shaderProgram, "uView"), false, ref view);
@@ -135,12 +140,20 @@ namespace RE.Rendering.Renderables
             Path = path;
             if (TextureCache.TryGetValue(path, out var t))
             {
-                texWidth = t.width;
-                texHeight = t.height;
+                _texWidth = t.width;
+                _texHeight = t.height;
                 return t.texture;
             }
+
+            if (!File.Exists(path))
+            {
+                Log.Error("Texture at path {Path} does not exist!", path);
+                var missingTexture = (int)Util.CreateMissingTexture(4);
+
+                return missingTexture;
+            }
             var image = ImageResult.FromStream(File.OpenRead(path), ColorComponents.RedGreenBlueAlpha);
-            (texWidth, texHeight) = (image.Width, image.Height);
+            (_texWidth, _texHeight) = (image.Width, image.Height);
             int tex = GL.GenTexture();
             GL.BindTexture(TextureTarget.Texture2D, tex);
             GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba,
@@ -151,31 +164,6 @@ namespace RE.Rendering.Renderables
 
             TextureCache.Add(path, (tex, image.Width, image.Height));
             return tex;
-        }
-
-        private int CreateShader()
-        {
-            string vertex = File.ReadAllText("Assets/shaders/sprite.vert");
-            string fragment = File.ReadAllText("Assets/Shaders/sprite.frag");
-
-            int vert = GL.CreateShader(ShaderType.VertexShader);
-            GL.ShaderSource(vert, vertex);
-            GL.CompileShader(vert);
-
-            int frag = GL.CreateShader(ShaderType.FragmentShader);
-            GL.ShaderSource(frag, fragment);
-            GL.CompileShader(frag);
-
-            int prog = GL.CreateProgram();
-            GL.AttachShader(prog, vert);
-            GL.AttachShader(prog, frag);
-            GL.LinkProgram(prog);
-
-            GL.DeleteShader(vert);
-            GL.DeleteShader(frag);
-
-            return prog;
-        }
-    }
-
+        } 
+    } 
 }

@@ -76,7 +76,7 @@ namespace RE.Core.World
             try
             {
                 var assemblyTypes = new[] { Assembly.GetExecutingAssembly() }
-                    .Concat(PluginManager.Plugins.Select(s => s.PluginInformation.Assembly))
+                    .Concat(PluginManager.LoadedPlugins.Select(s => s.PluginInformation.Assembly))
                     .SelectMany(assembly => assembly.GetTypes())
                     .Distinct()
                     .Where(type => typeof(Component).IsAssignableFrom(type) && !type.IsAbstract)

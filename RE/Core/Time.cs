@@ -5,6 +5,12 @@ namespace RE.Core;
 
 public static class Time
 {
+    public class ScheduledTask(double targetTime, Action action)
+    {
+        public Action Action { get; } = action;
+        public double TargetTime { get; } = targetTime;
+    }
+
     private static bool _initialized;
     private static readonly List<ScheduledTask> _scheduled = new();
     private static readonly List<ScheduledTask> _scheduledFrames = new();
@@ -18,6 +24,8 @@ public static class Time
     public static TimeSpan TotalTime => DateTime.Now - StartTime;
 
     public static bool IsScheduled(this ScheduledTask task) => _scheduled.Contains(task) || _scheduledFrames.Contains(task);
+
+    public static ScheduledTask Schedule(TimeSpan span, Action action) => Schedule((int)span.TotalMilliseconds, action);
     public static ScheduledTask Schedule(int ms, Action action)
     {
         var scheduledTask = new ScheduledTask(ElapsedTime + (double)ms / 1000, action);
@@ -91,11 +99,5 @@ public static class Time
     public static void OnUpdateUntil(Func<float, bool> predicate, Action<float> action)
     {
         updateUntil.Add((predicate, action));
-    }
-
-    public class ScheduledTask(double targetTime, Action action)
-    {
-        public Action Action { get; } = action;
-        public double TargetTime { get; } = targetTime;
     }
 }
