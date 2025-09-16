@@ -6,7 +6,7 @@ using RE.Utils;
 
 namespace RE.Rendering.Renderables;
 
-public class CircleRenderer : Renderable
+public class SphereLineRenderer : Renderable
 {
     private readonly int _vao;
     private readonly int _vbo;
@@ -20,7 +20,7 @@ public class CircleRenderer : Renderable
     public int Segments { get; set; }
     public Color4 Color { get; set; } = Color4.Red;
 
-    public CircleRenderer(Vector3 pos, float radius = 1, int segments = 64)
+    public SphereLineRenderer(Vector3 pos, float radius = 1, int segments = 64)
     {
         Center = pos;
         Radius = radius;

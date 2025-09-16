@@ -51,6 +51,10 @@ namespace RE.Audio
             var up = System.Numerics.Vector3.Cross(right, forward); // точно ортогонален
             var vel = System.Numerics.Vector3.Zero;
 
+            foreach (var sound in _activeSounds.Where(s => s.ShowDebugInfo))
+            {
+                sound.UpdateDebugInfo();
+            }
 
             FmodSystem.Update();
             FmodSystem.Set3DListenerAttributes(0, in pos, in vel, in forward, in up);

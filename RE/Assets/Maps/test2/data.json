@@ -8,7 +8,7 @@
         "scale": [1, 1, 1]
       },
       "components": {
-        "PlayerComponent": {}
+        "Player2": {}
       }
     },
     {
@@ -20,7 +20,7 @@
       },
       "components": {
         "MeshComponent": {
-          "args": ["assets/models/crouch.fbx"]
+          "args": ["assets/models/boxy.fbx"]
         },
         "MeshCollider": {}
       }

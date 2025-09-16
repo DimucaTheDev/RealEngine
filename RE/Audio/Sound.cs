@@ -3,8 +3,11 @@ using FmodAudio;
 using OpenTK.Mathematics;
 using RE.Core;
 using RE.Rendering.Renderables;
+using RE.Rendering.Text;
 using RE.Utils;
 using Log = Serilog.Log;
+using FmodSound = FmodAudio.Sound;
+using FmodChannel = FmodAudio.Channel;
 
 namespace RE.Audio
 {
@@ -20,10 +23,10 @@ namespace RE.Audio
         private bool _disposed;
         private float? _length = null!;
         private Time.ScheduledTask? _task;
-        private readonly CircleRenderer _crRefDis;
-        private readonly CircleRenderer _crMaxDis;
+        private readonly SphereLineRenderer _crRefDis;
+        private readonly SphereLineRenderer _crMaxDis;
         private readonly SpriteRenderer _sprite;
-
+        private readonly FloatingText _debugText;
         private float _maxDistance, _refDistance;
         private Vector3 _position;
 
@@ -33,8 +36,8 @@ namespace RE.Audio
         public event Action? Resumed;
         public event Action<float>? VolumeChanged;
 
-        public FmodAudio.Sound FmodSound { get; private set; }
-        public FmodAudio.Channel FmodChannel { get; private set; }
+        public FmodSound FmodSound { get; private set; }
+        public FmodChannel FmodChannel { get; private set; }
 
         public float Volume
         {
@@ -321,17 +324,19 @@ namespace RE.Audio
 
         public bool ShowDebugInfo
         {
-            get => _crRefDis.IsRendering() || _crMaxDis.IsRendering() || _sprite.IsRendering();
+            get => _debugText.IsRendering() || _crRefDis.IsRendering() || _crMaxDis.IsRendering() || _sprite.IsRendering();
             set
             {
                 if (value)
                 {
                     _crMaxDis.StartRender();
                     _crRefDis.StartRender();
+                    _debugText.StartRender();
                     _sprite.StartRender();
                 }
                 else
                 {
+                    _debugText.StopRender();
                     _crMaxDis.StopRender();
                     _crRefDis.StopRender();
                     _sprite.StopRender();
@@ -368,8 +373,9 @@ namespace RE.Audio
             FmodChannel = SoundManager.FmodSystem.PlaySound(source, paused: true)!;
 
             _sprite = new SpriteRenderer(Position, "Assets/Sprites/Editor/speaker.png");
-            _crMaxDis = new CircleRenderer(Vector3.Zero, 0);
-            _crRefDis = new CircleRenderer(Vector3.Zero, 0);
+            _crMaxDis = new SphereLineRenderer(Vector3.Zero, 0);
+            _crRefDis = new SphereLineRenderer(Vector3.Zero, 0);
+            _debugText = new("", Vector3.Zero, (FreeTypeFont)Fonts.Consolas);
 
             MaxDistance = 10;
             ReferenceDistance = 1;
@@ -463,7 +469,14 @@ namespace RE.Audio
             _sprite.Dispose();
             _crRefDis.Dispose();
             _crMaxDis.Dispose();
+            _debugText.Dispose();
             _disposed = true;
+        }
+
+        public void UpdateDebugInfo()
+        {
+            _debugText.Text = $"Pos: {Position}\nState: {State}\nDoS: {DisposeOnStop}\nLoop: {Loop}\n{Offset:0.00}/{Length:0.00} s";
+            _debugText.Position = Position + (0, 1, 0);
         }
 
         [SuppressMessage("ReSharper", "UnusedVariable")]

@@ -34,13 +34,7 @@
             "level lobby"
           ]
         },
-        "BoxColliderComponent": {
-          "Multiplier": [
-            1,
-            1,
-            1
-          ]
-        }
+        "BoxColliderComponent": {}
       }
     },
     {
@@ -48,14 +42,14 @@
       "tag": "configurator",
       "transform": {
         "position": [
-          -2.9999292,
-          -2.4000003,
-          -5.3442163
+          -1.7990413,
+          0.2621227,
+          -2.6049476
         ],
         "rotation": [
-          1.9674833E-07,
-          0.014265359,
-          -5.9508676E-07
+          0.028818632,
+          0.0032498343,
+          -24.047005
         ],
         "scale": [
           0.5,
@@ -70,15 +64,9 @@
           ]
         },
         "RigidBodyComponent": {
-          "Mass": 1.25
+          "Mass": 0
         },
-        "BoxColliderComponent": {
-          "Multiplier": [
-            1,
-            1,
-            1
-          ]
-        },
+        "BoxColliderComponent": {},
         "BillboardTextComponent": {
           "args": [
             "Billboard Text"
@@ -96,14 +84,14 @@
       "tag": null,
       "transform": {
         "position": [
-          0.122819625,
-          -1.900001,
-          1.1619318
+          57.958157,
+          -6675.305,
+          2.1147695
         ],
         "rotation": [
-          -1.432208E-06,
-          -0.35050893,
-          5.2935033E-05
+          -0.25927308,
+          -0.79147625,
+          -17.899183
         ],
         "scale": [
           1,
@@ -120,13 +108,7 @@
         "RigidBodyComponent": {
           "Mass": 20
         },
-        "BoxColliderComponent": {
-          "Multiplier": [
-            1,
-            1,
-            1
-          ]
-        }
+        "BoxColliderComponent": {}
       }
     },
     {
@@ -134,14 +116,14 @@
       "tag": null,
       "transform": {
         "position": [
-          4.286166,
-          -2.7250004,
-          1.5164083
+          -80.39752,
+          -31003.775,
+          11.164271
         ],
         "rotation": [
-          40.16162,
-          -5.333547,
-          5.333555
+          -35.746555,
+          4.2409472,
+          -11.446344
         ],
         "scale": [
           0.5,
@@ -158,13 +140,7 @@
         "RigidBodyComponent": {
           "Mass": 0.5
         },
-        "BoxColliderComponent": {
-          "Multiplier": [
-            0.35,
-            0.75,
-            0.35
-          ]
-        }
+        "BoxColliderComponent": {}
       }
     },
     {
@@ -177,7 +153,7 @@
           0
         ],
         "rotation": [
-          17.678736,
+          14.829238,
           0,
           0
         ],
@@ -193,13 +169,7 @@
             "assets/models/cub.fbx"
           ]
         },
-        "BoxColliderComponent": {
-          "Multiplier": [
-            1,
-            1,
-            1
-          ]
-        }
+        "BoxColliderComponent": {}
       }
     },
     {
@@ -207,14 +177,14 @@
       "tag": null,
       "transform": {
         "position": [
-          -0.14686054,
-          0.09999722,
-          2.9085088
+          1.2285861,
+          -1.9000003,
+          1.8225033
         ],
         "rotation": [
-          4.291105E-05,
-          0.0736255,
-          5.3852218E-05
+          -2.6957804E-07,
+          10.000534,
+          5.035303E-06
         ],
         "scale": [
           1,
@@ -231,13 +201,7 @@
         "RigidBodyComponent": {
           "Mass": 20
         },
-        "BoxColliderComponent": {
-          "Multiplier": [
-            1,
-            1,
-            1
-          ]
-        }
+        "BoxColliderComponent": {}
       }
     },
     {
@@ -245,14 +209,14 @@
       "tag": null,
       "transform": {
         "position": [
-          0.09347104,
-          -1.9000024,
-          4.750255
+          0.041558515,
+          -1.9000002,
+          4.549292
         ],
         "rotation": [
-          -3.8363714E-06,
-          -0.44405913,
-          0.000103634025
+          -2.3068587E-06,
+          -1.1179762,
+          -1.3061737E-06
         ],
         "scale": [
           1,
@@ -269,13 +233,7 @@
         "RigidBodyComponent": {
           "Mass": 20
         },
-        "BoxColliderComponent": {
-          "Multiplier": [
-            1,
-            1,
-            1
-          ]
-        }
+        "BoxColliderComponent": {}
       }
     },
     {
@@ -328,13 +286,7 @@
             "assets/models/cub.fbx"
           ]
         },
-        "BoxColliderComponent": {
-          "Multiplier": [
-            1,
-            1,
-            1
-          ]
-        }
+        "BoxColliderComponent": {}
       }
     },
     {

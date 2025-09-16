@@ -1,4 +1,7 @@
-﻿namespace RE.Core.World
+﻿using RE.Debug;
+using RE.Rendering;
+
+namespace RE.Core.World
 {
     public class Scene : IDisposable
     {
@@ -33,7 +36,7 @@
                 {
                     component.OnDestroy();
                     Game.Instance.UpdateFrame -= component.Update;
-                    Game.Instance.RenderFrame -= component.Render;
+                    RenderManager.RenderingComponents.Remove(component);
                 }
             }
         }

@@ -31,11 +31,12 @@ namespace RE.Core.World
 
         public static void SaveScene(Scene scene, string path)
         {
-            var root = new JsonArray();
+            var root = new JsonObject();
+            var objects = new JsonArray();
             foreach (var obj in scene.GameObjects.Where(s => !s.DoNotSave))
             {
                 JsonObject o = new JsonObject { { "name", obj.Name }, { "tag", obj.Tag } };
-                root.Add(o);
+                objects.Add(o);
                 var transform = obj.Transform;
                 JsonObject trObj = new()
                 {
@@ -46,12 +47,13 @@ namespace RE.Core.World
                 o.Add("transform", trObj);
                 JsonObject componentsObj = new();
                 o.Add("components", componentsObj);
-                foreach (var com in obj.Components)
+                foreach (var com in obj.Components.Where(s => s.SaveComponent))
                 {
                     var saveData = com.GetSaveData();
                     componentsObj.Add(com.GetType().Name, saveData);
                 }
             }
+            root.Add("objects", objects);
 
             var jsonString = root.ToJsonString(new JsonSerializerOptions() { WriteIndented = true });
             string savedTo;

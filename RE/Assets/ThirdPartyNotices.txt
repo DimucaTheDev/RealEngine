@@ -1,0 +1,70 @@
+Third Party Notices
+===================
+
+This product includes third-party libraries.  
+Each library is licensed under its respective license, reproduced or linked below.  
+
+-------------------------------------------------------------------------------
+AssimpNet  
+License: MIT  
+https://github.com/assimp/assimp-net/blob/master/LICENSE
+
+-------------------------------------------------------------------------------
+BulletSharp  
+License: zlib/libpng  
+https://github.com/AndresTraks/BulletSharpPInvoke/blob/master/LICENSE.txt
+
+-------------------------------------------------------------------------------
+FMOD  
+License: FMOD End User License Agreement  
+https://fmod.com/licensing  
+Free for commercial use if total revenue is less than USD 200,000 per year.
+
+-------------------------------------------------------------------------------
+FreeType  
+License: FreeType License (similar to BSD) OR GPL  
+https://freetype.org/license.html
+
+-------------------------------------------------------------------------------
+ImGui.NET  
+License: MIT  
+https://github.com/mellinoe/ImGui.NET/blob/master/LICENSE
+
+-------------------------------------------------------------------------------
+OpenCvSharp4 / OpenCvSharp4.runtime.win  
+License: BSD 3-Clause  
+https://github.com/shimat/opencvsharp/blob/master/LICENSE
+
+-------------------------------------------------------------------------------
+OpenTK  
+License: MIT  
+https://github.com/opentk/opentk/blob/master/LICENSE
+
+-------------------------------------------------------------------------------
+Serilog / Serilog.Enrichers.Thread / Serilog.Sinks.Console  
+License: Apache License 2.0  
+https://github.com/serilog/serilog/blob/dev/LICENSE
+
+-------------------------------------------------------------------------------
+SixLabors.ImageSharp  
+License: Apache License 2.0  
+https://github.com/SixLabors/ImageSharp/blob/main/LICENSE
+
+-------------------------------------------------------------------------------
+SpaceWizards.SharpFont  
+License: MIT  
+https://github.com/space-wizards/SharpFont/blob/master/LICENSE
+
+-------------------------------------------------------------------------------
+StbImageSharp  
+License: MIT  
+https://github.com/StbSharp/StbImageSharp/blob/master/LICENSE
+
+-------------------------------------------------------------------------------
+System.Drawing.Common  
+License: MIT  
+https://github.com/dotnet/runtime/blob/main/src/libraries/System.Drawing.Common/LICENSE.TXT
+
+-------------------------------------------------------------------------------
+
+End of Third Party Notices

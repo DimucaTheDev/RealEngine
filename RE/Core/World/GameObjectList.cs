@@ -1,4 +1,6 @@
 ﻿using System.Collections;
+using RE.Debug;
+using RE.Rendering;
 
 namespace RE.Core.World
 {
@@ -11,7 +13,7 @@ namespace RE.Core.World
         {
             _objects.Add(g);
             g.Scene = _scene;
-            foreach (var component in g.Components)
+            foreach (var component in g.Components.ToList())
             {
                 component.Start();
             }
@@ -26,7 +28,7 @@ namespace RE.Core.World
             foreach (var component in g.Components)
             {
                 Game.Instance.UpdateFrame -= component.Update;
-                Game.Instance.RenderFrame -= component.Render;
+                RenderManager.RenderingComponents.Add(component);
             }
             _objects.Remove(g);
         }

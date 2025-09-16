@@ -251,8 +251,9 @@ namespace RE.Core.Scripting
                 if (!SceneEditor.Enabled)
                     ov.Enable();
                 else
-                    ov.Disable();
-            }, "Starts or closes the scene editor for current level");
+                    Log.Error("Editor can be closed only via Editor -> Exit");
+                 //   ov.Disable();
+            }, "Starts the scene editor for current level");
             RegisterHandler("credits", _ =>
             {
                 WinApi.MessageBox(0, "Made with ❤️ by DimucaTheDev", "About", 0x40);

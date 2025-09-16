@@ -1,4 +1,5 @@
-﻿using BulletSharp;
+﻿using System.Text.Json.Nodes;
+using BulletSharp;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using RE.Core.Scripting;
@@ -15,7 +16,7 @@ namespace RE.Core.World.Components
 
         public CollisionShape CollisionShape => _collisionShape;
         public RigidBody RigidBody => _rigidBody;
-        public bool IsPhysicsObjectInitialized => _collisionShape != null;
+        public bool IsPhysicsObjectInitialized => _collisionShape != null!;
 
         [EditorProperty]
         public Vector3 Multiplier
@@ -28,6 +29,12 @@ namespace RE.Core.World.Components
             }
         } = Vector3.One;
 
+
+        public override void OnComponentAdded()
+        {
+            if (!IsPhysicsObjectInitialized)
+                Start();
+        }
         public override void Start()
         {
             _collisionShape = CreateCollisionShape();
@@ -43,8 +50,9 @@ namespace RE.Core.World.Components
                 _rigidBody.CollisionShape = _collisionShape;
                 rigid.Mass = rigid.Mass;
             }
-            else
+            else if (!_rigidBody?.IsInWorld ?? true)
             {
+
                 var transform = Owner.Transform;
                 var startTransform = BulletSharp.Math.Matrix.Identity;
                 startTransform.Origin = transform.Position.ToBulletVector3();
@@ -57,11 +65,10 @@ namespace RE.Core.World.Components
                 {
                     UserObject = this
                 };
-
                 PhysicsManager.DynamicsWorld.AddRigidBody(_rigidBody);
             }
 
-            _rigidBody.Friction = 1;
+            _rigidBody?.Friction = 1;
         }
 
         public abstract CollisionShape CreateCollisionShape();

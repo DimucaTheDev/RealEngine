@@ -35,8 +35,10 @@ namespace RE.Core.World.Components
         public override JsonNode GetSaveData()
         {
             JsonObject root = new();
+            var posOffset = new JsonArray { PositionOffset.X, PositionOffset.Y, PositionOffset.Z };
             var args = new JsonArray { Text };
             root.Add("args", args);
+            root.Add(nameof(PositionOffset), posOffset);
             return root;
         }
     }

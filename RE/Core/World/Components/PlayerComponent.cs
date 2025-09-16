@@ -19,10 +19,10 @@ using Keys = OpenTK.Windowing.GraphicsLibraryFramework.Keys;
 namespace RE.Core.World.Components
 {
     [ComponentInfo("World/Player", Description = "Handles player logic")]
-    internal class PlayerComponent : Component, ISceneRenderer
+    internal class PlayerComponent : Component, IDebugRenderer
     {
         private Camera _camera;
-        private GameObject _playerGameObject;
+        protected GameObject _playerGameObject;
         private bool _isCrouching = false;
         private float _standHeight = 1.75f;
         private float _crouchHeight = 0.4f;
@@ -78,10 +78,8 @@ namespace RE.Core.World.Components
             _playerGameObject.SetPosition(Owner.Transform.Position);
         }
 
-
         public override void Update(FrameEventArgs args)
         {
-
             var input = Game.Instance.KeyboardState;
 
             if (input.IsKeyPressed(Keys.GraveAccent))
@@ -419,7 +417,7 @@ namespace RE.Core.World.Components
 
                     rigidBody.ActivationState = ActivationState.ActiveTag;
 
-                    if (Game.Instance.MouseState.IsButtonPressed(MouseButton.Button1))
+                    if (false && Game.Instance.MouseState.IsButtonPressed(MouseButton.Button1))
                     {
                         if (_holdedObject.GetComponent<RigidBodyComponent>() != null)
                             _holdedObject.GetComponent<RigidBodyComponent>().Mass = _objMass;

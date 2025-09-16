@@ -2,6 +2,7 @@
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using RE.Core;
+using RE.Core.Scripting;
 using RE.Debug;
 using RE.Libs.Grille.ImGuiTK;
 using RE.Utils;
@@ -23,6 +24,8 @@ public enum RenderLayer
     ImGui
 }
 
+//todo перепиши весь класс 🙏😭
+
 public class RenderManager
 {
     public static SortedDictionary<RenderLayer, Dictionary<Type, List<Renderable>>> Renderables = new();
@@ -30,10 +33,10 @@ public class RenderManager
     public static Dictionary<Type, Action> RenderablesPostActions = new();
     public static Plane[] FrustumPlanes = new Plane[6];
     public static LineManager FrustumRenderer = new();
+    public static List<Component> RenderingComponents = [];
 
     private static bool _hasCameraFrustum = false;
     private static Matrix4 _cachedViewMatrix, _cachedProjMatrix;
-
 
     public static void Init()
     {
@@ -183,11 +186,30 @@ public class RenderManager
         return false;
     }
 
-
-
     public static void RenderAll(FrameEventArgs args)
     {
         GenerateFrustum();
+
+        var camPos = Camera.Instance.Position;
+        RenderingComponents.Sort((a, b) =>
+        {
+            float da = (a.Owner.Transform.Position - camPos).LengthSquared;
+            float db = (b.Owner.Transform.Position - camPos).LengthSquared;
+            return db.CompareTo(da);
+        });
+        RenderingComponents.Where(s => s is IOpaque).ToList().ForEach(s =>
+        {
+            s.Render(args);
+            if (s is IDebugRenderer d && Variables.GetVariable("showDebugInfo") is true)
+                d.DebugRender(args);
+        });
+        RenderingComponents.Where(s => s is not IOpaque).ToList().ForEach(s =>
+        {
+            s.Render(args);
+            if (s is IDebugRenderer d && Variables.GetVariable("showDebugInfo") is true)
+                d.DebugRender(args);
+        });
+
         foreach (var kvp in Renderables)
         {
             var layer = kvp.Key;
@@ -210,12 +232,14 @@ public class RenderManager
                                 continue;
                             }
                         }
+
                         renderable.Render(args);
                     }
 
                 if (RenderablesPostActions.TryGetValue(pair.Key, out var post))
                     post.Invoke();
             }
+
             OnLayerEnd(layer);
         }
     }

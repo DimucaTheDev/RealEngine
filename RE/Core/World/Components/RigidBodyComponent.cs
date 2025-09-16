@@ -4,22 +4,31 @@ using BulletSharp.Math;
 using OpenTK.Windowing.Common;
 using RE.Core.Scripting;
 using RE.Core.World.Physics;
+using RE.Debug;
+using RE.Rendering.Renderables;
+using RE.Rendering.Text;
 using RE.Utils;
+using Serilog;
 
 namespace RE.Core.World.Components
 {
     [ComponentInfo("Physics", Description = "Represents a dynamic physics body with mass and velocity")]
-    internal class RigidBodyComponent(float mass) : Component, IPhysicsComponent
+    internal class RigidBodyComponent(float mass) : Component, IPhysicsComponent, IDebugRenderer
     {
         public RigidBody RigidBody = null!;
 
+        private FloatingText? _debugText = null!;
+
+        [EditorProperty]
         public float Mass
         {
-            get => field;
+            get;
             set
             {
                 if (IsPhysicsObjectInitialized)
                 {
+
+
                     PhysicsManager.DynamicsWorld.RemoveRigidBody(RigidBody);
 
                     float newMass = value;
@@ -31,8 +40,8 @@ namespace RE.Core.World.Components
                     }
 
                     RigidBody.SetMassProps(newMass, localInertia);
-                    RigidBody.LinearVelocity = Vector3.Zero;
-                    RigidBody.AngularVelocity = Vector3.Zero;
+                    //RigidBody.LinearVelocity = Vector3.Zero;
+                    //RigidBody.AngularVelocity = Vector3.Zero;
 
                     PhysicsManager.DynamicsWorld.AddRigidBody(RigidBody);
                 }
@@ -45,10 +54,17 @@ namespace RE.Core.World.Components
 
         public RigidBodyComponent() : this(1) { }
 
+        public override void OnComponentAdded()
+        {
+            if (!IsPhysicsObjectInitialized)
+                Start();
+        }
+
         public override void Start()
         {
             TryInitializePhysics();
             RigidBody.Activate();
+            _debugText = new("", OpenTK.Mathematics.Vector3.Zero, (FreeTypeFont)Fonts.Consolas);
         }
 
         public void TryInitializePhysics()
@@ -62,7 +78,7 @@ namespace RE.Core.World.Components
                 RigidBody = collider.RigidBody;
                 Mass = Mass;
             }
-            else
+            else if (!RigidBody?.IsInWorld ?? true)
             {
                 var transform = Owner.Transform;
                 var startTransform = Matrix.Identity;
@@ -86,6 +102,14 @@ namespace RE.Core.World.Components
 
         public override void Update(FrameEventArgs args)
         {
+            if (_debugText != null)
+            {
+                _debugText.Position = Owner.Transform.Position + (0, Owner.Transform.Scale.Y + 1, 0);
+                _debugText.Text = $"Mass: {Mass}\n" +
+                                  $"Velocity: {RigidBody?.LinearVelocity.Length ?? 0f:0.00}\n" +
+                                  $"Angular Velocity: {RigidBody?.AngularVelocity.Length ?? 0f:0.00}";
+            }
+
             if (RigidBody == null || RigidBody.MotionState == null || Mass == 0f)
                 return;
 
@@ -106,18 +130,21 @@ namespace RE.Core.World.Components
                 RigidBody.Dispose();
                 RigidBody = null!;
             }
-
             base.OnDestroy();
         }
         public override void OnReset()
         {
-            throw new NotImplementedException("fuky waky >_<");
+            Log.Error(new NotImplementedException("fuky waky >_<"), "Nuh uh");
         }
         public override JsonNode GetSaveData()
         {
-            JsonObject root = new();
-            root.Add("Mass", Mass);
+            JsonObject root = new() { { nameof(Mass), Mass } };
             return root;
+        }
+
+        public void DebugRender(FrameEventArgs args)
+        {
+            _debugText?.Render(args);
         }
     }
 }

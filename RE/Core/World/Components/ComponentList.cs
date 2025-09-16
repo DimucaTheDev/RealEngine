@@ -1,4 +1,6 @@
 ﻿using System.Collections;
+using RE.Debug;
+using RE.Rendering;
 
 #pragma warning disable 108
 
@@ -9,6 +11,19 @@ namespace RE.Core.World.Components
         private readonly GameObject _owner = owner ?? throw new ArgumentNullException(nameof(owner));
         private readonly List<Component> _components = new();
 
+        public bool TryAdd(Component c)
+        {
+            try
+            {
+                Add(c);
+            }
+            catch
+            {
+                return false;
+            }
+
+            return true;
+        }
         public void Add(Component c)
         {
             if (c == null)
@@ -23,8 +38,7 @@ namespace RE.Core.World.Components
             c.Owner = _owner;
 
             Game.Instance.UpdateFrame += c.Update;
-            Game.Instance.RenderFrame += c.Render;
-
+            RenderManager.RenderingComponents.Add(c);
             _components.Add(c);
             c.OnComponentAdded();
         }
@@ -38,8 +52,7 @@ namespace RE.Core.World.Components
                 return;
 
             Game.Instance.UpdateFrame -= c.Update;
-            Game.Instance.RenderFrame -= c.Render;
-
+            RenderManager.RenderingComponents.Remove(c);
             c.OnDestroy();
 
             _components.Remove(c);

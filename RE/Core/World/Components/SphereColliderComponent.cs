@@ -16,7 +16,7 @@ namespace RE.Core.World.Components
         }
         public override JsonNode GetSaveData()
         {
-            JsonObject root = new();
+            JsonObject root = new() { { nameof(Multiplier), new JsonArray() { Multiplier } } };
             return root;
         }
     }

@@ -57,8 +57,7 @@ namespace RE.Core.World.Components
         public override JsonNode GetSaveData()
         {
             JsonObject root = new();
-            var args = new JsonArray();
-            args.Add(Path);
+            var args = new JsonArray { Path };
             root.Add("args", args);
             return root;
         }

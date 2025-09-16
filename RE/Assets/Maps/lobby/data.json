@@ -2,8 +2,23 @@
   "objects": [
     {
       "name": "test component",
+      "tag": null,
       "transform": {
-        "position": [ 3, 3, 0 ]
+        "position": [
+          3,
+          3,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
       },
       "components": {
         "TestComponent": {}
@@ -11,6 +26,7 @@
     },
     {
       "name": "player",
+      "tag": null,
       "transform": {
         "position": [
           0,
@@ -34,25 +50,51 @@
     },
     {
       "name": "Pistol",
+      "tag": null,
       "transform": {
         "position": [
           0,
           2,
           0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
         ]
       },
-      "components": {
-      }
+      "components": {}
     },
     {
       "name": "skybox",
-      "components": {
-        //"Skybox": { "args": [ "assets/skybox/space" ] }
-
-      }
+      "tag": null,
+      "transform": {
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "components": {}
     },
     {
       "name": "Floor",
+      "tag": null,
       "transform": {
         "position": [
           0,
@@ -76,27 +118,42 @@
             "assets/models/cub.smdl"
           ]
         },
-        "BoxCollider": {}
+        "BoxColliderComponent": {}
       }
     },
     {
       "name": "Video",
+      "tag": null,
       "transform": {
         "position": [
           0,
           2,
           0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
         ]
       },
       "components": {
-        "Sprite": {
-          "Scale": 1.2
+        "SpriteComponent": {
+          "args": [
+            "Assets/sprites/editor/blank.png"
+          ]
         },
-        // "Video": {},
-        "BillboardText": {
+        "BillboardTextComponent": {
+          "args": [
+            "Billboard Text"
+          ],
           "PositionOffset": [
             0,
-            1.7,
+            0,
             0
           ]
         }
@@ -104,6 +161,7 @@
     },
     {
       "name": "test 1",
+      "tag": null,
       "transform": {
         "position": [
           -4,
@@ -127,8 +185,8 @@
             "assets/models/button.smdl"
           ]
         },
-        "BoxCollider": {},
-        "Usable": {
+        "BoxColliderComponent": {},
+        "UsableComponent": {
           "args": [
             "level test"
           ]
@@ -137,6 +195,7 @@
     },
     {
       "name": "test 1 text",
+      "tag": null,
       "transform": {
         "position": [
           -4,
@@ -155,15 +214,21 @@
         ]
       },
       "components": {
-        "BillboardText": {
+        "BillboardTextComponent": {
           "args": [
             "Test 1"
+          ],
+          "PositionOffset": [
+            0,
+            0,
+            0
           ]
         }
       }
     },
     {
       "name": "test 1",
+      "tag": null,
       "transform": {
         "position": [
           -2,
@@ -187,13 +252,13 @@
             "assets/models/button.smdl"
           ]
         },
-        "BoxCollider": {},
-        "Usable": {
+        "BoxColliderComponent": {},
+        "UsableComponent": {
           "args": [
             "level test2"
           ]
         },
-        "BillboardText": {
+        "BillboardTextComponent": {
           "args": [
             "Test 2"
           ],
@@ -207,6 +272,7 @@
     },
     {
       "name": "test 1",
+      "tag": null,
       "transform": {
         "position": [
           0,
@@ -230,8 +296,8 @@
             "assets/models/button.smdl"
           ]
         },
-        "BoxCollider": {},
-        "Usable": {
+        "BoxColliderComponent": {},
+        "UsableComponent": {
           "args": [
             "level test123"
           ]
@@ -240,11 +306,17 @@
     },
     {
       "name": "sound test",
+      "tag": null,
       "transform": {
         "position": [
           2,
           3,
           -4
+        ],
+        "rotation": [
+          0,
+          0,
+          0
         ],
         "scale": [
           0.5,
@@ -258,12 +330,18 @@
             "assets/models/button.smdl"
           ]
         },
-        "BillboardText": {
-          "args": [ "Sound Testing" ],
-          "PositionOffset": [ 0, 1, 0 ]
+        "BillboardTextComponent": {
+          "args": [
+            "Sound Testing"
+          ],
+          "PositionOffset": [
+            0,
+            1,
+            0
+          ]
         },
-        "BoxCollider": {},
-        "Usable": {
+        "BoxColliderComponent": {},
+        "UsableComponent": {
           "args": [
             "level sound_test"
           ]
@@ -272,6 +350,7 @@
     },
     {
       "name": "test 1 text",
+      "tag": null,
       "transform": {
         "position": [
           0,
@@ -290,9 +369,42 @@
         ]
       },
       "components": {
-        "BillboardText": {
+        "BillboardTextComponent": {
           "args": [
             "Test 3"
+          ],
+          "PositionOffset": [
+            0,
+            0,
+            0
+          ]
+        }
+      }
+    },
+    {
+      "name": null,
+      "tag": null,
+      "transform": {
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "components": {
+        "MeshComponent": {
+          "args": [
+            "Assets\\Models\\krug.fbx"
           ]
         }
       }

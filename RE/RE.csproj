@@ -77,7 +77,7 @@
 
 	<ItemGroup>
 		<None Update="Assets\**">
-			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</None>
 	</ItemGroup>
 

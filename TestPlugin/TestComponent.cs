@@ -10,7 +10,10 @@ namespace TestPlugin
         public override void OnSceneLoaded(Scene s)
         {
             var gameObject = Owner;
-            gameObject.Components.Add(new BillboardTextComponent($"If you see this text,\nthen this means plugin\nsystem works!\n{TestPlugin.Instance.PluginInformation.Name} ({TestPlugin.Instance.PluginInformation.Version})"));
+            gameObject.Components.TryAdd(new BillboardTextComponent($"If you see this text,\nthen this means plugin\nsystem works!\n{TestPlugin.Instance.PluginInformation.Name} ({TestPlugin.Instance.PluginInformation.Version})")
+            {
+                SaveComponent = false
+            });
         }
 
         public override JsonNode GetSaveData()

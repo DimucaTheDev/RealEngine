@@ -43,7 +43,6 @@ namespace RE.Debug.Overlay
         private Scene _scene;
         private GameObject? _selectedObject;
         private bool _popupOpen = false;
-        private bool _renderAbout = false;
         private List<Type> _customPopups = new();
         private Dictionary<string, List<Type>> _componentDict = new();
         private Node _rootNode = new();
@@ -210,11 +209,12 @@ namespace RE.Debug.Overlay
             SelectedObjectOutline?.StopRender();
             if (_scene?.GameObjects != null)
             {
-                foreach (var o in _scene?.GameObjects!)
+                foreach (var o in _scene?.GameObjects!.ToList()!)
                 {
                     foreach (var c in o.Components)
                     {
                         c.OnSceneLoading(_scene); // maybe start()?
+                        c.Start();
                     }
                 }
             }
@@ -237,7 +237,7 @@ namespace RE.Debug.Overlay
             {
                 foreach (var com in obj.Components)
                 {
-                    if (com is ISceneRenderer s)
+                    if (com is IDebugRenderer s)
                         s.DebugRender(args);
                 }
             }
@@ -259,16 +259,60 @@ namespace RE.Debug.Overlay
 
             ImGuiWindowFlags flags = ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.MenuBar;
 
+            bool _renderAbout = false;
+            bool _renderQuit = false;
+
             Begin("Scene Hierarchy", flags);
 
             if (BeginMenuBar())
             {
                 if (BeginMenu("Editor"))
                 {
-                    Text(_scene.Name);
+                    if (MenuItem("Create new scene"))
+                    { }
+                    if (MenuItem("Open scene"))
+                    { }
+                    if (MenuItem("Save scene"))
+                    { }
+                    if (MenuItem("Save scene as"))
+                    { }
+                    if (MenuItem("Settings"))
+                    { }
+                    Separator();
+                    if (MenuItem("Exit"))
+                    {
+                        _renderQuit = true;
+                    }
                     EndMenu();
                 }
 
+                if (BeginMenu("Objects"))
+                {
+                    if (MenuItem("New Blank"))
+                    {
+                        var newObject = new GameObject();
+                        SceneManager.CurrentScene.GameObjects.Add(newObject);
+                        _selectedObject = newObject;
+                    }
+
+                    EndMenu();
+                }
+
+                if (BeginMenu("Tools"))
+                {
+                    if (MenuItem("Skybox Editor"))
+                    { }
+                    if (MenuItem("Particle Editor"))
+                    { }
+                    if (MenuItem("Model Browser"))
+                    { }
+                    if (MenuItem("Model Converter"))
+                    { }
+                    if (MenuItem("Var Editor"))
+                    { }
+                    EndMenu();
+
+                }
                 if (BeginMenu("Help"))
                 {
                     if (MenuItem("Open Docs"))
@@ -287,21 +331,8 @@ namespace RE.Debug.Overlay
                 }
                 EndMenuBar();
             }
-            //SetNextWindowSize(new Vector2(400, 300), ImGuiCond.FirstUseEver);
 
-            if (Button("[+]"))
-            {
-                var newObject = new GameObject();
-                SceneManager.CurrentScene.GameObjects.Add(newObject);
-                _selectedObject = newObject;
-            }
 
-            if (IsItemHovered())
-            {
-                BeginTooltip();
-                Text("Create new empty object");
-                EndTooltip();
-            }
 
             SameLine();
 
@@ -312,19 +343,9 @@ namespace RE.Debug.Overlay
                 _selectedObject = null;
                 SelectedObjectArrow!.StopRender();
             }
-            if (IsItemHovered())
-            {
-                BeginTooltip();
-                Text("Remove selected object object");
-                EndTooltip();
-            }
-            EndDisabled();
 
-            if (Button("Save"))
-            {
-                throw new();
-                SceneManager.SaveScene(_scene, "assets/maps/test123");
-            }
+            EndDisabled();
+ 
 
             Separator();
             foreach (var obj in SceneManager.CurrentScene.GameObjects.Where(s => s is { DoNotShowInEditor: false, Parent: null }).ToList())
@@ -333,13 +354,18 @@ namespace RE.Debug.Overlay
             }
             End();
 
+            if (_renderQuit)
+            {
+                OpenPopup("Quit");
+                _renderQuit = false;
+            }
             if (_renderAbout)
             {
                 OpenPopup("About");
                 _renderAbout = false;
             }
             DrawAbout();
-
+            DrawQuit();
 
             Vector2 inspectorWindowPos = new Vector2(viewport.WorkPos.X + totalWorkWidth - sidebarWidth, viewport.WorkPos.Y + totalWorkHeight / 2);
             Vector2 inspectorWindowSize = new Vector2(sidebarWidth, totalWorkHeight / 2);
@@ -348,6 +374,31 @@ namespace RE.Debug.Overlay
             SetNextWindowSize(inspectorWindowSize, ImGuiCond.Always);
 
             DrawInspector();
+        }
+
+        public void DrawQuit()
+        {
+            if (BeginPopupModal("Quit"))
+            {
+                Text("Are you sure you want to quit the editor?\nUnsaved changes will be lost.");
+                if (Button("Quit without Saving"))
+                {
+                    CloseCurrentPopup();
+                    Disable();
+                }
+                SameLine();
+                if (Button("Save and Quit"))
+                {
+                    SceneManager.SaveScene(_scene, $"Assets/Maps/{_scene.Name}");
+                    CloseCurrentPopup();
+                    Disable();
+                }
+                SameLine();
+                if (Button("Cancel"))
+                    CloseCurrentPopup();
+
+                EndPopup();
+            }
         }
         private void DrawAbout()
         {
@@ -400,7 +451,7 @@ namespace RE.Debug.Overlay
                         }
                     }
                 }
-                if(Button("Close")) 
+                if (Button("Close"))
                     CloseCurrentPopup();
                 EndChild();
                 EndPopup();
@@ -806,7 +857,7 @@ namespace RE.Debug.Overlay
                         open.Multiselect = false;
                         open.Filter = "FBX File|*.fbx|SMDL File|*.smdl";
                         open.ShowDialog();
-                        val_str = open.FileName;
+                        val_str = Path.GetRelativePath(".", open.FileName);
                     }
                     SameLine();
                     Text(val_str ?? "");

@@ -178,6 +178,6 @@ public class FreeTypeFont
         GL.BindTexture(TextureTarget.Texture2D, 0);
     }
 
-
+    public static explicit operator FreeTypeFont(string path) => new(48, path);
 
 }

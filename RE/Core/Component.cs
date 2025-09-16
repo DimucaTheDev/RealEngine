@@ -13,6 +13,7 @@ namespace RE.Core
                 throw new InvalidOperationException("Class must have parameterless constructor.");
         }
         public GameObject Owner { get; internal set; }
+        public bool SaveComponent { get; set; } = true;
 
         public T? GetComponent<T>() where T : Component
         {
