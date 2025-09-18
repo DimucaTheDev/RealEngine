@@ -30,6 +30,7 @@ using TextRenderer = RE.Rendering.Text.TextRenderer;
 
 namespace RE.Core;
 
+//todo: refactor this class into smaller parts
 internal class Game : GameWindow
 {
     private Game(GameWindowSettings gws, NativeWindowSettings nws) : base(gws, nws) { }
@@ -55,7 +56,7 @@ internal class Game : GameWindow
         Environment.CurrentDirectory = AppContext.BaseDirectory;
 
         SetupLogger();
-
+        
         Log.Information("{ProductName}; build {BuildDate:dd.MM.yyyy HH:mm:ss}; commit {CommitHash}", ProductName, BuildDate, CommitHash[..7]);
         Log.Information("Startup args: {@Args}", Environment.GetCommandLineArgs()[1..]);
 

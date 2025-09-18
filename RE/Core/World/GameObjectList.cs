@@ -4,15 +4,16 @@ using RE.Rendering;
 
 namespace RE.Core.World
 {
-    public class GameObjectList(Scene scene) : IEnumerable<GameObject>
+    /// <summary>
+    /// Represents a collection of <see cref="GameObject"/> within a <see cref="Scene"/>.
+    /// </summary>
+    public class GameObjectList : IEnumerable<GameObject>
     {
-        private readonly List<GameObject> _objects = new();
-        private readonly Scene _scene = scene;
+        private readonly List<GameObject> _objects = new(); 
 
         public void Add(GameObject g)
         {
-            _objects.Add(g);
-            g.Scene = _scene;
+            _objects.Add(g); 
             foreach (var component in g.Components.ToList())
             {
                 component.Start();

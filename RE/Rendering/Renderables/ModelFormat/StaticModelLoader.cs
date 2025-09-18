@@ -3,8 +3,19 @@ using OpenTK.Mathematics;
 
 namespace RE.Rendering.Renderables.ModelFormat
 {
-    internal static class StaticModelLoader
+    /// <summary>
+    /// This class is responsible for loading static 3D models from a custom binary format <c>SMDL</c>.
+    /// </summary>
+    public static class StaticModelLoader
     {
+        /// <summary>
+        /// Attempts to load a static model from the specified file path.
+        /// </summary>
+        /// <param name="modelPath">Path to SMDL file. Path is relative to working directory.</param>
+        /// <param name="data">Deserialized model data</param>
+        /// <returns>Exception occured during loading process. Can be <see langword="null"/></returns>
+        /// <exception cref="InvalidDataException">Provided file is not valid SMDL file</exception>
+        /// <exception cref="NotSupportedException">File version is not supported by Engine</exception>
         public static Exception? TryLoadModel(string modelPath, out StaticModelData data)
         {
             try

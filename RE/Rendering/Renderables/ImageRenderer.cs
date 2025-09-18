@@ -6,6 +6,9 @@ using StbImageSharp;
 
 namespace RE.Rendering.Renderables;
 
+/// <summary>
+/// This class is used to render images in UI
+/// </summary>
 public class ImageRenderer : Renderable
 {
     private int _texture;

@@ -8,7 +8,7 @@ using Serilog;
 
 namespace RE.Debug.Overlay
 {
-    internal class ConsoleWindow : Renderable
+    public class ConsoleWindow : Renderable
     {
         public static ConsoleWindow? Instance = null!;
 

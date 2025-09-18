@@ -2,6 +2,9 @@
 
 namespace RE.Core.World
 {
+    /// <summary>
+    /// Represents the position, rotation, and scale of a <see cref="GameObject"/>.
+    /// </summary>
     public class Transform : ICloneable
     {
         public Vector3 Position { get; set; }

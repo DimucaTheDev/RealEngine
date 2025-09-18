@@ -32,20 +32,26 @@ namespace RE.Core.World
             };
             Id = _next++;
         }
-         
+
         public ComponentList Components { get; }
 
         /// <summary>
         /// Gets or sets the transform containing position, rotation, and scale.
         /// </summary>
         public Transform Transform { get; set; }
-         
+
         public GameObject? Parent { get; set; }
-         
+
         public string? Name { get; set; }
-         
+
         public int Id { get; private set; }
-         
+
+        /// <summary>
+        /// Tags are used for finding objects by tag (see <see cref="GameObjectList.FindByTag"/>).
+        /// </summary>
+        /// <remarks>
+        /// Tag must be unique per scene.
+        /// </remarks>
         public string? Tag { get; set; }
 
         /// <summary>
@@ -87,7 +93,7 @@ namespace RE.Core.World
             rigidBody.WorldTransform = transform;
             rigidBody.MotionState?.SetWorldTransform(ref transform);
         }
-         
+
         /// <summary>
         /// Sets the rotation of the game object and updates the associated physics rigid body if present.
         /// </summary>
@@ -118,5 +124,4 @@ namespace RE.Core.World
             return Components.OfType<T>().FirstOrDefault();
         }
     }
-
 }

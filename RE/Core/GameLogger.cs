@@ -4,7 +4,13 @@ using Serilog.Formatting.Display;
 
 namespace RE.Core
 {
-    internal class GameLogger(string outputTemplate) : ILogEventSink
+    /// <summary>
+    /// This class is used to log game events to a string (<see cref="Log"/>).
+    /// </summary>
+    /// <example>
+    /// Game console (see <see cref="RE.Debug.Overlay.ConsoleWindow"/>) uses this class to display log messages in-game.
+    /// </example>
+    public class GameLogger(string outputTemplate) : ILogEventSink
     {
         private readonly MessageTemplateTextFormatter _formatter = new(outputTemplate);
         public static string Log = string.Empty;

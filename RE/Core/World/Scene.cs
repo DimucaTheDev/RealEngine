@@ -3,13 +3,18 @@ using RE.Rendering;
 
 namespace RE.Core.World
 {
+    /// <summary>
+    /// Represents a scene containing game objects and managing their lifecycle.
+    /// </summary>
     public class Scene : IDisposable
     {
         public string? Name { get; set; }
-        public GameObjectList GameObjects { get; }
+        public GameObjectList GameObjects { get; } = new();
 
-        public Scene() => GameObjects = new GameObjectList(this);
-
+        //TODO: rewrite method, remove "scene loaded"
+        /// <remarks>
+        /// Calls <see cref="Component.OnSceneLoading(Scene)"/> and <see cref="Component.OnSceneLoaded(Scene)"/> on all components of all game objects in the scene,
+        /// </remarks>
         public void Load()
         {
             foreach (var obj in GameObjects)
@@ -28,6 +33,10 @@ namespace RE.Core.World
             }
         }
 
+        /// <summary>
+        /// Calls <see cref="Component.OnDestroy"/> on all components of all game objects in the scene and unsubscribes them
+        /// from the <c>Update</c> and <c>Render</c> loop.
+        /// </summary>
         public void Dispose()
         {
             foreach (var obj in GameObjects)

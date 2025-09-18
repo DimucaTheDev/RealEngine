@@ -24,7 +24,7 @@ using Vector4 = System.Numerics.Vector4;
 
 namespace RE.Debug.Overlay
 {
-    internal partial class SceneEditor : Renderable
+    public partial class SceneEditor : Renderable
     {
         private class Node
         {

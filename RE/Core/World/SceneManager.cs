@@ -8,12 +8,33 @@ using Quaternion = OpenTK.Mathematics.Quaternion;
 
 namespace RE.Core.World
 {
-    internal static class SceneManager
+    /// <summary>
+    /// Static class that manages loading, saving, and transitioning between scenes.
+    /// </summary>
+    public static class SceneManager
     {
-        public static Scene CurrentScene { get; private set; }
+        /// <summary>
+        /// Currently loaded and active scene.
+        /// </summary>
+        public static Scene CurrentScene { get; private set; } = null!;
 
+        /// <summary>
+        /// Transitions to a new scene, disposing of the current one.
+        /// </summary>
+        /// <param name="scene">New scene to be loaded</param>
         public static void LoadScene(Scene scene) => LoadScene(scene, true, null);
+        /// <summary>
+        /// Transitions to a new scene, optionally disposing of the current one.
+        /// </summary>
+        /// <param name="scene">New scene to be loaded</param>
+        /// <param name="disposeCurrent">Whether to dispose currently loaded scene or not</param>
         public static void LoadScene(Scene scene, bool disposeCurrent) => LoadScene(scene, disposeCurrent, null);
+        /// <summary>
+        /// Transitions to a new scene, optionally disposing of the current one, and invoking action after loading.
+        /// </summary>
+        /// <param name="scene">New scene to be loaded</param>
+        /// <param name="disposeCurrent">Whether to dispose currently loaded scene or not</param>
+        /// <param name="afterLoaded">Invoke action when scene finishes loading</param>
         public static void LoadScene(Scene scene, bool disposeCurrent, Action? afterLoaded)
         {
             Initializer.AddStep(($"Loading level \"{scene.Name ?? "<unnamed>"}\"", () =>
@@ -29,6 +50,23 @@ namespace RE.Core.World
             ));
         }
 
+        /// <summary>
+        /// Saves the provided scene to the specified path in JSON format.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// The path can be either a directory or a file path ending with <c>.json</c>.<br/>
+        /// If a directory is provided, the scene will be saved as <c>data.json</c> within that directory.
+        /// </para>
+        /// </remarks>
+        /// <exception cref="JsonException">Can occur if data saved via <see cref="Component.GetSaveData"/> can not be converted to JSON</exception>
+        /// <param name="scene">Scene to be saved</param>
+        /// <param name="path">
+        /// Path where save file will be created.
+        /// <remarks>
+        /// <para>If path ends with <c>.json</c>, the file will be created at that path, otherwise a <c>data.json</c> will be created at specified path</para>
+        /// </remarks>
+        /// </param>
         public static void SaveScene(Scene scene, string path)
         {
             var root = new JsonObject();
@@ -72,7 +110,12 @@ namespace RE.Core.World
             }
             Log.Information("Saved level to '{Path}'", savedTo);
         }
-
+        //todo: parse at PATH, not just name
+        /// <summary>
+        /// Loads and deserializes a scene from JSON file located at <c>Assets/Maps/{name}/data.json</c>.
+        /// </summary>
+        /// <param name="name">Scene name in <c>Assets/Maps</c></param>
+        /// <returns>A new scene instance</returns>
         public static Scene ParseScene(string name)
         {
             try
