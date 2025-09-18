@@ -1,18 +1,34 @@
-﻿using OpenTK.Graphics.OpenGL4;
+﻿using System.Diagnostics.CodeAnalysis;
+using OpenTK.Graphics.OpenGL4;
 using Log = Serilog.Log;
 
 namespace RE.Core.Assets
 {
-    internal class Shader : DynamicAsset
+    /// <summary>
+    /// Represents an OpenGL shader asset.
+    /// </summary>
+    /// <remarks>The Shader class provides functionality for loading and compiling vertex, fragment, and
+    /// geometry shaders from file paths. It avoids recompiling shaders that have already been loaded by reusing
+    /// existing compiled shader handles.</remarks>
+    public class Shader : DynamicAsset
     {
         private static readonly List<Shader> CompiledShaders = [];
 
-
+        /// <summary>
+        /// Initializes a new instance of the Shader class using the specified file path.
+        /// </summary>
+        /// <remarks>
+        /// This constructor loads and compiles the shader from the provided file path.
+        /// </remarks>
+        /// <param name="path">The file system path to the shader source file. Cannot be null or empty.</param>
         public Shader(string path) : base(path)
         {
             OnLoad();
         }
 
+        /// <summary>
+        /// OpenGL handle for the compiled shader.
+        /// </summary>
         public int Handle { get; private set; }
         public sealed override void OnLoad()
         {
@@ -61,6 +77,10 @@ namespace RE.Core.Assets
             }
         }
 
+        /// <summary>
+        /// Returns the OpenGL handle of the shader.
+        /// </summary>
+        /// <param name="s"></param>
         public static implicit operator int(Shader s) => s.Handle;
     }
 }

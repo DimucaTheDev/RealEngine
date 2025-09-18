@@ -3,7 +3,15 @@ using Serilog;
 
 namespace RE.Core.PluginSystem
 {
-    internal class PluginManager
+    /// <summary>
+    /// Provides static methods and properties for managing the lifecycle of plugins within the application, including
+    /// loading, resolving, and unloading plugins.
+    /// </summary>
+    /// <remarks>The PluginManager class is responsible for discovering plugin assemblies, instantiating
+    /// plugin types, and managing their initialization and unloading. All members are static, and the class maintains
+    /// the current set of loaded plugins. Thread safety is not guaranteed; callers should ensure appropriate
+    /// synchronization if accessing from multiple threads.</remarks>
+    public static class PluginManager
     {
         public static IReadOnlyList<Plugin> LoadedPlugins { get; private set; } = [];
 
@@ -78,7 +86,7 @@ namespace RE.Core.PluginSystem
             LoadedPlugins = [];
         }
 
-        static List<Plugin> SortPlugins(List<Plugin> plugins)
+        private static List<Plugin> SortPlugins(List<Plugin> plugins)
         {
             var dict = plugins.ToDictionary(p => p.PluginInformation.Name);
             var edges = new Dictionary<string, List<string>>();

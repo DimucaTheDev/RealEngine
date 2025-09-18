@@ -10,31 +10,48 @@ using Serilog;
 
 namespace RE.Core.Scripting
 {
-    internal class CommandHandler
+    /// <summary>
+    /// Provides static methods and events for registering, executing, and managing text-based commands within the
+    /// application.
+    /// </summary>
+    /// <remarks>The CommandHandler class enables dynamic registration of command handlers and supports
+    /// command execution with argument parsing. It is designed for use in scenarios such as developer consoles or
+    /// scripting interfaces, where commands are entered as strings and dispatched to registered handlers. All members
+    /// are static, and the class is not intended to be instantiated. Thread safety is not guaranteed; ensure
+    /// appropriate synchronization if accessing from multiple threads.</remarks>
+    public static class CommandHandler
     {
         //mb i should make a Command class with description, args, etc
 
         public static event Action<string, List<string>, string?>? CommandExecuted;
 
-        private static int recursionDepth = 0;
+        private static int _recursionDepth = 0;
         private static readonly Dictionary<string, string> CommandDescriptions = [];
-        private const int MaxRecursionDepth = 1000;
+        private const int MaxRecursionDepth = 100;
 
+        /// <summary>
+        /// Executes the specified command line string, ensuring that the maximum allowed recursion depth is not
+        /// exceeded.
+        /// </summary>
+        /// <remarks>If the maximum recursion depth is exceeded, the command is not executed and an error
+        /// is logged. This method is intended to prevent stack overflows or infinite recursion when executing nested
+        /// commands.</remarks>
+        /// <param name="line">The command line to execute. Cannot be null.</param>
         public static void ExecuteCommandSafe(string line)
         {
-            if (recursionDepth > MaxRecursionDepth)
+            if (_recursionDepth > MaxRecursionDepth)
             {
                 Log.Error("Max recursion depth exceeded.");
                 return;
             }
             try
             {
-                recursionDepth++;
+                _recursionDepth++;
                 ExecuteCommand(line);
             }
             finally
             {
-                recursionDepth--;
+                _recursionDepth--;
             }
         }
         public static void ExecuteCommand(string command)
@@ -76,6 +93,7 @@ namespace RE.Core.Scripting
                 }
             };
         }
+
         public static void RegisterSingleArgHandler(string name, Action<string> handler, string description = "")
         {
             CommandExecuted += (cmd, args, full) =>

@@ -1,6 +1,13 @@
 ﻿namespace RE.Core.Scripting
 {
-    internal class Variables
+    /// <summary>
+    /// Provides a global key-value store for application-wide variables and notifies subscribers when variables change.
+    /// </summary>
+    /// <remarks>The Variables class enables storing and retrieving variables that are accessible throughout
+    /// the application. It is thread-safe for individual operations on the underlying dictionary, but callers should
+    /// ensure appropriate synchronization if performing compound operations. The VariableChanged event is raised
+    /// whenever a variable is added or updated using SetVariable.</remarks>
+    public class Variables
     {
         public static Dictionary<string, object?> GlobalVariables { get; } = new();
 

@@ -11,6 +11,7 @@ namespace RE.Core.Assets
     }
     public class AssetManager
     {
+        //todo: remove class
         public static List<DynamicAsset> LoadedAssets = [];
 
         public static bool PreLoad(string asset)

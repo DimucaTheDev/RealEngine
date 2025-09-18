@@ -3,6 +3,13 @@ using Serilog.Core;
 
 namespace RE.Core.PluginSystem
 {
+    /// <summary>
+    /// Provides a base class for implementing plugins that can be loaded and unloaded by the host application.
+    /// </summary>
+    /// <remarks>Inherit from this class to create a custom plugin. Override the <see cref="OnLoad"/> and <see
+    /// cref="OnUnload"/> methods to define initialization and cleanup logic for your plugin. Use the <see
+    /// cref="Logger"/> property to write log messages within the plugin context. The <see cref="PluginInformation"/>
+    /// property should provide metadata about the plugin, such as its name and version.</remarks>
     public abstract class Plugin
     {
         public ILogger Logger { get; protected set; }

@@ -44,7 +44,7 @@ namespace RE.Core.World.Testing
                         VariantIndex = 0,
                         DisposeOnStop = true,
                         InWorld = true,
-                        SourcePosition = _door.Transform.Position,
+                        Position = _door.Transform.Position,
                         Volume = 0.5f
                     });
                     used = true;
@@ -97,7 +97,7 @@ namespace RE.Core.World.Testing
                 VariantIndex = 0,
                 DisposeOnStop = true,
                 InWorld = true,
-                SourcePosition = _door.Transform.Position,
+                Position = _door.Transform.Position,
                 Volume = 0.5f
             });
 

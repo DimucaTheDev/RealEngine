@@ -1,6 +1,7 @@
 ﻿namespace RE.Core.Scripting
 {
-    internal interface IEditorPopup
+    // todo: add XML docs
+    public interface IEditorPopup
     {
         bool ShouldRenderPopup();
         void RenderPopup();

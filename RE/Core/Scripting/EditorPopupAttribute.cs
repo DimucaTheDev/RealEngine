@@ -1,7 +1,11 @@
 ﻿namespace RE.Core.Scripting
 {
+    /// <summary>
+    /// Specifies that a method should be exposed as a popup dialog in the editor.
+    /// </summary>
+    /// <param name="id"></param>
     [AttributeUsage(AttributeTargets.Method)]
-    internal class EditorPopupAttribute(string id) : Attribute
+    public class EditorPopupAttribute(string id) : Attribute
     {
         public string Id { get; } = id;
         public bool Modal { get; set; } = false;

@@ -4,11 +4,22 @@ using RE.Utils;
 
 namespace RE.Core.World
 {
+    /// <summary>
+    /// Represents an object in the game world with components, transform, and hierarchy.
+    /// </summary>
     public class GameObject
     {
         private static int _next = 0;
 
+        /// <summary>
+        /// Initializes a new instance of <see cref="GameObject"/> with no parent.
+        /// </summary>
         public GameObject() : this(null) { }
+
+        /// <summary>
+        /// Initializes a new instance of <see cref="GameObject"/> with the specified parent.
+        /// </summary>
+        /// <param name="parent">The parent <see cref="GameObject"/>. Can be null.</param>
         public GameObject(GameObject? parent)
         {
             Components = new ComponentList(this);
@@ -21,20 +32,46 @@ namespace RE.Core.World
             };
             Id = _next++;
         }
-
+         
         public ComponentList Components { get; }
+
+        /// <summary>
+        /// Gets or sets the transform containing position, rotation, and scale.
+        /// </summary>
         public Transform Transform { get; set; }
+         
         public GameObject? Parent { get; set; }
+         
         public string? Name { get; set; }
+         
         public int Id { get; private set; }
+         
         public string? Tag { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether this object should be excluded from saving (see <see cref="SceneManager.SaveScene"/>).
+        /// </summary>
         public bool DoNotSave { get; set; } = false;
+
+        /// <summary>
+        /// Gets or sets a value indicating whether this object should be hidden in the editor.
+        /// </summary>
         public bool DoNotShowInEditor { get; set; } = false;
 
-        public Scene Scene { get; set; }
+        /// <summary>
+        /// Gets or sets the <see cref="Scene"/> to which this object belongs.
+        /// </summary>
+        public Scene Scene { get; set; } = null!;
+
+        /// <summary>
+        /// Gets a read-only list of child <see cref="GameObject"/> instances under this object.
+        /// </summary>
         public IReadOnlyList<GameObject> Children => Scene.GameObjects.Where(s => s.Parent == this).ToList().AsReadOnly();
 
-        public void SetPosition() => SetPosition(Transform.Position);
+        /// <summary>
+        /// Sets the position of the game object and updates the associated physics rigid body if present.
+        /// </summary>
+        /// <param name="position">The new position to set.</param>
         public void SetPosition(Vector3 position)
         {
             Transform.Position = position;
@@ -50,9 +87,11 @@ namespace RE.Core.World
             rigidBody.WorldTransform = transform;
             rigidBody.MotionState?.SetWorldTransform(ref transform);
         }
-
-
-        public void SetRotation() => SetRotation(Transform.Rotation);
+         
+        /// <summary>
+        /// Sets the rotation of the game object and updates the associated physics rigid body if present.
+        /// </summary>
+        /// <param name="q">The new rotation quaternion to set.</param>
         public void SetRotation(Quaternion q)
         {
             Transform.Rotation = q;
@@ -66,13 +105,18 @@ namespace RE.Core.World
                 );
                 rigidBody.WorldTransform = transform;
                 rigidBody.MotionState?.SetWorldTransform(ref transform);
-
             }
         }
 
+        /// <summary>
+        /// Gets the first component of type <typeparamref name="T"/> attached to this game object.
+        /// </summary>
+        /// <typeparam name="T">The type of component to retrieve.</typeparam>
+        /// <returns>The first component of type <typeparamref name="T"/> if found; otherwise, <c>null</c>.</returns>
         public T? GetComponent<T>() where T : Component
         {
             return Components.OfType<T>().FirstOrDefault();
         }
     }
+
 }

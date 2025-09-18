@@ -1,9 +1,10 @@
 ﻿namespace RE.Core.Scripting
 {
     /// <summary>
-    /// Used to show """user-friendly""" name of property in Scene Editor
+    /// Specifies metadata for a property to control how it is displayed and edited in an editor environment.
     /// </summary>
-    /// <param name="name"></param>
+    /// <param name="name">The display name to use for the property in the editor. If null, the property's name is used.</param>
+    /// <param name="readonly"><see langword="true"/> to indicate that the property should be read-only in the editor; otherwise, <see langword="false"/>.</param>
     [AttributeUsage(AttributeTargets.Property)]
     public sealed class EditorPropertyAttribute(string? name = null, bool @readonly = false) : Attribute
     {

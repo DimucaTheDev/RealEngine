@@ -41,7 +41,7 @@ namespace RE.Core.World.Testing
                 SoundManager.Play(soundPath, new SoundPlaybackSettings
                 {
                     InWorld = true,
-                    SourcePosition = new Vector3(0, 0, -5)
+                    Position = new Vector3(0, 0, -5)
                 });
             });
 
@@ -50,7 +50,7 @@ namespace RE.Core.World.Testing
                 SoundManager.Play(soundPath, new SoundPlaybackSettings
                 {
                     InWorld = true,
-                    SourcePosition = new Vector3(0, 0, 5)
+                    Position = new Vector3(0, 0, 5)
                 });
             });
 
@@ -59,7 +59,7 @@ namespace RE.Core.World.Testing
                 var emitter = SoundManager.Play("test/test", new SoundPlaybackSettings
                 {
                     InWorld = true,
-                    SourcePosition = new Vector3(0, 0, 0)
+                    Position = new Vector3(0, 0, 0)
                 });
 
                 float elapsed = 0f;

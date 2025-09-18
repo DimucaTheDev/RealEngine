@@ -11,7 +11,17 @@ using TaskScheduler = BulletSharp.TaskScheduler;
 
 namespace RE.Core.World.Physics
 {
-    internal class PhysicsManager : DynamicAsset
+    /// <summary>
+    /// Manages the initialization, configuration, and simulation of the physics engine, including world creation,
+    /// scheduling, and global physics operations.
+    /// </summary>
+    /// <remarks>The PhysicsManager provides static methods and properties to control the physics simulation
+    /// lifecycle and perform global physics actions, such as applying explosion forces. It is responsible for setting
+    /// up the multi-threaded physics world and managing simulation state. Only one instance should be initialized per
+    /// application. Thread safety is not guaranteed for all operations; ensure that physics methods are called from the
+    /// appropriate context.
+    /// </remarks>
+    public class PhysicsManager : DynamicAsset
     {
         private static readonly List<TaskScheduler> Schedulers = [];
         private static bool _init;
@@ -21,7 +31,7 @@ namespace RE.Core.World.Physics
         private static DbvtBroadphase _broadphase;
         private static CollisionDispatcherMultiThreaded _dispatcher;
         private static CollisionConfiguration _collisionConfiguration;
-
+         
         public static DiscreteDynamicsWorldMultiThreaded DynamicsWorld = null!;
         public static bool EnableSimulation = true;
 

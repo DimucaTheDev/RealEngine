@@ -10,15 +10,25 @@ using Serilog;
 
 namespace RE.Audio
 {
-    internal static class SoundManager
+    public static class SoundManager
     {
-        public static ReadOnlyDictionary<string, List<string>> SoundMap;
+        /// <summary>
+        /// Gets the mapping of sound categories to their associated sound file names.
+        /// </summary>
+        /// <remarks>
+        /// Paths in the sound map are relative to the application's working directory.
+        /// </remarks>
+        public static ReadOnlyDictionary<string, List<string>>? SoundMap;
         public static ReadOnlyCollection<Sound> ActiveSounds => _activeSounds.AsReadOnly();
+        /// <summary>
+        /// Represents the global instance of the FMOD audio system.
+        /// </summary>
+        /// <remarks>Use this field to access FMOD system-level functionality throughout the application.</remarks>
+        public static FmodSystem FmodSystem;
 
         private static readonly Dictionary<string, List<string>> _soundMap = new();
         private static readonly Dictionary<string, FmodAudio.Sound> _buffers = new();
         private static readonly List<Sound> _activeSounds = new();
-        public static FmodSystem FmodSystem;
 
         public static void Init()
         {
@@ -87,7 +97,18 @@ namespace RE.Audio
                 sound.FmodChannel.Volume = gain * sound.Volume;
             }
         }
-        public static Sound Get(string id, int? n = null)
+
+        /// <summary>
+        /// Retrieves a sound instance associated with the specified sound identifier.
+        /// </summary>
+        /// <remarks>If multiple sound files are associated with the same identifier, the optional index
+        /// parameter allows selection of a specific variation. If the index is not provided, a random variation is
+        /// chosen. The returned sound instance is tracked for active playback management.</remarks>
+        /// <param name="id">The unique identifier of the sound to retrieve. Cannot be null or empty.</param>
+        /// <param name="variation">The index of the sound variation to retrieve. If null, a random variation is selected.</param>
+        /// <returns>A new instance of the sound associated with the specified identifier and variation index, or <see langword="null"/> if the
+        /// identifier is not found.</returns>
+        public static Sound Get(string id, int? variation = null)
         {
             if (!_soundMap.TryGetValue(id, out var files) || files.Count == 0)
             {
@@ -95,7 +116,7 @@ namespace RE.Audio
                 return null!;
             }
 
-            var file = files[n ?? Random.Shared.Next(files.Count)];
+            var file = files[variation ?? Random.Shared.Next(files.Count)];
 
             if (!_buffers.TryGetValue(file, out FmodAudio.Sound fmodSound))
             {
@@ -109,6 +130,16 @@ namespace RE.Audio
             return sound;
         }
 
+        /// <summary>
+        /// Plays a sound with the specified identifier and playback settings.
+        /// </summary>
+        /// <remarks>If multiple sound variants are available for the given ID, the variant is selected
+        /// randomly unless a specific variant index is provided in <paramref name="settings"/>. The returned <see
+        /// cref="Sound"/> object can be used to control playback or query the state of the sound.</remarks>
+        /// <param name="id">The unique identifier of the sound to play. Must correspond to a sound registered in the sound map.</param>
+        /// <param name="settings">The playback settings to apply to the sound. If not specified, default settings are used.</param>
+        /// <returns>A <see cref="Sound"/> instance representing the playing sound, or <see langword="null"/> if the specified
+        /// sound ID is not found.</returns>
         public static Sound Play(string id, SoundPlaybackSettings settings = default)
         {
             if (!_soundMap.TryGetValue(id, out var files) || files.Count == 0)
@@ -123,9 +154,9 @@ namespace RE.Audio
 
             sound.Volume = settings.Volume;
             sound.Pitch = settings.Pitch;
-            sound.Position = settings.SourcePosition ?? Vector3.Zero;
+            sound.Position = settings.Position ?? Vector3.Zero;
             sound.DisposeOnStop = settings.DisposeOnStop;
-            sound.ShowDebugInfo = true;//settings.ShowDebugInfo;
+            sound.ShowDebugInfo = settings.ShowDebugInfo;
             sound.Loop = settings.Loop;
             sound.IsRelative = !settings.InWorld;
 
@@ -146,7 +177,6 @@ namespace RE.Audio
             return sound;
         }
 
-        //you can use Sound.Dispose(), but this method will also remove sound from the active list
         public static void DisposeSound(Sound? sound)
         {
             if (sound == null)

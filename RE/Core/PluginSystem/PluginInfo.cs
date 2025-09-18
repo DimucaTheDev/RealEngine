@@ -9,7 +9,6 @@ namespace RE.Core.PluginSystem
         public string? Author { get; set; }
         public string? Description { get; set; }
         public string? LoadBefore { get; set; }
-        public Assembly Assembly { get; set; } = Assembly.GetCallingAssembly();
+        public Assembly Assembly { get; } = Assembly.GetCallingAssembly();
     }
-
 }

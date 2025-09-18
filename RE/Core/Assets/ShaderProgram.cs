@@ -4,20 +4,35 @@ using Log = Serilog.Log;
 
 namespace RE.Core.Assets
 {
-    internal class ShaderProgram : DynamicAsset
+    /// <summary>
+    /// Represents an OpenGL shader program that manages the attachment, linking, and usage of shader objects for
+    /// rendering operations.
+    /// </summary>
+    /// <remarks>A <see cref="ShaderProgram"/> encapsulates the lifecycle of an OpenGL program object, including attaching
+    /// shaders, linking them, and setting uniform values. Use this class to manage GPU shader resources and to set
+    /// uniform variables for rendering. This class also provides resource cleanup when unloaded.
+    /// Thread safety is not guaranteed; use from the same thread that owns the OpenGL context.</remarks>
+    public class ShaderProgram : DynamicAsset
     {
+        /// <summary>
+        /// OpenGL handle for the shader program.
+        /// </summary>
         public int Handle { get; private set; } = GL.CreateProgram();
 
         private bool _linked;
         private readonly List<Shader> _linkedShaders = [];
 
+        /// <inheritdoc cref="GL.AttachShader(int, int)"/>
         public void AttachShader(string path) => AttachShader(new Shader(path));
+        /// <inheritdoc cref="GL.AttachShader(int, int)"/>
         public void AttachShader(Shader shader)
         {
             GL.AttachShader(this, shader);
             _linkedShaders.Add(shader);
         }
 
+        /// <inheritdoc cref="GL.UseProgram(int)"/>
+        /// <remarks>The program will be linked if not already</remarks>
         public void Use()
         {
             if (!_linked)
@@ -30,6 +45,17 @@ namespace RE.Core.Assets
             GL.UseProgram(this);
         }
 
+        /// <summary>
+        /// Sets the value of a uniform variable in the shader program by name.
+        /// </summary>
+        /// <remarks>If the specified uniform name does not exist in the shader program, the method logs
+        /// an error and does not set any value. Only certain types are supported; attempting to use an unsupported type
+        /// will result in an exception.</remarks>
+        /// <typeparam name="T">The type of the value to set. Must be a supported uniform type and not null.</typeparam>
+        /// <param name="name">The name of the uniform variable to set. Cannot be null.</param>
+        /// <param name="value">The value to assign to the uniform variable. Must be of a supported type such as <see langword="int"/>, <see langword="uint"/>, <see langword="float"/>, <see langword="double"/>,
+        /// <see langword="bool"/>, <see cref="Vector2"/>, <see cref="Vector3"/>, <see cref="Vector4"/>, <see cref="Color4"/>, <see cref="Matrix2"/>, <see cref="Matrix3"/>, or <see cref="Matrix4"/>.</param>
+        /// <exception cref="NotSupportedException">Thrown if the type of <typeparamref name="T"/> is not supported as a uniform variable.</exception>
         public void SetValue<T>(string name, T value) where T : notnull
         {
             int location = GL.GetUniformLocation(this, name);
@@ -81,10 +107,13 @@ namespace RE.Core.Assets
                     break;
 
                 default:
-                    throw new NotSupportedException($"Uniform doesnt support {typeof(T)}");
+                    throw new NotSupportedException($"Uniform doesn't support {typeof(T)}");
             }
         }
 
+        /// <summary>
+        /// Deleted shader program and sets <see cref="Handle"/> to 0.
+        /// </summary>
         public override void OnUnload()
         {
             base.OnUnload();

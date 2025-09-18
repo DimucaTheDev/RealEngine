@@ -11,6 +11,9 @@ using FmodChannel = FmodAudio.Channel;
 
 namespace RE.Audio
 {
+    /// <summary>
+    /// Represents sound instance. Sound instance can be created using <see cref="SoundManager.Get(string, int?)"/> or <see cref="SoundManager.Play(string, SoundPlaybackSettings)"/> method.
+    /// </summary>
     public class Sound : IDisposable
     {
         public enum SoundState
@@ -22,7 +25,7 @@ namespace RE.Audio
 
         private bool _disposed;
         private float? _length = null!;
-        private Time.ScheduledTask? _task;
+        private Time.ScheduledTask? _task; // this task fires OnStopped event, because FMOD has no such event
         private readonly SphereLineRenderer _crRefDis;
         private readonly SphereLineRenderer _crMaxDis;
         private readonly SpriteRenderer _sprite;
@@ -34,11 +37,29 @@ namespace RE.Audio
         public event Action? Paused;
         public event Action? Stopped;
         public event Action? Resumed;
+        /// <summary>
+        /// Occurs when the volume level changes.   
+        /// </summary>
+        /// <remarks>Subscribers receive the new volume level as a parameter when the event is raised. The
+        /// volume value is typically represented as a floating-point number between 0.0 (muted) and 1.0 (maximum
+        /// volume)</remarks>
         public event Action<float>? VolumeChanged;
 
+        /// <summary>
+        /// Stores the underlying FMOD sound instance.
+        /// </summary>
+        /// <remarks>FMOD Docs: <a href="https://www.fmod.com/docs/2.01/api/core-api-sound.html"> https://www.fmod.com/docs/2.01/api/core-api-sound.html</a></remarks>
         public FmodSound FmodSound { get; private set; }
+        /// <summary>
+        /// Stores the underlying FMOD channel instance.
+        /// </summary>
+        /// <remarks>FMOD Docs: <a href="https://www.fmod.com/docs/2.01/api/core-api-channel.html"> https://www.fmod.com/docs/2.01/api/core-api-channel.html</a></remarks>
         public FmodChannel FmodChannel { get; private set; }
 
+        /// <remarks>
+        /// <para>Range: <c>[0; 1]</c>.</para>
+        /// <para>Changing value calls <see cref="VolumeChanged"/> event with new volume level.</para>
+        /// </remarks>
         public float Volume
         {
             get
@@ -67,6 +88,9 @@ namespace RE.Audio
             }
         }
 
+        /// <summary>
+        /// Represents current playback position in seconds.
+        /// </summary>
         public float Offset
         {
             get
@@ -89,6 +113,18 @@ namespace RE.Audio
             }
         }
 
+        /// <summary>
+        /// Gets or sets a value indicating whether the sound should loop when playback reaches the end.
+        /// </summary>
+        /// <remarks>
+        /// <para>If set to <see langword="true"/>, the sound will automatically restart from the
+        /// beginning when it finishes playing. If set to <see langword="false"/>, playback will stop when the end is
+        /// reached.
+        /// </para>
+        /// <para>
+        /// Note that if property is set to <see langword="true"/>, the <see cref="Stopped"/> event will not be fired.
+        /// </para>
+        /// </remarks>
         public bool Loop
         {
             get
@@ -119,6 +155,9 @@ namespace RE.Audio
             }
         }
 
+        /// <remarks>
+        /// <para>Range: <c>[0; 10]</c>.</para>
+        /// </remarks>
         public float Pitch
         {
             get
@@ -146,6 +185,11 @@ namespace RE.Audio
             }
         }
 
+        /// <summary>
+        /// Gets or sets the 3D position of the sound in world coordinates.
+        /// </summary>
+        /// <remarks>When <see cref="IsRelative"/> is set to <see langword="true"/>, changing this value will have no effect.
+        /// </remarks>
         public Vector3 Position
         {
             get
@@ -170,18 +214,25 @@ namespace RE.Audio
 
                 _position = value;
 
-                if (IsRelative)
-                    return;
-
                 _crMaxDis.Center = value;
                 _crRefDis.Center = value;
                 _sprite.Position = value;
+
+                if (IsRelative)
+                    return;
+
                 var zero = Vector3.Zero.ToSystemVector3();
                 var pos = value.ToSystemVector3();
                 FmodChannel.Set3DAttributes(in pos, in zero, in zero);
             }
         }
 
+        /// <summary>
+        /// Gets the length of the sound, in seconds.
+        /// </summary>
+        /// <remarks>If the sound is not ready, the property returns 0. The value is calculated based on
+        /// the sound's PCM length and playback frequency. Subsequent accesses may return a cached value for
+        /// performance.</remarks>
         public float Length
         {
             get
@@ -209,8 +260,12 @@ namespace RE.Audio
         }
 
         /// <summary>
-        /// <c>true</c> if 2D. <c>false</c> if 3D.
+        /// Gets or sets a value indicating whether the sound is played in relative (2D) mode or spatialized (3D) mode.
         /// </summary>
+        /// <remarks>When set to <see langword="true"/>, the sound is played as a 2D sound and is not
+        /// affected by 3D positioning or distance attenuation. When set to <see langword="false"/>, the sound is
+        /// spatialized in 3D space, and properties such as position and distance affect how it is heard. Changing this
+        /// property may update related 3D sound parameters.</remarks>
         public bool IsRelative
         {
             get
@@ -255,6 +310,13 @@ namespace RE.Audio
             }
         }
 
+        /// <summary>
+        /// Gets or sets the maximum distance at which the sound can be heard in 3D space.
+        /// </summary>
+        /// <remarks><para>The maximum distance determines how far the sound will be audible before it is fully
+        /// attenuated.</para>
+        /// <para>Setting this property to zero is not allowed and will be ignored.</para>
+        /// <para>This has no effect if <see cref="IsRelative"/> is set to <see langword="true"/></para></remarks>
         public float MaxDistance
         {
             get
@@ -292,6 +354,17 @@ namespace RE.Audio
             }
         }
 
+        /// <summary>
+        /// Gets or sets the reference distance for 3D sound attenuation.
+        /// </summary>
+        /// <remarks>
+        /// <para>The reference distance determines how far listener can be away from <see cref="Position"/> to hear the sound
+        /// at max volume.
+        /// </para>
+        /// <para>
+        /// Setting this property to zero is not allowed and will be ignored.
+        /// </para>
+        /// </remarks>
         public float ReferenceDistance
         {
             get
@@ -319,9 +392,32 @@ namespace RE.Audio
 
                 _crRefDis.Radius = value;
                 FmodChannel.Set3DMinMaxDistance(value, MaxDistance);
+                // todo: is it allowed to have ref dis > max dis?
             }
         }
 
+        /// <summary>
+        /// Gets or sets a value indicating whether debug information is displayed on the screen.
+        /// </summary>
+        /// <remarks>When set to <see langword="true"/>, enabling this property will display additional
+        /// debug overlays or information relevant to the current context. Disabling it hides all such debug visuals.
+        /// This info includes:
+        /// <list type="bullet">
+        /// <item>Red sphere of radius <see cref="MaxDistance"/></item>
+        /// <item>Red sphere of radius <see cref="ReferenceDistance"/></item>
+        /// <item>2D Sprite at <see cref="Position"/></item>
+        /// <item>Floating text at <see cref="Position"/> with:
+        /// <list type="bullet">
+        /// <item>Position (see <see cref="Position"/>)</item>
+        /// <item>State (see <see cref="SoundState"/>)</item>
+        /// <item>Dispose on stop (see <see cref="DisposeOnStop"/>)</item>
+        /// <item>Loop (see <see cref="Loop"/>)</item>
+        /// <item>Offset (<see cref="Offset"/>)</item>
+        /// <item>Length (<see cref="Length"/>)</item>
+        /// </list>
+        /// </item>
+        /// </list>
+        /// </remarks>
         public bool ShowDebugInfo
         {
             get => _debugText.IsRendering() || _crRefDis.IsRendering() || _crMaxDis.IsRendering() || _sprite.IsRendering();
@@ -361,10 +457,22 @@ namespace RE.Audio
             }
         }
 
+        /// <summary>
+        /// Gets or sets a value indicating whether the object should be disposed when the sound is stopped.
+        /// <remarks>
+        /// <para>If <see cref="Loop"/> is set to <see langword="true"/>, the sound instance will not be disposed.</para>
+        /// </remarks>
+        /// </summary>
         public bool DisposeOnStop { get; set; }
         public bool IsPlaying => State == SoundState.Playing;
         public bool IsPaused => State == SoundState.Paused;
         public bool IsStopped => State == SoundState.Stopped;
+        /// <summary>
+        /// Gets a value indicating whether the object is ready for use.
+        /// </summary>
+        /// <remarks>The object is considered ready when all required resources are initialized, and it has
+        /// not been disposed. Use this property to check readiness before performing operations that depend on the
+        /// object's valid state.</remarks>
         public bool IsReady => FmodChannel != null! && FmodSound != null! && !_disposed && IsHandleValid();
 
         internal Sound(FmodAudio.Sound source)
@@ -404,7 +512,7 @@ namespace RE.Audio
             };
         }
 
-        internal void Play()
+        public void Play()
         {
             if (!IsReady)
             {
@@ -459,6 +567,21 @@ namespace RE.Audio
             }
         }
 
+        /// <summary>
+        /// Releases all resources used by the current instance.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// Call this method when the instance is no longer needed to free unmanaged resources
+        /// promptly. After calling this method, the instance should not be used.
+        /// </para>
+        /// <para>
+        /// Sound automatically disposes when <see cref="DisposeOnStop"/> is set to <see langword="true"/>.
+        /// </para>
+        /// <para>
+        /// It is recommended to use <see cref="SoundManager.DisposeSound"/> to properly remove the sound from active sound list
+        /// </para>
+        /// </remarks>
         public void Dispose()
         {
             if (_disposed)
@@ -473,7 +596,7 @@ namespace RE.Audio
             _disposed = true;
         }
 
-        public void UpdateDebugInfo()
+        internal void UpdateDebugInfo()
         {
             _debugText.Text = $"Pos: {Position}\nState: {State}\nDoS: {DisposeOnStop}\nLoop: {Loop}\n{Offset:0.00}/{Length:0.00} s";
             _debugText.Position = Position + (0, 1, 0);
