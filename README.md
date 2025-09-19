@@ -14,8 +14,11 @@ Simple 3D game engine made with C#, OpenTK, FMOD, and bunch of other libs... See
 Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
 
 ## Images:
-![Runtime](https://github.com/dimucathedev/realengine/blob/master/images/running.png?raw=true)
+Ingame:
+![Runtime](https://github.com/dimucathedev/realengine/blob/master/Images/running.png?raw=true)
 
-![Editor](https://github.com/dimucathedev/realengine/blob/master/images/editor.png?raw=true)
+Editor:
+![Editor](https://github.com/dimucathedev/realengine/blob/master/Images/editor.png?raw=true)
 
-![About](https://github.com/dimucathedev/realengine/blob/master/images/about.png?raw=true)
+About :) :
+![About](https://github.com/dimucathedev/realengine/blob/master/Images/about.png?raw=true)
