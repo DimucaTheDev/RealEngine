@@ -6,6 +6,7 @@ using SharpFont;
 
 namespace RE.Rendering.Text;
 
+// https://github.com/Rabbid76/c_sharp_opengl/blob/master/OpenTK_example_5/FreeTypeFont.cs
 public class FreeTypeFont
 {
     //change!
@@ -179,5 +180,4 @@ public class FreeTypeFont
     }
 
     public static explicit operator FreeTypeFont(string path) => new(48, path);
-
 }
