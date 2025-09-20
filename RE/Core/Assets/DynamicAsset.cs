@@ -10,6 +10,12 @@ namespace RE.Core.Assets
     /// provide custom loading and unloading logic.</remarks>
     public abstract class DynamicAsset
     {
+        /// <summary>
+        /// Property that stores the path to the asset file, if applicable.
+        /// </summary>
+        /// <remarks>
+        /// This property may be null or empty for assets that are created entirely in memory and do not correspond to a file.
+        /// </remarks>
         public string? AssetPath { get; }
 
         protected DynamicAsset() : this(null!) { }
