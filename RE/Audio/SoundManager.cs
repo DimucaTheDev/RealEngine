@@ -154,7 +154,7 @@ namespace RE.Audio
 
             sound.Volume = settings.Volume;
             sound.Pitch = settings.Pitch;
-            sound.Position = settings.Position ?? Vector3.Zero;
+            sound.Position = settings.Position;
             sound.DisposeOnStop = settings.DisposeOnStop;
             sound.ShowDebugInfo = settings.ShowDebugInfo;
             sound.Loop = settings.Loop;
