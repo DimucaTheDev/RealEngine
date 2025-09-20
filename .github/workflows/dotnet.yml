@@ -24,10 +24,8 @@ jobs:
       run: dotnet restore
     - name: Build
       run: dotnet build --no-restore
-    - name: Setup DocFX
-      uses: crazy-max/ghaction-chocolatey@v1
-      with:
-        args: install docfx
+    - name: Setup DocFX 
+      run: dotnet tool update -g docfx
     - name: DocFX Build
       working-directory: DocFX
       run: docfx docfx.json
