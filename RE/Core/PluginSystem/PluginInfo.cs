@@ -2,6 +2,9 @@
 
 namespace RE.Core.PluginSystem
 {
+    /// <summary>
+    /// todo: XML docs
+    /// </summary>
     public class PluginInfo
     {
         public required string Name { get; set; }

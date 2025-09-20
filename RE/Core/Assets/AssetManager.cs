@@ -9,6 +9,10 @@ namespace RE.Core.Assets
         Audio,
         Shader
     }
+    /// <summary>
+    /// todo: Remove class
+    /// </summary>
+    [Obsolete("Use the new AssetLoader system instead.")]
     public class AssetManager
     {
         //todo: remove class

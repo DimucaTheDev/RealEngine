@@ -12,6 +12,9 @@ namespace RE.Core.PluginSystem
     /// property should provide metadata about the plugin, such as its name and version.</remarks>
     public abstract class Plugin
     {
+        /// <summary>
+        /// Logger instance for logging messages within the plugin context.
+        /// </summary>
         public ILogger Logger { get; protected set; }
 
         protected Plugin()
@@ -20,6 +23,9 @@ namespace RE.Core.PluginSystem
             Logger = Log.Logger.ForContext("SourceContext", Path.GetFileName(PluginInformation.Assembly.Location));
         }
 
+        /// <summary>
+        /// Gets the plugin's metadata information.
+        /// </summary>
         public abstract PluginInfo PluginInformation { get; }
 
         public virtual void OnLoad() { }

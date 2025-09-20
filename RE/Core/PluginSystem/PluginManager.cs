@@ -15,6 +15,15 @@ namespace RE.Core.PluginSystem
     {
         public static IReadOnlyList<Plugin> LoadedPlugins { get; private set; } = [];
 
+        /// <summary>
+        /// Loads and initializes all plugins found in the <c>DLL\PLUGINS</c> directory. This method scans for assemblies,
+        /// identifies types that inherit from the <see cref="Plugin"/> base class, and invokes their <see cref="Plugin.OnLoad"/>.
+        /// </summary>
+        /// <remarks>
+        /// Before being loaded, plugins are sorted based on their <see cref="PluginInfo.LoadBefore"/> property to ensure correct load order.
+        /// </remarks>
+        /// <exception cref="Exception">Thrown if method is unable to load/initialize plugin.</exception>
+        /// <exception cref="InvalidOperationException">Thrown if plugin dependencies cycle detected.</exception>
         public static void ResolvePlugins()
         {
             Log.Information("Resolving assemblies...");
@@ -68,6 +77,9 @@ namespace RE.Core.PluginSystem
                 LoadedPlugins.Select(s => $"{s.PluginInformation.Name} ({s.PluginInformation.Version})"));
         }
 
+        /// <summary>
+        /// Cycles through all currently loaded plugins in reverse and invokes their <see cref="Plugin.OnUnload"/> method.
+        /// </summary>
         public static void UnloadPlugins()
         {
             foreach (var plugin in LoadedPlugins.Reverse())
