@@ -80,6 +80,7 @@ namespace RE.Core.World
         /// <param name="position">The new position to set.</param>
         public void SetPosition(Vector3 position)
         {
+            //todo: move all children [ childPos + (newPos - oldPos) ]
             Transform.Position = position;
 
             var rigidBody = GetComponent<RigidBodyComponent>()?.RigidBody

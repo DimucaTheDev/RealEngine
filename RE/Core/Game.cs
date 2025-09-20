@@ -56,9 +56,12 @@ internal class Game : GameWindow
         Environment.CurrentDirectory = AppContext.BaseDirectory;
 
         SetupLogger();
-        
+
         Log.Information("{ProductName}; build {BuildDate:dd.MM.yyyy HH:mm:ss}; commit {CommitHash}", ProductName, BuildDate, CommitHash[..7]);
         Log.Information("Startup args: {@Args}", Environment.GetCommandLineArgs()[1..]);
+
+        if (Directory.Exists("Debug"))
+            Directory.Delete("Debug", true);
 
         foreach (var lib in Directory.GetFiles("Dll\\WIN32", "*.dll"))
         {
