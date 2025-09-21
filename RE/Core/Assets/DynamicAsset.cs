@@ -22,7 +22,7 @@ namespace RE.Core.Assets
         protected DynamicAsset(string path)
         {
             AssetPath = path;
-            AssetManager.LoadedAssets.Add(this);
+            LoadedAssets.Add(this);
             if (string.IsNullOrWhiteSpace(AssetPath))
                 Log.Verbose("  new dyn.asset:  {Name}<{HashCode}>", GetType().Name, GetHashCode());
             else
@@ -37,7 +37,9 @@ namespace RE.Core.Assets
                 Log.Verbose("  dyn.asset unload:  {Name}<{HashCode}>", GetType().Name, GetHashCode());
             else
                 Log.Verbose("  dyn.asset unload:  {Name}<{HashCode}> ///\t{Path}", GetType().Name, GetHashCode(), AssetPath);
-            AssetManager.LoadedAssets.Remove(this);
+            LoadedAssets.Remove(this);
         }
+
+        public static List<DynamicAsset> LoadedAssets = [];
     }
 }

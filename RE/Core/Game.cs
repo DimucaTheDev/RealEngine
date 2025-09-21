@@ -179,8 +179,7 @@ internal class Game : GameWindow
     protected override void OnUnload()
     {
         base.OnUnload();
-
-        AssetManager.UnloadAll();
+         
         PluginManager.UnloadPlugins();
 
         foreach (var lib in LoadedLibs)
