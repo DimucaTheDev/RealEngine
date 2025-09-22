@@ -342,24 +342,7 @@ namespace RE.Core.World.Components
                 }
 
 
-                if (input.IsKeyPressed(Keys.F11))
-                    Game.Instance.ToggleFullscreen();
-                if (input.IsKeyPressed(Keys.F1))
-                {
-                    RenderManager.RemoveCameraFrustum();
-                    if (input.IsKeyDown(Keys.LeftControl))
-                    {
-                        return;
-                    }
-
-                    RenderManager.CreateCameraFrustum();
-                }
-
-                if (input.IsKeyPressed(Keys.F2))
-                {
-                    var p = Game.TakeScreenshot();
-                    Log.Information("Screenshot saved to {Path}", p);
-                }
+                
 
                 if (input.IsKeyDown(Keys.Escape))
                 {

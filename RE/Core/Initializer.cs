@@ -18,6 +18,7 @@ namespace RE.Core
         private static ScreenText _textSteps;
         private static List<ScreenText> _textPastSteps = new();
         private static ScreenText _textTitle;
+        private static ScreenText _textTitleDemo;
         private static Queue<(string label, Action action)> _initSteps = new();
         private static string _currentStep = "";
         private static bool _initDone = false;
@@ -38,10 +39,15 @@ namespace RE.Core
             _textSteps = new ScreenText(null, Vector2.Zero, font);
 
             var title = "REAL ENGINE";
+            var titleDemo = "Demo";
             _textTitle = new ScreenText(title,
                 new Vector2(
                     (Game.Instance.ClientSize.X - titleFont.GetTextWidth(title)) / 2,
                     Game.Instance.ClientSize.Y / 4 - titleFont.GetTextHeight(title) / 2 + 80), titleFont, Vector4.One);
+            _textTitleDemo = new ScreenText(titleDemo,
+                new Vector2(
+                    (Game.Instance.ClientSize.X - titleFont.GetTextWidth(titleDemo, 0.5f)) / 2 + 200,
+                    Game.Instance.ClientSize.Y / 4 - titleFont.GetTextHeight(titleDemo, 0.5f) / 2 + 100), titleFont, 0.5f, new(0.5f));
 
 
             _textCurrentStep.Color = new Vector4(1f, 1f, 1f, 1f);
@@ -50,6 +56,7 @@ namespace RE.Core
             _textCurrentStep.StartRender();
             _textSteps.StartRender();
             _textTitle.StartRender();
+            _textTitleDemo.StartRender();
 
             InitializationCompleted += () =>
             {
@@ -60,6 +67,7 @@ namespace RE.Core
                 _textSteps.StopRender();
                 _textCurrentStep.StopRender();
                 _textTitle.StopRender();
+                _textTitleDemo.StopRender();
                 _textPastSteps.ForEach(s => s.StopRender());
             };
         }
@@ -70,6 +78,7 @@ namespace RE.Core
             _textCurrentStep.StartRender();
             _textSteps.StartRender();
             _textTitle.StartRender();
+            _textTitleDemo.StartRender();
         }
         public static void AddStep((string label, Action action) step)
         {

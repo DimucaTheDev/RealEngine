@@ -72,7 +72,7 @@ namespace RE.Core.World
         /// <summary>
         /// Gets a read-only list of child <see cref="GameObject"/> instances under this object.
         /// </summary>
-        public IReadOnlyList<GameObject> Children => Scene.GameObjects.Where(s => s.Parent == this).ToList().AsReadOnly();
+        public IReadOnlyList<GameObject> Children => Scene?.GameObjects.Where(s => s.Parent == this).ToList().AsReadOnly() ?? [];
 
         /// <summary>
         /// Sets the position of the game object and updates the associated physics rigid body if present.

@@ -33,14 +33,15 @@ namespace RE.Debug.Overlay
             public readonly List<Type> Types = new();
         }
 
+        public SceneEditor() => this.StartRender();
+
         public static SceneEditor Instance = new();
         public static bool Enabled = false;
 
         public override RenderLayer RenderLayer => RenderLayer.ImGui;
         public override bool IsVisible { get; set; } = false;
 
-        private List<GameObject> _editorObjects = new();
-        private Scene _scene;
+        private Scene _scene = null!;
         private GameObject? _selectedObject;
         private bool _popupOpen = false;
         private List<Type> _customPopups = new();
@@ -345,7 +346,7 @@ namespace RE.Debug.Overlay
             }
 
             EndDisabled();
- 
+
 
             Separator();
             foreach (var obj in SceneManager.CurrentScene.GameObjects.Where(s => s is { DoNotShowInEditor: false, Parent: null }).ToList())
@@ -562,7 +563,7 @@ namespace RE.Debug.Overlay
         private OpenTK.Mathematics.Vector3 obj_Position { get => _selectedObject.Transform.Position; set => _selectedObject.SetPosition(value); }
         private OpenTK.Mathematics.Quaternion obj_Rotation { get => _selectedObject.Transform.Rotation; set => _selectedObject.SetRotation(value); }
 
-        private PropertyInfo _p;
+        private PropertyInfo _p = null!;
         //refactor_me
         private void DrawComponents(GameObject obj)
         {
@@ -731,7 +732,7 @@ namespace RE.Debug.Overlay
             }
         }
 
-        private string _searchComponent;
+        private string _searchComponent = null!;
 
         void RenderNodeRecursive(Node node)
         {

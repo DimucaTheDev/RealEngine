@@ -159,8 +159,30 @@ internal class Game : GameWindow
 
         RenderManager.RenderAll(args);
         SwapBuffers();
+
+        if (KeyboardState.IsKeyPressed(Keys.F11))
+            Game.Instance.ToggleFullscreen();
+        if (KeyboardState.IsKeyPressed(Keys.F1))
+        {
+            RenderManager.RemoveCameraFrustum();
+            if (KeyboardState.IsKeyDown(Keys.LeftControl))
+            {
+                return;
+            }
+
+            RenderManager.CreateCameraFrustum();
+        }
+
+        if (KeyboardState.IsKeyPressed(Keys.F2))
+        {
+            var p = Game.TakeScreenshot();
+            Log.Information("Screenshot saved to {Path}", p);
+        }
     }
 
+    /// <summary>
+    /// Toggles window state between fullscreen and windowed mode.
+    /// </summary>
     public void ToggleFullscreen()
     {
         if (WindowState == WindowState.Fullscreen)
@@ -179,7 +201,7 @@ internal class Game : GameWindow
     protected override void OnUnload()
     {
         base.OnUnload();
-         
+
         PluginManager.UnloadPlugins();
 
         foreach (var lib in LoadedLibs)
@@ -188,9 +210,23 @@ internal class Game : GameWindow
             WinApi.FreeLibrary(lib.Key);
         }
     }
+
+    /// <summary>
+    /// Takes a screenshot of the current frame and saves it to the <c>My Pictures</c> folder.
+    /// </summary>
+    /// <remarks>
+    /// The screenshot will be saved in a subfolder named <see cref="ProductName"/> with a filename <c>re_yyyy-MM-dd_HH-mm-ss.png</c>.
+    /// </remarks>
+    /// <returns>Absolute path to saved screenshot</returns>
     public static string TakeScreenshot() => TakeScreenshot(Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.MyPictures), ProductName,
         $"re_{DateTime.Now:yyyy-MM-dd_HH-mm-ss}.png"));
+    //todo: make methods non-static
+    /// <summary>
+    /// Takes a screenshot of the current frame and saves it to the specified file.
+    /// </summary>
+    /// <param name="fileName">Path that screenshot will be saved to</param>
+    /// <returns>Absolute path to saved screenshot</returns>
     public static unsafe string TakeScreenshot(string fileName)
     {
         var a = new byte[Instance.ClientSize.X * Instance.ClientSize.Y * 3];
@@ -254,7 +290,7 @@ internal class Game : GameWindow
                 ImageLockMode.ReadOnly,
                 System.Drawing.Imaging.PixelFormat.Format32bppArgb);
 
-            System.Runtime.InteropServices.Marshal.Copy(bitmapData.Scan0, data, 0, data.Length);
+            Marshal.Copy(bitmapData.Scan0, data, 0, data.Length);
             bitmap.UnlockBits(bitmapData);
 
             for (int i = 0; i < data.Length; i += 4)
