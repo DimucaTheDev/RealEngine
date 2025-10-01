@@ -16,6 +16,8 @@ namespace RE.Core.Assets
     public partial class Shader : DynamicAsset
     {
         private static readonly List<Shader> CompiledShaders = [];
+        private static HashSet<string> _seenDecl = new(); // this hash set stores var's names to prevent variable dupe
+
 
         /// <summary>
         /// Initializes a new instance of the Shader class using the specified file path.
@@ -110,6 +112,7 @@ namespace RE.Core.Assets
             }
             var content = File.ReadAllText(AssetPath!);
 
+            _seenDecl = new HashSet<string>();
             content = PreprocessShader(content, AssetPath);
 
             GL.ShaderSource(Handle, content);
@@ -172,6 +175,14 @@ namespace RE.Core.Assets
                 {
                     if (excludeVersionHeader && line.StartsWith("#version"))
                         continue;
+                    if (line.StartsWith("in ") || line.StartsWith("out ") || line.StartsWith("uniform "))
+                    {
+                        if (!_seenDecl.Add(line.Trim()))
+                        { 
+                            Log.Warning("Duplicate shader declaration skipped: {Line}", line.Trim());
+                            continue;
+                        }
+                    }
                     finalShader.AppendLine(line);
                 }
             }

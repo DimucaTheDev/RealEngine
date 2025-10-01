@@ -1,4 +1,8 @@
-﻿using OpenTK.Mathematics;
+﻿using System.Reflection;
+using OpenTK.Graphics.OpenGL4;
+using OpenTK.Mathematics;
+using RE.Rendering.Lightning;
+using RE.Utils;
 using GL = OpenTK.Graphics.OpenGL4.GL;
 using Log = Serilog.Log;
 
@@ -108,6 +112,65 @@ namespace RE.Core.Assets
 
                 default:
                     throw new NotSupportedException($"Uniform doesn't support {typeof(T)}");
+            }
+        }
+
+        public void SetStructArray<T>(string varName, IEnumerable<T> values)
+        {
+            var valArray = values as T[] ?? values.ToArray();
+
+            if (valArray.Length == 0)
+                return;
+
+            var methodInfo = GetType().GetMethod(nameof(SetValue));
+
+            foreach (var prop in typeof(T).GetProperties())
+            {
+                var propNameAttr = prop.GetCustomAttribute<GlPropertyNameAttribute>();
+                var propName = propNameAttr?.PropertyName ?? prop.Name;
+                var method = methodInfo?.MakeGenericMethod(prop.PropertyType); 
+
+                for (int i = 0; i < valArray.Length; i++)
+                {
+                    var propValue = prop.GetValue(valArray[i]);
+
+                    string uniformName = $"{varName}[{i}].{propName}";
+
+                    if (propValue is null)
+                        continue;
+                     
+                    method?.Invoke(this, [uniformName, propValue]);
+                }
+            }
+        }
+        //todo: needs investigation. do we really need nameless vars?
+        private void SetStructArray<T>(IEnumerable<T> values)
+        {
+            var structNameAttr = typeof(T).GetCustomAttribute<GlStructNameAttribute>();
+            var structName = structNameAttr?.StructureName ?? typeof(T).Name;
+            SetStructArray(structName, values);
+        }
+        public void SetStruct<T>(string varName, T value) where T : struct
+        {
+            //var structNameAttr = typeof(T).GetCustomAttribute<GlStructNameAttribute>();
+            string structName = varName;//structNameAttr?.StructureName ?? typeof(T).Name;
+
+            foreach (var prop in typeof(T).GetProperties())
+            {
+                var propNameAttr = prop.GetCustomAttribute<GlPropertyNameAttribute>();
+                var propName = propNameAttr?.PropertyName ?? prop.Name; 
+
+                string uniformName = $"{structName}.{propName}";
+                object? propValue = prop.GetValue(value);
+
+                if (propValue is null)
+                    continue;
+                 
+                var method = GetType()
+                    .GetMethod(nameof(SetValue))?
+                    .MakeGenericMethod(propValue.GetType());
+
+                method?.Invoke(this, [uniformName, propValue]);
             }
         }
 

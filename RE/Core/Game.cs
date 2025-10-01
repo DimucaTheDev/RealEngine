@@ -155,10 +155,13 @@ internal class Game : GameWindow
             Wireframe = !Wireframe;
         GL.PolygonMode(TriangleFace.FrontAndBack, Wireframe ? PolygonMode.Line : PolygonMode.Fill);
 
+        
         base.OnRenderFrame(args);
-
+        
         RenderManager.RenderAll(args);
         SwapBuffers();
+
+
 
         if (KeyboardState.IsKeyPressed(Keys.F11))
             Game.Instance.ToggleFullscreen();

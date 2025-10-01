@@ -38,6 +38,7 @@ namespace RE.Utils
         // Conversions
 
         public static OpenTK.Mathematics.Vector3 ToOpenTkVector3(this BulletSharp.Math.Vector3 v) => new(v.X, v.Y, v.Z);
+        public static OpenTK.Mathematics.Vector3 ToOpenTkVector3(this Assimp.Vector3D v) => new(v.X, v.Y, v.Z);
         public static OpenTK.Mathematics.Vector4 ToOpenTkVector4(this BulletSharp.Math.Vector4 v) => new(v.X, v.Y, v.Z, v.W);
         public static OpenTK.Mathematics.Quaternion ToOpenTkQuaternion(this BulletSharp.Math.Quaternion q) => new(q.X, q.Y, q.Z, q.W);
         public static BulletSharp.Math.Vector3 ToBulletVector3(this OpenTK.Mathematics.Vector3 v) => new(v.X, v.Y, v.Z);

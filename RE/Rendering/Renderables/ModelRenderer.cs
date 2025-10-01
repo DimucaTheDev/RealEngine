@@ -1,14 +1,20 @@
 ﻿using System.Diagnostics;
 using System.Globalization;
 using Assimp;
+using Assimp.Unmanaged;
 using OpenTK.Graphics.OpenGL4;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
+using RE.Core;
+using RE.Core.Assets;
+using RE.Debug;
+using RE.Rendering.Lightning;
 using RE.Rendering.Renderables.ModelFormat;
 using RE.Rendering.Text;
 using RE.Utils;
 using Serilog;
 using StbImageSharp;
+using Material = RE.Rendering.Lightning.Material;
 using PrimitiveType = OpenTK.Graphics.OpenGL4.PrimitiveType;
 using Quaternion = OpenTK.Mathematics.Quaternion;
 
@@ -20,7 +26,7 @@ namespace RE.Rendering.Renderables
         private static readonly FreeTypeFont Font = new(32, "Assets/Fonts/consola.ttf");
         private static readonly Dictionary<string, uint> TextureCache = new();
         private static readonly Dictionary<string, (uint vao, uint vbo, uint ebo, int indexCount, List<float> vertices, List<int> indices)> MeshCache = new();
-        private static int _sharedShader;
+        private static ShaderProgram _program;
         private static bool _shaderInitialized = false;
         private uint _vao, _vbo, _ebo, _texture;
         private int _indexCount;
@@ -43,9 +49,10 @@ namespace RE.Rendering.Renderables
         public bool Outline { get; set; }
         public override RenderLayer RenderLayer => RenderLayer.World;
         public override bool IsVisible { get; set; } = true;
+
         public Vector3 Position
         {
-            get => field;
+            get;
             set
             {
                 if (_noModelSprite != null)
@@ -55,6 +62,7 @@ namespace RE.Rendering.Renderables
                 field = value;
             }
         }
+
         public bool ShouldCull { get; set; } = true;
         public Quaternion Rotation { get; set; }
         public Vector3 Scale { get; set; }
@@ -98,7 +106,6 @@ namespace RE.Rendering.Renderables
 
         public override void Render(FrameEventArgs args)
         {
-
             Matrix4 model =
                 Matrix4.CreateScale(Scale) *
                 Matrix4.CreateFromQuaternion(Rotation) *
@@ -107,22 +114,38 @@ namespace RE.Rendering.Renderables
             Matrix4 view = Camera.Instance.GetViewMatrix();
             Matrix4 proj = Camera.Instance.GetProjectionMatrix();
 
-            GL.UseProgram(_sharedShader);
-            GL.UniformMatrix4(GL.GetUniformLocation(_sharedShader, "model"), false, ref model);
-            GL.UniformMatrix4(GL.GetUniformLocation(_sharedShader, "view"), false, ref view);
-            GL.UniformMatrix4(GL.GetUniformLocation(_sharedShader, "projection"), false, ref proj);
-
             GL.ActiveTexture(TextureUnit.Texture0);
             GL.BindTexture(TextureTarget.Texture2D, _texture);
-            GL.Uniform1(GL.GetUniformLocation(_sharedShader, "tex"), 0);
+            //todo: same for Texture1 and specular map
+
+
+            _program.Use();
+            _program.SetValue("model", model);
+            _program.SetValue("view", view);
+            _program.SetValue("projection", proj);
+            // _program.SetValue("tex", 0);
+            _program.SetValue("viewPos", Camera.Instance.Position);
+
+            _program.SetValue("material.diffuse", 0);
+            _program.SetValue("material.shininess", 32.0f);
+            _program.SetValue("spotLight.position", Camera.Instance.Position);
+            _program.SetValue("spotLight.direction", Camera.Instance.Front);
+            _program.SetValue("spotLight.ambient", new Vector3(0.0f, 0.0f, 0.0f));
+            _program.SetValue("spotLight.diffuse", new Vector3(1.0f, 1.0f, 1.0f));
+            _program.SetValue("spotLight.specular", new Vector3(1.0f, 1.0f, 1.0f));
+            _program.SetValue("spotLight.constant", 1.0f);
+            _program.SetValue("spotLight.linear", 0.09f);
+            _program.SetValue("spotLight.quadratic", 0.032f);
+            _program.SetValue("spotLight.cutOff", MathF.Cos(MathHelper.DegreesToRadians(12.5f)));
+            _program.SetValue("spotLight.outerCutOff", MathF.Cos(MathHelper.DegreesToRadians(17.5f)));
 
             GL.BindVertexArray(_vao);
             if (Outline)
             {
                 GL.Enable(EnableCap.CullFace);
-                GL.CullFace(TriangleFace.Front); // отбрасываем передние грани, остаются задние
-                GL.Uniform1(GL.GetUniformLocation(_sharedShader, "outline"), 1);
-                GL.Uniform4(GL.GetUniformLocation(_sharedShader, "outlineColor"), OutlineColor);
+                GL.CullFace(TriangleFace.Front);
+                _program.SetValue("outline", 1);
+                _program.SetValue("outlineColor", OutlineColor);
                 GL.PolygonMode(TriangleFace.Back,
                     PolygonMode.Fill); //todo: render only back side monocolor. somewhy it doesnt work
             }
@@ -133,8 +156,7 @@ namespace RE.Rendering.Renderables
             {
                 GL.Disable(EnableCap.CullFace);
                 GL.PolygonMode(TriangleFace.FrontAndBack, PolygonMode.Fill);
-                GL.Uniform1(GL.GetUniformLocation(_sharedShader, "outline"), 0);
-
+                _program.SetValue("outline", 0);
             }
         }
 
@@ -169,8 +191,8 @@ namespace RE.Rendering.Renderables
             if (MeshCache.TryGetValue(path, out var meshData))
             {
                 (_vao, _vbo, _ebo, _indexCount, renderVertices, PhysicsIndices) = meshData;
-                PhysicsVertices = new float[renderVertices.Count / 5 * 3];
-                for (int i = 0, j = 0; i < renderVertices.Count; i += 5, j += 3)
+                PhysicsVertices = new float[renderVertices.Count / 8 * 3];
+                for (int i = 0, j = 0; i < renderVertices.Count; i += 8, j += 3)
                 {
                     PhysicsVertices[j] = renderVertices[i];
                     PhysicsVertices[j + 1] = renderVertices[i + 1];
@@ -190,9 +212,7 @@ namespace RE.Rendering.Renderables
                     return false;
                 }
 
-
                 Name = data.Name;
-
                 for (int i = 0; i < data.Vertices.Length; i++)
                 {
                     var v = data.Vertices[i];
@@ -210,6 +230,21 @@ namespace RE.Rendering.Renderables
                     }
                     else
                     {
+                        renderVertices.Add(0.0f);
+                        renderVertices.Add(0.0f);
+                    }
+
+                    if (data.Normals != null && i < data.Normals.Length)
+                    {
+                        Vector3 rv = new(data.Normals[i].X, data.Normals[i].Y, data.Normals[i].Z);
+
+                        rv = Vector3.Transform(rv, Quaternion.FromAxisAngle(Vector3.UnitX, MathHelper.DegreesToRadians(-90.0f)));
+
+                        renderVertices.AddRange(rv.X, rv.Y, rv.Z);
+                    }
+                    else
+                    {
+                        renderVertices.Add(0.0f);
                         renderVertices.Add(0.0f);
                         renderVertices.Add(0.0f);
                     }
@@ -238,10 +273,18 @@ namespace RE.Rendering.Renderables
                 GL.BindBuffer(BufferTarget.ElementArrayBuffer, _ebo);
                 GL.BufferData(BufferTarget.ElementArrayBuffer, indices.Count * sizeof(uint), indices.ToArray(), BufferUsageHint.StaticDraw);
 
-                GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, 5 * sizeof(float), 0);
+
+                // позиции
+                GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, 8 * sizeof(float), 0);
                 GL.EnableVertexAttribArray(0);
-                GL.VertexAttribPointer(1, 2, VertexAttribPointerType.Float, false, 5 * sizeof(float), 3 * sizeof(float));
+
+                // uv
+                GL.VertexAttribPointer(1, 2, VertexAttribPointerType.Float, false, 8 * sizeof(float), 3 * sizeof(float));
                 GL.EnableVertexAttribArray(1);
+
+                // нормали
+                GL.VertexAttribPointer(2, 3, VertexAttribPointerType.Float, false, 8 * sizeof(float), 5 * sizeof(float));
+                GL.EnableVertexAttribArray(2);
 
                 GL.BindVertexArray(0);
 
@@ -264,7 +307,7 @@ namespace RE.Rendering.Renderables
                 }
                 catch (Exception ex)
                 {
-                    Log.Error(ex, "Failed to load model {ModelName} at {Path}", Name, path);
+                    Log.Error(ex, "Assimp failed to load model {ModelName} at {Path}", Name, path);
                     _exception = ex.Message;
                     return false;
                 }
@@ -309,7 +352,12 @@ namespace RE.Rendering.Renderables
                         ? mesh.TextureCoordinateChannels[0][i]
                         : new Vector3D(0, 0, 0);
 
-                    renderVertices.AddRange([opentkPos.X, opentkPos.Y, opentkPos.Z, uv.X, uv.Y]);
+                    var normal = mesh.HasNormals ? mesh.Normals[i].ToOpenTkVector3() : new(0, 0, 1);
+
+                    normal = Vector3.Transform(normal, Quaternion.FromAxisAngle(Vector3.UnitX, MathHelper.DegreesToRadians(-90.0f)));
+
+                    renderVertices.AddRange([opentkPos.X, opentkPos.Y, opentkPos.Z, uv.X, uv.Y, normal.X, normal.Y, normal.Z]);
+
 
                     physicsVerticesTemp.AddRange([opentkPos.X, opentkPos.Y, opentkPos.Z]);
                 }
@@ -333,12 +381,18 @@ namespace RE.Rendering.Renderables
                 GL.BufferData(BufferTarget.ElementArrayBuffer, indices.Count * sizeof(uint), indices.ToArray(),
                     BufferUsageHint.StaticDraw);
 
-                GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, 5 * sizeof(float), 0);
+                // позиции
+                GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, 8 * sizeof(float), 0);
                 GL.EnableVertexAttribArray(0);
-                GL.VertexAttribPointer(1, 2, VertexAttribPointerType.Float, false, 5 * sizeof(float),
-                    3 * sizeof(float));
+
+                // uv
+                GL.VertexAttribPointer(1, 2, VertexAttribPointerType.Float, false, 8 * sizeof(float), 3 * sizeof(float));
                 GL.EnableVertexAttribArray(1);
-                GL.BindVertexArray(0);
+
+                // нормали
+                GL.VertexAttribPointer(2, 3, VertexAttribPointerType.Float, false, 8 * sizeof(float), 5 * sizeof(float));
+                GL.EnableVertexAttribArray(2);
+
 
                 MeshCache[path] = ((uint)_vao, (uint)_vbo, (uint)_ebo, _indexCount, renderVertices,
                     indices.Select(s => (int)s).ToList());
@@ -422,30 +476,9 @@ namespace RE.Rendering.Renderables
             if (_shaderInitialized)
                 return;
 
-            string vertexShaderSrc = File.ReadAllText("assets/shaders/assimp.vert");
-            string fragmentShaderSrc = File.ReadAllText("assets/shaders/assimp.frag");
-
-            int vs = GL.CreateShader(ShaderType.VertexShader);
-            GL.ShaderSource(vs, vertexShaderSrc);
-            GL.CompileShader(vs);
-            GL.GetShader(vs, ShaderParameter.CompileStatus, out var status);
-            if (status == 0)
-                throw new Exception(GL.GetShaderInfoLog(vs));
-
-            int fs = GL.CreateShader(ShaderType.FragmentShader);
-            GL.ShaderSource(fs, fragmentShaderSrc);
-            GL.CompileShader(fs);
-            GL.GetShader(fs, ShaderParameter.CompileStatus, out status);
-            if (status == 0)
-                throw new Exception(GL.GetShaderInfoLog(fs));
-
-            _sharedShader = GL.CreateProgram();
-            GL.AttachShader(_sharedShader, vs);
-            GL.AttachShader(_sharedShader, fs);
-            GL.LinkProgram(_sharedShader);
-
-            GL.DeleteShader(vs);
-            GL.DeleteShader(fs);
+            _program = new();
+            _program.AttachShader("assets/shaders/assimp.vert");
+            _program.AttachShader("assets/shaders/assimp.frag");
 
             _shaderInitialized = true;
         }
@@ -461,8 +494,6 @@ namespace RE.Rendering.Renderables
             GL.DeleteBuffer(_vbo);
             GL.DeleteBuffer(_ebo);
             GL.DeleteTexture(_texture);
-            GL.DeleteProgram(_sharedShader);
         }
     }
-
 }
