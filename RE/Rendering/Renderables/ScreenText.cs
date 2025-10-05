@@ -8,12 +8,12 @@ using System.Diagnostics;
 
 namespace RE.Rendering.Renderables;
 
-[DebuggerDisplay("Text: \"{Content}\"")]
+[DebuggerDisplay("Text: \"{Text}\"")]
 internal class ScreenText : Renderable
 {
     public ScreenText(string? content, Vector2 position, FreeTypeFont font)
     {
-        Content = content ?? "";
+        Text = content ?? "";
         Position = position;
         Font = font;
     }
@@ -43,7 +43,7 @@ internal class ScreenText : Renderable
         Direction = direction;
     }
 
-    public string Content { get; set; }
+    public string Text { get; set; }
     public Vector2 Position { get; set; }
     public float Scale { get; set; } = 1.0f;
     public Vector4 Color { get; set; } = new(0, 0, 0, 1);
@@ -72,6 +72,6 @@ internal class ScreenText : Renderable
     {
         if (!IsVisible) return;
         GL.Uniform4(3, Color);
-        Font.RenderText(Content, Position.X, Position.Y, Scale, Direction);
+        Font.RenderText(Text, Position.X, Position.Y, Scale, Direction);
     }
 }

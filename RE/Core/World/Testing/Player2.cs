@@ -1,5 +1,6 @@
 ﻿using OpenTK.Windowing.Common;
 using RE.Core.World.Components;
+using RE.Core.World.Components.Physics;
 using RE.Rendering;
 
 namespace RE.Core.World.Testing

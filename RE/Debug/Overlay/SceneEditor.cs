@@ -12,6 +12,7 @@ using RE.Core.PluginSystem;
 using RE.Core.Scripting;
 using RE.Core.World;
 using RE.Core.World.Components;
+using RE.Core.World.Components.Lighting;
 using RE.Rendering;
 using RE.Rendering.Renderables;
 using RE.Utils;
@@ -318,7 +319,7 @@ namespace RE.Debug.Overlay
                 {
                     if (MenuItem("Open Docs"))
                     {
-                        Process.Start("explorer", "https://youtu.be/MAgroYfCwdI");
+                        Process.Start("explorer", "https://dimucathedev.github.io/RealEngine/docs/editor/about.md");
                     }
 
                     Separator();
@@ -569,13 +570,14 @@ namespace RE.Debug.Overlay
         {
             foreach (var com in obj.Components.ToList())
             {
-                if (TreeNodeEx(AddSpacesToCamelCase(com.GetType().Name.Replace("Component", "")),
+                var type = com.GetType();
+                if (TreeNodeEx(AddSpacesToCamelCase(type.Name.Replace("Component", "")),
                         ImGuiTreeNodeFlags.OpenOnArrow))
                 {
                     BindingFlags flags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance |
                                          BindingFlags.Static;
 
-                    foreach (var method in com.GetType().GetMethods(flags)
+                    foreach (var method in type.GetMethods(flags)
                                  .Where(s => s.GetCustomAttribute<EditorButtonAttribute>() != null))
                     {
                         if (Button(AddSpacesToCamelCase(method.GetCustomAttribute<EditorButtonAttribute>()?.ShownText ??
@@ -616,9 +618,56 @@ namespace RE.Debug.Overlay
                             }
                         }
 
-                        foreach (var prop in com.GetType().GetProperties(flags)
+                        foreach (var prop in type.GetProperties(flags)
                                      .Where(s => s.GetCustomAttribute<EditorPropertyAttribute>() != null))
                         {
+                            var ifs = prop.GetCustomAttributes<IfAttribute>();
+                            if (ifs.Any())
+                            {
+                                if (!ifs.All(att =>
+                                    {
+                                        try
+                                        {
+                                            var propInfo = type.GetProperty(att.Name)!;
+                                            var propValue = propInfo.GetValue(com);
+                                            var expected = Convert.ChangeType(att.Value, propInfo.PropertyType);
+
+                                            return Equals(propValue, expected); 
+                                        }
+                                        catch
+                                        {
+                                            Log.Error("{AttributeName} links to property {Name} that does not exist!", nameof(IfAttribute), att.Name);
+                                            throw;
+                                        }
+                                    }))
+                                {
+                                    continue;
+                                }
+                            }
+                            var ifns = prop.GetCustomAttributes<IfNotAttribute>();
+                            if (ifns.Any())
+                            {
+                                if (!ifns.All(att =>
+                                    {
+                                        try
+                                        {
+                                            var propInfo = type.GetProperty(att.Name)!;
+                                            var propValue = propInfo.GetValue(com);
+                                            var expected = Convert.ChangeType(att.Value, propInfo.PropertyType);
+
+                                            return !Equals(propValue, expected);
+                                        }
+                                        catch
+                                        {
+                                            Log.Error("{AttributeName} links to property {Name} that does not exist!", nameof(IfNotAttribute), att.Name);
+                                            throw;
+                                        }
+                                    }))
+                                {
+                                    continue;
+                                }
+                            }
+
                             EditorPropertyAttribute attr;
                             TableNextRow();
                             TableSetColumnIndex(0);
@@ -823,7 +872,7 @@ namespace RE.Debug.Overlay
             }
         }
 
-        private static int val_i = 0;
+        private static int val_i = 0, val_enum = 0;
         private static bool val_b = false, val_b_temp;
         private static float val_x = 0, val_y = 0, val_z = 0, val_f = 0;
         private static string val_str = "";
@@ -945,19 +994,37 @@ namespace RE.Debug.Overlay
                         CloseCurrentPopup();
                     }
                 }
-                else if (prop.PropertyType == typeof(bool))
+                else if (prop.PropertyType.IsEnum)
                 {
-                    Checkbox("Value:", ref val_b);
+                    var values = Enum.GetValues(prop.PropertyType);
+                    var names = Enum.GetNames(prop.PropertyType);
+
+                    int currentIndex = val_enum;
+
+                    if (BeginCombo("Value:", names[currentIndex]))
+                    {
+                        for (int i = 0; i < values.Length; i++)
+                        {
+                            bool isSelected = i == currentIndex;
+                            if (Selectable(names[i], isSelected))
+                            {
+                                currentIndex = i;
+                                val_enum = (int)(values.GetValue(i)!);
+                            }
+
+                            if (isSelected)
+                                SetItemDefaultFocus();
+                        }
+                        EndCombo();
+                    }
+
                     if (Button("Apply"))
                     {
-                        prop.SetValue(instance, val_b);
+                        prop.SetValue(instance, val_enum);
                         CloseCurrentPopup();
                     }
                 }
-                else
-                {
-                    throw new();
-                }
+
 
                 SameLine();
                 if (Button("Cancel"))

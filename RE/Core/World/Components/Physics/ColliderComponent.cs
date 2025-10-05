@@ -7,7 +7,7 @@ using RE.Core.World.Physics;
 using RE.Debug;
 using RE.Utils;
 
-namespace RE.Core.World.Components
+namespace RE.Core.World.Components.Physics
 {
     internal abstract class ColliderComponent : Component, IPhysicsComponent
     {
@@ -94,10 +94,10 @@ namespace RE.Core.World.Components
         public override void Render(FrameEventArgs args)
         {
             if (_rigidBody is { IsInWorld: true } && Variables.GetVariable("renderColliderBorders") is true)
-                DrawRigidBodyBounds(_rigidBody, LineManager.Main!);
+                DrawRigidBodyBounds(_rigidBody, LineRenderer.Main!);
         }
 
-        void DrawRigidBodyBounds(RigidBody body, LineManager lineManager)
+        void DrawRigidBodyBounds(RigidBody body, LineRenderer lineRenderer)
         {
             // Check if the shape is a BoxShape, as this method is specific to drawing boxes
             if (body.CollisionShape is BoxShape boxShape)
@@ -148,7 +148,7 @@ namespace RE.Core.World.Components
                     var start = worldCorners[edges[i, 0]];
                     var end = worldCorners[edges[i, 1]];
                     var c = new Vector4(1, 0, 0, 1);
-                    lineManager.RenderLine(start, end, c, c);
+                    lineRenderer.RenderLine(start, end, c, c);
                 }
             }
             else
@@ -174,7 +174,7 @@ namespace RE.Core.World.Components
                 {
                     var start = aabbWorldCorners[edges[i, 0]];
                     var end = aabbWorldCorners[edges[i, 1]];
-                    lineManager.RenderLine(start, end, new(0.5f, 0.5f, 0.5f, 1), new(0.5f, 0.5f, 0.5f, 1));
+                    lineRenderer.RenderLine(start, end, new(0.5f, 0.5f, 0.5f, 1), new(0.5f, 0.5f, 0.5f, 1));
                 }
             }
         }

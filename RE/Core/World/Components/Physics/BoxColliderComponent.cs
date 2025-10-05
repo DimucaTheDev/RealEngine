@@ -3,7 +3,7 @@ using BulletSharp;
 using RE.Core.Scripting;
 using RE.Utils;
 
-namespace RE.Core.World.Components
+namespace RE.Core.World.Components.Physics
 {
     [ComponentInfo("Physics/Collision")]
     internal class BoxColliderComponent : ColliderComponent

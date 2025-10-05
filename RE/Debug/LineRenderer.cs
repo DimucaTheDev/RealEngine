@@ -7,22 +7,24 @@ using RE.Rendering;
 
 namespace RE.Debug;
 
-public class LineManager : Renderable
+public class LineRenderer : Renderable
 {
     //REMOVE AND REMAKE!!!
-    public LineManager() => Init();
+    public LineRenderer() => Init();
 
-    public static LineManager? Main
+    public static LineRenderer? Main
     {
-        get => field ??= new LineManager();
+        get => field ??= new LineRenderer();
         private set;
     } = null!;
+
+    public static void DrawLine(Vector3 start, Vector3 end, Vector4 colorStart, Vector4 colorEnd) => Main?.RenderLine(start, end, colorStart, colorEnd);
+
 
     private readonly List<LineEntry> _lines = new();
     private int _nextId;
     private readonly HashSet<int> _toRemove = new();
     private int _vao, _vbo, _shader;
-    private readonly List<Vertex> _vertices = new();
 
     public void Dispose()
     {
@@ -148,7 +150,7 @@ public class LineManager : Renderable
     public int AddLine(Vector3 start, Vector3 end, Vector4 colorStart, Vector4 colorEnd, int msRemove = 10000)
     {
         //    if (!_inited)
-        //        throw new InvalidOperationException("LineManager is not initialized. Call Init() first.");
+        //        throw new InvalidOperationException("LineRenderer is not initialized. Call Init() first.");
 
 
         var id = _nextId++;

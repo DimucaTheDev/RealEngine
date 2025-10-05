@@ -6,6 +6,7 @@ using RE.Core;
 using RE.Core.Scripting;
 using RE.Core.World;
 using RE.Core.World.Components;
+using RE.Core.World.Components.Physics;
 
 namespace RE.Rendering;
 

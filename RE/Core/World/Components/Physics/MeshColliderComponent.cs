@@ -3,7 +3,7 @@ using BulletSharp;
 using OpenTK.Mathematics;
 using RE.Core.Scripting;
 
-namespace RE.Core.World.Components
+namespace RE.Core.World.Components.Physics
 {
     [ComponentInfo("Physics/Collision", Description = "Mesh collider intended for static objects only (non-movable collision shape based on triangle mesh)")]
     internal class MeshColliderComponent : ColliderComponent

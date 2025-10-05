@@ -1,5 +1,7 @@
-﻿using RE.Debug;
+﻿using OpenTK.Mathematics;
+using RE.Debug;
 using RE.Rendering;
+using RE.Rendering.Lightning;
 
 namespace RE.Core.World
 {
@@ -10,6 +12,7 @@ namespace RE.Core.World
     {
         public string? Name { get; set; }
         public GameObjectList GameObjects { get; } = new();
+        public DirectionalLight? SunLight { get; set; } = null; // scene doesnt has sun by default.. maybe
 
         //TODO: rewrite method, remove "scene loaded"
         /// <remarks>

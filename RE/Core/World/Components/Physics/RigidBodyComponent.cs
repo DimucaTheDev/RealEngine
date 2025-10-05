@@ -10,7 +10,7 @@ using RE.Rendering.Text;
 using RE.Utils;
 using Serilog;
 
-namespace RE.Core.World.Components
+namespace RE.Core.World.Components.Physics
 {
     [ComponentInfo("Physics", Description = "Represents a dynamic physics body with mass and velocity")]
     internal class RigidBodyComponent(float mass) : Component, IPhysicsComponent, IDebugRenderer

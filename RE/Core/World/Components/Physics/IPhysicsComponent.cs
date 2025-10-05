@@ -1,4 +1,4 @@
-﻿namespace RE.Core.World.Components
+﻿namespace RE.Core.World.Components.Physics
 {
     internal interface IPhysicsComponent
     {

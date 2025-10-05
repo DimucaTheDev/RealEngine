@@ -124,19 +124,19 @@ namespace RE.Core
                     float textY = (Game.Instance.ClientSize.Y - font.GetTextHeight(label)) / 2f + 50;
 
                     _textCurrentStep.Position = new(textX, textY);
-                    _textCurrentStep.Content = label;
+                    _textCurrentStep.Text = label;
 
                     float centerX = Game.Instance.ClientSize.X / 2f;
                     float centerY = Game.Instance.ClientSize.Y / 2f + 50;
 
-                    _textCurrentStep.Content = _currentStep;
+                    _textCurrentStep.Text = _currentStep;
                     _textCurrentStep.Position = new Vector2(centerX - font.GetTextWidth(_currentStep) / 2f, centerY);
 
                     for (int i = 0; i < _textPastSteps.Count; i++)
                     {
                         var txt = _textPastSteps[i];
                         float y = centerY + font.PixelHeight * (i + 1);
-                        txt.Position = new Vector2(centerX - font.GetTextWidth(txt.Content) / 2f, y);
+                        txt.Position = new Vector2(centerX - font.GetTextWidth(txt.Text) / 2f, y);
 
                         float t = i / (float)(MaxSteps - 1); //[0; 1]
                         float alpha = MathF.Pow(1f - t, 1.5f); // [0,18; 1]]
@@ -150,10 +150,10 @@ namespace RE.Core
                         txt.Color = txt.Color with { W = result };
                     }
 
-                    _textSteps.Content = $"{_step++}/{_steps}";
+                    _textSteps.Text = $"{_step++}/{_steps}";
                     _textSteps.Position =
-                        new Vector2((Game.Instance.ClientSize.X - font.GetTextWidth(_textSteps.Content)) / 2,
-                            (Game.Instance.ClientSize.Y - font.GetTextHeight(_textSteps.Content)) / 2 - 20 + 50);
+                        new Vector2((Game.Instance.ClientSize.X - font.GetTextWidth(_textSteps.Text)) / 2,
+                            (Game.Instance.ClientSize.Y - font.GetTextHeight(_textSteps.Text)) / 2 - 20 + 50);
 
                     _shouldExecuteAction = true;
                     _pendingAction = action;

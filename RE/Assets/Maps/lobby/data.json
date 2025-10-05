@@ -118,7 +118,13 @@
             "assets/models/cub.smdl"
           ]
         },
-        "BoxColliderComponent": {}
+        "BoxColliderComponent": {
+          "Multiplier": [
+            1,
+            1,
+            1
+          ]
+        }
       }
     },
     {
@@ -185,7 +191,13 @@
             "assets/models/button.smdl"
           ]
         },
-        "BoxColliderComponent": {},
+        "BoxColliderComponent": {
+          "Multiplier": [
+            1,
+            1,
+            1
+          ]
+        },
         "UsableComponent": {
           "args": [
             "level test"
@@ -252,7 +264,13 @@
             "assets/models/button.smdl"
           ]
         },
-        "BoxColliderComponent": {},
+        "BoxColliderComponent": {
+          "Multiplier": [
+            1,
+            1,
+            1
+          ]
+        },
         "UsableComponent": {
           "args": [
             "level test2"
@@ -296,7 +314,13 @@
             "assets/models/button.smdl"
           ]
         },
-        "BoxColliderComponent": {},
+        "BoxColliderComponent": {
+          "Multiplier": [
+            1,
+            1,
+            1
+          ]
+        },
         "UsableComponent": {
           "args": [
             "level test123"
@@ -340,7 +364,13 @@
             0
           ]
         },
-        "BoxColliderComponent": {},
+        "BoxColliderComponent": {
+          "Multiplier": [
+            1,
+            1,
+            1
+          ]
+        },
         "UsableComponent": {
           "args": [
             "level sound_test"
@@ -406,6 +436,118 @@
           "args": [
             "Assets\\Models\\krug.fbx"
           ]
+        }
+      }
+    },
+    {
+      "name": "Light point",
+      "tag": null,
+      "transform": {
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "components": {
+        "LightEmitterComponent": {
+          "LightType": 1,
+          "Direction": [
+            0,
+            0,
+            0
+          ],
+          "AmbientColor": [
+            0,
+            0,
+            0
+          ],
+          "DiffuseColor": [
+            0,
+            0,
+            0
+          ],
+          "SpecularColor": [
+            0,
+            0,
+            0
+          ],
+          "Position": [
+            0,
+            2.15,
+            0
+          ],
+          "Constant": 1,
+          "Linear": 0,
+          "Quadratic": 0,
+          "CutOff": 0,
+          "OuterCutOff": 0
+        }
+      }
+    },
+    {
+      "name": "Sun",
+      "tag": null,
+      "transform": {
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "components": {
+        "LightEmitterComponent": {
+          "LightType": 0,
+          "Direction": [
+            0,
+            0,
+            0
+          ],
+          "AmbientColor": [
+            0,
+            0,
+            0
+          ],
+          "DiffuseColor": [
+            0,
+            0,
+            0
+          ],
+          "SpecularColor": [
+            0,
+            0,
+            0
+          ],
+          "Position": [
+            0,
+            0,
+            0
+          ],
+          "Constant": 1,
+          "Linear": 0,
+          "Quadratic": 0,
+          "CutOff": 0,
+          "OuterCutOff": 0
         }
       }
     }

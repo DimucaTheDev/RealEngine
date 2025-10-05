@@ -1,5 +1,6 @@
 ﻿using OpenTK.Mathematics;
 using RE.Core.World.Components;
+using RE.Core.World.Components.Physics;
 using RE.Utils;
 
 namespace RE.Core.World

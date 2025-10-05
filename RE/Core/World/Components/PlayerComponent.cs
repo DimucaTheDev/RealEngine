@@ -6,6 +6,7 @@ using OpenTK.Windowing.Common;
 using OpenTK.Windowing.GraphicsLibraryFramework;
 using RE.Audio;
 using RE.Core.Scripting;
+using RE.Core.World.Components.Physics;
 using RE.Core.World.Physics;
 using RE.Debug;
 using RE.Debug.Overlay;

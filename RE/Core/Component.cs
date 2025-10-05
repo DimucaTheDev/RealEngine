@@ -1,6 +1,11 @@
-﻿using System.Text.Json.Nodes;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Reflection;
+using System.Text.Json.Nodes;
+using System.Text.Json.Serialization;
+using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using RE.Core.World;
+using RE.Utils;
 
 namespace RE.Core
 {
@@ -19,10 +24,12 @@ namespace RE.Core
         /// <summary>
         /// <see cref="GameObject"/> that this component is attached to.
         /// </summary>
+        [JsonIgnore]
         public GameObject Owner { get; internal set; } = null!;
         /// <summary>
         /// Whether this component should be stored when the scene is being saved (see <see cref="SceneManager.SaveScene"/>).
-        /// </summary> 
+        /// </summary>
+        [JsonIgnore]
         public bool SaveComponent { get; set; } = true;
 
         /// <typeparam name="T">Component type</typeparam>
@@ -38,6 +45,20 @@ namespace RE.Core
         /// <remarks>This method is not called if <see cref="SaveComponent"/> is set to <see langword="false"/></remarks>
         /// <returns><see cref="JsonNode"/> that contains saved data</returns>
         public abstract JsonNode GetSaveData();
+
+        protected JsonNode GetDataForProperties()
+        {
+            JsonObject obj = new();
+            var properties = GetType().GetProperties().Where(p => p is { CanRead: true, CanWrite: true });
+            foreach (var property in properties.Where(s => s.GetCustomAttribute<JsonIgnoreAttribute>() == null))
+            {
+                dynamic value = property.GetValue(this)!;
+                obj.Add(property.Name, value is Vector3 vector3 ? vector3.ToJsonArray() : JsonValue.Create(value));
+            }
+
+            return obj;
+        }
+
 
         //todo: rewrite logic of how these methods are called
         public virtual void OnComponentAdded() { }

@@ -17,6 +17,7 @@ using StbImageSharp;
 using Material = RE.Rendering.Lightning.Material;
 using PrimitiveType = OpenTK.Graphics.OpenGL4.PrimitiveType;
 using Quaternion = OpenTK.Mathematics.Quaternion;
+using TextRenderer = RE.Rendering.Text.TextRenderer;
 
 namespace RE.Rendering.Renderables
 {
@@ -70,6 +71,7 @@ namespace RE.Rendering.Renderables
         public string Name { get; set; }
         public float[]? PhysicsVertices { get; private set; }
         public List<int>? PhysicsIndices { get; private set; }
+        public Material Material { get; set; } = new();
 
         public ModelRenderer()
         {
@@ -123,21 +125,25 @@ namespace RE.Rendering.Renderables
             _program.SetValue("model", model);
             _program.SetValue("view", view);
             _program.SetValue("projection", proj);
-            // _program.SetValue("tex", 0);
-            _program.SetValue("viewPos", Camera.Instance.Position);
 
-            _program.SetValue("material.diffuse", 0);
-            _program.SetValue("material.shininess", 32.0f);
-            _program.SetValue("spotLight.position", Camera.Instance.Position);
-            _program.SetValue("spotLight.direction", Camera.Instance.Front);
-            _program.SetValue("spotLight.ambient", new Vector3(0.0f, 0.0f, 0.0f));
-            _program.SetValue("spotLight.diffuse", new Vector3(1.0f, 1.0f, 1.0f));
-            _program.SetValue("spotLight.specular", new Vector3(1.0f, 1.0f, 1.0f));
-            _program.SetValue("spotLight.constant", 1.0f);
-            _program.SetValue("spotLight.linear", 0.09f);
-            _program.SetValue("spotLight.quadratic", 0.032f);
-            _program.SetValue("spotLight.cutOff", MathF.Cos(MathHelper.DegreesToRadians(12.5f)));
-            _program.SetValue("spotLight.outerCutOff", MathF.Cos(MathHelper.DegreesToRadians(17.5f)));
+            // lighting.glsl
+            _program.SetValue("viewPos", Camera.Instance.Position);
+            _program.SetStruct("material", Material);
+            _program.SetStruct("spotLight", new SpotLight()
+            {
+                Position = Camera.Instance.Position,
+                Direction = Camera.Instance.Front,
+                DiffuseColor = Vector3.One,
+                SpecularColor = Vector3.One,
+                Constant = 1.0f,
+                Linear = 0.09f,
+                Quadratic = 0.032f,
+                CutOff = MathF.Cos(MathHelper.DegreesToRadians(12.5f)),
+                OuterCutOff = MathF.Cos(MathHelper.DegreesToRadians(17.5f))
+            });
+
+            if (Core.World.SceneManager.CurrentScene.SunLight != null)
+                _program.SetStruct("dirLight", Core.World.SceneManager.CurrentScene.SunLight.Value);
 
             GL.BindVertexArray(_vao);
             if (Outline)
@@ -146,8 +152,7 @@ namespace RE.Rendering.Renderables
                 GL.CullFace(TriangleFace.Front);
                 _program.SetValue("outline", 1);
                 _program.SetValue("outlineColor", OutlineColor);
-                GL.PolygonMode(TriangleFace.Back,
-                    PolygonMode.Fill); //todo: render only back side monocolor. somewhy it doesnt work
+                GL.PolygonMode(TriangleFace.Back, PolygonMode.Fill); //todo: render only back side monocolor. somewhy it doesnt work
             }
 
             GL.DrawElements(PrimitiveType.Triangles, _indexCount, DrawElementsType.UnsignedInt, 0);
@@ -158,8 +163,10 @@ namespace RE.Rendering.Renderables
                 GL.PolygonMode(TriangleFace.FrontAndBack, PolygonMode.Fill);
                 _program.SetValue("outline", 0);
             }
+           // LineRenderer.DrawLine(Position + (0, 2, 0) + dirLightDirection, Position + (0, 2, 0), new(1, 0, 0, 1), new(0, 0, 1, 1));
         }
 
+        private static int i = 0;
         public void SetTexture(uint texture)
         {
             _texture = texture;
@@ -274,7 +281,7 @@ namespace RE.Rendering.Renderables
                 GL.BufferData(BufferTarget.ElementArrayBuffer, indices.Count * sizeof(uint), indices.ToArray(), BufferUsageHint.StaticDraw);
 
 
-                // позиции
+                // pos
                 GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, 8 * sizeof(float), 0);
                 GL.EnableVertexAttribArray(0);
 
@@ -282,7 +289,7 @@ namespace RE.Rendering.Renderables
                 GL.VertexAttribPointer(1, 2, VertexAttribPointerType.Float, false, 8 * sizeof(float), 3 * sizeof(float));
                 GL.EnableVertexAttribArray(1);
 
-                // нормали
+                // normals
                 GL.VertexAttribPointer(2, 3, VertexAttribPointerType.Float, false, 8 * sizeof(float), 5 * sizeof(float));
                 GL.EnableVertexAttribArray(2);
 
@@ -317,7 +324,6 @@ namespace RE.Rendering.Renderables
 
                 if (!scene.Meshes.Any())
                     return false;
-
 
                 var mesh = scene.Meshes[0];
 
@@ -381,7 +387,7 @@ namespace RE.Rendering.Renderables
                 GL.BufferData(BufferTarget.ElementArrayBuffer, indices.Count * sizeof(uint), indices.ToArray(),
                     BufferUsageHint.StaticDraw);
 
-                // позиции
+                // pos
                 GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, 8 * sizeof(float), 0);
                 GL.EnableVertexAttribArray(0);
 
@@ -389,13 +395,24 @@ namespace RE.Rendering.Renderables
                 GL.VertexAttribPointer(1, 2, VertexAttribPointerType.Float, false, 8 * sizeof(float), 3 * sizeof(float));
                 GL.EnableVertexAttribArray(1);
 
-                // нормали
+                // normals
                 GL.VertexAttribPointer(2, 3, VertexAttribPointerType.Float, false, 8 * sizeof(float), 5 * sizeof(float));
                 GL.EnableVertexAttribArray(2);
 
 
                 MeshCache[path] = ((uint)_vao, (uint)_vbo, (uint)_ebo, _indexCount, renderVertices,
                     indices.Select(s => (int)s).ToList());
+
+                var mat = scene.Materials[mesh.MaterialIndex];
+                if (mat != null)
+                {
+                    Material = new Material
+                    {
+                        Shininess = mat.Shininess
+                    };
+                }
+                else
+                    Material = new Material();
 
                 PhysicsVertices = physicsVerticesTemp.ToArray();
                 PhysicsIndices = indices.Select(i => (int)i).ToList();

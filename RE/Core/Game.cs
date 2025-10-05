@@ -1,6 +1,8 @@
 ﻿using System.Drawing.Imaging;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Xml;
+using BulletSharp.SoftBody;
 using OpenTK.Graphics.OpenGL;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
@@ -103,6 +105,10 @@ internal class Game : GameWindow
 
     protected override void OnLoad()
     {
+        GL.Enable(EnableCap.DebugOutput);
+        GL.Enable(EnableCap.DebugOutputSynchronous);
+        GL.DebugMessageCallback(GlLogCallback, 0);
+
         RenderManager.Init();
         Time.Init();
         ImGuiController.Get();
@@ -113,7 +119,7 @@ internal class Game : GameWindow
         Initializer.AddStep(("Bootstrapping...", () =>
         {
             DebugOverlay.Init();
-            LineManager.Main!.StartRender();
+            LineRenderer.Main!.StartRender();
             ConsoleWindow.Init();
             SoundManager.Init();
             PhysicsManager.Init();
@@ -121,10 +127,11 @@ internal class Game : GameWindow
         ));
         Initializer.AddStep(("Registering Commands", CommandHandler.RegisterAllCommands));
         Initializer.AddStep(("Running default.cfg", () => { CommandHandler.ExecuteCommand("source assets/cfg/default.cfg"); }
-        ));
+        )); 
 
         base.OnLoad();
     }
+
     protected override void OnResize(ResizeEventArgs e)
     {
         Camera.Instance.AspectRatio = (float)e.Width / e.Height;
@@ -155,9 +162,9 @@ internal class Game : GameWindow
             Wireframe = !Wireframe;
         GL.PolygonMode(TriangleFace.FrontAndBack, Wireframe ? PolygonMode.Line : PolygonMode.Fill);
 
-        
+
         base.OnRenderFrame(args);
-        
+
         RenderManager.RenderAll(args);
         SwapBuffers();
 
@@ -274,6 +281,21 @@ internal class Game : GameWindow
         if (hasTemplate)
             Log.Information("Using log template from: {LogTemplatePath}", logTemplatePath);
     }
+
+    // OpenGL debug callback
+    private static void GlLogCallback(DebugSource source, DebugType type, int id, DebugSeverity severity, int length, IntPtr message, IntPtr userParam)
+    {
+        string msg = Marshal.PtrToStringAnsi(message, length);
+        Log.Write(severity switch
+        {
+            DebugSeverity.DontCare => Serilog.Events.LogEventLevel.Verbose,
+            DebugSeverity.DebugSeverityHigh => Serilog.Events.LogEventLevel.Error,
+            DebugSeverity.DebugSeverityMedium => Serilog.Events.LogEventLevel.Warning,
+            DebugSeverity.DebugSeverityLow => Serilog.Events.LogEventLevel.Information,
+            DebugSeverity.DebugSeverityNotification => Serilog.Events.LogEventLevel.Verbose,
+            _ => Serilog.Events.LogEventLevel.Information
+        }, "[{OpenGL}:{Type}] {Message}", "OpenGL", type, msg);
+    }
     private static WindowIcon? LoadIcon()
     {
         var path = "Assets/RealEngine2.ico";
@@ -295,7 +317,7 @@ internal class Game : GameWindow
 
             Marshal.Copy(bitmapData.Scan0, data, 0, data.Length);
             bitmap.UnlockBits(bitmapData);
-
+            
             for (int i = 0; i < data.Length; i += 4)
             {
                 byte a = data[i + 3];

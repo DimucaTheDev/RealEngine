@@ -4,6 +4,7 @@ using System.Text.Json.Nodes;
 using OpenTK.Mathematics;
 using RE.Core.PluginSystem;
 using Serilog;
+using static System.Windows.Forms.Design.AxImporter;
 using Quaternion = OpenTK.Mathematics.Quaternion;
 
 namespace RE.Core.World
@@ -92,8 +93,12 @@ namespace RE.Core.World
                 }
             }
             root.Add("objects", objects);
-
-            var jsonString = root.ToJsonString(new JsonSerializerOptions() { WriteIndented = true });
+            
+            var jsonString = root.ToJsonString(new JsonSerializerOptions()
+            {
+                WriteIndented = true,
+                TypeInfoResolver = new System.Text.Json.Serialization.Metadata.DefaultJsonTypeInfoResolver()
+            });
             string savedTo;
             if (jsonString.EndsWith(".json")) // a file
             {

@@ -32,7 +32,7 @@ public class RenderManager
     public static Dictionary<Type, Action> RenderablesInitActions = new();
     public static Dictionary<Type, Action> RenderablesPostActions = new();
     public static Plane[] FrustumPlanes = new Plane[6];
-    public static LineManager FrustumRenderer = new();
+    public static LineRenderer FrustumRenderer = new();
     public static List<Component> RenderingComponents = [];
 
     private static bool _hasCameraFrustum = false;

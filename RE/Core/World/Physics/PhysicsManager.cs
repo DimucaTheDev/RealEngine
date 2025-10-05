@@ -3,6 +3,7 @@ using OpenTK.Mathematics;
 using RE.Core.Assets;
 using RE.Core.Scripting;
 using RE.Core.World.Components;
+using RE.Core.World.Components.Physics;
 using RE.Debug.Overlay;
 using RE.Utils;
 using Log = Serilog.Log;
