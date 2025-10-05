@@ -12,7 +12,7 @@ namespace RE.Rendering.Renderables
     public class SpriteRenderer : Renderable
     {
         private readonly int _vao;
-        private readonly int _vbo; 
+        private readonly int _vbo;
         private int _texture;
         private float _texWidth = 0, _texHeight = 0;
         private readonly bool _constantSize;
@@ -26,6 +26,9 @@ namespace RE.Rendering.Renderables
         public override bool IsVisible { get; set; } = true;
         public string Path { get; set; }
         public float Scale { get; set; }
+        public bool LockRotationX { get; set; } = false;
+        public bool LockRotationY { get; set; } = false;
+        public bool LockRotationZ { get; set; } = false;
 
         public SpriteRenderer(Vector3 position, string spritePath = "Assets/Sprites/Editor/blank.png",
             bool constantSize = false, float scale = 1f)
@@ -82,34 +85,43 @@ namespace RE.Rendering.Renderables
 
             var up = Vector3.UnitY;
             var right = Vector3.Normalize(Vector3.Cross(up, lookDir));
-            var billboardUp = Vector3.Cross(lookDir, right);
+
+            if (LockRotationX)
+                right = new Vector3(1, 0, 0);
+            if (LockRotationY)
+                up = new Vector3(0, 1, 0);
+            if (LockRotationZ)
+                lookDir = new Vector3(0, 0, 1);
+
+            var billboard = new Matrix4(
+               new Vector4(right, 0),
+               new Vector4(up, 0),
+               new Vector4(-lookDir, 0),
+               new Vector4(0, 0, 0, 1)
+           );
 
             var aspectRatio = _texWidth / _texHeight;
-
-
-            var w = 1f;
-            var h = w / aspectRatio;
-
             var baseSize = 1.0f;
-            var distance = (Position - Camera.Instance.Position).Length;
+            var distance = (Position - camPos).Length;
             var scale = distance * baseSize;
-
             var size = 1.0f;
 
             var translateToCenter = Matrix4.CreateTranslation(-0.5f, -0.5f, 0f);
             var finalScale = _constantSize ? scale * Scale : size * Scale;
+
             var model =
-                translateToCenter *
-                Matrix4.CreateScale(finalScale, -finalScale / aspectRatio, 1f) *
-                Camera.Instance.GetBillboard(Position) *
-                Matrix4.CreateTranslation(Position);
+               translateToCenter *
+               Matrix4.CreateScale(finalScale, -finalScale / aspectRatio, 1f) *
+               billboard *
+               Matrix4.CreateTranslation(Position);
+
 
             var view = Camera.Instance.GetViewMatrix();
             var projection = Camera.Instance.GetProjectionMatrix();
 
-            GL.UniformMatrix4(GL.GetUniformLocation(_shaderProgram, "uModel"), false, ref model);
-            GL.UniformMatrix4(GL.GetUniformLocation(_shaderProgram, "uView"), false, ref view);
-            GL.UniformMatrix4(GL.GetUniformLocation(_shaderProgram, "uProjection"), false, ref projection);
+            _shaderProgram.SetValue("uModel", model);
+            _shaderProgram.SetValue("uView", view);
+            _shaderProgram.SetValue("uProjection", projection);
 
             GL.BindTexture(TextureTarget.Texture2D, _texture);
             GL.BindVertexArray(_vao);
@@ -164,6 +176,6 @@ namespace RE.Rendering.Renderables
 
             TextureCache.Add(path, (tex, image.Width, image.Height));
             return tex;
-        } 
-    } 
+        }
+    }
 }

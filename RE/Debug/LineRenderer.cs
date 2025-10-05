@@ -1,8 +1,10 @@
 ﻿using System.Runtime.InteropServices;
+using JetBrains.Annotations;
 using OpenTK.Graphics.OpenGL4;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using RE.Core;
+using RE.Core.Assets;
 using RE.Rendering;
 
 namespace RE.Debug;
@@ -24,7 +26,8 @@ public class LineRenderer : Renderable
     private readonly List<LineEntry> _lines = new();
     private int _nextId;
     private readonly HashSet<int> _toRemove = new();
-    private int _vao, _vbo, _shader;
+    private int _vao, _vbo;
+    private ShaderProgram _shaderProgram;
 
     public void Dispose()
     {
@@ -40,10 +43,10 @@ public class LineRenderer : Renderable
             _vbo = 0;
         }
 
-        if (_shader != 0)
+        if (_shaderProgram != 0)
         {
-            GL.DeleteProgram(_shader);
-            _shader = 0;
+            GL.DeleteProgram(_shaderProgram);
+            _shaderProgram = null!;
         }
     }
 
@@ -58,14 +61,13 @@ public class LineRenderer : Renderable
         if (_lines.Count == 0)
             return;
 
-        GL.UseProgram(_shader);
+        _shaderProgram.Use();
         var view = Camera.Instance.GetViewMatrix();
         var proj = Camera.Instance.GetProjectionMatrix();
 
-        GL.UniformMatrix4(GL.GetUniformLocation(_shader, "uView"), false, ref view);
-        GL.UniformMatrix4(GL.GetUniformLocation(_shader, "uProjection"), false, ref proj);
+        _shaderProgram.SetValue("uView", view);
+        _shaderProgram.SetValue("uProjection", proj);
 
-        // Собираем массив вершин из _lines
         var vertexData = new Vertex[_lines.Count * 2];
         for (var i = 0; i < _lines.Count; i++)
         {
@@ -84,14 +86,13 @@ public class LineRenderer : Renderable
 
     public void RenderLine(Vector3 start, Vector3 end, Vector4 colorStart, Vector4 colorEnd)
     {
-        GL.UseProgram(_shader);
+        _shaderProgram.Use();
         var view = Camera.Instance.GetViewMatrix();
         var proj = Camera.Instance.GetProjectionMatrix();
 
-        GL.UniformMatrix4(GL.GetUniformLocation(_shader, "uView"), false, ref view);
-        GL.UniformMatrix4(GL.GetUniformLocation(_shader, "uProjection"), false, ref proj);
+        _shaderProgram.SetValue("uView", view);
+        _shaderProgram.SetValue("uProjection", proj);
 
-        // Собираем массив вершин из _lines
         var vertexData = new Vertex[2];
         vertexData[0] = new Vertex { Position = start, Color = colorStart };
         vertexData[1] = new Vertex { Position = end, Color = colorEnd };
@@ -108,24 +109,9 @@ public class LineRenderer : Renderable
 
     public void Init()
     {
-        var vertexShaderSource = File.ReadAllText("Assets/shaders/line.vert");
-        var fragmentShaderSource = File.ReadAllText("Assets/shaders/line.frag");
-
-        var vertexShader = GL.CreateShader(ShaderType.VertexShader);
-        GL.ShaderSource(vertexShader, vertexShaderSource);
-        GL.CompileShader(vertexShader);
-
-        var fragmentShader = GL.CreateShader(ShaderType.FragmentShader);
-        GL.ShaderSource(fragmentShader, fragmentShaderSource);
-        GL.CompileShader(fragmentShader);
-
-        _shader = GL.CreateProgram();
-        GL.AttachShader(_shader, vertexShader);
-        GL.AttachShader(_shader, fragmentShader);
-        GL.LinkProgram(_shader);
-
-        GL.DeleteShader(vertexShader);
-        GL.DeleteShader(fragmentShader);
+        _shaderProgram = new ShaderProgram();
+        _shaderProgram.AttachShader("Assets/shaders/line.vert");
+        _shaderProgram.AttachShader("Assets/shaders/line.frag");
 
         _vao = GL.GenVertexArray();
         _vbo = GL.GenBuffer();
@@ -143,7 +129,6 @@ public class LineRenderer : Renderable
         GL.VertexAttribPointer(1, 4, VertexAttribPointerType.Float, false, stride, Vector3.SizeInBytes);
 
         GL.BindVertexArray(0);
-
     }
 
 
@@ -197,8 +182,8 @@ public class LineRenderer : Renderable
 
     private struct Vertex
     {
-        public Vector3 Position;
-        public Vector4 Color;
+        [UsedImplicitly] public Vector3 Position;
+        [UsedImplicitly] public Vector4 Color;
     }
 
     private class LineEntry

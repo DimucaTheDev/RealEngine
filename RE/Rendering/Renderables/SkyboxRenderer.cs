@@ -1,5 +1,6 @@
 ﻿using OpenTK.Graphics.OpenGL4;
 using OpenTK.Windowing.Common;
+using RE.Core.Assets;
 using Serilog;
 using SixLabors.ImageSharp.Processing;
 
@@ -7,22 +8,23 @@ namespace RE.Rendering.Renderables;
 
 internal class SkyboxRenderer : Renderable
 {
-    private static int _vao, _vbo, _handle;
+    private static int _vao, _vbo;
+    private static ShaderProgram _handle;
 
     private static readonly float[] _cubeVertices =
     [
         -1, 1, -1, -1, -1, -1, 1, -1, -1,
-        1, -1, -1, 1, 1, -1, -1, 1, -1, // задняя
+        1, -1, -1, 1, 1, -1, -1, 1, -1, 
         -1, -1, 1, -1, -1, -1, -1, 1, -1,
-        -1, 1, -1, -1, 1, 1, -1, -1, 1, // левая
+        -1, 1, -1, -1, 1, 1, -1, -1, 1, 
         1, -1, -1, 1, -1, 1, 1, 1, 1,
-        1, 1, 1, 1, 1, -1, 1, -1, -1, // правая
+        1, 1, 1, 1, 1, -1, 1, -1, -1,
         -1, -1, 1, -1, 1, 1, 1, 1, 1,
-        1, 1, 1, 1, -1, 1, -1, -1, 1, // передняя
+        1, 1, 1, 1, -1, 1, -1, -1, 1, 
         -1, 1, -1, 1, 1, -1, 1, 1, 1,
-        1, 1, 1, -1, 1, 1, -1, 1, -1, // верх
+        1, 1, 1, -1, 1, 1, -1, 1, -1,
         -1, -1, -1, -1, -1, 1, 1, -1, 1,
-        1, -1, 1, 1, -1, -1, -1, -1, -1 // низ
+        1, -1, 1, 1, -1, -1, -1, -1, -1 
     ];
     private static int _cubemap;
 
@@ -43,23 +45,22 @@ internal class SkyboxRenderer : Renderable
 
     public override void Render(FrameEventArgs args)
     {
-        GL.DepthMask(false); // не пишем в z-buffer
+        GL.DepthMask(false);
 
-        GL.UseProgram(_handle);
+        _handle.Use();
         var view = Camera.Instance.GetViewMatrix();
         var proj = Camera.Instance.GetProjectionMatrix();
         view.Row3.X = 0;
         view.Row3.Y = 0;
         view.Row3.Z = 0;
-        GL.UniformMatrix4(GL.GetUniformLocation(_handle, "view"), false, ref view);
-        GL.UniformMatrix4(GL.GetUniformLocation(_handle, "projection"), false, ref proj); // added ref
+        _handle.SetValue("view", view);
+        _handle.SetValue("projection", proj);
 
         GL.BindVertexArray(_vao);
 
         GL.ActiveTexture(TextureUnit.Texture0);
         GL.BindTexture(TextureTarget.TextureCubeMap, _cubemap);
-        GL.Uniform1(GL.GetUniformLocation(_handle, "skybox"), 0);
-
+        _handle.SetValue("skybox", 0);
 
         GL.DrawArrays(PrimitiveType.Triangles, 0, 36);
 
@@ -70,25 +71,9 @@ internal class SkyboxRenderer : Renderable
     {
         Instance = new SkyboxRenderer(); // added instance initialization
 
-        var vertexSource = File.ReadAllText("Assets/shaders/skybox.vert");
-        var fragmentSource = File.ReadAllText("Assets/shaders/skybox.frag");
-
-        var vertexShader = GL.CreateShader(ShaderType.VertexShader);
-        GL.ShaderSource(vertexShader, vertexSource);
-        GL.CompileShader(vertexShader);
-
-        var fragmentShader = GL.CreateShader(ShaderType.FragmentShader);
-        GL.ShaderSource(fragmentShader, fragmentSource);
-        GL.CompileShader(fragmentShader);
-
-        _handle = GL.CreateProgram();
-        GL.AttachShader(_handle, vertexShader);
-        GL.AttachShader(_handle, fragmentShader);
-        GL.LinkProgram(_handle);
-
-        GL.DeleteShader(vertexShader);
-        GL.DeleteShader(fragmentShader);
-
+        _handle = new();
+        _handle.AttachShader("Assets/shaders/skybox.vert");
+        _handle.AttachShader("Assets/shaders/skybox.frag");
 
         _vao = GL.GenVertexArray();
         _vbo = GL.GenBuffer();

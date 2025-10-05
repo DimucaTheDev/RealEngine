@@ -2,6 +2,7 @@
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using RE.Core;
+using RE.Core.Assets;
 using StbImageSharp;
 
 namespace RE.Rendering.Renderables;
@@ -13,7 +14,7 @@ public class ImageRenderer : Renderable
 {
     private int _texture;
     private int _vao, _vbo, _ebo;
-    private int _shaderProgram;
+    private ShaderProgram _shaderProgram;
     private string _pathToImg;
 
     public override RenderLayer RenderLayer => RenderLayer.UI;
@@ -81,28 +82,11 @@ public class ImageRenderer : Renderable
         GL.BindVertexArray(0);
     }
 
-    private int CompileShaders()
+    private ShaderProgram CompileShaders()
     {
-        string vertexShaderSrc = File.ReadAllText("assets/shaders/ui_image.vert");
-
-        string fragmentShaderSrc = File.ReadAllText("assets/shaders/ui_image.frag");
-
-        int vertexShader = GL.CreateShader(ShaderType.VertexShader);
-        GL.ShaderSource(vertexShader, vertexShaderSrc);
-        GL.CompileShader(vertexShader);
-
-        int fragmentShader = GL.CreateShader(ShaderType.FragmentShader);
-        GL.ShaderSource(fragmentShader, fragmentShaderSrc);
-        GL.CompileShader(fragmentShader);
-
-        int program = GL.CreateProgram();
-        GL.AttachShader(program, vertexShader);
-        GL.AttachShader(program, fragmentShader);
-        GL.LinkProgram(program);
-        GL.DetachShader(program, vertexShader);
-        GL.DetachShader(program, fragmentShader);
-        GL.DeleteShader(vertexShader);
-        GL.DeleteShader(fragmentShader);
+        ShaderProgram program = new();
+        program.AttachShader("assets/shaders/ui_image.vert");
+        program.AttachShader("assets/shaders/ui_image.frag");
 
         return program;
     }

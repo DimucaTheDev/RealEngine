@@ -2,6 +2,7 @@
 using OpenTK.Graphics.OpenGL4;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
+using RE.Core.Assets;
 using RE.Utils;
 
 namespace RE.Rendering.Renderables;
@@ -10,7 +11,7 @@ public class SphereLineRenderer : Renderable
 {
     private readonly int _vao;
     private readonly int _vbo;
-    private readonly int _shaderProgram;
+    private readonly ShaderProgram _shaderProgram;
     private Vector3[] _vertices;
 
     public override RenderLayer RenderLayer => RenderLayer.World;
@@ -42,46 +43,13 @@ public class SphereLineRenderer : Renderable
         _shaderProgram = CompileShader();
     }
 
-    private int CompileShader()
+    private ShaderProgram CompileShader()
     {
-        var vertexSource = File.ReadAllText("assets/shaders/circle.vert");
-
-        var fragmentSource = File.ReadAllText("assets/shaders/circle.frag");
-
-        int vertexShader = GL.CreateShader(ShaderType.VertexShader);
-        GL.ShaderSource(vertexShader, vertexSource);
-        GL.CompileShader(vertexShader);
-        CheckShaderCompile(vertexShader);
-
-        int fragmentShader = GL.CreateShader(ShaderType.FragmentShader);
-        GL.ShaderSource(fragmentShader, fragmentSource);
-        GL.CompileShader(fragmentShader);
-        CheckShaderCompile(fragmentShader);
-
-        int program = GL.CreateProgram();
-        GL.AttachShader(program, vertexShader);
-        GL.AttachShader(program, fragmentShader);
-        GL.LinkProgram(program);
-
-        GL.GetProgram(program, GetProgramParameterName.LinkStatus, out int status);
-        if (status == 0)
-            throw new Exception("Shader linking failed: " + GL.GetProgramInfoLog(program));
-
-        GL.DeleteShader(vertexShader);
-        GL.DeleteShader(fragmentShader);
-
-        return program;
-    }
-
-    private void CheckShaderCompile(int shader)
-    {
-        GL.GetShader(shader, ShaderParameter.CompileStatus, out int success);
-        if (success == 0)
-        {
-            var info = GL.GetShaderInfoLog(shader);
-            throw new Exception("Shader compile error: " + info);
-        }
-    }
+        ShaderProgram shaderProgram = new();
+        shaderProgram.AttachShader("assets/shaders/circle.vert");
+        shaderProgram.AttachShader("assets/shaders/circle.frag");
+        return shaderProgram;
+    } 
 
     public override void Render(FrameEventArgs args)
     {
@@ -90,9 +58,9 @@ public class SphereLineRenderer : Renderable
         GL.UseProgram(_shaderProgram);
         var viewMatrix = Camera.Instance.GetViewMatrix();
         var projectionMatrix = Camera.Instance.GetProjectionMatrix();
-        GL.UniformMatrix4(GL.GetUniformLocation(_shaderProgram, "uView"), false, ref viewMatrix);
-        GL.UniformMatrix4(GL.GetUniformLocation(_shaderProgram, "uProj"), false, ref projectionMatrix);
-        GL.Uniform4(GL.GetUniformLocation(_shaderProgram, "uColor"), Color);
+        _shaderProgram.SetValue("uView", viewMatrix);
+        _shaderProgram.SetValue("uProj", projectionMatrix);
+        _shaderProgram.SetValue("uColor", Color);
 
         GL.BindVertexArray(_vao);
         GL.BindBuffer(BufferTarget.ArrayBuffer, _vbo);
@@ -134,11 +102,7 @@ public class SphereLineRenderer : Renderable
             float y = MathF.Sin(angle) * Radius;
             _vertices[i] = Center + new Vector3(x, y, 0);
         }
-    }
-
-    [DllImport("NativeLibrary")]
-    internal static extern unsafe void NativeFunctionWithCallback(delegate* unmanaged[Swift]<int, int> callback);
-
+    } 
     public void Dispose()
     {
         this.StopRender();

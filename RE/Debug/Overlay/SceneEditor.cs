@@ -52,7 +52,10 @@ namespace RE.Debug.Overlay
         private static readonly ImFontPtr _bigFont;
         private static readonly ModelRenderer SelectedObjectOutline = new() { Outline = true };
         private static readonly SpriteRenderer SelectedObjectArrow = new(OpenTK.Mathematics.Vector3.PositiveInfinity,
-            "assets/sprites/editor/arrow_down.png");
+            "assets/sprites/editor/arrow_down.png")
+        {
+            LockRotationY = true
+        };
 
         private static readonly int LogoImage;
 
@@ -65,7 +68,7 @@ namespace RE.Debug.Overlay
                     var propertyInfo = typeof(Color4)
                         .GetProperty(e?.ToString() ?? "red",
                             BindingFlags.IgnoreCase | BindingFlags.Static | BindingFlags.Public)!;
-                    if (propertyInfo == null)
+                    if (propertyInfo == null!)
                     {
                         var props = typeof(Color4).GetProperties(BindingFlags.Static | BindingFlags.Public)
                             .Where(prop => prop.PropertyType == typeof(Color4));
@@ -224,6 +227,8 @@ namespace RE.Debug.Overlay
             // _scene.Dispose(); //todo: do something with thi shi 🥀
         }
 
+
+
         public override void Render(FrameEventArgs args)
         {
             if (SelectedObjectArrow != null!)
@@ -319,7 +324,7 @@ namespace RE.Debug.Overlay
                 {
                     if (MenuItem("Open Docs"))
                     {
-                        Process.Start("explorer", "https://dimucathedev.github.io/RealEngine/docs/editor/about.md");
+                        Process.Start("explorer", "https://dimucathedev.github.io/RealEngine/docs/editor/about.html");
                     }
 
                     Separator();

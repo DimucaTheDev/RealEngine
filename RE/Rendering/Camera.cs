@@ -1,4 +1,5 @@
 ﻿using ImGuiNET;
+using Microsoft.VisualBasic.Devices;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using OpenTK.Windowing.GraphicsLibraryFramework;
@@ -7,6 +8,7 @@ using RE.Core.Scripting;
 using RE.Core.World;
 using RE.Core.World.Components;
 using RE.Core.World.Components.Physics;
+using RE.Debug.Overlay;
 
 namespace RE.Rendering;
 
@@ -14,6 +16,7 @@ public class Camera
 {
     private const float MouseSensitivity = 0.2f;
     private Vector2 _lastMousePos;
+    private Vector2 _lastMouseDownPos;
 
     public bool FirstMove = true;
     public float AspectRatio;
@@ -50,20 +53,40 @@ public class Camera
         Game.Instance.CursorState = CursorState.Grabbed;
         Game.Instance.MouseMove += s => Instance.HandleMouseMove(s.X, s.Y);
         //Game.Instance.UpdateFrame += _ => Instance.HandleInput(Game.Instance.KeyboardState);
+        Game.Instance.MouseUp += args =>
+        {
+            if (SceneEditor.Enabled && args.Button == MouseButton.Button2)
+            {
+                Game.Instance.CursorState = CursorState.Normal;
+                Game.Instance.MousePosition = Instance._lastMouseDownPos;
+            }
+        };
         Game.Instance.MouseDown += args =>
         {
             if (ImGui.GetIO().WantCaptureMouse)
                 return;
 
+            if (SceneEditor.Enabled)
+            {
+                if (args.Button == MouseButton.Button2)
+                {
+                    Instance._lastMouseDownPos = Game.Instance.MousePosition;
+                    Game.Instance.CursorState = CursorState.Grabbed;
+                    Instance.FirstMove = true;
+                }
+
+                return;
+            }
+
             Game.Instance.CursorState = CursorState.Grabbed;
 
 
-            if (args.Button == MouseButton.Button2)
+            if (!SceneEditor.Enabled && args.Button == MouseButton.Button2)
             {
                 GameObject obj = new GameObject();
                 obj.Components.Add(new MeshComponent("assets/models/crate.fbx"));
 
-                Vector3 cameraFrontOpenTK = Instance.Front;
+                Vector3 front = Instance.Front;
 
                 obj.Components.Add(new BoxColliderComponent());
                 var rb = new RigidBodyComponent(20);
@@ -71,18 +94,16 @@ public class Camera
 
                 SceneManager.CurrentScene.GameObjects.Add(obj);
 
-                BulletSharp.Math.Vector3 cameraFrontBullet = new BulletSharp.Math.Vector3(cameraFrontOpenTK.X, cameraFrontOpenTK.Y, cameraFrontOpenTK.Z);
+                BulletSharp.Math.Vector3 cameraFrontBullet = new BulletSharp.Math.Vector3(front.X, front.Y, front.Z);
                 rb.RigidBody.Restitution = 0.2f;
                 rb.RigidBody.Friction = 1;
                 float impulseStrength = 5.0f;
                 BulletSharp.Math.Vector3 impulseVector = cameraFrontBullet * impulseStrength;
                 rb.RigidBody.ApplyImpulse(impulseVector, BulletSharp.Math.Vector3.Zero);
 
-                obj.SetPosition(2 * cameraFrontOpenTK + Instance.Position);
-
+                obj.SetPosition(2 * front + Instance.Position);
             }
         };
-
     }
 
     public void HandleMouseMove(float mouseX, float mouseY)

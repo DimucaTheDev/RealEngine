@@ -62,6 +62,7 @@
 		<PackageReference Include="FmodAudio" Version="2.2.5" />
 		<PackageReference Include="freetype" Version="2.8.0.1" />
 		<PackageReference Include="ImGui.NET" Version="1.90.0.1" />
+		<PackageReference Include="JetBrains.Annotations" Version="2025.2.2" />
 		<PackageReference Include="OpenCvSharp4" Version="4.11.0.20250507" />
 		<PackageReference Include="OpenCvSharp4.runtime.win" Version="4.11.0.20250507" />
 		<PackageReference Include="OpenTK" Version="4.9.4" />

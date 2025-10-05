@@ -256,7 +256,7 @@ internal class Game : GameWindow
     {
         string logTemplatePath = "Assets/logTemplate.txt";
         string[] args = Environment.GetCommandLineArgs();
-
+        //todo: add System.CommandLine
         for (int i = 0; i < args.Length; i++)
         {
             if (args[i] == "-log" && i + 1 < args.Length)

@@ -445,7 +445,7 @@
       "transform": {
         "position": [
           0,
-          0,
+          4.8,
           0
         ],
         "rotation": [
@@ -461,11 +461,11 @@
       },
       "components": {
         "LightEmitterComponent": {
-          "LightType": 1,
+          "LightType": 2,
           "Direction": [
-            0,
-            0,
-            0
+            -0,
+            -1,
+            -0
           ],
           "AmbientColor": [
             0,
@@ -473,25 +473,25 @@
             0
           ],
           "DiffuseColor": [
-            0,
-            0,
-            0
+            1,
+            1,
+            1
           ],
           "SpecularColor": [
-            0,
-            0,
-            0
+            1,
+            1,
+            1
           ],
           "Position": [
             0,
-            2.15,
+            0,
             0
           ],
           "Constant": 1,
-          "Linear": 0,
-          "Quadratic": 0,
-          "CutOff": 0,
-          "OuterCutOff": 0
+          "Linear": 0.09,
+          "Quadratic": 0.032,
+          "CutOff": 0.976296,
+          "OuterCutOff": 0.95371693
         }
       }
     },
