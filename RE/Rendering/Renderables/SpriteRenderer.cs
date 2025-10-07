@@ -80,40 +80,43 @@ namespace RE.Rendering.Renderables
         {
             _shaderProgram.Use();
 
-            var camPos = Camera.Instance.Position;
-            var lookDir = Vector3.Normalize(camPos - Position);
+            float aspectRatio = _texWidth / _texHeight;
+            float w = 1f;
+            float baseSize = 1.0f;
+            float distance = (Position - Camera.Instance.Position).Length;
+            float scale = distance * baseSize;
 
-            var up = Vector3.UnitY;
-            var right = Vector3.Normalize(Vector3.Cross(up, lookDir));
+            float size = 1.0f;
 
-            if (LockRotationX)
-                right = new Vector3(1, 0, 0);
-            if (LockRotationY)
-                up = new Vector3(0, 1, 0);
-            if (LockRotationZ)
-                lookDir = new Vector3(0, 0, 1);
+            Matrix4 translateToCenter = Matrix4.CreateTranslation(-0.5f, -0.5f, 0f);
+            float finalScale = _constantSize ? scale * Scale : size * Scale;
+            Matrix4 billboard = Camera.Instance.GetBillboard(Position);
 
-            var billboard = new Matrix4(
-               new Vector4(right, 0),
-               new Vector4(up, 0),
-               new Vector4(-lookDir, 0),
-               new Vector4(0, 0, 0, 1)
-           );
+            // lock axes
+            if (LockRotationX || LockRotationY || LockRotationZ)
+            {
+                // extract rotation basis
+                var right = billboard.Row0.Xyz;
+                var up = billboard.Row1.Xyz;
+                var forward = billboard.Row2.Xyz;
 
-            var aspectRatio = _texWidth / _texHeight;
-            var baseSize = 1.0f;
-            var distance = (Position - camPos).Length;
-            var scale = distance * baseSize;
-            var size = 1.0f;
+                if (LockRotationX)
+                    right = Vector3.UnitX;
+                if (LockRotationY)
+                    up = Vector3.UnitY;
+                if (LockRotationZ)
+                    forward = Vector3.UnitZ;
 
-            var translateToCenter = Matrix4.CreateTranslation(-0.5f, -0.5f, 0f);
-            var finalScale = _constantSize ? scale * Scale : size * Scale;
+                billboard.Row0.Xyz = right;
+                billboard.Row1.Xyz = up;
+                billboard.Row2.Xyz = forward;
+            }
 
-            var model =
-               translateToCenter *
-               Matrix4.CreateScale(finalScale, -finalScale / aspectRatio, 1f) *
-               billboard *
-               Matrix4.CreateTranslation(Position);
+            Matrix4 model =
+                translateToCenter *
+                Matrix4.CreateScale(finalScale, -finalScale / aspectRatio, 1f) *
+                billboard *
+                Matrix4.CreateTranslation(Position);
 
 
             var view = Camera.Instance.GetViewMatrix();

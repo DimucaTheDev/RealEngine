@@ -50,6 +50,8 @@ namespace RE.Rendering.Renderables
         public bool Outline { get; set; }
         public override RenderLayer RenderLayer => RenderLayer.World;
         public override bool IsVisible { get; set; } = true;
+        public Vector3 MinBounds { get; set; }
+        public Vector3 MaxBounds { get; set; }
 
         public Vector3 Position
         {
@@ -72,6 +74,8 @@ namespace RE.Rendering.Renderables
         public float[]? PhysicsVertices { get; private set; }
         public List<int>? PhysicsIndices { get; private set; }
         public Material Material { get; set; } = new();
+        public bool IgnoreLight { get; set; }
+        public bool ConstantSize { get; set; }
 
         public ModelRenderer()
         {
@@ -108,11 +112,21 @@ namespace RE.Rendering.Renderables
 
         public override void Render(FrameEventArgs args)
         {
+            var viewPos = Camera.Instance.Position;
+            float distance = (viewPos - Position).Length;
+
+            const float baseScaleFactor = 0.075f;
+            float constantScale = distance * baseScaleFactor;
+
             Matrix4 model =
-                Matrix4.CreateScale(Scale) *
+                Matrix4.CreateScale(ConstantSize ? new(constantScale) : Scale) *
                 Matrix4.CreateFromQuaternion(Rotation) *
                 Matrix4.CreateTranslation(Position);
+            Render(args, model);
+        }
 
+        public void Render(FrameEventArgs args, Matrix4 model)
+        {
             Matrix4 view = Camera.Instance.GetViewMatrix();
             Matrix4 proj = Camera.Instance.GetProjectionMatrix();
 
@@ -127,23 +141,29 @@ namespace RE.Rendering.Renderables
             _program.SetValue("projection", proj);
 
             // lighting.glsl
-            _program.SetValue("viewPos", Camera.Instance.Position);
             _program.SetStruct("material", Material);
-            _program.SetStruct("spotLight", new SpotLight()
+            if (IgnoreLight)
+                _program.SetValue("ignoreLight", true);
+            else
             {
-                Position = Camera.Instance.Position,
-                Direction = Camera.Instance.Front,
-                DiffuseColor = Vector3.One,
-                SpecularColor = Vector3.One,
-                Constant = 1.0f,
-                Linear = 0.09f,
-                Quadratic = 0.032f,
-                CutOff = MathF.Cos(MathHelper.DegreesToRadians(12.5f)),
-                OuterCutOff = MathF.Cos(MathHelper.DegreesToRadians(17.5f))
-            });
+                _program.SetValue("ignoreLight", false);
+                _program.SetValue("viewPos", Camera.Instance.Position);
+                _program.SetStruct("spotLight", new SpotLight()
+                {
+                    Position = Camera.Instance.Position,
+                    Direction = Camera.Instance.Front,
+                    DiffuseColor = Vector3.One,
+                    SpecularColor = Vector3.One,
+                    Constant = 1.0f,
+                    Linear = 0.09f,
+                    Quadratic = 0.032f,
+                    CutOff = MathF.Cos(MathHelper.DegreesToRadians(12.5f)),
+                    OuterCutOff = MathF.Cos(MathHelper.DegreesToRadians(17.5f))
+                });
 
-            if (Core.World.SceneManager.CurrentScene.SunLight != null)
-                _program.SetStruct("dirLight", Core.World.SceneManager.CurrentScene.SunLight.Value);
+                if (Core.World.SceneManager.CurrentScene.SunLight != null)
+                    _program.SetStruct("dirLight", Core.World.SceneManager.CurrentScene.SunLight.Value);
+            }
 
             GL.BindVertexArray(_vao);
             if (Outline)
@@ -151,7 +171,7 @@ namespace RE.Rendering.Renderables
                 GL.Enable(EnableCap.CullFace);
                 GL.CullFace(TriangleFace.Front);
                 _program.SetValue("outline", 1);
-                _program.SetValue("outlineColor", OutlineColor);
+                _program.SetValue("outlineColor", (MathF.Sin(Time.ElapsedTime*4) / 2 + 0.5f) * OutlineColor);
                 GL.PolygonMode(TriangleFace.Back, PolygonMode.Fill); //todo: render only back side monocolor. somewhy it doesnt work
             }
 
@@ -159,11 +179,12 @@ namespace RE.Rendering.Renderables
             GL.BindVertexArray(0);
             if (Outline)
             {
+                // GL_INVALID_ENUM error generated. Polygon modes for <face> are disabled in the current profile.
                 GL.Disable(EnableCap.CullFace);
                 GL.PolygonMode(TriangleFace.FrontAndBack, PolygonMode.Fill);
                 _program.SetValue("outline", 0);
             }
-           // LineRenderer.DrawLine(Position + (0, 2, 0) + dirLightDirection, Position + (0, 2, 0), new(1, 0, 0, 1), new(0, 0, 1, 1));
+            // LineRenderer.DrawLine(Position + (0, 2, 0) + dirLightDirection, Position + (0, 2, 0), new(1, 0, 0, 1), new(0, 0, 1, 1));
         }
 
         private static int i = 0;
@@ -197,6 +218,7 @@ namespace RE.Rendering.Renderables
 
             if (MeshCache.TryGetValue(path, out var meshData))
             {
+                //todo: cache min max bounds
                 (_vao, _vbo, _ebo, _indexCount, renderVertices, PhysicsIndices) = meshData;
                 PhysicsVertices = new float[renderVertices.Count / 8 * 3];
                 for (int i = 0, j = 0; i < renderVertices.Count; i += 8, j += 3)
@@ -220,11 +242,22 @@ namespace RE.Rendering.Renderables
                 }
 
                 Name = data.Name;
+
+                var min = new Vector3D(float.MaxValue, float.MaxValue, float.MaxValue);
+                var max = new Vector3D(float.MinValue, float.MinValue, float.MinValue);
                 for (int i = 0; i < data.Vertices.Length; i++)
                 {
                     var v = data.Vertices[i];
 
                     v = Vector3.Transform(v, Quaternion.FromAxisAngle(Vector3.UnitX, MathHelper.DegreesToRadians(-90.0f)));
+
+                    min.X = Math.Min(min.X, v.X);
+                    min.Y = Math.Min(min.Y, v.Y);
+                    min.Z = Math.Min(min.Z, v.Z);
+
+                    max.X = Math.Max(max.X, v.X);
+                    max.Y = Math.Max(max.Y, v.Y);
+                    max.Z = Math.Max(max.Z, v.Z);
 
                     renderVertices.Add(v.X);
                     renderVertices.Add(v.Y);
@@ -260,6 +293,9 @@ namespace RE.Rendering.Renderables
                     physicsVerticesTemp.Add(v.Y);
                     physicsVerticesTemp.Add(v.Z);
                 }
+
+                MaxBounds = max.ToOpenTkVector3();
+                MinBounds = min.ToOpenTkVector3();
 
                 foreach (var index in data.Indices)
                 {
@@ -342,6 +378,9 @@ namespace RE.Rendering.Renderables
                     max.Z = Math.Max(max.Z, v.Z);
                 }
 
+                MaxBounds = max.ToOpenTkVector3();
+                MinBounds = min.ToOpenTkVector3();
+
                 var center = (min + max) * 0.5f;
 
                 Quaternion correctionRotation =
@@ -363,7 +402,6 @@ namespace RE.Rendering.Renderables
                     normal = Vector3.Transform(normal, Quaternion.FromAxisAngle(Vector3.UnitX, MathHelper.DegreesToRadians(-90.0f)));
 
                     renderVertices.AddRange([opentkPos.X, opentkPos.Y, opentkPos.Z, uv.X, uv.Y, normal.X, normal.Y, normal.Z]);
-
 
                     physicsVerticesTemp.AddRange([opentkPos.X, opentkPos.Y, opentkPos.Z]);
                 }

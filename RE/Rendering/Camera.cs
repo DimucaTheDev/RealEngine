@@ -138,12 +138,31 @@ public class Camera
     public Matrix4 GetViewMatrix() => Matrix4.LookAt(Position, Position + Front, Up);
     public Matrix4 GetProjectionMatrix() => GetProjectionMatrix(Fov);
     public Matrix4 GetProjectionMatrix(float fov) => Matrix4.CreatePerspectiveFieldOfView(MathHelper.DegreesToRadians(fov), AspectRatio, 0.1f, 10000f);
-    public Matrix4 GetBillboard(Vector3 objectPosition)
+    public Matrix4 GetBillboard(Vector3 objectPosition, bool lockX = false, bool lockY = false)
     {
         Matrix4 view = GetViewMatrix();
 
         view.Row3.Xyz = Vector3.Zero;
-        return Matrix4.Transpose(view);
-    }
 
+        Matrix4 billboard = Matrix4.Transpose(view);
+
+        Vector3 right = billboard.Column0.Xyz;
+        Vector3 up = billboard.Column1.Xyz;
+        Vector3 forward = billboard.Column2.Xyz;
+
+        if (lockX)
+        { 
+            up = Vector3.UnitY;
+            right = Vector3.Normalize(Vector3.Cross(up, forward));
+        }
+
+        if (lockY)
+        { }
+
+        billboard.Column0 = new Vector4(right, billboard.Column0.W);
+        billboard.Column1 = new Vector4(up, billboard.Column1.W);
+        billboard.Column2 = new Vector4(forward, billboard.Column2.W);
+
+        return billboard;
+    }
 }

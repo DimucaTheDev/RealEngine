@@ -11,15 +11,11 @@ uniform mat4 projection;
 
 out vec2 TexCoords;
 out vec3 FragPos;
-out vec3 Normal;
-out double b_outline;
-out vec4 v_outlineColor;
+out vec3 Normal; 
 
 void main()
 {
-    TexCoords = aUV;
-    b_outline = outline;
-    v_outlineColor = outlineColor;
+    TexCoords = aUV; 
 
     FragPos = vec3(model * vec4(aPos, 1.0));
     Normal  = mat3(transpose(inverse(model))) * aNormal;

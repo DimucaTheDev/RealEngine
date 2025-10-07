@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using ImGuiNET;
+using JetBrains.Annotations;
 using OpenTK.Graphics.OpenGL;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
@@ -44,6 +45,7 @@ namespace RE.Debug.Overlay
 
         private Scene _scene = null!;
         private GameObject? _selectedObject;
+        private bool _selectedObjectHasMesh = false;
         private bool _popupOpen = false;
         private List<Type> _customPopups = new();
         private Dictionary<string, List<Type>> _componentDict = new();
@@ -55,6 +57,22 @@ namespace RE.Debug.Overlay
             "assets/sprites/editor/arrow_down.png")
         {
             LockRotationY = true
+        };
+
+        private static ModelRenderer XAxisArrow = new("assets/models/axis.fbx", OpenTK.Mathematics.Vector3.PositiveInfinity)
+        {
+            IgnoreLight = true,
+            ConstantSize = true
+        };
+        private static ModelRenderer YAxisArrow = new("assets/models/axis.fbx", OpenTK.Mathematics.Vector3.PositiveInfinity)
+        {
+            IgnoreLight = true,
+            ConstantSize = true
+        };
+        private static ModelRenderer ZAxisArrow = new("assets/models/axis.fbx", OpenTK.Mathematics.Vector3.PositiveInfinity)
+        {
+            IgnoreLight = true,
+            ConstantSize = true
         };
 
         private static readonly int LogoImage;
@@ -152,6 +170,10 @@ namespace RE.Debug.Overlay
 
                 GL.BindTexture(TextureTarget.Texture2D, 0);
             }
+
+            XAxisArrow.SetTexture(Util.CreateMonoColorTexture(new(1, 0, 0)));
+            YAxisArrow.SetTexture(Util.CreateMonoColorTexture(new(0, 1, 0)));
+            ZAxisArrow.SetTexture(Util.CreateMonoColorTexture(new(0, 0, 1)));
         }
 
         public void Enable()
@@ -210,7 +232,6 @@ namespace RE.Debug.Overlay
         {
             Enabled = false;
             IsVisible = false;
-            SelectedObjectArrow?.StopRender();
             SelectedObjectOutline?.StopRender();
             if (_scene?.GameObjects != null)
             {
@@ -227,17 +248,55 @@ namespace RE.Debug.Overlay
             // _scene.Dispose(); //todo: do something with thi shi 🥀
         }
 
-
-
         public override void Render(FrameEventArgs args)
         {
-            if (SelectedObjectArrow != null!)
+
+            if (_selectedObject != null)
             {
-                if (_selectedObject != null)
-                    SelectedObjectArrow.Position = _selectedObject.Transform.Position
-                                                   //+ (0, _selectedObject.Transform.Scale.Y, 0)
-                                                   + (0, 1.2f, 0)
-                                                   + (0, MathF.Sin(Time.ElapsedTime * 3) / 4, 0);
+                SelectedObjectArrow.Position = _selectedObject.Transform.Position
+                                          //+ (0, _selectedObject.Transform.Scale.Y, 0)
+                                          + (0, 1.2f, 0)
+                                          + (0, MathF.Sin(Time.ElapsedTime * 3) / 4, 0);
+
+                //if (_selectedObjectHasMesh)
+                //    SelectedObjectArrow.Render(args);
+                // we have gizmos arrows, maybe we dont need that anymore... todo:
+
+                GL.Disable(EnableCap.DepthTest);
+
+                var min = XAxisArrow.MinBounds;
+                var max = XAxisArrow.MaxBounds;
+                var objPos = _selectedObject.Transform.Position;
+
+                var offset = ((max - min) / 2).X;
+                var camPos = Camera.Instance.Position;
+                float distance = (camPos - objPos).Length;
+                float fixedScale = distance * 0.05f;
+                XAxisArrow.Position = objPos + new OpenTK.Mathematics.Vector3(offset * fixedScale, 0, 0);
+                Matrix4 model =
+                    Matrix4.CreateScale(fixedScale) *
+                    Matrix4.CreateTranslation(XAxisArrow.Position);
+
+                XAxisArrow.Render(args, model);
+
+
+                YAxisArrow.Position = objPos + new OpenTK.Mathematics.Vector3(0, offset * fixedScale, 0);
+                model =
+                    Matrix4.CreateScale(fixedScale) *
+                    Matrix4.CreateRotationZ(MathHelper.DegreesToRadians(90)) *
+                    Matrix4.CreateTranslation(YAxisArrow.Position);
+                YAxisArrow.Render(args, model);
+
+                ZAxisArrow.Position = objPos + new OpenTK.Mathematics.Vector3(0, 0, offset * fixedScale);
+                model =
+                    Matrix4.CreateScale(fixedScale) *
+                    Matrix4.CreateRotationY(MathHelper.DegreesToRadians(-90)) *
+                    Matrix4.CreateTranslation(ZAxisArrow.Position);
+
+                ZAxisArrow.Render(args, model);
+
+
+                GL.Enable(EnableCap.DepthTest);
             }
 
             foreach (var obj in _scene.GameObjects)
@@ -300,6 +359,7 @@ namespace RE.Debug.Overlay
                         var newObject = new GameObject();
                         SceneManager.CurrentScene.GameObjects.Add(newObject);
                         _selectedObject = newObject;
+                        _selectedObjectHasMesh = false;
                     }
 
                     EndMenu();
@@ -348,7 +408,6 @@ namespace RE.Debug.Overlay
             {
                 _scene.GameObjects.Remove(_selectedObject!);
                 _selectedObject = null;
-                SelectedObjectArrow!.StopRender();
             }
 
             EndDisabled();
@@ -637,7 +696,7 @@ namespace RE.Debug.Overlay
                                             var propValue = propInfo.GetValue(com);
                                             var expected = Convert.ChangeType(att.Value, propInfo.PropertyType);
 
-                                            return Equals(propValue, expected); 
+                                            return Equals(propValue, expected);
                                         }
                                         catch
                                         {
@@ -1075,6 +1134,7 @@ namespace RE.Debug.Overlay
             if (IsItemClicked())
             {
                 _selectedObject = obj;
+                _selectedObjectHasMesh = obj.GetComponent<MeshComponent>() != null;
                 UpdateSelection();
             }
 
@@ -1093,14 +1153,12 @@ namespace RE.Debug.Overlay
             if (mesh == null!)
             {
                 SelectedObjectOutline.StopRender();
-                SelectedObjectArrow.StartRender();
                 SelectedObjectArrow.Position = _selectedObject.Transform.Position
                                                + (0, 1.2f, 0)
                                                + (0, MathF.Sin(Time.ElapsedTime * 3) / 4, 0);
             }
             else
             {
-                SelectedObjectArrow.StopRender();
                 SelectedObjectOutline.StartRender();
 
                 SelectedObjectOutline.Position = _selectedObject.Transform.Position;

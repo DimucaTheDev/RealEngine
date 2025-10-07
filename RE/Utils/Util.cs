@@ -1,4 +1,5 @@
 ﻿using OpenTK.Graphics.OpenGL;
+using OpenTK.Mathematics;
 
 namespace RE.Utils
 {
@@ -41,6 +42,34 @@ namespace RE.Utils
 
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
+
+            return texID;
+        }
+
+        public static uint CreateMonoColorTexture(Vector3 color)
+        {
+            uint texID = (uint)GL.GenTexture();
+            GL.BindTexture(TextureTarget.Texture2D, texID);
+
+            byte[] data =
+            [
+                (byte)(color.X * 255f),
+                (byte)(color.Y * 255f),
+                (byte)(color.Z * 255f),
+                255
+            ];
+
+            GL.TexImage2D(TextureTarget.Texture2D,
+                0,
+                PixelInternalFormat.Rgba, 1, 1, 0,
+                PixelFormat.Rgba,
+                PixelType.UnsignedByte,
+                data);
+
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
+
+            GL.BindTexture(TextureTarget.Texture2D, 0);
 
             return texID;
         }

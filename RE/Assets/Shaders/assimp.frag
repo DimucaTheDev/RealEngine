@@ -1,6 +1,9 @@
 #version 330 core
   
 uniform vec3 viewPos;
+uniform bool ignoreLight;
+uniform int outline;
+uniform vec4 outlineColor;
 
 out vec4 FragColor;
 
@@ -12,6 +15,14 @@ in vec2 TexCoords;
 
 void main()
 { 
+    if(outline == 1){
+        FragColor = outlineColor;
+        return;
+    }
+    if(ignoreLight){
+        FragColor = vec4(vec3(texture(material.diffuse, TexCoords)), 1);
+        return;
+    }
     //properties
     vec3 norm = normalize(Normal);
     vec3 viewDir = normalize(viewPos - FragPos);
