@@ -4,7 +4,6 @@ using System.Globalization;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using ImGuiNET;
-using JetBrains.Annotations;
 using OpenTK.Graphics.OpenGL;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
@@ -13,13 +12,14 @@ using RE.Core.PluginSystem;
 using RE.Core.Scripting;
 using RE.Core.World;
 using RE.Core.World.Components;
-using RE.Core.World.Components.Lighting;
 using RE.Rendering;
 using RE.Rendering.Renderables;
 using RE.Utils;
 using Serilog;
 using static ImGuiNET.ImGui;
+using Keys = OpenTK.Windowing.GraphicsLibraryFramework.Keys;
 using PixelFormat = OpenTK.Graphics.OpenGL.PixelFormat;
+using TkVector3 = OpenTK.Mathematics.Vector3;
 using Vector2 = System.Numerics.Vector2;
 using Vector3 = System.Numerics.Vector3;
 using Vector4 = System.Numerics.Vector4;
@@ -30,7 +30,7 @@ namespace RE.Debug.Overlay
     {
         private class Node
         {
-            public string Name;
+            public string Name = string.Empty;
             public readonly Dictionary<string, Node> Children = new();
             public readonly List<Type> Types = new();
         }
@@ -46,22 +46,16 @@ namespace RE.Debug.Overlay
 
         private Scene _scene = null!;
         private GameObject? _selectedObject;
-        private bool _selectedObjectHasMesh = false;
-        private bool _popupOpen = false;
         private List<Type> _customPopups = new();
         private Dictionary<string, List<Type>> _componentDict = new();
         private Node _rootNode = new();
 
         private static readonly ImFontPtr _bigFont;
         private static readonly ModelRenderer SelectedObjectOutline = new() { Outline = true };
-        private static readonly SpriteRenderer SelectedObjectArrow = new(OpenTK.Mathematics.Vector3.PositiveInfinity,
-            "assets/sprites/editor/arrow_down.png")
-        {
-            LockRotationY = true
-        };
+
 
         private static GizmosRenderable XAxisArrow = new(null, GizmosRenderable.Axis.X);
-        private static GizmosRenderable YAxisArrow = new (null, GizmosRenderable.Axis.Y);
+        private static GizmosRenderable YAxisArrow = new(null, GizmosRenderable.Axis.Y);
         private static GizmosRenderable ZAxisArrow = new(null, GizmosRenderable.Axis.Z);
 
         private static readonly int LogoImage;
@@ -142,8 +136,8 @@ namespace RE.Debug.Overlay
                 _bigFont = io.Fonts.AddFontFromFileTTF("Assets/Fonts/consola.ttf", 60);
 
                 byte* pixels;
-                int width, height, bytesPerPixel;
-                io.Fonts.GetTexDataAsRGBA32(out pixels, out width, out height, out bytesPerPixel);
+                int width, height;
+                io.Fonts.GetTexDataAsRGBA32(out pixels, out width, out height, out _);
 
                 int fontTex = GL.GenTexture();
                 GL.BindTexture(TextureTarget.Texture2D, fontTex);
@@ -158,7 +152,16 @@ namespace RE.Debug.Overlay
                 io.Fonts.SetTexID((IntPtr)fontTex);
 
                 GL.BindTexture(TextureTarget.Texture2D, 0);
-            } 
+            }
+        }
+
+        private void SelectObject(GameObject obj)
+        {
+            _selectedObject = obj;
+            XAxisArrow.GameObject = obj;
+            YAxisArrow.GameObject = obj;
+            ZAxisArrow.GameObject = obj;
+            UpdateSelection();
         }
 
         public void Enable()
@@ -174,10 +177,7 @@ namespace RE.Debug.Overlay
 
             _scene = SceneManager.CurrentScene;//SceneManager.ParseScene(SceneManager.CurrentScene.Name!/*костыль*/); // TODO: set json path to scene's property
             //SceneManager.LoadScene(_scene, true);
-            _selectedObject = null;
-            XAxisArrow.GameObject = null;
-            YAxisArrow.GameObject = null;
-            ZAxisArrow.GameObject = null;
+            SelectObject(null);
             IsVisible = true;
 
             foreach (var type in Assembly.GetExecutingAssembly().GetTypes().Where(t => typeof(IEditorPopup).IsAssignableFrom(t)))
@@ -227,7 +227,7 @@ namespace RE.Debug.Overlay
                 {
                     foreach (var c in o.Components)
                     {
-                        c.OnSceneLoading(_scene); // maybe start()?
+                        //todo: maybe we should save scene to memory and load "new" from there
                         c.Start();
                     }
                 }
@@ -238,17 +238,29 @@ namespace RE.Debug.Overlay
 
         public override void Render(FrameEventArgs args)
         {
+            var p = Camera.Instance.Position;
+
+
+            var speed = 7f * Time.DeltaTime;
+            var input = Game.Instance.KeyboardState;
+            if (input.IsKeyDown(Keys.W))
+                p += (Camera.Instance.Front with { Y = 0 }).Normalized() * speed;
+            if (input.IsKeyDown(Keys.S))
+                p -= (Camera.Instance.Front with { Y = 0 }).Normalized() * speed;
+            if (input.IsKeyDown(Keys.A))
+                p -= TkVector3.Normalize(TkVector3.Cross(Camera.Instance.Front, Camera.Instance.Up)) * speed;
+            if (input.IsKeyDown(Keys.D))
+                p += TkVector3.Normalize(TkVector3.Cross(Camera.Instance.Front, Camera.Instance.Up)) * speed;
+            if (input.IsKeyDown(Keys.Space))
+                p += TkVector3.UnitY * speed;
+            if (input.IsKeyDown(Keys.LeftShift))
+                p -= TkVector3.UnitY * speed;
+
+            if (!ImGui.GetIO().WantCaptureKeyboard)
+                Camera.Instance.Position = (p);
 
             if (_selectedObject != null)
             {
-                SelectedObjectArrow.Position = _selectedObject.Transform.Position
-                                          //+ (0, _selectedObject.Transform.Scale.Y, 0)
-                                          + (0, 1.2f, 0)
-                                          + (0, MathF.Sin(Time.ElapsedTime * 3) / 4, 0);
-
-                //if (_selectedObjectHasMesh)
-                //    SelectedObjectArrow.Render(args);
-                // we have gizmos arrows, maybe we dont need that anymore... todo:
 
                 GL.Disable(EnableCap.DepthTest);
 
@@ -318,11 +330,7 @@ namespace RE.Debug.Overlay
                     {
                         var newObject = new GameObject();
                         SceneManager.CurrentScene.GameObjects.Add(newObject);
-                        _selectedObject = newObject;
-                        XAxisArrow.GameObject = newObject;
-                        YAxisArrow.GameObject = newObject;
-                        ZAxisArrow.GameObject = newObject;
-                        _selectedObjectHasMesh = false;
+                        SelectObject(newObject);
                     }
 
                     EndMenu();
@@ -370,15 +378,13 @@ namespace RE.Debug.Overlay
             if (Button("[-]"))
             {
                 _scene.GameObjects.Remove(_selectedObject!);
-                _selectedObject = null;
-                XAxisArrow.GameObject = null;
-                YAxisArrow.GameObject = null;
-                ZAxisArrow.GameObject = null;
+                SelectObject(null);
+
             }
 
             EndDisabled();
 
-            if (Button($"Preview Light: {(PreviewLight ? "✅" : "❌")}"))
+            if (Button($"Preview Light: {(PreviewLight ? "Y" : "N")}"))
                 PreviewLight = !PreviewLight;
 
             Separator();
@@ -634,7 +640,9 @@ namespace RE.Debug.Overlay
                             SetCursorPosX(GetCursorPosX() + (cellWidth - buttonWidth) / 2f);
                             if (Button("Reset"))
                             {
-                                com.OnReset();
+                                obj.Components.Remove(com);
+                                var newCom = (Component)Activator.CreateInstance(type)!;
+                                obj.Components.Add(newCom);
                             }
                         }
                         TableSetColumnIndex(1);
@@ -834,7 +842,20 @@ namespace RE.Debug.Overlay
 
         void DrawButton(Type type)
         {
-            bool disabled = _selectedObject!.Components.Any(s => s.GetType() == type);
+            bool SatisfiesCondition(Type c)
+            {
+                var reqAtts = c.GetCustomAttributes<RequiresComponentAttribute>();
+                if (_selectedObject!.Components.Any(s => s.GetType() == c))
+                    return false;
+                foreach (var att in reqAtts)
+                {
+                    if (_selectedObject!.Components.All(comp => comp.GetType() != att.RequiredComponent))
+                        return false;
+                }
+
+                return true;
+            }
+            bool disabled = !SatisfiesCondition(type);
             BeginDisabled(disabled);
             if (Button(AddSpacesToCamelCase(type.Name.Replace("Component", ""))))
             {
@@ -1101,10 +1122,7 @@ namespace RE.Debug.Overlay
 
             if (IsItemClicked())
             {
-                _selectedObject = obj;
-                XAxisArrow.GameObject = obj;
-                YAxisArrow.GameObject = obj;
-                ZAxisArrow.GameObject = obj;
+                SelectObject(obj);
                 UpdateSelection();
             }
 
@@ -1118,14 +1136,11 @@ namespace RE.Debug.Overlay
         }
         void UpdateSelection()
         {
-            var mesh = _selectedObject.GetComponent<MeshComponent>();
+            var mesh = _selectedObject?.GetComponent<MeshComponent>();
 
             if (mesh == null!)
             {
                 SelectedObjectOutline.StopRender();
-                SelectedObjectArrow.Position = _selectedObject.Transform.Position
-                                               + (0, 1.2f, 0)
-                                               + (0, MathF.Sin(Time.ElapsedTime * 3) / 4, 0);
             }
             else
             {

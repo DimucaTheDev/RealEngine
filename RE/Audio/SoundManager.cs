@@ -68,34 +68,6 @@ namespace RE.Audio
 
             FmodSystem.Update();
             FmodSystem.Set3DListenerAttributes(0, in pos, in vel, in forward, in up);
-
-            return; //i dunno code below is kinda useless with FMOD
-            foreach (var sound in _activeSounds.Where(s => s is { IsRelative: false }))
-            {
-                break; //fixme:
-                float distance = Vector3.Distance(sound.Position, cam.Position);
-
-                float gain;
-                if (distance >= sound.MaxDistance)
-                {
-                    gain = 0f;
-                }
-                else if (distance <= sound.ReferenceDistance)
-                {
-                    gain = 1f;
-                }
-                else
-                {
-                    float range = sound.MaxDistance - sound.ReferenceDistance;
-                    gain = 1f - ((distance - sound.ReferenceDistance) / range);
-                    gain = Math.Clamp(gain, 0f, 1f);
-                }
-
-                var sPos = sound.Position.ToSystemVector3();
-                var sZero = Vector3.Zero.ToSystemVector3();
-                sound.FmodChannel.Set3DAttributes(in sPos, in sZero, in sZero);
-                sound.FmodChannel.Volume = gain * sound.Volume;
-            }
         }
 
         /// <summary>

@@ -1,5 +1,4 @@
-﻿using System.Text.Json.Nodes;
-using BulletSharp;
+﻿using BulletSharp;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using RE.Core.Scripting;
@@ -11,9 +10,10 @@ namespace RE.Core.World.Components.Physics
 {
     internal abstract class ColliderComponent : Component, IPhysicsComponent
     {
-        protected CollisionShape _collisionShape;
-        protected RigidBody _rigidBody;
-
+#pragma warning disable 8618
+        private CollisionShape _collisionShape;
+        private RigidBody _rigidBody;
+#pragma warning restore
         public CollisionShape CollisionShape => _collisionShape;
         public RigidBody RigidBody => _rigidBody;
         public bool IsPhysicsObjectInitialized => _collisionShape != null!;
@@ -25,24 +25,21 @@ namespace RE.Core.World.Components.Physics
             set
             {
                 field = value;
-                Start();
+                TryInitializePhysics();
             }
         } = Vector3.One;
 
-
-        public override void OnComponentAdded()
-        {
-            if (!IsPhysicsObjectInitialized)
-                Start();
-        }
         public override void Start()
         {
-            _collisionShape = CreateCollisionShape();
+            if (IsPhysicsObjectInitialized)
+                return;
             TryInitializePhysics();
         }
 
         public void TryInitializePhysics()
         {
+            _collisionShape = CreateCollisionShape();
+
             var rigid = GetComponent<RigidBodyComponent>();
             if (rigid?.IsPhysicsObjectInitialized ?? false)
             {
@@ -84,11 +81,6 @@ namespace RE.Core.World.Components.Physics
             }
 
             base.OnDestroy();
-        }
-
-        public override void OnReset()
-        {
-            throw new NotImplementedException("fuky waky >_<");
         }
 
         public override void Render(FrameEventArgs args)

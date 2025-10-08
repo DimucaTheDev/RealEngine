@@ -5,12 +5,13 @@ using RE.Core.Scripting;
 
 namespace RE.Core.World.Components.Physics
 {
+    [RequiresComponent(typeof(MeshComponent))]
     [ComponentInfo("Physics/Collision", Description = "Mesh collider intended for static objects only (non-movable collision shape based on triangle mesh)")]
     internal class MeshColliderComponent : ColliderComponent
     {
         public override CollisionShape CreateCollisionShape()
         {
-            var meshComponent = Owner.GetComponent<MeshComponent>();
+            var meshComponent = Owner.GetComponent<MeshComponent>()!;
             var modelRenderer = meshComponent.GetModelRenderer();
 
             if (meshComponent == null! || meshComponent.GetModelRenderer().PhysicsIndices == null)
@@ -62,8 +63,7 @@ namespace RE.Core.World.Components.Physics
         }
         public override JsonNode GetSaveData()
         {
-            JsonObject root = new() { { nameof(Multiplier), new JsonArray() { Multiplier } } };
-            return root;
+            return GetDataForProperties();
         }
     }
 }

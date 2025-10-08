@@ -8,7 +8,6 @@ using RE.Debug;
 using RE.Rendering.Renderables;
 using RE.Rendering.Text;
 using RE.Utils;
-using Serilog;
 
 namespace RE.Core.World.Components.Physics
 {
@@ -54,14 +53,11 @@ namespace RE.Core.World.Components.Physics
 
         public RigidBodyComponent() : this(1) { }
 
-        public override void OnComponentAdded()
-        {
-            if (!IsPhysicsObjectInitialized)
-                Start();
-        }
 
         public override void Start()
         {
+            if (IsPhysicsObjectInitialized)
+                return;
             TryInitializePhysics();
             RigidBody.Activate();
             _debugText = new("", OpenTK.Mathematics.Vector3.Zero, (FreeTypeFont)Fonts.Consolas);
@@ -131,10 +127,6 @@ namespace RE.Core.World.Components.Physics
                 RigidBody = null!;
             }
             base.OnDestroy();
-        }
-        public override void OnReset()
-        {
-            Log.Error(new NotImplementedException("fuky waky >_<"), "Nuh uh");
         }
         public override JsonNode GetSaveData()
         {

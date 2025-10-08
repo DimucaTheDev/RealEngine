@@ -1,15 +1,12 @@
 ﻿using System.Drawing.Imaging;
 using System.Reflection;
 using System.Runtime.InteropServices;
-using System.Xml;
-using BulletSharp.SoftBody;
 using OpenTK.Graphics.OpenGL;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using OpenTK.Windowing.Common.Input;
 using OpenTK.Windowing.Desktop;
 using RE.Audio;
-using RE.Core.Assets;
 using RE.Core.PluginSystem;
 using RE.Core.Scripting;
 using RE.Core.World.Physics;
@@ -104,6 +101,22 @@ internal class Game : GameWindow
     protected override void OnUpdateFrame(FrameEventArgs args)
     {
         PhysicsManager.Update((float)args.Time);
+
+        if (KeyboardState.IsKeyPressed(Keys.GraveAccent))
+        {
+            if (ConsoleWindow.Instance!.IsVisible)
+            {
+                ConsoleWindow.Instance!.IsVisible = false;
+                Game.Instance.CursorState = CursorState.Grabbed;
+            }
+            else
+            {
+                ConsoleWindow.Instance!.IsVisible = true;
+                Game.Instance.CursorState = CursorState.Normal;
+                Camera.Instance.FirstMove = true;
+            }
+        }
+
         base.OnUpdateFrame(args);
     }
 
@@ -173,7 +186,7 @@ internal class Game : GameWindow
         RenderManager.RenderAll(args);
         SwapBuffers();
 
- 
+
         if (KeyboardState.IsKeyPressed(Keys.F11))
             Game.Instance.ToggleFullscreen();
         if (KeyboardState.IsKeyPressed(Keys.F1))

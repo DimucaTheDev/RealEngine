@@ -5,9 +5,9 @@ using RE.Core;
 using RE.Rendering.Renderables;
 using RE.Rendering.Text;
 using RE.Utils;
-using Log = Serilog.Log;
-using FmodSound = FmodAudio.Sound;
 using FmodChannel = FmodAudio.Channel;
+using FmodSound = FmodAudio.Sound;
+using Log = Serilog.Log;
 
 namespace RE.Audio
 {
@@ -49,7 +49,7 @@ namespace RE.Audio
         /// Stores the underlying FMOD sound instance.
         /// </summary>
         /// <remarks>FMOD Docs: <a href="https://www.fmod.com/docs/2.01/api/core-api-sound.html"> https://www.fmod.com/docs/2.01/api/core-api-sound.html</a></remarks>
-        public FmodSound FmodSound { get; private set; }
+        public FmodSound FmodSound { get; }
         /// <summary>
         /// Stores the underlying FMOD channel instance.
         /// </summary>
@@ -467,6 +467,8 @@ namespace RE.Audio
         public bool IsPlaying => State == SoundState.Playing;
         public bool IsPaused => State == SoundState.Paused;
         public bool IsStopped => State == SoundState.Stopped;
+
+#pragma warning disable 8073
         /// <summary>
         /// Gets a value indicating whether the object is ready for use.
         /// </summary>
@@ -474,6 +476,7 @@ namespace RE.Audio
         /// not been disposed. Use this property to check readiness before performing operations that depend on the
         /// object's valid state.</remarks>
         public bool IsReady => FmodChannel != null! && FmodSound != null! && !_disposed && IsHandleValid();
+#pragma warning restore
 
         internal Sound(FmodAudio.Sound source)
         {

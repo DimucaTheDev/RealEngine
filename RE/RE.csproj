@@ -21,6 +21,16 @@
 
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Production|AnyCPU'">
 	  <DefineConstants>$(DefineConstants);PROD;PRODUCTION</DefineConstants>
+	  <Optimize>True</Optimize>
+	  <NoWarn>1701;1702</NoWarn>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+	  <NoWarn>1701;1702</NoWarn>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+	  <NoWarn>1701;1702</NoWarn>
 	</PropertyGroup>
 
 	<ItemGroup>

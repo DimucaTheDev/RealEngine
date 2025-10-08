@@ -59,14 +59,10 @@ namespace RE.Core
         }
 
 
-        //todo: rewrite logic of how these methods are called ASAP!!!
-        public virtual void OnComponentAdded() { }
+        //todo: rewrite logic of how these methods are called ASAP!!! 
         public virtual void Start() { }
-        public virtual void OnSceneLoading(Scene scene) { }
-        public virtual void OnSceneLoaded(Scene scene) { }
         public virtual void Update(FrameEventArgs args) { }
         public virtual void Render(FrameEventArgs args) { }
         public virtual void OnDestroy() { }
-        public virtual void OnReset() { }
     }
 }

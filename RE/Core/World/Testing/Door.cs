@@ -9,6 +9,7 @@ using RE.Debug.Overlay;
 
 namespace RE.Core.World.Testing
 {
+#pragma warning disable
     internal class Door : Component
     {
         private GameObject _door;
@@ -17,11 +18,6 @@ namespace RE.Core.World.Testing
         private Sound sound;
 
         [EditorProperty("State")] public float State { get; set; }
-
-        public override void OnComponentAdded()
-        {
-            Start();
-        }
 
         public override void Start()
         {

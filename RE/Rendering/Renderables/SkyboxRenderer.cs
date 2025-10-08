@@ -9,22 +9,22 @@ namespace RE.Rendering.Renderables;
 internal class SkyboxRenderer : Renderable
 {
     private static int _vao, _vbo;
-    private static ShaderProgram _handle;
+    private static ShaderProgram _handle = null!;
 
     private static readonly float[] _cubeVertices =
     [
         -1, 1, -1, -1, -1, -1, 1, -1, -1,
-        1, -1, -1, 1, 1, -1, -1, 1, -1, 
+        1, -1, -1, 1, 1, -1, -1, 1, -1,
         -1, -1, 1, -1, -1, -1, -1, 1, -1,
-        -1, 1, -1, -1, 1, 1, -1, -1, 1, 
+        -1, 1, -1, -1, 1, 1, -1, -1, 1,
         1, -1, -1, 1, -1, 1, 1, 1, 1,
         1, 1, 1, 1, 1, -1, 1, -1, -1,
         -1, -1, 1, -1, 1, 1, 1, 1, 1,
-        1, 1, 1, 1, -1, 1, -1, -1, 1, 
+        1, 1, 1, 1, -1, 1, -1, -1, 1,
         -1, 1, -1, 1, 1, -1, 1, 1, 1,
         1, 1, 1, -1, 1, 1, -1, 1, -1,
         -1, -1, -1, -1, -1, 1, 1, -1, 1,
-        1, -1, 1, 1, -1, -1, -1, -1, -1 
+        1, -1, 1, 1, -1, -1, -1, -1, -1
     ];
     private static int _cubemap;
 
@@ -38,7 +38,7 @@ internal class SkyboxRenderer : Renderable
         "Assets/skybox/back.png"     // GL_TEXTURE_CUBE_MAP_NEGATIVE_Z
     ];
 
-    public static SkyboxRenderer Instance { get; private set; }
+    public static SkyboxRenderer Instance { get; private set; } = null!;
 
     public override RenderLayer RenderLayer => RenderLayer.Skybox;
     public override bool IsVisible { get; set; } = true;

@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using OpenTK.Graphics.OpenGL;
+﻿using OpenTK.Graphics.OpenGL;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using RE.Core.World;
@@ -28,6 +25,7 @@ namespace RE.Rendering.Renderables
                     Axis.X => new(1, 0, 0),
                     Axis.Y => new(0, 1, 0),
                     Axis.Z => new(0, 0, 1),
+                    _ => throw new ArgumentOutOfRangeException(nameof(a), a, null)
                 }));
         }
 
@@ -36,7 +34,8 @@ namespace RE.Rendering.Renderables
 
         public override void Render(FrameEventArgs args)
         {
-            if(GameObject == null!) return;
+            if (GameObject == null!)
+                return;
             GL.Disable(EnableCap.DepthTest);
             var min = MinBounds;
             var max = MaxBounds;

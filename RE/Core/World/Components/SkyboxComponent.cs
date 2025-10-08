@@ -12,7 +12,7 @@ namespace RE.Core.World.Components
     [ComponentInfo("World", Description = $"Renders Skybox with 6 images located in '{nameof(Path)}':\r\n/right.png\r\n/left.png\r\n/top.png\r\n/bottom.png\r\n/front.png\r\n/back.png\r\n")]
     internal class SkyboxComponent(string path) : Component
     {
-        private ShaderProgram _program;
+        private ShaderProgram _program = null!;
 
         private static int _vao, _vbo;
         private static readonly float[] _cubeVertices =
@@ -31,7 +31,7 @@ namespace RE.Core.World.Components
             1, -1, 1, 1, -1, -1, -1, -1, -1 // низ
         ];
         private static int _cubemap;
-        private static string[] faces =
+        private static string[] _faces =
         [
             "/right.png",   // GL_TEXTURE_CUBE_MAP_POSITIVE_X
             "/left.png",    // GL_TEXTURE_CUBE_MAP_NEGATIVE_X
@@ -62,9 +62,9 @@ namespace RE.Core.World.Components
 
             try
             {
-                for (int i = 0; i < faces.Length; i++)
+                for (int i = 0; i < _faces.Length; i++)
                 {
-                    var pathToFace = Path + faces[i];
+                    var pathToFace = Path + _faces[i];
                     if (File.Exists(pathToFace))
                     {
                         using var image =

@@ -29,7 +29,7 @@ public class LineRenderer : Renderable
     private int _vao, _vbo;
     private ShaderProgram _shaderProgram;
 
-    public void Dispose()
+    public override void Dispose()
     {
         if (_vao != 0)
         {

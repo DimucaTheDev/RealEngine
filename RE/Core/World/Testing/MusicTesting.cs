@@ -14,7 +14,7 @@ namespace RE.Core.World.Testing
         private bool ActionRunning = false;
         private Queue<Action> testQueue = new();
 
-        public override void OnSceneLoaded(Scene scene)
+        public override void Start()
         {
             Camera.Instance.Position = new Vector3(0, 5, 0);
             Camera.Instance.Pitch = Camera.Instance.Yaw = 0;
@@ -28,11 +28,14 @@ namespace RE.Core.World.Testing
         private const string soundPath = "common/wpn_select";
         void StartBenchmark()
         {
+            var before = Variables.GetVariable("showDebugInfo");
+            Variables.SetVariable("showDebugInfo", true);
             AddTask("Play 2D sound", () =>
             {
                 SoundManager.Play(soundPath, new SoundPlaybackSettings
                 {
-                    InWorld = false
+                    InWorld = false,
+                    ShowDebugInfo = true
                 });
             });
 
@@ -41,7 +44,8 @@ namespace RE.Core.World.Testing
                 SoundManager.Play(soundPath, new SoundPlaybackSettings
                 {
                     InWorld = true,
-                    Position = new Vector3(0, 0, -5)
+                    Position = new Vector3(0, 0, -5),
+                    ShowDebugInfo = true
                 });
             });
 
@@ -50,7 +54,8 @@ namespace RE.Core.World.Testing
                 SoundManager.Play(soundPath, new SoundPlaybackSettings
                 {
                     InWorld = true,
-                    Position = new Vector3(0, 0, 5)
+                    Position = new Vector3(0, 0, 5),
+                    ShowDebugInfo = true
                 });
             });
 
@@ -59,7 +64,8 @@ namespace RE.Core.World.Testing
                 var emitter = SoundManager.Play("test/test", new SoundPlaybackSettings
                 {
                     InWorld = true,
-                    Position = new Vector3(0, 0, 0)
+                    Position = new Vector3(0, 0, 0),
+                    ShowDebugInfo = true
                 });
 
                 float elapsed = 0f;
@@ -77,7 +83,8 @@ namespace RE.Core.World.Testing
                 {
                     InWorld = false,
                     Loop = true,
-                    Volume = 0.2f
+                    Volume = 0.2f,
+                    ShowDebugInfo = true
                 });
 
                 Time.Schedule(1000, () =>
@@ -90,6 +97,7 @@ namespace RE.Core.World.Testing
                 Time.Schedule(1000, () =>
                 {
                     CommandHandler.ExecuteCommand("level lobby");
+                    Variables.SetVariable("showDebugInfo", before!);
                 });
             });
         }
@@ -115,7 +123,6 @@ namespace RE.Core.World.Testing
             if (!ActionRunning && testQueue.TryDequeue(out var task))
                 task();
         }
-
 
         public override JsonNode GetSaveData()
         {

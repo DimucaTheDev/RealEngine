@@ -4,7 +4,6 @@ using System.Text.Json.Nodes;
 using OpenTK.Mathematics;
 using RE.Core.PluginSystem;
 using Serilog;
-using static System.Windows.Forms.Design.AxImporter;
 using Quaternion = OpenTK.Mathematics.Quaternion;
 
 namespace RE.Core.World
@@ -45,7 +44,6 @@ namespace RE.Core.World
                     CurrentScene.Dispose();
                 }
                 CurrentScene = scene;
-                CurrentScene.Load();
                 afterLoaded?.Invoke();
             }
             ));
@@ -93,7 +91,7 @@ namespace RE.Core.World
                 }
             }
             root.Add("objects", objects);
-            
+
             var jsonString = root.ToJsonString(new JsonSerializerOptions()
             {
                 WriteIndented = true,
@@ -152,6 +150,7 @@ namespace RE.Core.World
                 foreach (var obj in objs)
                 {
                     GameObject gameObject = new GameObject();
+                    gameObject.Scene = scene;
 
                     gameObject.Name =
                         obj.TryGetProperty("name", out JsonElement nameProperty)
@@ -220,7 +219,7 @@ namespace RE.Core.World
                                 instance = Activator.CreateInstance(type)!;
 
                             Component c = (Component)instance;
-                            gameObject.Components.Add(c);
+                            gameObject.Components.Add(c, true);
 
                             foreach (var prop in component.Value.EnumerateObject())
                             {
@@ -252,9 +251,16 @@ namespace RE.Core.World
                             }
                         }
                     }
-                    scene.GameObjects.Add(gameObject);
+                    scene.GameObjects.Add(gameObject, true);
                 }
 
+                foreach (var go in scene.GameObjects.ToList())
+                {
+                    foreach (var c in go.Components.ToList())
+                    {
+                        c.Start();
+                    }
+                }
                 CurrentScene = temp;
                 return scene;
             }

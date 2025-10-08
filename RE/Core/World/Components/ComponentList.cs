@@ -1,5 +1,4 @@
 ﻿using System.Collections;
-using RE.Debug;
 using RE.Rendering;
 
 #pragma warning disable 108
@@ -24,7 +23,7 @@ namespace RE.Core.World.Components
 
             return true;
         }
-        public void Add(Component c)
+        public void Add(Component c, bool doNotCallStart = false)
         {
             if (c == null)
                 throw new ArgumentNullException(nameof(c), "Component cannot be null");
@@ -40,7 +39,8 @@ namespace RE.Core.World.Components
             Game.Instance.UpdateFrame += c.Update;
             RenderManager.RenderingComponents.Add(c);
             _components.Add(c);
-            c.OnComponentAdded();
+            if (!doNotCallStart)
+                c.Start();
         }
 
         public void Remove(Component c)

@@ -1,5 +1,4 @@
-﻿using System.Runtime.InteropServices;
-using OpenTK.Graphics.OpenGL4;
+﻿using OpenTK.Graphics.OpenGL4;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using RE.Core.Assets;
@@ -49,13 +48,13 @@ public class SphereLineRenderer : Renderable
         shaderProgram.AttachShader("assets/shaders/circle.vert");
         shaderProgram.AttachShader("assets/shaders/circle.frag");
         return shaderProgram;
-    } 
+    }
 
     public override void Render(FrameEventArgs args)
     {
         UpdateVertices();
 
-        GL.UseProgram(_shaderProgram);
+        _shaderProgram.Use();
         var viewMatrix = Camera.Instance.GetViewMatrix();
         var projectionMatrix = Camera.Instance.GetProjectionMatrix();
         _shaderProgram.SetValue("uView", viewMatrix);
@@ -102,8 +101,8 @@ public class SphereLineRenderer : Renderable
             float y = MathF.Sin(angle) * Radius;
             _vertices[i] = Center + new Vector3(x, y, 0);
         }
-    } 
-    public void Dispose()
+    }
+    public override void Dispose()
     {
         this.StopRender();
         GL.DeleteBuffer(_vbo);

@@ -12,42 +12,41 @@ namespace RE.Core
     {
         public static event Action? InitializationCompleted;
 
-        private static FreeTypeFont font;
-        private static FreeTypeFont titleFont;
+#pragma warning disable 8618 //these variables are initialized in Init()
+        private static FreeTypeFont _font;
+        private static FreeTypeFont _titleFont;
         private static ScreenText _textCurrentStep;
         private static ScreenText _textSteps;
-        private static List<ScreenText> _textPastSteps = new();
         private static ScreenText _textTitle;
         private static ScreenText _textTitleDemo;
+#pragma warning restore
+        private static List<ScreenText> _textPastSteps = new();
         private static Queue<(string label, Action action)> _initSteps = new();
         private static string _currentStep = "";
-        private static bool _initDone = false;
+        private static bool _initDone;
         private static bool _shouldExecuteAction;
         private static Action? _pendingAction;
         private static int _step = 1;
         private static int _steps = 0;
         private const int MaxSteps = 10;
-        private static string pastLog = "";
 
         public static void Init()
         {
-            font = new(16, Fonts.Eurostile);
-            titleFont = new(64, Fonts.Eurostile);
-
-
-            _textCurrentStep = new ScreenText(null, Vector2.Zero, font);
-            _textSteps = new ScreenText(null, Vector2.Zero, font);
+            _font = new(16, Fonts.Eurostile);
+            _titleFont = new(64, Fonts.Eurostile);
+            _textCurrentStep = new ScreenText(null, Vector2.Zero, _font);
+            _textSteps = new ScreenText(null, Vector2.Zero, _font);
 
             var title = "REAL ENGINE";
             var titleDemo = "Demo";
             _textTitle = new ScreenText(title,
                 new Vector2(
-                    (Game.Instance.ClientSize.X - titleFont.GetTextWidth(title)) / 2,
-                    Game.Instance.ClientSize.Y / 4 - titleFont.GetTextHeight(title) / 2 + 80), titleFont, Vector4.One);
+                    (Game.Instance.ClientSize.X - _titleFont.GetTextWidth(title)) / 2,
+                    Game.Instance.ClientSize.Y / 4 - _titleFont.GetTextHeight(title) / 2 + 80), _titleFont, Vector4.One);
             _textTitleDemo = new ScreenText(titleDemo,
                 new Vector2(
-                    (Game.Instance.ClientSize.X - titleFont.GetTextWidth(titleDemo, 0.5f)) / 2 + 200,
-                    Game.Instance.ClientSize.Y / 4 - titleFont.GetTextHeight(titleDemo, 0.5f) / 2 + 100), titleFont, 0.5f, new(0.5f));
+                    (Game.Instance.ClientSize.X - _titleFont.GetTextWidth(titleDemo, 0.5f)) / 2 + 200,
+                    Game.Instance.ClientSize.Y / 4 - _titleFont.GetTextHeight(titleDemo, 0.5f) / 2 + 100), _titleFont, 0.5f, new(0.5f));
 
 
             _textCurrentStep.Color = new Vector4(1f, 1f, 1f, 1f);
@@ -103,7 +102,7 @@ namespace RE.Core
 
                     if (!string.IsNullOrEmpty(_currentStep))
                     {
-                        var pastText = new ScreenText(_currentStep, Vector2.Zero, font, new Vector4(Vector3.One, .175f));
+                        var pastText = new ScreenText(_currentStep, Vector2.Zero, _font, new Vector4(Vector3.One, .175f));
                         pastText.StartRender();
                         _textPastSteps.Insert(0, pastText);
 
@@ -120,8 +119,8 @@ namespace RE.Core
                     var (label, action) = _initSteps.Dequeue();
                     _currentStep = label;
 
-                    float textX = (Game.Instance.ClientSize.X - font.GetTextWidth(label)) / 2f;
-                    float textY = (Game.Instance.ClientSize.Y - font.GetTextHeight(label)) / 2f + 50;
+                    float textX = (Game.Instance.ClientSize.X - _font.GetTextWidth(label)) / 2f;
+                    float textY = (Game.Instance.ClientSize.Y - _font.GetTextHeight(label)) / 2f + 50;
 
                     _textCurrentStep.Position = new(textX, textY);
                     _textCurrentStep.Text = label;
@@ -130,13 +129,13 @@ namespace RE.Core
                     float centerY = Game.Instance.ClientSize.Y / 2f + 50;
 
                     _textCurrentStep.Text = _currentStep;
-                    _textCurrentStep.Position = new Vector2(centerX - font.GetTextWidth(_currentStep) / 2f, centerY);
+                    _textCurrentStep.Position = new Vector2(centerX - _font.GetTextWidth(_currentStep) / 2f, centerY);
 
                     for (int i = 0; i < _textPastSteps.Count; i++)
                     {
                         var txt = _textPastSteps[i];
-                        float y = centerY + font.PixelHeight * (i + 1);
-                        txt.Position = new Vector2(centerX - font.GetTextWidth(txt.Text) / 2f, y);
+                        float y = centerY + _font.PixelHeight * (i + 1);
+                        txt.Position = new Vector2(centerX - _font.GetTextWidth(txt.Text) / 2f, y);
 
                         float t = i / (float)(MaxSteps - 1); //[0; 1]
                         float alpha = MathF.Pow(1f - t, 1.5f); // [0,18; 1]]
@@ -152,8 +151,8 @@ namespace RE.Core
 
                     _textSteps.Text = $"{_step++}/{_steps}";
                     _textSteps.Position =
-                        new Vector2((Game.Instance.ClientSize.X - font.GetTextWidth(_textSteps.Text)) / 2,
-                            (Game.Instance.ClientSize.Y - font.GetTextHeight(_textSteps.Text)) / 2 - 20 + 50);
+                        new Vector2((Game.Instance.ClientSize.X - _font.GetTextWidth(_textSteps.Text)) / 2,
+                            (Game.Instance.ClientSize.Y - _font.GetTextHeight(_textSteps.Text)) / 2 - 20 + 50);
 
                     _shouldExecuteAction = true;
                     _pendingAction = action;

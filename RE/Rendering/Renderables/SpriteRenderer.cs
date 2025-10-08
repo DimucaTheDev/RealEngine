@@ -1,5 +1,4 @@
-﻿using Microsoft.VisualBasic.Logging;
-using OpenTK.Graphics.OpenGL4;
+﻿using OpenTK.Graphics.OpenGL4;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using RE.Core.Assets;
@@ -34,8 +33,9 @@ namespace RE.Rendering.Renderables
             bool constantSize = false, float scale = 1f)
         {
             Position = position;
-            this._constantSize = constantSize;
+            Path = spritePath;
             Scale = scale;
+            _constantSize = constantSize;
 
             float[] vertices = {
             // pos      // uv
@@ -81,7 +81,6 @@ namespace RE.Rendering.Renderables
             _shaderProgram.Use();
 
             float aspectRatio = _texWidth / _texHeight;
-            float w = 1f;
             float baseSize = 1.0f;
             float distance = (Position - Camera.Instance.Position).Length;
             float scale = distance * baseSize;
@@ -139,7 +138,7 @@ namespace RE.Rendering.Renderables
             _texture = LoadTexture(path);
         }
 
-        public void Dispose()
+        public override void Dispose()
         {
             this.StopRender();
             GL.DeleteVertexArray(_vao);

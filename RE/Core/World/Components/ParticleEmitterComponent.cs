@@ -40,11 +40,6 @@ namespace RE.Core.World.Components
             _openPopup = true;
         }
 
-        public override void OnComponentAdded()
-        {
-            Start();
-        }
-
         public override void Start()
         {
             if (_emitterSpriteRenderer == null)

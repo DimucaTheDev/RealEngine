@@ -1,6 +1,4 @@
 ﻿using System.Collections;
-using RE.Debug;
-using RE.Rendering;
 
 namespace RE.Core.World
 {
@@ -9,11 +7,14 @@ namespace RE.Core.World
     /// </summary>
     public class GameObjectList : IEnumerable<GameObject>
     {
-        private readonly List<GameObject> _objects = new(); 
+        private readonly List<GameObject> _objects = new();
 
-        public void Add(GameObject g)
+        public void Add(GameObject g, bool doNotCallStart = false)
         {
-            _objects.Add(g); 
+            _objects.Add(g);
+            if (doNotCallStart)
+                return;
+            //todo: set g.Scene 
             foreach (var component in g.Components.ToList())
             {
                 component.Start();
@@ -26,10 +27,9 @@ namespace RE.Core.World
             {
                 Remove(child);
             }
-            foreach (var component in g.Components)
-            { 
+            foreach (var component in g.Components.ToList())
+            {
                 g.Components.Remove(component);
-                RenderManager.RenderingComponents.Add(component);
             }
             _objects.Remove(g);
         }

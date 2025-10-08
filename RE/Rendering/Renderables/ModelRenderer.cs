@@ -1,13 +1,11 @@
 ﻿using System.Diagnostics;
 using System.Globalization;
 using Assimp;
-using Assimp.Unmanaged;
 using OpenTK.Graphics.OpenGL4;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using RE.Core;
 using RE.Core.Assets;
-using RE.Debug;
 using RE.Debug.Overlay;
 using RE.Rendering.Lightning;
 using RE.Rendering.Renderables.ModelFormat;
@@ -18,7 +16,6 @@ using StbImageSharp;
 using Material = RE.Rendering.Lightning.Material;
 using PrimitiveType = OpenTK.Graphics.OpenGL4.PrimitiveType;
 using Quaternion = OpenTK.Mathematics.Quaternion;
-using TextRenderer = RE.Rendering.Text.TextRenderer;
 
 namespace RE.Rendering.Renderables
 {
@@ -28,7 +25,7 @@ namespace RE.Rendering.Renderables
         private static readonly FreeTypeFont Font = new(32, "Assets/Fonts/consola.ttf");
         private static readonly Dictionary<string, uint> TextureCache = new();
         private static readonly Dictionary<string, (uint vao, uint vbo, uint ebo, int indexCount, List<float> vertices, List<int> indices, Vector3 min, Vector3 max)> MeshCache = new();
-        private static ShaderProgram _program;
+        private static ShaderProgram _program = null!;
         private static bool _shaderInitialized = false;
         private uint _vao, _vbo, _ebo, _texture;
         private int _indexCount;
@@ -126,7 +123,7 @@ namespace RE.Rendering.Renderables
             Render(args, model);
         }
 
-        
+
 
         public void Render(FrameEventArgs args, Matrix4 model)
         {
@@ -145,7 +142,7 @@ namespace RE.Rendering.Renderables
 
             // lighting.glsl
             _program.SetStruct("material", Material);
-            if (IgnoreLight || (SceneEditor.Enabled && SceneEditor.PreviewLight))
+            if (IgnoreLight || (SceneEditor.Enabled && !SceneEditor.PreviewLight))
                 _program.SetValue("ignoreLight", true);
             else
             {
@@ -174,7 +171,7 @@ namespace RE.Rendering.Renderables
                 GL.Enable(EnableCap.CullFace);
                 GL.CullFace(TriangleFace.Front);
                 _program.SetValue("outline", 1);
-                _program.SetValue("outlineColor", (MathF.Sin(Time.ElapsedTime*4) / 2 + 0.5f) * OutlineColor);
+                _program.SetValue("outlineColor", (MathF.Sin(Time.ElapsedTime * 4) / 2 + 0.5f) * OutlineColor);
                 //GL.PolygonMode(TriangleFace.Back, PolygonMode.Fill); //todo: render only back side monocolor. somewhy it doesnt work
             }
 

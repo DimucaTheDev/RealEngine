@@ -11,7 +11,7 @@ namespace RE.Core.World.Testing
         {
             base.Update(args);
             if (Game.Instance.MouseState.IsButtonPressed(0))
-            { 
+            {
                 var forward = Camera.Instance.Front.Normalized();
 
                 // Сила отдачи
@@ -23,7 +23,7 @@ namespace RE.Core.World.Testing
                     -forward.Y * recoilForce,
                     -forward.Z * recoilForce
                 );
-                _playerGameObject.GetComponent<RigidBodyComponent>()!.RigidBody.ApplyCentralImpulse(impulse);
+                PlayerGameObject.GetComponent<RigidBodyComponent>()!.RigidBody.ApplyCentralImpulse(impulse);
             }
         }
     }

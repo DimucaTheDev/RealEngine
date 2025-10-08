@@ -8,13 +8,13 @@ namespace RE.Rendering.Text;
 
 internal class TextRenderer
 {
-    private static ShaderProgram ShaderProgram;
+    private static ShaderProgram _shaderProgram = null!;
 
     public static void Init()
     {
-        ShaderProgram = new();
-        ShaderProgram.AttachShader("assets/shaders/text.frag");
-        ShaderProgram.AttachShader("assets/shaders/text.vert");
+        _shaderProgram = new();
+        _shaderProgram.AttachShader("assets/shaders/text.frag");
+        _shaderProgram.AttachShader("assets/shaders/text.vert");
 
         RenderManager.SetRenderableInitAction<ScreenText>(() =>
         {
@@ -22,7 +22,7 @@ internal class TextRenderer
                 Game.Instance.ClientSize.Y, 0.0f, -1.0f, 1.0f);
             GL.Enable(EnableCap.Blend);
             GL.BlendFunc(0, BlendingFactorSrc.SrcAlpha, BlendingFactorDest.OneMinusSrcAlpha);
-            ShaderProgram.Use(); 
+            _shaderProgram.Use();
             GL.UniformMatrix4(1, false, ref projectionM);
         });
     }

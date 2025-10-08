@@ -6,6 +6,7 @@ using RE.Core.World.Components;
 
 namespace RE.Core.World.Testing
 {
+#pragma warning disable
     internal class Video : Component
     {
         List<int> textures = [];
@@ -39,12 +40,11 @@ namespace RE.Core.World.Testing
         {
             timeAccumulator += args.Time;
 
-            // Сколько кадров прошло с прошлого апдейта
             while (timeAccumulator >= frameDuration)
             {
                 timeAccumulator -= frameDuration;
 
-                frame = (frame + 1) % textures.Count; // или не % если видео можно закончить
+                frame = (frame + 1) % textures.Count;
                 GetComponent<SpriteComponent>().Sprite.SetTexture((uint)textures[frame]);
             }
 
