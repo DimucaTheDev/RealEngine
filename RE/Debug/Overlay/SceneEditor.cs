@@ -842,20 +842,23 @@ namespace RE.Debug.Overlay
 
         void DrawButton(Type type)
         {
-            bool SatisfiesCondition(Type c)
+            bool SatisfiesCondition(Type c, out List<Type> missing)
             {
+                missing = new();
                 var reqAtts = c.GetCustomAttributes<RequiresComponentAttribute>();
                 if (_selectedObject!.Components.Any(s => s.GetType() == c))
                     return false;
                 foreach (var att in reqAtts)
                 {
                     if (_selectedObject!.Components.All(comp => comp.GetType() != att.RequiredComponent))
-                        return false;
+                        missing.Add(att.RequiredComponent);
                 }
-
-                return true;
+                return missing.Count == 0;
             }
-            bool disabled = !SatisfiesCondition(type);
+
+            bool alreadyContains = _selectedObject!.Components.Any(s => s.GetType() == type);
+            bool disabled = !SatisfiesCondition(type, out var missingComponents);
+
             BeginDisabled(disabled);
             if (Button(AddSpacesToCamelCase(type.Name.Replace("Component", ""))))
             {
@@ -871,8 +874,20 @@ namespace RE.Debug.Overlay
                 {
                     if (disabled)
                     {
-                        Text($"Object already contains {type.Name}");
-                        Separator();
+                        if (alreadyContains)
+                        {
+                            Text($"This object already contains {type.Name}.");
+                            Separator();
+                        }
+                        else if (missingComponents.Count > 0)
+                        {
+                            Text("Cannot add this component because the following required components are missing:");
+                            foreach (var req in missingComponents)
+                                Text($"- {AddSpacesToCamelCase(req.Name.Replace("Component", ""))} ({req.FullName} in {Path.GetFileName(req.Assembly.Location)})");
+                            Separator();
+                            Text("Please add the required components first.");
+                            NewLine();
+                        }
                     }
                     var a = type.GetCustomAttribute<ComponentInfoAttribute>();
                     if (a is { Description: not null })
@@ -1138,7 +1153,7 @@ namespace RE.Debug.Overlay
         {
             var mesh = _selectedObject?.GetComponent<MeshComponent>();
 
-            if (mesh == null!)
+            if (mesh == null! || string.IsNullOrWhiteSpace(mesh.Path))
             {
                 SelectedObjectOutline.StopRender();
             }

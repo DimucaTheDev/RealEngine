@@ -48,12 +48,26 @@ namespace RE.Audio
         /// <summary>
         /// Stores the underlying FMOD sound instance.
         /// </summary>
-        /// <remarks>FMOD Docs: <a href="https://www.fmod.com/docs/2.01/api/core-api-sound.html"> https://www.fmod.com/docs/2.01/api/core-api-sound.html</a></remarks>
+        /// <remarks>
+        /// <para>
+        /// FMOD Docs: <a href="https://www.fmod.com/docs/2.01/api/core-api-sound.html"> https://www.fmod.com/docs/2.01/api/core-api-sound.html</a>
+        /// </para>
+        /// <para>
+        /// Can be <see langword="null"/> if sound is disposed.
+        /// </para>
+        /// </remarks>
         public FmodSound FmodSound { get; }
         /// <summary>
         /// Stores the underlying FMOD channel instance.
         /// </summary>
-        /// <remarks>FMOD Docs: <a href="https://www.fmod.com/docs/2.01/api/core-api-channel.html"> https://www.fmod.com/docs/2.01/api/core-api-channel.html</a></remarks>
+        /// <remarks>
+        /// <para>
+        /// FMOD Docs: <a href="https://www.fmod.com/docs/2.01/api/core-api-channel.html"> https://www.fmod.com/docs/2.01/api/core-api-channel.html</a>
+        /// </para>
+        /// <para>
+        /// Can be <see langword="null"/> if sound is disposed.
+        /// </para>
+        /// </remarks>
         public FmodChannel FmodChannel { get; private set; }
 
         /// <remarks>

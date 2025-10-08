@@ -1,11 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace RE.Core.Scripting
+﻿namespace RE.Core.Scripting
 {
-    //todo: docs
-    //this attribute is used to specify that a property should only be displayed if property NAME matches VALUE
+    /// <summary>
+    /// Specifies a conditional requirement for a property based on the value of another property. Apply this attribute
+    /// to a property to indicate that it is relevant only when a specified property has a particular value.
+    /// </summary>
+    /// <remarks>Multiple instances of this attribute can be applied to a property to define complex
+    /// conditional logic. This attribute is typically used in validation or UI scenarios to control property visibility
+    /// or requirement based on other property values.</remarks>
+    /// <param name="v">The name of the property whose value determines whether the attributed property is applicable.</param>
+    /// <param name="val">The value to compare against the specified property. The attributed property is considered relevant when the
+    /// named property's value equals this value.</param>
     [AttributeUsage(AttributeTargets.Property, AllowMultiple = true)]
     public sealed class IfAttribute(string v, object? val) : Attribute
     {

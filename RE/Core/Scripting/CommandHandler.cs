@@ -287,12 +287,14 @@ namespace RE.Core.Scripting
                 int index = 0;
                 foreach (var tex in Enumerable.Range(0, 32000)) // https://www.youtube.com/shorts/gib8WGoR604 
                 {
-                    if (!GL.IsTexture(tex)) continue;
+                    if (!GL.IsTexture(tex))
+                        continue;
                     GL.BindTexture(TextureTarget.Texture2D, tex);
 
                     GL.GetTexLevelParameter(TextureTarget.Texture2D, 0, GetTextureParameter.TextureWidth, out int width);
                     GL.GetTexLevelParameter(TextureTarget.Texture2D, 0, GetTextureParameter.TextureHeight, out int height);
-                    if (width == 0 || height == 0) continue;
+                    if (width == 0 || height == 0)
+                        continue;
                     byte[] pixels = new byte[width * height * 4];
                     GL.GetTexImage(TextureTarget.Texture2D, 0, PixelFormat.Rgba, PixelType.UnsignedByte, pixels);
 
@@ -303,7 +305,7 @@ namespace RE.Core.Scripting
                     Debugger.Break();
                 }
                 Log.Information("Dumped {Count} textures.", index);
-            });
+            }, "Dumps all GL textures to dump/ folder");
         }
 
         private static string Format(object? obj)

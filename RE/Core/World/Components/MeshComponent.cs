@@ -44,7 +44,7 @@ namespace RE.Core.World.Components
             ModelRenderer.Position = Owner.Transform.Position;
             ModelRenderer.Rotation = Owner.Transform.Rotation;
             ModelRenderer.Scale = Owner.Transform.Scale;
-            if (_started)
+            if (_started && !string.IsNullOrWhiteSpace(Path))
                 ModelRenderer.Render(args);
         }
 

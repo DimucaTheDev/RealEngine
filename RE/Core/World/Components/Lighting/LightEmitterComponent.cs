@@ -1,22 +1,24 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Text.Json.Nodes;
+﻿using System.Text.Json.Nodes;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using RE.Core.Scripting;
 using RE.Debug;
 using RE.Rendering.Renderables;
-using RE.Utils;
 
 namespace RE.Core.World.Components.Lighting
 {
+    /// <summary>
+    /// wip
+    /// </summary>
     public enum LightType
     {
         Directional,
         Point,
         Spot,
     }
+    /// <summary>
+    /// wip
+    /// </summary>
     public class LightEmitterComponent : Component, IDebugRenderer
     {
         [EditorProperty] public LightType LightType { get; set; }
