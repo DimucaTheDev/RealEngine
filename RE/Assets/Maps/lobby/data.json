@@ -228,7 +228,7 @@
       "components": {
         "BillboardTextComponent": {
           "args": [
-            "Test 1"
+            "Test 1 \u0410\u0411\u0412"
           ],
           "PositionOffset": [
             0,

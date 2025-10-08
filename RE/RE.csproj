@@ -66,6 +66,7 @@
 		<PackageReference Include="OpenCvSharp4" Version="4.11.0.20250507" />
 		<PackageReference Include="OpenCvSharp4.runtime.win" Version="4.11.0.20250507" />
 		<PackageReference Include="OpenTK" Version="4.9.4" />
+		<PackageReference Include="RenderdocSharp" Version="1.0.0-rc.1" />
 		<PackageReference Include="Serilog" Version="4.3.0" />
 		<PackageReference Include="Serilog.Enrichers.Thread" Version="4.0.0" />
 		<PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
@@ -103,6 +104,6 @@
 		<None Include="Assets\GenerateStaticModel.cs">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</None>
-	</ItemGroup>
+	</ItemGroup> 
 
 </Project>

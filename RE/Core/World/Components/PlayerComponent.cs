@@ -22,7 +22,7 @@ namespace RE.Core.World.Components
     [ComponentInfo("World/Player", Description = "Handles player logic")]
     internal class PlayerComponent : Component, IDebugRenderer
     {
-        private Camera _camera;
+        private Camera _camera = Camera.Instance;
         protected GameObject _playerGameObject;
         private bool _isCrouching = false;
         private float _standHeight = 1.75f;
@@ -46,13 +46,12 @@ namespace RE.Core.World.Components
         float _bobBlend = 0f;
         float _currentCameraYOffset2 = 0f;
 
-        SpriteRenderer _spriteSpawnpoint;
+        SpriteRenderer _spriteSpawnpoint = new SpriteRenderer(Vector3.Zero, "assets/sprites/editor/spawn.png", scale: 1);
 
         [EditorProperty] public string InteractDenySound { get; set; } = "common/wpn_denyselect";
 
         public override void Start()
         {
-            _camera = Camera.Instance;
             _playerGameObject = new GameObject(Owner)
             {
                 DoNotShowInEditor = true,
@@ -62,6 +61,7 @@ namespace RE.Core.World.Components
                     Scale = new Vector3(0.75f, _standHeight, 0.75f)
                 }
             };
+            _playerGameObject.SetPosition(Owner.Transform.Position);
             var rigidBodyComponent = new RigidBodyComponent();
             _playerGameObject.Components.Add(new CapsuleColliderComponent());
             _playerGameObject.Components.Add(rigidBodyComponent);
@@ -71,13 +71,7 @@ namespace RE.Core.World.Components
             rigidBodyComponent.RigidBody.ActivationState = ActivationState.DisableDeactivation;
             rigidBodyComponent.RigidBody.Gravity = new BulletSharp.Math.Vector3(0, -25f, 0);
 
-            _spriteSpawnpoint = new SpriteRenderer(Vector3.Zero, "assets/sprites/editor/spawn.png", scale: 1);
-        }
-
-        public override void OnSceneLoading(Scene scene)
-        {
-            _playerGameObject.SetPosition(Owner.Transform.Position);
-        }
+        } 
 
         public override void Update(FrameEventArgs args)
         {

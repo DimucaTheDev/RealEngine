@@ -17,7 +17,7 @@ namespace RE.Core.World.Components.Lighting
         Point,
         Spot,
     }
-    public class LightEmitterComponent : Component
+    public class LightEmitterComponent : Component, IDebugRenderer
     {
         [EditorProperty] public LightType LightType { get; set; }
 
@@ -55,7 +55,7 @@ namespace RE.Core.World.Components.Lighting
             return GetDataForProperties();
         }
 
-        public override void Render(FrameEventArgs args)
+        public void DebugRender(FrameEventArgs args)
         {
             //todo: see comment on Position
             _bulbSprite.Position = Owner.Transform.Position + Position;
@@ -63,6 +63,7 @@ namespace RE.Core.World.Components.Lighting
             switch (LightType)
             {
                 case LightType.Spot:
+                    const int lines = 16;
                     Vector3 forward = Vector3.Normalize(Direction);
                     Vector3 up = Vector3.UnitY;
                     if (Math.Abs(Vector3.Dot(forward, up)) > 0.99f)
@@ -74,27 +75,30 @@ namespace RE.Core.World.Components.Lighting
                     float angle = MathF.Acos(OuterCutOff);
                     float radius = MathF.Tan(angle);
 
-                    Vector3[] ringPoints = new Vector3[8];
+                    Vector3[] ringPoints = new Vector3[lines];
 
-                    for (int i = 0; i < 8; i++)
+                    for (int i = 0; i < lines; i++)
                     {
-                        float theta = i * MathF.PI / 4f;
+                        float theta = i * MathF.PI / (lines / 2);
 
                         Vector3 offset = (MathF.Cos(theta) * right + MathF.Sin(theta) * up) * radius;
                         Vector3 dir = Vector3.Normalize(forward + offset);
-                        Vector3 end = Owner.Transform.Position + dir * 4f;
+                        Vector3 end = Owner.Transform.Position + dir * 4;
 
                         ringPoints[i] = end;
+
+                        if (i % 2 == 0)
+                            continue;
 
                         LineRenderer.DrawLine(Owner.Transform.Position, end,
                            (1, 0, 0, 1),
                            (0, 1, 0, 1));
                     }
 
-                    for (int i = 0; i < 8; i++)
+                    for (int i = 0; i < lines; i++)
                     {
                         Vector3 a = ringPoints[i];
-                        Vector3 b = ringPoints[(i + 1) % 8];
+                        Vector3 b = ringPoints[(i + 1) % lines];
 
                         LineRenderer.DrawLine(a, b,
                             (0, 1, 0, 1),

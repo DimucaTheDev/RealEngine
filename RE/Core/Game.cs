@@ -18,6 +18,7 @@ using RE.Debug.Overlay;
 using RE.Libs.Grille.ImGuiTK;
 using RE.Rendering;
 using RE.Utils;
+using RenderdocSharp;
 using Serilog;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
@@ -92,6 +93,9 @@ internal class Game : GameWindow
             });
         Instance = game;
 
+        if (Renderdoc.IsAvailable)
+            Log.Information("RenderDoc available: {Version}", Renderdoc.Version);
+
         game.Run();
 
         Log.Information("End");
@@ -127,7 +131,7 @@ internal class Game : GameWindow
         ));
         Initializer.AddStep(("Registering Commands", CommandHandler.RegisterAllCommands));
         Initializer.AddStep(("Running default.cfg", () => { CommandHandler.ExecuteCommand("source assets/cfg/default.cfg"); }
-        )); 
+        ));
 
         base.OnLoad();
     }
@@ -141,6 +145,7 @@ internal class Game : GameWindow
 
     protected override void OnRenderFrame(FrameEventArgs args)
     {
+
         if (Initializer.Render(args))
         {
             return;
@@ -168,8 +173,7 @@ internal class Game : GameWindow
         RenderManager.RenderAll(args);
         SwapBuffers();
 
-
-
+ 
         if (KeyboardState.IsKeyPressed(Keys.F11))
             Game.Instance.ToggleFullscreen();
         if (KeyboardState.IsKeyPressed(Keys.F1))
@@ -317,7 +321,7 @@ internal class Game : GameWindow
 
             Marshal.Copy(bitmapData.Scan0, data, 0, data.Length);
             bitmap.UnlockBits(bitmapData);
-            
+
             for (int i = 0; i < data.Length; i += 4)
             {
                 byte a = data[i + 3];

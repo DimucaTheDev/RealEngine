@@ -39,6 +39,7 @@ namespace RE.Debug.Overlay
 
         public static SceneEditor Instance = new();
         public static bool Enabled = false;
+        public static bool PreviewLight = false;
 
         public override RenderLayer RenderLayer => RenderLayer.ImGui;
         public override bool IsVisible { get; set; } = false;
@@ -59,21 +60,9 @@ namespace RE.Debug.Overlay
             LockRotationY = true
         };
 
-        private static ModelRenderer XAxisArrow = new("assets/models/axis.fbx", OpenTK.Mathematics.Vector3.PositiveInfinity)
-        {
-            IgnoreLight = true,
-            ConstantSize = true
-        };
-        private static ModelRenderer YAxisArrow = new("assets/models/axis.fbx", OpenTK.Mathematics.Vector3.PositiveInfinity)
-        {
-            IgnoreLight = true,
-            ConstantSize = true
-        };
-        private static ModelRenderer ZAxisArrow = new("assets/models/axis.fbx", OpenTK.Mathematics.Vector3.PositiveInfinity)
-        {
-            IgnoreLight = true,
-            ConstantSize = true
-        };
+        private static GizmosRenderable XAxisArrow = new(null, GizmosRenderable.Axis.X);
+        private static GizmosRenderable YAxisArrow = new (null, GizmosRenderable.Axis.Y);
+        private static GizmosRenderable ZAxisArrow = new(null, GizmosRenderable.Axis.Z);
 
         private static readonly int LogoImage;
 
@@ -169,11 +158,7 @@ namespace RE.Debug.Overlay
                 io.Fonts.SetTexID((IntPtr)fontTex);
 
                 GL.BindTexture(TextureTarget.Texture2D, 0);
-            }
-
-            XAxisArrow.SetTexture(Util.CreateMonoColorTexture(new(1, 0, 0)));
-            YAxisArrow.SetTexture(Util.CreateMonoColorTexture(new(0, 1, 0)));
-            ZAxisArrow.SetTexture(Util.CreateMonoColorTexture(new(0, 0, 1)));
+            } 
         }
 
         public void Enable()
@@ -190,6 +175,9 @@ namespace RE.Debug.Overlay
             _scene = SceneManager.CurrentScene;//SceneManager.ParseScene(SceneManager.CurrentScene.Name!/*костыль*/); // TODO: set json path to scene's property
             //SceneManager.LoadScene(_scene, true);
             _selectedObject = null;
+            XAxisArrow.GameObject = null;
+            YAxisArrow.GameObject = null;
+            ZAxisArrow.GameObject = null;
             IsVisible = true;
 
             foreach (var type in Assembly.GetExecutingAssembly().GetTypes().Where(t => typeof(IEditorPopup).IsAssignableFrom(t)))
@@ -264,37 +252,9 @@ namespace RE.Debug.Overlay
 
                 GL.Disable(EnableCap.DepthTest);
 
-                var min = XAxisArrow.MinBounds;
-                var max = XAxisArrow.MaxBounds;
-                var objPos = _selectedObject.Transform.Position;
-
-                var offset = ((max - min) / 2).X;
-                var camPos = Camera.Instance.Position;
-                float distance = (camPos - objPos).Length;
-                float fixedScale = distance * 0.05f;
-                XAxisArrow.Position = objPos + new OpenTK.Mathematics.Vector3(offset * fixedScale, 0, 0);
-                Matrix4 model =
-                    Matrix4.CreateScale(fixedScale) *
-                    Matrix4.CreateTranslation(XAxisArrow.Position);
-
-                XAxisArrow.Render(args, model);
-
-
-                YAxisArrow.Position = objPos + new OpenTK.Mathematics.Vector3(0, offset * fixedScale, 0);
-                model =
-                    Matrix4.CreateScale(fixedScale) *
-                    Matrix4.CreateRotationZ(MathHelper.DegreesToRadians(90)) *
-                    Matrix4.CreateTranslation(YAxisArrow.Position);
-                YAxisArrow.Render(args, model);
-
-                ZAxisArrow.Position = objPos + new OpenTK.Mathematics.Vector3(0, 0, offset * fixedScale);
-                model =
-                    Matrix4.CreateScale(fixedScale) *
-                    Matrix4.CreateRotationY(MathHelper.DegreesToRadians(-90)) *
-                    Matrix4.CreateTranslation(ZAxisArrow.Position);
-
-                ZAxisArrow.Render(args, model);
-
+                XAxisArrow.Render(args);
+                YAxisArrow.Render(args);
+                ZAxisArrow.Render(args);
 
                 GL.Enable(EnableCap.DepthTest);
             }
@@ -359,6 +319,9 @@ namespace RE.Debug.Overlay
                         var newObject = new GameObject();
                         SceneManager.CurrentScene.GameObjects.Add(newObject);
                         _selectedObject = newObject;
+                        XAxisArrow.GameObject = newObject;
+                        YAxisArrow.GameObject = newObject;
+                        ZAxisArrow.GameObject = newObject;
                         _selectedObjectHasMesh = false;
                     }
 
@@ -408,10 +371,15 @@ namespace RE.Debug.Overlay
             {
                 _scene.GameObjects.Remove(_selectedObject!);
                 _selectedObject = null;
+                XAxisArrow.GameObject = null;
+                YAxisArrow.GameObject = null;
+                ZAxisArrow.GameObject = null;
             }
 
             EndDisabled();
 
+            if (Button($"Preview Light: {(PreviewLight ? "✅" : "❌")}"))
+                PreviewLight = !PreviewLight;
 
             Separator();
             foreach (var obj in SceneManager.CurrentScene.GameObjects.Where(s => s is { DoNotShowInEditor: false, Parent: null }).ToList())
@@ -1134,7 +1102,9 @@ namespace RE.Debug.Overlay
             if (IsItemClicked())
             {
                 _selectedObject = obj;
-                _selectedObjectHasMesh = obj.GetComponent<MeshComponent>() != null;
+                XAxisArrow.GameObject = obj;
+                YAxisArrow.GameObject = obj;
+                ZAxisArrow.GameObject = obj;
                 UpdateSelection();
             }
 

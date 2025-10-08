@@ -27,8 +27,8 @@ namespace RE.Core.World
                 Remove(child);
             }
             foreach (var component in g.Components)
-            {
-                Game.Instance.UpdateFrame -= component.Update;
+            { 
+                g.Components.Remove(component);
                 RenderManager.RenderingComponents.Add(component);
             }
             _objects.Remove(g);

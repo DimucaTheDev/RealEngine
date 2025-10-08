@@ -8,6 +8,7 @@ using OpenTK.Windowing.Common;
 using RE.Core;
 using RE.Core.Assets;
 using RE.Debug;
+using RE.Debug.Overlay;
 using RE.Rendering.Lightning;
 using RE.Rendering.Renderables.ModelFormat;
 using RE.Rendering.Text;
@@ -26,7 +27,7 @@ namespace RE.Rendering.Renderables
     {
         private static readonly FreeTypeFont Font = new(32, "Assets/Fonts/consola.ttf");
         private static readonly Dictionary<string, uint> TextureCache = new();
-        private static readonly Dictionary<string, (uint vao, uint vbo, uint ebo, int indexCount, List<float> vertices, List<int> indices)> MeshCache = new();
+        private static readonly Dictionary<string, (uint vao, uint vbo, uint ebo, int indexCount, List<float> vertices, List<int> indices, Vector3 min, Vector3 max)> MeshCache = new();
         private static ShaderProgram _program;
         private static bool _shaderInitialized = false;
         private uint _vao, _vbo, _ebo, _texture;
@@ -125,6 +126,8 @@ namespace RE.Rendering.Renderables
             Render(args, model);
         }
 
+        
+
         public void Render(FrameEventArgs args, Matrix4 model)
         {
             Matrix4 view = Camera.Instance.GetViewMatrix();
@@ -142,7 +145,7 @@ namespace RE.Rendering.Renderables
 
             // lighting.glsl
             _program.SetStruct("material", Material);
-            if (IgnoreLight)
+            if (IgnoreLight || (SceneEditor.Enabled && SceneEditor.PreviewLight))
                 _program.SetValue("ignoreLight", true);
             else
             {
@@ -172,7 +175,7 @@ namespace RE.Rendering.Renderables
                 GL.CullFace(TriangleFace.Front);
                 _program.SetValue("outline", 1);
                 _program.SetValue("outlineColor", (MathF.Sin(Time.ElapsedTime*4) / 2 + 0.5f) * OutlineColor);
-                GL.PolygonMode(TriangleFace.Back, PolygonMode.Fill); //todo: render only back side monocolor. somewhy it doesnt work
+                //GL.PolygonMode(TriangleFace.Back, PolygonMode.Fill); //todo: render only back side monocolor. somewhy it doesnt work
             }
 
             GL.DrawElements(PrimitiveType.Triangles, _indexCount, DrawElementsType.UnsignedInt, 0);
@@ -181,7 +184,7 @@ namespace RE.Rendering.Renderables
             {
                 // GL_INVALID_ENUM error generated. Polygon modes for <face> are disabled in the current profile.
                 GL.Disable(EnableCap.CullFace);
-                GL.PolygonMode(TriangleFace.FrontAndBack, PolygonMode.Fill);
+                //GL.PolygonMode(TriangleFace.FrontAndBack, PolygonMode.Fill);
                 _program.SetValue("outline", 0);
             }
             // LineRenderer.DrawLine(Position + (0, 2, 0) + dirLightDirection, Position + (0, 2, 0), new(1, 0, 0, 1), new(0, 0, 1, 1));
@@ -219,7 +222,7 @@ namespace RE.Rendering.Renderables
             if (MeshCache.TryGetValue(path, out var meshData))
             {
                 //todo: cache min max bounds
-                (_vao, _vbo, _ebo, _indexCount, renderVertices, PhysicsIndices) = meshData;
+                (_vao, _vbo, _ebo, _indexCount, renderVertices, PhysicsIndices, MinBounds, MaxBounds) = meshData;
                 PhysicsVertices = new float[renderVertices.Count / 8 * 3];
                 for (int i = 0, j = 0; i < renderVertices.Count; i += 8, j += 3)
                 {
@@ -331,7 +334,7 @@ namespace RE.Rendering.Renderables
 
                 GL.BindVertexArray(0);
 
-                MeshCache[path] = (_vao, _vbo, _ebo, _indexCount, renderVertices, indices.Select(s => (int)s).ToList());
+                MeshCache[path] = (_vao, _vbo, _ebo, _indexCount, renderVertices, indices.Select(s => (int)s).ToList(), MinBounds, MaxBounds);
 
                 PhysicsVertices = physicsVerticesTemp.ToArray();
                 PhysicsIndices = indices.Select(i => (int)i).ToList();
@@ -439,7 +442,7 @@ namespace RE.Rendering.Renderables
 
 
                 MeshCache[path] = ((uint)_vao, (uint)_vbo, (uint)_ebo, _indexCount, renderVertices,
-                    indices.Select(s => (int)s).ToList());
+                    indices.Select(s => (int)s).ToList(), MinBounds, MaxBounds);
 
                 var mat = scene.Materials[mesh.MaterialIndex];
                 if (mat != null)

@@ -1,0 +1,80 @@
+{
+  "objects": [
+    {
+      "name": null,
+      "tag": null,
+      "transform": {
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          10,
+          0.1,
+          10
+        ]
+      },
+      "components": {
+        "MeshComponent": {
+          "args": [
+            "Assets\\Models\\cub.fbx"
+          ]
+        }
+      }
+    },
+    {
+      "name": null,
+      "tag": null,
+      "transform": {
+        "position": [
+          0,
+          1.5,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "components": {
+        "PlayerComponent": {}
+      }
+    },
+    {
+      "name": null,
+      "tag": null,
+      "transform": {
+        "position": [
+          0,
+          4.7,
+          -5.5
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "components": {
+        "AllFontsComponentTest": {}
+      }
+    }
+  ]
+}

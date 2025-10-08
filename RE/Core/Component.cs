@@ -1,5 +1,4 @@
-﻿using System.Diagnostics.CodeAnalysis;
-using System.Reflection;
+﻿using System.Reflection;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using OpenTK.Mathematics;
@@ -15,12 +14,6 @@ namespace RE.Core
     /// <remarks>All classes that inherit this class must have parameterless constructor</remarks>
     public abstract class Component
     {
-        protected Component()
-        {
-            var ctor = GetType().GetConstructor(Type.EmptyTypes);
-            if (ctor == null)
-                throw new InvalidOperationException("Class must have parameterless constructor.");
-        }
         /// <summary>
         /// <see cref="GameObject"/> that this component is attached to.
         /// </summary>
@@ -52,15 +45,21 @@ namespace RE.Core
             var properties = GetType().GetProperties().Where(p => p is { CanRead: true, CanWrite: true });
             foreach (var property in properties.Where(s => s.GetCustomAttribute<JsonIgnoreAttribute>() == null))
             {
-                dynamic value = property.GetValue(this)!;
-                obj.Add(property.Name, value is Vector3 vector3 ? vector3.ToJsonArray() : JsonValue.Create(value));
+                var value = property.GetValue(this);
+                if (value is null)
+                    obj.Add(property.Name, null);
+                else if (value is Vector3 v)
+                    obj.Add(property.Name, v.ToJsonArray());
+                else
+                    obj.Add(property.Name, JsonValue.Create(value));
+
             }
 
             return obj;
         }
 
 
-        //todo: rewrite logic of how these methods are called
+        //todo: rewrite logic of how these methods are called ASAP!!!
         public virtual void OnComponentAdded() { }
         public virtual void Start() { }
         public virtual void OnSceneLoading(Scene scene) { }

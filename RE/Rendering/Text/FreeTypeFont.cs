@@ -1,4 +1,5 @@
 ﻿using System.Collections.ObjectModel;
+using System.Diagnostics;
 using OpenTK.Graphics.OpenGL4;
 using OpenTK.Mathematics;
 using Serilog;
@@ -34,9 +35,9 @@ public class FreeTypeFont
 
         // set texture unit
         GL.ActiveTexture(TextureUnit.Texture0);
-
-        // Load first 128 characters of ASCII set
-        for (uint c = 0; c < 128; c++)
+        
+        // Load first X characters of UTF set
+        for (uint c = 0; c < face.GlyphCount; c++)
             try
             {
                 // load glyph
@@ -44,7 +45,6 @@ public class FreeTypeFont
                 face.LoadChar(c, LoadFlags.Render, LoadTarget.Normal);
                 var glyph = face.Glyph;
                 var bitmap = glyph.Bitmap;
-
                 // create glyph texture
                 var texObj = GL.GenTexture();
                 GL.BindTexture(TextureTarget.Texture2D, texObj);

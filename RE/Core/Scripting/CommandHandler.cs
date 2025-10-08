@@ -1,12 +1,15 @@
 ﻿using System.Collections;
+using System.Diagnostics;
 using System.Globalization;
 using System.Text.RegularExpressions;
+using OpenTK.Graphics.OpenGL;
 using RE.Audio;
 using RE.Core.World;
 using RE.Debug.Overlay;
 using RE.Rendering;
 using RE.Utils;
 using Serilog;
+using SixLabors.ImageSharp;
 
 namespace RE.Core.Scripting
 {
@@ -270,11 +273,36 @@ namespace RE.Core.Scripting
                     ov.Enable();
                 else
                     Log.Error("Editor can be closed only via Editor -> Exit");
-                 //   ov.Disable();
+                //   ov.Disable();
             }, "Starts the scene editor for current level");
             RegisterHandler("credits", _ =>
             {
                 WinApi.MessageBox(0, "Made with ❤️ by DimucaTheDev", "About", 0x40);
+            });
+            RegisterHandler("dt", _ =>
+            {
+                Directory.CreateDirectory("dump");
+                Directory.EnumerateFiles("dump").ToList().ForEach(File.Delete);
+                Log.Information("Dumping textures...");
+                int index = 0;
+                foreach (var tex in Enumerable.Range(0, 32000)) // https://www.youtube.com/shorts/gib8WGoR604 
+                {
+                    if (!GL.IsTexture(tex)) continue;
+                    GL.BindTexture(TextureTarget.Texture2D, tex);
+
+                    GL.GetTexLevelParameter(TextureTarget.Texture2D, 0, GetTextureParameter.TextureWidth, out int width);
+                    GL.GetTexLevelParameter(TextureTarget.Texture2D, 0, GetTextureParameter.TextureHeight, out int height);
+                    if (width == 0 || height == 0) continue;
+                    byte[] pixels = new byte[width * height * 4];
+                    GL.GetTexImage(TextureTarget.Texture2D, 0, PixelFormat.Rgba, PixelType.UnsignedByte, pixels);
+
+
+                    using var img = SixLabors.ImageSharp.Image.LoadPixelData<SixLabors.ImageSharp.PixelFormats.Rgba32>(pixels, width, height);
+                    img.SaveAsPng($"dump/{tex}.png");
+                    index++;
+                    Debugger.Break();
+                }
+                Log.Information("Dumped {Count} textures.", index);
             });
         }
 
