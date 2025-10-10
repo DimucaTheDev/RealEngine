@@ -241,7 +241,6 @@ namespace RE.Debug.Overlay
         {
             var p = Camera.Instance.Position;
 
-
             var speed = 7f * Time.DeltaTime;
             var input = Game.Instance.KeyboardState;
             if (input.IsKeyDown(Keys.W))
@@ -262,14 +261,9 @@ namespace RE.Debug.Overlay
 
             if (_selectedObject != null)
             {
-
-                GL.Disable(EnableCap.DepthTest);
-
                 XAxisArrow.Render(args);
                 YAxisArrow.Render(args);
                 ZAxisArrow.Render(args);
-
-                GL.Enable(EnableCap.DepthTest);
             }
 
             foreach (var obj in _scene.GameObjects)
@@ -321,7 +315,8 @@ namespace RE.Debug.Overlay
                     { }
                     if (BeginMenu("Preferences"))
                     {
-                        Text("123");
+                        Selectable("Render Skybox", ref PreviewSkybox);
+                        Selectable("Preview Light", ref PreviewLight);
                         EndMenu();
                     }
                     if (MenuItem("Settings"))
@@ -393,27 +388,6 @@ namespace RE.Debug.Overlay
 
 
 
-            SameLine();
-
-            BeginDisabled(_selectedObject == null);
-            if (Button("[-]"))
-            {
-                _scene.GameObjects.Remove(_selectedObject!);
-                SelectObject(null);
-
-            }
-
-            EndDisabled();
-
-            SameLine();
-            if (Button($"Preview Light: {(PreviewLight ? "Y" : "N")}"))
-                PreviewLight = !PreviewLight;
-
-            SameLine();
-            if (Button($"Preview Skybox: {(PreviewSkybox ? "Y" : "N")}"))
-                PreviewSkybox = !PreviewSkybox;
-
-            Separator();
             foreach (var obj in _scene.GameObjects.Where(s => s is { DoNotShowInEditor: false, Parent: null }).ToList())
             {
                 DrawObjectTree(obj);
@@ -543,7 +517,7 @@ namespace RE.Debug.Overlay
                 TableNextRow();
                 TableSetColumnIndex(0);
                 Text("Id:");
-                var id = "0x" + _selectedObject.Id.ToString("x");
+                var id = $"0x{_selectedObject.Id:x} ({_selectedObject.Id})";
                 TableSetColumnIndex(1);
                 Text(id);
 
@@ -625,8 +599,6 @@ namespace RE.Debug.Overlay
             }
             End();
         }
-        private OpenTK.Mathematics.Vector3 obj_Position { get => _selectedObject.Transform.Position; set => _selectedObject.SetPosition(value); }
-        private OpenTK.Mathematics.Quaternion obj_Rotation { get => _selectedObject.Transform.Rotation; set => _selectedObject.SetRotation(value); }
 
         private PropertyInfo _p = null!;
         //refactor_me
@@ -854,7 +826,7 @@ namespace RE.Debug.Overlay
             foreach (var childEntry in node.Children.OrderBy(c => c.Key))
             {
                 Node childNode = childEntry.Value;
-                if (TreeNodeEx(childNode.Name, (ImGuiTreeNodeFlags)1048576))
+                if (TreeNode(childNode.Name))
                 {
                     RenderNodeRecursive(childNode);
                     TreePop();
@@ -1151,15 +1123,34 @@ namespace RE.Debug.Overlay
             throw new NotImplementedException(type.Name);
         }
 
+        private bool _popupOpened;
         private void DrawObjectTree(GameObject obj)
         {
             bool hasVisibleChildren = obj.Children.Any(s => !s.DoNotShowInEditor);
-
             ImGuiTreeNodeFlags flags = hasVisibleChildren
                 ? ImGuiTreeNodeFlags.OpenOnArrow | ImGuiTreeNodeFlags.OpenOnDoubleClick | (ImGuiTreeNodeFlags)1048576
                 : ImGuiTreeNodeFlags.Leaf | ImGuiTreeNodeFlags.NoTreePushOnOpen;
 
             bool nodeOpen = TreeNodeEx((nint)obj.GetHashCode(), flags, $"{obj.Name ?? "<unnamed>"}");
+
+            PushStyleColor(ImGuiCol.PopupBg, new Vector4(0.1f, 0.1f, 0.1f, 0.95f));
+            if (BeginPopupContextItem())
+            {
+                if (Selectable("Delete Object"))
+                {
+                    _scene.GameObjects.Remove(obj!);
+                }
+
+                if (IsItemHovered())
+                    _popupOpened = true;
+                if (_popupOpened && !IsItemHovered())
+                {
+                    CloseCurrentPopup();
+                    _popupOpened = false;
+                }
+                EndPopup();
+            }
+            PopStyleColor();
 
             if (IsItemClicked())
             {

@@ -1,5 +1,4 @@
 ﻿using ImGuiNET;
-using Microsoft.VisualBasic.Devices;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using OpenTK.Windowing.GraphicsLibraryFramework;
@@ -57,6 +56,9 @@ public class Camera
         {
             if (SceneEditor.Enabled && args.Button == MouseButton.Button2)
             {
+                if (ImGui.GetIO().WantCaptureMouse || ImGui.GetIO().WantCaptureKeyboard)
+                    return;
+
                 Game.Instance.CursorState = CursorState.Normal;
                 Game.Instance.MousePosition = Instance._lastMouseDownPos;
             }
@@ -68,6 +70,7 @@ public class Camera
 
             if (SceneEditor.Enabled)
             {
+                ImGui.GetIO().AddMouseButtonEvent(0, true);
                 if (args.Button == MouseButton.Button2)
                 {
                     Instance._lastMouseDownPos = Game.Instance.MousePosition;
@@ -151,13 +154,13 @@ public class Camera
         Vector3 forward = billboard.Column2.Xyz;
 
         if (lockX)
-        { 
+        {
             up = Vector3.UnitY;
             right = Vector3.Normalize(Vector3.Cross(up, forward));
         }
 
         if (lockY)
-        { }
+        { } // huh
 
         billboard.Column0 = new Vector4(right, billboard.Column0.W);
         billboard.Column1 = new Vector4(up, billboard.Column1.W);

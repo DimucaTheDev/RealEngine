@@ -171,7 +171,7 @@ namespace RE.Rendering.Renderables
                 GL.Enable(EnableCap.CullFace);
                 GL.CullFace(TriangleFace.Front);
                 _program.SetValue("outline", 1);
-                _program.SetValue("outlineColor", (MathF.Sin(Time.ElapsedTime * 4) / 2 + 0.5f) * OutlineColor);
+                _program.SetValue("outlineColor", OutlineColor with { W = (MathF.Sin(Time.ElapsedTime * 4) / 2 + 0.5f) });
                 //GL.PolygonMode(TriangleFace.Back, PolygonMode.Fill); //todo: render only back side monocolor. somewhy it doesnt work
             }
 

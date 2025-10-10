@@ -72,7 +72,7 @@ namespace RE.Rendering.Renderables
                     break;
             }
             Render(args, model);
-            GL.Disable(EnableCap.DepthTest);
+            GL.Enable(EnableCap.DepthTest);
         }
     }
 }
