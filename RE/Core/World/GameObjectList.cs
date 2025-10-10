@@ -1,17 +1,25 @@
 ﻿using System.Collections;
+using Serilog;
 
 namespace RE.Core.World
 {
     /// <summary>
     /// Represents a collection of <see cref="GameObject"/> within a <see cref="Scene"/>.
     /// </summary>
-    public class GameObjectList : IEnumerable<GameObject>
+    public class GameObjectList(Scene scene) : IEnumerable<GameObject>
     {
         private readonly List<GameObject> _objects = new();
 
         public void Add(GameObject g, bool doNotCallStart = false)
         {
+            if (_objects.Contains(g))
+            {
+                Log.Error("Tried to add an object that is already in the scene: {Name}", g.Name);
+                return;
+            }
+
             _objects.Add(g);
+            g.Scene = scene;
             if (doNotCallStart)
                 return;
             //todo: set g.Scene 

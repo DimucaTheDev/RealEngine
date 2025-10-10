@@ -29,7 +29,7 @@ namespace RE.Rendering.Renderables
                 }));
         }
 
-        public GameObject GameObject { get; set; }
+        public GameObject? GameObject { get; set; }
         private Axis _axis;
 
         public override void Render(FrameEventArgs args)

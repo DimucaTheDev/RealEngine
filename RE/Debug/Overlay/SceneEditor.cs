@@ -39,7 +39,7 @@ namespace RE.Debug.Overlay
 
         public static SceneEditor Instance = new();
         public static bool Enabled = false;
-        public static bool PreviewLight = false;
+        public static bool PreviewLight, PreviewSkybox;
 
         public override RenderLayer RenderLayer => RenderLayer.ImGui;
         public override bool IsVisible { get; set; } = false;
@@ -155,7 +155,7 @@ namespace RE.Debug.Overlay
             }
         }
 
-        private void SelectObject(GameObject obj)
+        private void SelectObject(GameObject? obj)
         {
             _selectedObject = obj;
             XAxisArrow.GameObject = obj;
@@ -175,8 +175,9 @@ namespace RE.Debug.Overlay
 
             Log.Information("Starting Scene Editor for \"{SceneName}\"...", SceneManager.CurrentScene.Name);
 
-            _scene = SceneManager.CurrentScene;//SceneManager.ParseScene(SceneManager.CurrentScene.Name!/*костыль*/); // TODO: set json path to scene's property
-            //SceneManager.LoadScene(_scene, true);
+            _scene = SceneManager.CurrentScene;//SceneManager.ParseScene(SceneManager.CurrentScene.Name!/*костыль*/);
+                                               // TODO: set json path to scene's property
+            SceneManager.LoadScene(_scene, true);
             SelectObject(null);
             IsVisible = true;
 
@@ -276,7 +277,11 @@ namespace RE.Debug.Overlay
                 foreach (var com in obj.Components)
                 {
                     if (com is IDebugRenderer s)
+                    {
+                        if (com is SkyboxComponent && !PreviewSkybox)
+                            continue;
                         s.DebugRender(args);
+                    }
                 }
             }
 
@@ -314,6 +319,11 @@ namespace RE.Debug.Overlay
                     { }
                     if (MenuItem("Save scene as"))
                     { }
+                    if (BeginMenu("Preferences"))
+                    {
+                        Text("123");
+                        EndMenu();
+                    }
                     if (MenuItem("Settings"))
                     { }
                     Separator();
@@ -330,6 +340,17 @@ namespace RE.Debug.Overlay
                     {
                         var newObject = new GameObject();
                         SceneManager.CurrentScene.GameObjects.Add(newObject);
+                        SelectObject(newObject);
+                    }
+                    if (MenuItem("New Blank 2"))
+                    {
+                        var newObject = new GameObject();
+                        SceneManager.CurrentScene.GameObjects.Add(newObject);
+
+                        var newObject2 = new GameObject();
+                        SceneManager.CurrentScene.GameObjects.Add(newObject2);
+                        newObject.Parent = newObject2;
+
                         SelectObject(newObject);
                     }
 
@@ -384,11 +405,16 @@ namespace RE.Debug.Overlay
 
             EndDisabled();
 
+            SameLine();
             if (Button($"Preview Light: {(PreviewLight ? "Y" : "N")}"))
                 PreviewLight = !PreviewLight;
 
+            SameLine();
+            if (Button($"Preview Skybox: {(PreviewSkybox ? "Y" : "N")}"))
+                PreviewSkybox = !PreviewSkybox;
+
             Separator();
-            foreach (var obj in SceneManager.CurrentScene.GameObjects.Where(s => s is { DoNotShowInEditor: false, Parent: null }).ToList())
+            foreach (var obj in _scene.GameObjects.Where(s => s is { DoNotShowInEditor: false, Parent: null }).ToList())
             {
                 DrawObjectTree(obj);
             }
@@ -828,7 +854,7 @@ namespace RE.Debug.Overlay
             foreach (var childEntry in node.Children.OrderBy(c => c.Key))
             {
                 Node childNode = childEntry.Value;
-                if (TreeNode(childNode.Name))
+                if (TreeNodeEx(childNode.Name, (ImGuiTreeNodeFlags)1048576))
                 {
                     RenderNodeRecursive(childNode);
                     TreePop();
@@ -1130,10 +1156,10 @@ namespace RE.Debug.Overlay
             bool hasVisibleChildren = obj.Children.Any(s => !s.DoNotShowInEditor);
 
             ImGuiTreeNodeFlags flags = hasVisibleChildren
-                ? ImGuiTreeNodeFlags.OpenOnArrow | ImGuiTreeNodeFlags.OpenOnDoubleClick
+                ? ImGuiTreeNodeFlags.OpenOnArrow | ImGuiTreeNodeFlags.OpenOnDoubleClick | (ImGuiTreeNodeFlags)1048576
                 : ImGuiTreeNodeFlags.Leaf | ImGuiTreeNodeFlags.NoTreePushOnOpen;
 
-            bool nodeOpen = TreeNodeEx((nint)obj.GetHashCode(), flags, $"[0x{obj.Id:x}] {obj.Name ?? "<unnamed>"}");
+            bool nodeOpen = TreeNodeEx((nint)obj.GetHashCode(), flags, $"{obj.Name ?? "<unnamed>"}");
 
             if (IsItemClicked())
             {

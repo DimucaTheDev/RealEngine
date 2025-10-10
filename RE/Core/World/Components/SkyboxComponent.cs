@@ -3,6 +3,7 @@ using OpenTK.Graphics.OpenGL4;
 using OpenTK.Windowing.Common;
 using RE.Core.Assets;
 using RE.Core.Scripting;
+using RE.Debug;
 using RE.Rendering;
 using Serilog;
 using SixLabors.ImageSharp.Processing;
@@ -10,7 +11,7 @@ using SixLabors.ImageSharp.Processing;
 namespace RE.Core.World.Components
 {
     [ComponentInfo("World", Description = $"Renders Skybox with 6 images located in '{nameof(Path)}':\r\n/right.png\r\n/left.png\r\n/top.png\r\n/bottom.png\r\n/front.png\r\n/back.png\r\n")]
-    internal class SkyboxComponent(string path) : Component
+    internal class SkyboxComponent(string path) : Component, IDebugRenderer
     {
         private ShaderProgram _program = null!;
 
@@ -192,5 +193,7 @@ namespace RE.Core.World.Components
             root.Add("args", args);
             return root;
         }
+
+        public void DebugRender(FrameEventArgs args) => Render(args);
     }
 }

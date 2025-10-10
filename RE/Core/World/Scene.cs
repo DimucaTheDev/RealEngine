@@ -9,9 +9,10 @@ namespace RE.Core.World
     public class Scene : IDisposable
     {
         public string? Name { get; set; }
-        public GameObjectList GameObjects { get; } = new();
+        public GameObjectList GameObjects { get; }
         public DirectionalLight? SunLight { get; set; } = null; // scene doesnt contain sun by default.. maybe
 
+        public Scene() => GameObjects = new GameObjectList(this);
 
         /// <summary>
         /// Calls <see cref="Component.OnDestroy"/> on all components of all game objects in the scene and unsubscribes them
