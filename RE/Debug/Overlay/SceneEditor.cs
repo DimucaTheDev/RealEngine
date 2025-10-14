@@ -1,9 +1,11 @@
 ﻿using System.Diagnostics;
 using System.Drawing.Imaging;
 using System.Globalization;
+using System.Numerics;
 using System.Reflection;
 using System.Text.RegularExpressions;
-using ImGuiNET;
+using Hexa.NET.ImGui;
+using Hexa.NET.ImGuizmo;
 using OpenTK.Graphics.OpenGL;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
@@ -16,9 +18,10 @@ using RE.Rendering;
 using RE.Rendering.Renderables;
 using RE.Utils;
 using Serilog;
-using static ImGuiNET.ImGui;
+using static Hexa.NET.ImGui.ImGui;
 using Keys = OpenTK.Windowing.GraphicsLibraryFramework.Keys;
 using PixelFormat = OpenTK.Graphics.OpenGL.PixelFormat;
+using Quaternion = OpenTK.Mathematics.Quaternion;
 using TkVector3 = OpenTK.Mathematics.Vector3;
 using Vector2 = System.Numerics.Vector2;
 using Vector3 = System.Numerics.Vector3;
@@ -54,9 +57,9 @@ namespace RE.Debug.Overlay
         private static readonly ModelRenderer SelectedObjectOutline = new() { Outline = true };
 
 
-        private static GizmosRenderable XAxisArrow = new(null, GizmosRenderable.Axis.X);
-        private static GizmosRenderable YAxisArrow = new(null, GizmosRenderable.Axis.Y);
-        private static GizmosRenderable ZAxisArrow = new(null, GizmosRenderable.Axis.Z);
+        private static GizmosRenderable _xAxisArrow = new(null, GizmosRenderable.Axis.X);
+        private static GizmosRenderable _yAxisArrow = new(null, GizmosRenderable.Axis.Y);
+        private static GizmosRenderable _zAxisArrow = new(null, GizmosRenderable.Axis.Z);
 
         private static readonly int LogoImage;
 
@@ -131,12 +134,14 @@ namespace RE.Debug.Overlay
             unsafe
             {
                 // making big cansolaz font
+                /*
                 var io = ImGui.GetIO();
                 io.Fonts.AddFontDefault();
                 _bigFont = io.Fonts.AddFontFromFileTTF("Assets/Fonts/consola.ttf", 60);
 
                 byte* pixels;
                 int width, height;
+                io.Fonts.TexData
                 io.Fonts.GetTexDataAsRGBA32(out pixels, out width, out height, out _);
 
                 int fontTex = GL.GenTexture();
@@ -151,16 +156,16 @@ namespace RE.Debug.Overlay
 
                 io.Fonts.SetTexID((IntPtr)fontTex);
 
-                GL.BindTexture(TextureTarget.Texture2D, 0);
+                GL.BindTexture(TextureTarget.Texture2D, 0);*/
             }
         }
 
         private void SelectObject(GameObject? obj)
         {
             _selectedObject = obj;
-            XAxisArrow.GameObject = obj;
-            YAxisArrow.GameObject = obj;
-            ZAxisArrow.GameObject = obj;
+            _xAxisArrow.GameObject = obj;
+            _yAxisArrow.GameObject = obj;
+            _zAxisArrow.GameObject = obj;
             UpdateSelection();
         }
 
@@ -215,10 +220,21 @@ namespace RE.Debug.Overlay
                 // This assumes _componentDict stores the types at the *leaf* of the group path
                 currentNode.Types.AddRange(entry.Value);
             }
+
+            _translateIcon = LoadTexture("assets/sprites/editor/translate.png");
+            _rotateIcon = LoadTexture("assets/sprites/editor/rotate.png");
+            _scaleIcon = LoadTexture("assets/sprites/editor/scale.png");
+            _worldIcon = LoadTexture("assets/sprites/editor/world.png");
+            _localIcon = LoadTexture("assets/sprites/editor/local.png");
         }
 
+
+        private int _translateIcon, _rotateIcon, _scaleIcon, _worldIcon, _localIcon;
         public void Disable()
         {
+            if (!Enabled)
+                return;
+
             Enabled = false;
             IsVisible = false;
             SelectedObjectOutline?.StopRender();
@@ -233,7 +249,7 @@ namespace RE.Debug.Overlay
                     }
                 }
             }
-            //SceneManager.LoadScene(_scene);
+            SceneManager.LoadScene(_scene);
             // _scene.Dispose(); //todo: do something with thi shi 🥀
         }
 
@@ -259,12 +275,7 @@ namespace RE.Debug.Overlay
             if (!ImGui.GetIO().WantCaptureKeyboard)
                 Camera.Instance.Position = (p);
 
-            if (_selectedObject != null)
-            {
-                XAxisArrow.Render(args);
-                YAxisArrow.Render(args);
-                ZAxisArrow.Render(args);
-            }
+            DrawObjectGizmos();
 
             foreach (var obj in _scene.GameObjects)
             {
@@ -296,8 +307,8 @@ namespace RE.Debug.Overlay
 
             ImGuiWindowFlags flags = ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.MenuBar;
 
-            bool _renderAbout = false;
-            bool _renderQuit = false;
+            bool renderAbout = false;
+            bool renderQuit = false;
 
             Begin("Scene Hierarchy", flags);
 
@@ -324,7 +335,7 @@ namespace RE.Debug.Overlay
                     Separator();
                     if (MenuItem("Exit"))
                     {
-                        _renderQuit = true;
+                        renderQuit = true;
                     }
                     EndMenu();
                 }
@@ -378,7 +389,7 @@ namespace RE.Debug.Overlay
 
                     if (MenuItem("About"))
                     {
-                        _renderAbout = true;
+                        renderAbout = true;
                     }
 
                     EndMenu();
@@ -394,15 +405,15 @@ namespace RE.Debug.Overlay
             }
             End();
 
-            if (_renderQuit)
+            if (renderQuit)
             {
                 OpenPopup("Quit");
-                _renderQuit = false;
+                renderQuit = false;
             }
-            if (_renderAbout)
+            if (renderAbout)
             {
                 OpenPopup("About");
-                _renderAbout = false;
+                renderAbout = false;
             }
             DrawAbout();
             DrawQuit();
@@ -414,6 +425,72 @@ namespace RE.Debug.Overlay
             SetNextWindowSize(inspectorWindowSize, ImGuiCond.Always);
 
             DrawInspector();
+        }
+
+        ImGuizmoOperation _operation = ImGuizmoOperation.Translate;
+        ImGuizmoMode _mode = ImGuizmoMode.World;
+        public void DrawObjectGizmos()
+        {
+            SetNextWindowPos(new Vector2(10, 10), ImGuiCond.FirstUseEver);
+            Begin("##mode_selector", ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoSavedSettings);
+
+            var imTextureId1 = new ImTextureID((ulong)_translateIcon);
+            var imTextureId2 = new ImTextureID((ulong)_rotateIcon);
+            var imTextureId3 = new ImTextureID((ulong)_scaleIcon);
+            var imTextureId4 = new ImTextureID((ulong)_worldIcon);
+            var imTextureId5 = new ImTextureID((ulong)_localIcon);
+
+            const int size = 20;
+
+            //todo: vinesti peremenii za metod
+
+            BeginDisabled(_operation == ImGuizmoOperation.Translate);
+            if (ImageButton("##translate", new ImTextureRef() { TexID = imTextureId1 }, new Vector2(size, size)))
+                _operation = ImGuizmoOperation.Translate;
+            EndDisabled();
+
+            BeginDisabled(_operation == ImGuizmoOperation.Rotate);
+            SameLine();
+            if (ImageButton("##rotate", new ImTextureRef() { TexID = imTextureId2 }, new Vector2(size, size)))
+                _operation = ImGuizmoOperation.Rotate;
+            EndDisabled();
+
+            BeginDisabled(_operation == ImGuizmoOperation.Scale);
+            SameLine();
+            if (ImageButton("##scale", new ImTextureRef() { TexID = imTextureId3 }, new Vector2(size, size)))
+                _operation = ImGuizmoOperation.Scale;
+            EndDisabled();
+
+            SameLine();
+            if (ImageButton("##mode", new ImTextureRef() { TexID = _mode == ImGuizmoMode.World ? imTextureId4 : imTextureId5 }, new Vector2(size, size)))
+                _mode = _mode == ImGuizmoMode.World ? ImGuizmoMode.Local : ImGuizmoMode.World;
+
+            End();
+            var pr = (Matrix4x4)Camera.Instance.GetProjectionMatrix();
+            var vr = (Matrix4x4)Camera.Instance.GetViewMatrix();
+            var one = Matrix4x4.Identity;
+            if (_selectedObject != null)
+            {
+                var rot = _selectedObject!.Transform.Rotation;
+                var model =
+                    Matrix4x4.CreateScale(_selectedObject!.Transform.Scale.ToSystemVector3())
+                    * Matrix4x4.CreateFromQuaternion(rot.ToSystemQuaternion())
+                    * Matrix4x4.CreateTranslation(_selectedObject!.Transform.Position.ToSystemVector3());
+
+
+                if (ImGuizmo.Manipulate(ref vr.M11, ref pr.M11, _operation, _mode,
+                        ref model.M11))
+                {
+                    if (Matrix4x4.Decompose(model, out var scale, out var rotation, out var translation))
+                    {
+                        _selectedObject.Transform.Position = translation.ToOpenTkVector3();
+                        _selectedObject.Transform.Rotation = rotation.ToOpenTkQuaternion();
+                        _selectedObject.Transform.Scale = scale.ToOpenTkVector3();
+
+                        UpdateSelection();
+                    }
+                }
+            }
         }
 
         public void DrawQuit()
@@ -445,7 +522,7 @@ namespace RE.Debug.Overlay
             SetNextWindowSize(new Vector2(500, 400), ImGuiCond.FirstUseEver);
             if (BeginPopupModal("About"))
             {
-                Image((IntPtr)LogoImage, new Vector2(100, 100));
+                Image(new ImTextureRef() { TexID = (IntPtr)LogoImage }, new Vector2(100, 100));
                 SameLine();
 
                 float textHeight = ImGui.GetTextLineHeightWithSpacing();
@@ -454,7 +531,7 @@ namespace RE.Debug.Overlay
 
                 SetCursorPosY(GetCursorPosY() + yOffset);
 
-                PushFont(_bigFont);
+                PushFont(_bigFont, 32);
                 Text(Game.ProductName);
                 PopFont();
 
@@ -472,8 +549,11 @@ namespace RE.Debug.Overlay
                 NewLine();
                 Text("GitHub:");
                 SameLine();
-                if (Button("DimucaTheDev/RealEngine"))
-                    Process.Start("explorer", "https://github.com/dimucathedev/realengine");
+                TextLinkOpenURL("DimucaTheDev/RealEngine", "https://github.com/DimucaTheDev/RealEngine");
+
+                //todo: refactor and code cleanup and fix bugs and get a job
+
+
                 NewLine();
                 Separator();
                 NewLine();
@@ -529,11 +609,11 @@ namespace RE.Debug.Overlay
                     if (Button(_selectedObject.Name ?? "<unnamed>"))
                     {
                         OpenPopup("prop_new_value");
-                        val_str = _selectedObject.Name ?? "<unnamed>";
+                        _valStr = _selectedObject.Name ?? "<unnamed>";
                         _p = typeof(GameObject).GetProperty("Name")!;
-                        hash = _p.GetHashCode();
+                        _hash = _p.GetHashCode();
                     }
-                    if (typeof(GameObject).GetProperty("Name")?.GetHashCode() == hash)
+                    if (typeof(GameObject).GetProperty("Name")?.GetHashCode() == _hash)
                         DrawValueChangePopup(_p, _selectedObject);
                 }
                 TableNextRow();
@@ -546,11 +626,11 @@ namespace RE.Debug.Overlay
                     if (Button(_selectedObject.Transform.Position.ToString()))
                     {
                         OpenPopup("prop_new_value");
-                        (val_x, val_y, val_z) = _selectedObject.Transform.Position;
+                        (_valX, _valY, _valZ) = _selectedObject.Transform.Position;
                         _p = GetType().GetProperty("obj_Position", f)!;
-                        hash = _p.GetHashCode();
+                        _hash = _p.GetHashCode();
                     }
-                    if (GetType().GetProperty("obj_Position", f)?.GetHashCode() == hash)
+                    if (GetType().GetProperty("obj_Position", f)?.GetHashCode() == _hash)
                         DrawValueChangePopup(_p, this);
                 }
                 TableNextRow();
@@ -565,11 +645,11 @@ namespace RE.Debug.Overlay
                     if (Button(v.ToString()))
                     {
                         OpenPopup("prop_new_value");
-                        (val_x, val_y, val_z) = v;
+                        (_valX, _valY, _valZ) = v;
                         _p = GetType().GetProperty("obj_Rotation", f)!;
-                        hash = _p.GetHashCode();
+                        _hash = _p.GetHashCode();
                     }
-                    if (GetType().GetProperty("obj_Rotation", f)!?.GetHashCode() == hash)
+                    if (GetType().GetProperty("obj_Rotation", f)!?.GetHashCode() == _hash)
                         DrawValueChangePopup(_p, this);
                 }
                 TableNextRow();
@@ -580,11 +660,11 @@ namespace RE.Debug.Overlay
                     if (Button(_selectedObject.Transform.Scale.ToString()))
                     {
                         OpenPopup("prop_new_value");
-                        (val_x, val_y, val_z) = _selectedObject.Transform.Scale;
+                        (_valX, _valY, _valZ) = _selectedObject.Transform.Scale;
                         _p = typeof(Transform).GetProperty("Scale")!;
-                        hash = _p.GetHashCode();
+                        _hash = _p.GetHashCode();
                     }
-                    if (typeof(Transform).GetProperty("Scale")?.GetHashCode() == hash)
+                    if (typeof(Transform).GetProperty("Scale")?.GetHashCode() == _hash)
                         DrawValueChangePopup(_p, _selectedObject.Transform);
                 }
                 TableNextRow();
@@ -720,33 +800,33 @@ namespace RE.Debug.Overlay
                                     Text(prop.GetValue(com)?.ToString() ?? "<null>");
                                 else if (prop.PropertyType == typeof(bool))
                                 {
-                                    Checkbox("", ref val_b);
-                                    if (val_b != val_b_temp)
+                                    Checkbox("", ref _valB);
+                                    if (_valB != _valBTemp)
                                     {
-                                        prop.SetValue(com, val_b);
+                                        prop.SetValue(com, _valB);
                                     }
 
-                                    val_b_temp = val_b;
+                                    _valBTemp = _valB;
                                 }
                                 else if (Button(prop.GetValue(com)?.ToString() ?? "<null>"))
                                 {
                                     OpenPopup("prop_new_value");
-                                    hash = prop.GetHashCode();
+                                    _hash = prop.GetHashCode();
 
                                     //set reference values to prop's value
                                     if (prop.PropertyType == typeof(OpenTK.Mathematics.Vector3))
                                     {
-                                        (val_x, val_y, val_z) = ((OpenTK.Mathematics.Vector3)prop.GetValue(com)!);
+                                        (_valX, _valY, _valZ) = ((OpenTK.Mathematics.Vector3)prop.GetValue(com)!);
                                     }
 
                                     if (prop.PropertyType == typeof(string))
-                                        val_str = prop.GetValue(com)?.ToString() ?? "<null>";
+                                        _valStr = prop.GetValue(com)?.ToString() ?? "<null>";
                                     if (prop.PropertyType == typeof(float))
-                                        val_f = (float)(prop.GetValue(com) ?? 0);
+                                        _valF = (float)(prop.GetValue(com) ?? 0);
                                     if (prop.PropertyType == typeof(int))
-                                        val_i = (int)(prop.GetValue(com) ?? 0);
+                                        _valI = (int)(prop.GetValue(com) ?? 0);
                                     if (prop.PropertyType == typeof(bool))
-                                        val_b = (bool)(prop.GetValue(com) ?? false);
+                                        _valB = (bool)(prop.GetValue(com) ?? false);
                                 }
 
                                 if (IsItemHovered())
@@ -756,7 +836,7 @@ namespace RE.Debug.Overlay
                                     EndTooltip();
                                 }
 
-                                if (!attr!.IsReadOnly && prop.GetHashCode() == hash)
+                                if (!attr!.IsReadOnly && prop.GetHashCode() == _hash)
                                     DrawValueChangePopup(prop, com);
                             }
                         }
@@ -938,11 +1018,11 @@ namespace RE.Debug.Overlay
             }
         }
 
-        private static int val_i = 0, val_enum = 0;
-        private static bool val_b = false, val_b_temp;
-        private static float val_x = 0, val_y = 0, val_z = 0, val_f = 0;
-        private static string val_str = "";
-        private static int hash;
+        private static int _valI = 0, _valEnum = 0;
+        private static bool _valB = false, _valBTemp;
+        private static float _valX = 0, _valY = 0, _valZ = 0, _valF = 0;
+        private static string _valStr = "";
+        private static int _hash;
 
         public void DrawValueChangePopup(PropertyInfo prop, object instance)
         {
@@ -973,44 +1053,44 @@ namespace RE.Debug.Overlay
                         open.Multiselect = false;
                         open.Filter = "FBX File|*.fbx|SMDL File|*.smdl";
                         open.ShowDialog();
-                        val_str = Path.GetRelativePath(".", open.FileName);
+                        _valStr = Path.GetRelativePath(".", open.FileName);
                     }
                     SameLine();
-                    Text(val_str ?? "");
+                    Text(_valStr ?? "");
 
                     if (Button("Apply"))
                     {
-                        prop.SetValue(instance, val_str);
+                        prop.SetValue(instance, _valStr);
                         CloseCurrentPopup();
                         UpdateSelection();
                     }
                 }
                 else if (prop.PropertyType == typeof(string) && instance is not MeshComponent or UsableComponent)
                 {
-                    InputText("##text", ref val_str, 9999);
+                    InputText("##text", ref _valStr, 9999);
                     if (Button("Apply"))
                     {
-                        prop.SetValue(instance, val_str);
+                        prop.SetValue(instance, _valStr);
                         CloseCurrentPopup();
                     }
                 }
                 else if (prop.PropertyType == typeof(OpenTK.Mathematics.Vector3) || prop.PropertyType == typeof(Quaternion))
                 {
-                    DragFloat("X", ref val_x, 0.05f);
-                    DragFloat("Y", ref val_y, 0.05f);
-                    DragFloat("Z", ref val_z, 0.05f);
+                    DragFloat("X", ref _valX, 0.05f);
+                    DragFloat("Y", ref _valY, 0.05f);
+                    DragFloat("Z", ref _valZ, 0.05f);
 
                     if (Button("Apply"))
                     {
                         object val;
                         if (prop.PropertyType != typeof(Quaternion))
-                            val = new OpenTK.Mathematics.Vector3(val_x, val_y, val_z);
+                            val = new OpenTK.Mathematics.Vector3(_valX, _valY, _valZ);
                         else
                         {
                             var eulerRad = new OpenTK.Mathematics.Vector3(
-                                MathHelper.DegreesToRadians(val_x),
-                                MathHelper.DegreesToRadians(val_y),
-                                MathHelper.DegreesToRadians(val_z));
+                                MathHelper.DegreesToRadians(_valX),
+                                MathHelper.DegreesToRadians(_valY),
+                                MathHelper.DegreesToRadians(_valZ));
                             val = Quaternion.FromEulerAngles(eulerRad);
                         }
                         prop.SetValue(instance, val);
@@ -1021,13 +1101,13 @@ namespace RE.Debug.Overlay
                 }
                 else if (prop.PropertyType == typeof(Vector3))
                 {
-                    DragFloat("X", ref val_x, 0.05f);
-                    DragFloat("Y", ref val_y, 0.05f);
-                    DragFloat("Z", ref val_z, 0.05f);
+                    DragFloat("X", ref _valX, 0.05f);
+                    DragFloat("Y", ref _valY, 0.05f);
+                    DragFloat("Z", ref _valZ, 0.05f);
 
                     if (Button("Apply"))
                     {
-                        var val = new Vector3(val_x, val_y, val_z);
+                        var val = new Vector3(_valX, _valY, _valZ);
                         prop.SetValue(instance, val);
                         CloseCurrentPopup();
                         UpdateSelection();
@@ -1038,12 +1118,12 @@ namespace RE.Debug.Overlay
                 {
                     var l = prop.GetCustomAttribute<ValueLimitAttribute>();
                     if (l != null)
-                        DragInt($"Value[{l.Min}; {l.Max}]:", ref val_i, 1, (int)l.Min, (int)l.Max);
+                        DragInt($"Value[{l.Min}; {l.Max}]:", ref _valI, 1, (int)l.Min, (int)l.Max);
                     else
-                        DragInt("Value:", ref val_i, 0.05f, int.MinValue, int.MaxValue);
+                        DragInt("Value:", ref _valI, 0.05f, int.MinValue, int.MaxValue);
                     if (Button("Apply"))
                     {
-                        prop.SetValue(instance, val_i);
+                        prop.SetValue(instance, _valI);
                         CloseCurrentPopup();
                     }
                 }
@@ -1051,12 +1131,12 @@ namespace RE.Debug.Overlay
                 {
                     var l = prop.GetCustomAttribute<ValueLimitAttribute>();
                     if (l != null)
-                        DragFloat($"Value[{l.Min}; {l.Max}]:", ref val_f, 0.05f, (float)l.Min, (float)l.Max);
+                        DragFloat($"Value[{l.Min}; {l.Max}]:", ref _valF, 0.05f, (float)l.Min, (float)l.Max);
                     else
-                        DragFloat("Value:", ref val_f, 0.05f, float.MinValue, float.MaxValue);
+                        DragFloat("Value:", ref _valF, 0.05f, float.MinValue, float.MaxValue);
                     if (Button("Apply"))
                     {
-                        prop.SetValue(instance, val_f);
+                        prop.SetValue(instance, _valF);
                         CloseCurrentPopup();
                     }
                 }
@@ -1065,7 +1145,7 @@ namespace RE.Debug.Overlay
                     var values = Enum.GetValues(prop.PropertyType);
                     var names = Enum.GetNames(prop.PropertyType);
 
-                    int currentIndex = val_enum;
+                    int currentIndex = _valEnum;
 
                     if (BeginCombo("Value:", names[currentIndex]))
                     {
@@ -1075,7 +1155,7 @@ namespace RE.Debug.Overlay
                             if (Selectable(names[i], isSelected))
                             {
                                 currentIndex = i;
-                                val_enum = (int)(values.GetValue(i)!);
+                                _valEnum = (int)(values.GetValue(i)!);
                             }
 
                             if (isSelected)
@@ -1086,7 +1166,7 @@ namespace RE.Debug.Overlay
 
                     if (Button("Apply"))
                     {
-                        prop.SetValue(instance, val_enum);
+                        prop.SetValue(instance, _valEnum);
                         CloseCurrentPopup();
                     }
                 }
@@ -1128,10 +1208,10 @@ namespace RE.Debug.Overlay
         {
             bool hasVisibleChildren = obj.Children.Any(s => !s.DoNotShowInEditor);
             ImGuiTreeNodeFlags flags = hasVisibleChildren
-                ? ImGuiTreeNodeFlags.OpenOnArrow | ImGuiTreeNodeFlags.OpenOnDoubleClick | (ImGuiTreeNodeFlags)1048576
+                ? ImGuiTreeNodeFlags.OpenOnArrow | ImGuiTreeNodeFlags.OpenOnDoubleClick | ImGuiTreeNodeFlags.DrawLinesFull
                 : ImGuiTreeNodeFlags.Leaf | ImGuiTreeNodeFlags.NoTreePushOnOpen;
 
-            bool nodeOpen = TreeNodeEx((nint)obj.GetHashCode(), flags, $"{obj.Name ?? "<unnamed>"}");
+            bool nodeOpen = TreeNodeEx(obj.GetHashCode().ToString(), flags, $"{obj.Name ?? "<unnamed>"}");
 
             PushStyleColor(ImGuiCol.PopupBg, new Vector4(0.1f, 0.1f, 0.1f, 0.95f));
             if (BeginPopupContextItem())
@@ -1139,8 +1219,9 @@ namespace RE.Debug.Overlay
                 if (Selectable("Delete Object"))
                 {
                     _scene.GameObjects.Remove(obj!);
+                    _selectedObject = null;
+                    UpdateSelection();
                 }
-
                 if (IsItemHovered())
                     _popupOpened = true;
                 if (_popupOpened && !IsItemHovered())
@@ -1168,6 +1249,12 @@ namespace RE.Debug.Overlay
         }
         void UpdateSelection()
         {
+            if (_selectedObject == null)
+            {
+                SelectedObjectOutline.StopRender();
+                return;
+            }
+
             var mesh = _selectedObject?.GetComponent<MeshComponent>();
 
             if (mesh == null! || string.IsNullOrWhiteSpace(mesh.Path))
@@ -1178,7 +1265,7 @@ namespace RE.Debug.Overlay
             {
                 SelectedObjectOutline.StartRender();
 
-                SelectedObjectOutline.Position = _selectedObject.Transform.Position;
+                SelectedObjectOutline.Position = _selectedObject!.Transform.Position;
                 SelectedObjectOutline.Rotation = _selectedObject.Transform.Rotation;
                 SelectedObjectOutline.Scale = _selectedObject.Transform.Scale;
                 var f = 0.05f;
@@ -1198,6 +1285,33 @@ namespace RE.Debug.Overlay
             }
             return CamelSpaceRegex().Replace(text, " $1");
         }
+
+        private int LoadTexture(string path)
+        {
+            int t = GL.GenTexture();
+            GL.BindTexture(TextureTarget.Texture2D, t);
+
+            var pathToFace = path;
+
+            using var image = SixLabors.ImageSharp.Image.Load<SixLabors.ImageSharp.PixelFormats.Rgba32>(pathToFace);
+            //  image.Mutate(x => x.Flip(FlipMode.Vertical));
+            var pixels = new byte[4 * image.Width * image.Height];
+            image.CopyPixelDataTo(pixels);
+
+            GL.TexImage2D(TextureTarget.Texture2D, 0,
+                PixelInternalFormat.Rgba,
+                image.Width, image.Height, 0,
+                PixelFormat.Rgba,
+                PixelType.UnsignedByte,
+                pixels);
+
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Linear);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Linear);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)TextureWrapMode.ClampToEdge);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)TextureWrapMode.ClampToEdge);
+            return t;
+        }
+
 
         [GeneratedRegex("(?<!^)([A-Z])")]
         private static partial Regex CamelSpaceRegex();

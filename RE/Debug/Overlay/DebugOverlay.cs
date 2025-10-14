@@ -1,13 +1,5 @@
-﻿using OpenTK.Graphics.OpenGL4;
-using OpenTK.Mathematics;
-using OpenTK.Windowing.Common;
-using RE.Audio;
-using RE.Core.World;
-using RE.Core.World.Components;
+﻿using OpenTK.Windowing.Common;
 using RE.Rendering;
-using RE.Utils;
-using Serilog;
-using static ImGuiNET.ImGui;
 
 namespace RE.Debug.Overlay;
 

@@ -1,8 +1,8 @@
-﻿using ImGuiNET;
+﻿using System.Runtime.CompilerServices;
+using Hexa.NET.ImGui;
 using OpenTK.Graphics.OpenGL4;
 using OpenTK.Mathematics;
 using Serilog;
-using System.Runtime.CompilerServices;
 
 namespace RE.Libs.Grille.ImGuiTK;
 
@@ -129,12 +129,18 @@ public class GLObjects : IDisposable
     /// <summary>
     ///     Recreates the device texture used to render text.
     /// </summary>
-    public void RecreateFontDeviceTexture()
+    public unsafe void RecreateFontDeviceTexture()
     {
+        
         var io = ImGui.GetIO();
-        io.Fonts.GetTexDataAsRGBA32(out nint pixels, out var width, out var height, out var bytesPerPixel);
 
-        var mips = (int)Math.Floor(Math.Log(Math.Max(width, height), 2));
+        // Получаем данные атласа — обязательно вызвать перед использованием TexData
+        var width = io.Fonts.TexData.Width;
+        var height = io.Fonts.TexData.Height;
+        var pixels = io.Fonts.TexData.Pixels;
+
+        // Количество уровней мипмапа (full chain)
+        int levels = 1 + (int)Math.Floor(Math.Log(Math.Max(width, height), 2));
 
         var prevActiveTexture = GL.GetInteger(GetPName.ActiveTexture);
         GL.ActiveTexture(TextureUnit.Texture0);
@@ -142,29 +148,32 @@ public class GLObjects : IDisposable
 
         _fontTexture = GL.GenTexture();
         GL.BindTexture(TextureTarget.Texture2D, _fontTexture);
-        GL.TexStorage2D(TextureTarget2d.Texture2D, mips, SizedInternalFormat.Rgba8, width, height);
 
-        GL.TexSubImage2D(TextureTarget.Texture2D, 0, 0, 0, width, height, PixelFormat.Bgra, PixelType.UnsignedByte,
-            pixels);
+        // Выделяем хранилище с нужным числом уровней
+        GL.TexStorage2D(TextureTarget2d.Texture2D, levels, SizedInternalFormat.Rgba8, width, height);
+
+        // Формат RGBA, потому что мы вызвали GetTexDataAsRGBA32
+        GL.TexSubImage2D(TextureTarget.Texture2D, 0, 0, 0, width, height, PixelFormat.Rgba, PixelType.UnsignedByte, (nint)pixels);
 
         GL.GenerateMipmap(GenerateMipmapTarget.Texture2D);
 
-        GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)TextureWrapMode.Repeat);
-        GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)TextureWrapMode.Repeat);
+        // Для атласа шрифтов обычно использовать ClampToEdge
+        GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)TextureWrapMode.ClampToEdge);
+        GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)TextureWrapMode.ClampToEdge);
 
-        GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMaxLevel, mips - 1);
-
+        GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMaxLevel, levels - 1);
         GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Linear);
-        GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Linear);
+        GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.LinearMipmapLinear);
 
-        // Restore state
+        // Восстановить state
         GL.BindTexture(TextureTarget.Texture2D, prevTexture2D);
         GL.ActiveTexture((TextureUnit)prevActiveTexture);
 
-        io.Fonts.SetTexID(_fontTexture);
-
+        // Установить TexID в ImGui и очистить данные CPU-side
+        io.Fonts.TexData.SetTexID((nint)_fontTexture);
         io.Fonts.ClearTexData();
     }
+
 
     private static int CreateProgram(string name, string vertexSource, string fragmentSoruce)
     {

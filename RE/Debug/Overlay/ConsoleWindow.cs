@@ -1,5 +1,5 @@
 ﻿using System.Numerics;
-using ImGuiNET;
+using Hexa.NET.ImGui;
 using OpenTK.Windowing.Common;
 using RE.Core;
 using RE.Core.Scripting;
@@ -23,7 +23,7 @@ namespace RE.Debug.Overlay
         private static string _inputBuffer = string.Empty;
         private static Vector2 _consoleSize = new(600, 300);
         private static Vector2 _consolePos = new(20, 20);
-        private static bool _scrollToBottom = false;
+        private static bool _scrollToBottom = true;
 
 
         private bool _focusNextFrame = false;
@@ -39,8 +39,7 @@ namespace RE.Debug.Overlay
             if (ImGui.Begin("Console", ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoDocking))
             {
                 var w = (bool)Variables.GetVariable("wrapConsole")!;
-                ImGui.BeginChild("ScrollRegion", new Vector2(0, -ImGui.GetFrameHeightWithSpacing()), ImGuiChildFlags.Border, w ? ImGuiWindowFlags.None : ImGuiWindowFlags.HorizontalScrollbar);
-
+                ImGui.BeginChild("ScrollRegion", new Vector2(0, -ImGui.GetFrameHeightWithSpacing()), ImGuiChildFlags.Borders, w ? ImGuiWindowFlags.None : ImGuiWindowFlags.HorizontalScrollbar);
                 if (w)
                     ImGui.TextWrapped(GameLogger.Log);
                 else
@@ -48,7 +47,7 @@ namespace RE.Debug.Overlay
 
                 if (_scrollToBottom)
                 {
-                    ImGui.SetScrollHereY(9999.0f);
+                    ImGui.SetScrollHereY(1f);
                     _scrollToBottom = false;
                 }
                 ImGui.EndChild();
@@ -78,7 +77,7 @@ namespace RE.Debug.Overlay
             }
 
             ImGui.End();
-            ImGui.PopStyleColor();
+            //ImGui.PopStyleColor();
         }
 
         public static void Init()

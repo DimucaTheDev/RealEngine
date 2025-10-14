@@ -1,4 +1,5 @@
-﻿using System.Text.Json.Nodes;
+﻿using System.Numerics;
+using System.Text.Json.Nodes;
 using OpenTK.Graphics.OpenGL4;
 using OpenTK.Windowing.Common;
 using RE.Core.Assets;
@@ -152,6 +153,7 @@ namespace RE.Core.World.Components
             GL.DrawArrays(PrimitiveType.Triangles, 0, 36);
 
             GL.DepthMask(true);
+
         }
         private byte[] CreateMissingTexture()
         {

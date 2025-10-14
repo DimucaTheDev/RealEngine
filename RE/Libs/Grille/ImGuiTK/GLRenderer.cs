@@ -1,5 +1,5 @@
 ﻿using System.Runtime.CompilerServices;
-using ImGuiNET;
+using Hexa.NET.ImGui;
 using OpenTK.Graphics.OpenGL4;
 using Serilog;
 using ErrorCode = OpenTK.Graphics.OpenGL4.ErrorCode;
@@ -29,7 +29,7 @@ public class GLRenderer : IDisposable
         RenderImDrawData(ImGui.GetDrawData());
     }
 
-    public void RenderImDrawData(ImDrawDataPtr draw_data)
+    public unsafe void RenderImDrawData(ImDrawDataPtr draw_data)
     {
         if (draw_data.CmdListsCount == 0)
             return;
@@ -51,21 +51,21 @@ public class GLRenderer : IDisposable
             var cmd_list = draw_data.CmdLists[n];
 
             GL.BufferSubData(BufferTarget.ArrayBuffer, nint.Zero, cmd_list.VtxBuffer.Size * Unsafe.SizeOf<ImDrawVert>(),
-                cmd_list.VtxBuffer.Data);
+                (nint)cmd_list.VtxBuffer.Data);
             CheckGLError($"Data Vert {n}");
 
             GL.BufferSubData(BufferTarget.ElementArrayBuffer, nint.Zero, cmd_list.IdxBuffer.Size * sizeof(ushort),
-                cmd_list.IdxBuffer.Data);
+               (nint)cmd_list.IdxBuffer.Data);
             CheckGLError($"Data Idx {n}");
 
             for (var cmd_i = 0; cmd_i < cmd_list.CmdBuffer.Size; cmd_i++)
             {
                 var pcmd = cmd_list.CmdBuffer[cmd_i];
-                if (pcmd.UserCallback != nint.Zero)
+                if (pcmd.UserCallback != null)
                     throw new NotImplementedException();
 
                 GL.ActiveTexture(TextureUnit.Texture0);
-                GL.BindTexture(TextureTarget.Texture2D, (int)pcmd.TextureId);
+                GL.BindTexture(TextureTarget.Texture2D, (int)pcmd.TexRef.TexID);
                 CheckGLError("Texture");
 
                 // We do _windowHeight - (int)clip.W instead of (int)clip.Y because gl has flipped Y when it comes to these coordinates

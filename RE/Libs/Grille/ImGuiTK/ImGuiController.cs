@@ -1,4 +1,6 @@
-﻿using ImGuiNET;
+﻿using Hexa.NET.ImGui;
+using Hexa.NET.ImGui.Backends.OpenGL3;
+using Hexa.NET.ImGuizmo;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using OpenTK.Windowing.Desktop;
@@ -30,32 +32,26 @@ public class ImGuiController : IDisposable
     /// </summary>
     private ImGuiController()
     {
-        Renderer = new GLRenderer();
+        unsafe
+        {
+            Renderer = new GLRenderer();
 
 
-        Game.Instance.Resize += args => WindowResized(args.Width, args.Height);
-        Game.Instance.MouseWheel += args => MouseScroll(args.Offset);
-        Game.Instance.TextInput += args => PressChar((char)args.Unicode);
+            Game.Instance.Resize += args => WindowResized(args.Width, args.Height);
+            Game.Instance.MouseWheel += args => MouseScroll(args.Offset);
+            Game.Instance.TextInput += args => PressChar((char)args.Unicode);
 
+            var context = ImGui.CreateContext();
+            ImGui.SetCurrentContext(context);
+            ImGuiImplOpenGL3.SetCurrentContext(context);
+            ImGuiImplOpenGL3.Init("#version 150");
 
-        var context = ImGui.CreateContext();
-        ImGui.SetCurrentContext(context);
-        var io = ImGui.GetIO();
-        //io.Fonts.AddFontDefault();
-        io.Fonts.AddFontFromFileTTF("assets/fonts/consola.ttf", 13, null, io.Fonts.GetGlyphRangesCyrillic());
+            var io = ImGui.GetIO();
+            io.BackendFlags |= ImGuiBackendFlags.RendererHasVtxOffset | ImGuiBackendFlags.RendererHasTextures;
+            io.ConfigFlags |= ImGuiConfigFlags.DockingEnable;
 
-        io.BackendFlags |= ImGuiBackendFlags.RendererHasVtxOffset;
-        // Enable Docking
-        io.ConfigFlags |= ImGuiConfigFlags.DockingEnable;
-
-        Renderer.Objects.CreateDeviceResources();
-
-        SetPerFrameImGuiData(1f / 60f);
-
-        ImGui.NewFrame();
-        _frameBegun = true;
-
-        ImGuiTheme.ApplyDarkTheme();
+            ImGuiTheme.ApplyDarkTheme();
+        }
     }
 
     public GLRenderer Renderer { get; }
@@ -84,7 +80,8 @@ public class ImGuiController : IDisposable
         {
             _frameBegun = false;
             ImGui.Render();
-            Renderer.RenderImDrawData();
+            ImGui.EndFrame();
+            ImGuiImplOpenGL3.RenderDrawData(ImGui.GetDrawData());
         }
     }
 
@@ -96,6 +93,7 @@ public class ImGuiController : IDisposable
         if (_frameBegun)
         {
             ImGui.Render();
+            ImGuiImplOpenGL3.RenderDrawData(ImGui.GetDrawData());
         }
 
         SetPerFrameImGuiData(deltaSeconds);
@@ -103,7 +101,12 @@ public class ImGuiController : IDisposable
             UpdateImGuiInput(wnd);
 
         _frameBegun = true;
+        ImGuizmo.SetImGuiContext(ImGui.GetCurrentContext());
+
+        ImGuiImplOpenGL3.NewFrame();
         ImGui.NewFrame();
+        ImGuizmo.BeginFrame();
+        ImGuizmo.SetRect(0, 0, Game.Instance.ClientSize.X, Game.Instance.ClientSize.Y);
     }
 
     /// <summary>
@@ -170,7 +173,7 @@ public class ImGuiController : IDisposable
     public static ImGuiKey TranslateKey(Keys key)
     {
         if (key >= Keys.D0 && key <= Keys.D9)
-            return key - Keys.D0 + ImGuiKey._0;
+            return key - Keys.D0 + ImGuiKey.Key0;
 
         if (key >= Keys.A && key <= Keys.Z)
             return key - Keys.A + ImGuiKey.A;

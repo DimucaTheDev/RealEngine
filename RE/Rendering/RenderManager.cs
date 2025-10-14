@@ -4,7 +4,6 @@ using OpenTK.Windowing.Common;
 using RE.Core;
 using RE.Core.Scripting;
 using RE.Debug;
-using RE.Libs.Grille.ImGuiTK;
 using RE.Utils;
 using Quaternion = OpenTK.Mathematics.Quaternion;
 using Vector3 = OpenTK.Mathematics.Vector3;
@@ -197,13 +196,10 @@ public class RenderManager
             float db = (b.Owner.Transform.Position - camPos).LengthSquared;
             return db.CompareTo(da);
         });
-        RenderingComponents.Where(s => s is IOpaque).ToList().ForEach(s =>
-        {
-            s.Render(args);
-            if (s is IDebugRenderer d && Variables.GetVariable("showDebugInfo") is true)
-                d.DebugRender(args);
-        });
-        RenderingComponents.Where(s => s is not IOpaque).ToList().ForEach(s =>
+
+
+
+        RenderingComponents.ToList().ForEach(s =>
         {
             s.Render(args);
             if (s is IDebugRenderer d && Variables.GetVariable("showDebugInfo") is true)
@@ -288,26 +284,8 @@ public class RenderManager
             FrustumPlanes[i].D /= length;
         }
     }
-    private static void OnLayerBegin(RenderLayer layer)
-    {
-        switch (layer)
-        {
-            case RenderLayer.ImGui:
-
-                ImGuiController.Get().Update(Game.Instance, Time.DeltaTime);
-                break;
-        }
-    }
-
-    private static void OnLayerEnd(RenderLayer layer)
-    {
-        switch (layer)
-        {
-            case RenderLayer.ImGui:
-                ImGuiController.Get().Render();
-                break;
-        }
-    }
+    private static void OnLayerBegin(RenderLayer layer) { }
+    private static void OnLayerEnd(RenderLayer layer) { }
 
     //todo: move somewhere...
     //Debug

@@ -1,6 +1,8 @@
 ﻿using System.Drawing.Imaging;
+using System.Numerics;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using Hexa.NET.ImGuizmo;
 using OpenTK.Graphics.OpenGL;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
@@ -164,6 +166,7 @@ internal class Game : GameWindow
             return;
         }
 
+        #region GL
         GL.Viewport(0, 0, ClientSize.X, ClientSize.Y);
         GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
         GL.DepthFunc(DepthFunction.Lequal);
@@ -171,24 +174,34 @@ internal class Game : GameWindow
         GL.Enable(EnableCap.Blend);
         //GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
         GL.ClearColor(Color.CadetBlue);
+        GL.PolygonMode(TriangleFace.FrontAndBack, Wireframe ? PolygonMode.Line : PolygonMode.Fill);
         //GL.Enable(EnableCap.CullFace);
         //GL.CullFace(CullFaceMode.Back);
         //GL.FrontFace(FrontFaceDirection.Ccw);
+        #endregion
 
-
-        if (KeyboardState.IsKeyPressed(Keys.F3))
-            Wireframe = !Wireframe;
-        GL.PolygonMode(TriangleFace.FrontAndBack, Wireframe ? PolygonMode.Line : PolygonMode.Fill);
-
+        ImGuiController.Get().Update(this, Time.DeltaTime);
 
         base.OnRenderFrame(args);
 
         RenderManager.RenderAll(args);
+
+        var pr = (Matrix4x4)Camera.Instance.GetProjectionMatrix();
+        var vr = (Matrix4x4)Camera.Instance.GetViewMatrix();
+        var one = Matrix4x4.Identity;
+        ImGuizmo.DrawGrid(ref vr, ref pr, ref one, 1);
+
+        ImGuiController.Get().Render();
+
         SwapBuffers();
 
-
+        #region Keybinds
+        if (KeyboardState.IsKeyPressed(Keys.F3))
+            Wireframe = !Wireframe;
         if (KeyboardState.IsKeyPressed(Keys.F11))
             Game.Instance.ToggleFullscreen();
+        if (KeyboardState.IsKeyPressed(Keys.F4))
+            CommandHandler.ExecuteCommand("editor");
         if (KeyboardState.IsKeyPressed(Keys.F1))
         {
             RenderManager.RemoveCameraFrustum();
@@ -199,12 +212,12 @@ internal class Game : GameWindow
 
             RenderManager.CreateCameraFrustum();
         }
-
         if (KeyboardState.IsKeyPressed(Keys.F2))
         {
             var p = Game.TakeScreenshot();
             Log.Information("Screenshot saved to {Path}", p);
         }
+        #endregion
     }
 
     /// <summary>

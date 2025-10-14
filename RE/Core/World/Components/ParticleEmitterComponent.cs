@@ -1,5 +1,5 @@
 ﻿using System.Text.Json.Nodes;
-using ImGuiNET;
+using Hexa.NET.ImGui;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using RE.Core.Scripting;

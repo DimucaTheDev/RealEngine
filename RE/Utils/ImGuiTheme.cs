@@ -1,5 +1,5 @@
 ﻿using System.Numerics;
-using ImGuiNET;
+using Hexa.NET.ImGui;
 
 namespace RE.Utils
 {
@@ -46,9 +46,9 @@ namespace RE.Utils
             style.Colors[(int)ImGuiCol.ResizeGripActive] = new Vector4(1.00f, 1.00f, 1.00f, 0.95f);
             style.Colors[(int)ImGuiCol.Tab] = new Vector4(0.30f, 0.30f, 0.30f, 0.86f);
             style.Colors[(int)ImGuiCol.TabHovered] = new Vector4(0.52f, 0.52f, 0.52f, 0.80f);
-            style.Colors[(int)ImGuiCol.TabActive] = new Vector4(0.55f, 0.55f, 0.55f, 1.00f);
-            style.Colors[(int)ImGuiCol.TabUnfocused] = new Vector4(0.45f, 0.45f, 0.45f, 0.97f);
-            style.Colors[(int)ImGuiCol.TabUnfocusedActive] = new Vector4(0.39f, 0.39f, 0.39f, 1.00f);
+            style.Colors[(int)ImGuiCol.TabSelected] = new Vector4(0.55f, 0.55f, 0.55f, 1.00f);
+            //style.Colors[(int)ImGuiCol.TabUnfocused] = new Vector4(0.45f, 0.45f, 0.45f, 0.97f);
+            //style.Colors[(int)ImGuiCol.TabUnfocusedActive] = new Vector4(0.39f, 0.39f, 0.39f, 1.00f);
             style.Colors[(int)ImGuiCol.DockingPreview] = new Vector4(0.00f, 0.00f, 0.00f, 0.70f);
             style.Colors[(int)ImGuiCol.DockingEmptyBg] = new Vector4(0.20f, 0.20f, 0.20f, 1.00f);
             style.Colors[(int)ImGuiCol.PlotLines] = new Vector4(0.61f, 0.61f, 0.61f, 1.00f);
@@ -62,7 +62,7 @@ namespace RE.Utils
             style.Colors[(int)ImGuiCol.TableRowBgAlt] = new Vector4(1.00f, 1.00f, 1.00f, 0.06f);
             style.Colors[(int)ImGuiCol.TextSelectedBg] = new Vector4(0.48f, 0.48f, 0.48f, 0.48f);
             style.Colors[(int)ImGuiCol.DragDropTarget] = new Vector4(1.00f, 1.00f, 0.00f, 0.90f);
-            style.Colors[(int)ImGuiCol.NavHighlight] = new Vector4(0.26f, 0.59f, 0.98f, 1.00f);
+            //style.Colors[(int)ImGuiCol.NavHighlight] = new Vector4(0.26f, 0.59f, 0.98f, 1.00f);
             style.Colors[(int)ImGuiCol.NavWindowingHighlight] = new Vector4(1.00f, 1.00f, 1.00f, 0.70f);
             style.Colors[(int)ImGuiCol.NavWindowingDimBg] = new Vector4(0.80f, 0.80f, 0.80f, 0.20f);
             style.Colors[(int)ImGuiCol.ModalWindowDimBg] = new Vector4(0.80f, 0.80f, 0.80f, 0.35f);
