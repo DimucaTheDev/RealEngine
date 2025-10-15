@@ -469,6 +469,9 @@ namespace RE.Debug.Overlay
             var pr = (Matrix4x4)Camera.Instance.GetProjectionMatrix();
             var vr = (Matrix4x4)Camera.Instance.GetViewMatrix();
             var one = Matrix4x4.Identity;
+
+            ImGuizmo.DrawGrid(ref vr, ref pr, ref one, 100);
+
             if (_selectedObject != null)
             {
                 var rot = _selectedObject!.Transform.Rotation;

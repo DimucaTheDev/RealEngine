@@ -32,7 +32,7 @@ namespace RE.Core.World.Physics
         private static DbvtBroadphase _broadphase;
         private static CollisionDispatcherMultiThreaded _dispatcher;
         private static CollisionConfiguration _collisionConfiguration;
-         
+
         public static DiscreteDynamicsWorldMultiThreaded DynamicsWorld = null!;
         public static bool EnableSimulation = true;
 
@@ -145,7 +145,7 @@ namespace RE.Core.World.Physics
 
         public static void Update(float deltaTime)
         {
-            if (!_init)
+            if (!_init || Initializer.HasJob)
                 return;
             if (!SceneEditor.Enabled)
             {

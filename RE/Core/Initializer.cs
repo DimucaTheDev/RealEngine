@@ -29,6 +29,7 @@ namespace RE.Core
         private static int _step = 1;
         private static int _steps = 0;
         private const int MaxSteps = 10;
+        public static bool HasJob { get; private set; }
 
         public static void Init()
         {
@@ -102,6 +103,7 @@ namespace RE.Core
 
                     if (!string.IsNullOrEmpty(_currentStep))
                     {
+                        HasJob = true;
                         var pastText = new ScreenText(_currentStep, Vector2.Zero, _font, new Vector4(Vector3.One, .175f));
                         pastText.StartRender();
                         _textPastSteps.Insert(0, pastText);
@@ -172,6 +174,7 @@ namespace RE.Core
                 return true;
             }
 
+            HasJob = false;
             return false;
         }
     }

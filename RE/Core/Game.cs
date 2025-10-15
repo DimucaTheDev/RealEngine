@@ -2,7 +2,6 @@
 using System.Numerics;
 using System.Reflection;
 using System.Runtime.InteropServices;
-using Hexa.NET.ImGuizmo;
 using OpenTK.Graphics.OpenGL;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
@@ -183,14 +182,7 @@ internal class Game : GameWindow
         ImGuiController.Get().Update(this, Time.DeltaTime);
 
         base.OnRenderFrame(args);
-
         RenderManager.RenderAll(args);
-
-        var pr = (Matrix4x4)Camera.Instance.GetProjectionMatrix();
-        var vr = (Matrix4x4)Camera.Instance.GetViewMatrix();
-        var one = Matrix4x4.Identity;
-        ImGuizmo.DrawGrid(ref vr, ref pr, ref one, 1);
-
         ImGuiController.Get().Render();
 
         SwapBuffers();
