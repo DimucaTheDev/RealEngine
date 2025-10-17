@@ -25,9 +25,7 @@ namespace RE.Core.World.Components.Physics
             set
             {
                 if (IsPhysicsObjectInitialized)
-                {
-
-
+                { 
                     PhysicsManager.DynamicsWorld.RemoveRigidBody(RigidBody);
 
                     float newMass = value;
@@ -51,7 +49,7 @@ namespace RE.Core.World.Components.Physics
 
         public bool IsPhysicsObjectInitialized => RigidBody != null;
 
-        public RigidBodyComponent() : this(1) { }
+        public RigidBodyComponent() : this(mass: 1) { }
 
 
         public override void Start()

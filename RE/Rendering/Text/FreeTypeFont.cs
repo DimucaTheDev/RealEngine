@@ -18,8 +18,19 @@ public class FreeTypeFont
     public readonly uint PixelHeight;
     public ReadOnlyDictionary<uint, Character> CharacterMap => _characters.AsReadOnly();
 
+    private static Dictionary<(uint height, string path), (int vao, int vbo, Dictionary<uint, Character> map)>
+        Cache = new();
+
     public FreeTypeFont(uint pixelheight, string ttfPath)
     {
+        if(Cache.TryGetValue((pixelheight, ttfPath), out var cache))
+        {
+            _vao = cache.vao;
+            _vbo = cache.vbo;
+            _characters = cache.map;
+            return;
+        }
+
         PixelHeight = pixelheight;
         var lib = new Library();
 
@@ -103,6 +114,8 @@ public class FreeTypeFont
 
         GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
         GL.BindVertexArray(0);
+
+        Cache.Add((pixelheight, ttfPath), (_vao, _vbo, _characters));
     }
     public float GetTextHeight(string text, float scale = 1f)
     {
