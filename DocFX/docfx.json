@@ -6,7 +6,7 @@
         {
           "src": "..",
           "files": [
-            "RE/RE.csproj"
+            "RE/bin/Debug/net10.0-windows/RE.dll"
           ]
         }
       ],
