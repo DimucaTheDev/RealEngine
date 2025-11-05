@@ -188,7 +188,6 @@ public class FloatingText : Renderable
         GL.BindTexture(TextureTarget.Texture2D, 0);
     }
 
-
     public override void Dispose()
     {
         this.StopRender();

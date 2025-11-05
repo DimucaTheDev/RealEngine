@@ -2,6 +2,7 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using OpenTK.Mathematics;
+using RE.Core.Assets;
 using RE.Core.PluginSystem;
 using Serilog;
 using Quaternion = OpenTK.Mathematics.Quaternion;
@@ -39,11 +40,21 @@ namespace RE.Core.World
         {
             Initializer.AddStep(($"Loading level \"{scene.Name ?? "<unnamed>"}\"", () =>
             {
-                if (CurrentScene != null! && disposeCurrent)
+                if (scene == CurrentScene)
                 {
-                    CurrentScene.Dispose();
+                    CurrentScene = Reload(scene);
+                    scene.Dispose();
                 }
-                CurrentScene = scene;
+                else
+                {
+                    if (CurrentScene != null! && disposeCurrent)
+                    {
+                        CurrentScene.Dispose();
+                    }
+
+                    CurrentScene = scene;
+                }
+
                 afterLoaded?.Invoke();
             }
             ));
@@ -66,7 +77,28 @@ namespace RE.Core.World
         /// <para>If path ends with <c>.json</c>, the file will be created at that path, otherwise a <c>data.json</c> will be created at specified path</para>
         /// </remarks>
         /// </param>
-        public static void SaveScene(Scene scene, string path)
+        public static void SaveSceneToFile(Scene scene, string path)
+        {
+            var jsonString = SerializeScene(scene);
+
+            string savedTo;
+            if (jsonString.EndsWith(".json")) // a file
+            {
+                var directoryName = Path.GetDirectoryName(path);
+                if (!Directory.Exists(directoryName))
+                    Directory.CreateDirectory(directoryName!);
+                File.WriteAllText(savedTo = path, jsonString);
+            }
+            else
+            {
+                if (!Directory.Exists(path))
+                    Directory.CreateDirectory(path);
+                File.WriteAllText(savedTo = Path.Combine(path, "data.json"), jsonString);
+            }
+            Log.Information("Saved level to '{Path}'", savedTo);
+        }
+
+        public static string SerializeScene(Scene scene)
         {
             var root = new JsonObject();
             var objects = new JsonArray();
@@ -97,22 +129,10 @@ namespace RE.Core.World
                 WriteIndented = true,
                 TypeInfoResolver = new System.Text.Json.Serialization.Metadata.DefaultJsonTypeInfoResolver()
             });
-            string savedTo;
-            if (jsonString.EndsWith(".json")) // a file
-            {
-                var directoryName = Path.GetDirectoryName(path);
-                if (!Directory.Exists(directoryName))
-                    Directory.CreateDirectory(directoryName!);
-                File.WriteAllText(savedTo = path, jsonString);
-            }
-            else
-            {
-                if (!Directory.Exists(path))
-                    Directory.CreateDirectory(path);
-                File.WriteAllText(savedTo = Path.Combine(path, "data.json"), jsonString);
-            }
-            Log.Information("Saved level to '{Path}'", savedTo);
+            return jsonString;
         }
+
+
         //todo: parse at PATH, not just name
         /// <summary>
         /// Loads and deserializes a scene from JSON file located at <c>Assets/Maps/{name}/data.json</c>.
@@ -121,6 +141,14 @@ namespace RE.Core.World
         /// <returns>A new scene instance</returns>
         public static Scene ParseScene(string name)
         {
+            string dataPath = Path.Combine("Assets", "Maps", name, $"data.json");
+
+            return DeserializeScene(ContentManager.GetString(dataPath), name);
+        }
+
+        public static Scene DeserializeScene(string jsonString, string? name = null)
+        {
+            var temp = CurrentScene; // КОСТЫЛЬ
             try
             {
                 var assemblyTypes = new[] { Assembly.GetExecutingAssembly() }
@@ -130,32 +158,34 @@ namespace RE.Core.World
                     .Where(type => typeof(Component).IsAssignableFrom(type) && !type.IsAbstract)
                     .ToList();
 
-
-                var temp = CurrentScene; // КОСТЫЛЬ
+                JsonDocument doc = JsonDocument.Parse(jsonString,
+                    new JsonDocumentOptions()
+                    { CommentHandling = JsonCommentHandling.Skip, AllowTrailingCommas = true });
 
                 Scene scene = new Scene();
                 CurrentScene = scene;
-                scene.Name = name; //TODO: get name from manifest
 
-                string dataPath = Path.Combine("Assets", "Maps", name, $"data.json");
-                JsonDocument doc = JsonDocument.Parse(File.ReadAllText(dataPath),
-                    new JsonDocumentOptions() { CommentHandling = JsonCommentHandling.Skip, AllowTrailingCommas = true });
+                var hasSceneName = doc.RootElement.TryGetProperty("name", out var sceneName);
+
+                scene.Name = name ?? (hasSceneName ? sceneName.GetString() : "Unnamed"); //TODO: get name from manifest
+
 
                 if (!(doc.RootElement.TryGetProperty("objects", out var objProp) && objProp.EnumerateArray().Any()))
                 {
                     Log.Warning("Scene does not contain any objects.");
                 }
-                var objs = objProp.EnumerateArray();
 
-                foreach (var obj in objs)
+                var objects = objProp.EnumerateArray();
+
+                foreach (var obj in objects)
                 {
                     GameObject gameObject = new GameObject();
                     gameObject.Scene = scene;
 
                     gameObject.Name =
                         obj.TryGetProperty("name", out JsonElement nameProperty)
-                        ? nameProperty.GetString()!
-                        : Random.Shared.Next().ToString();
+                            ? nameProperty.GetString()!
+                            : Random.Shared.Next().ToString();
 
                     gameObject.Tag =
                         obj.TryGetProperty("tag", out JsonElement tagProperty)
@@ -175,7 +205,11 @@ namespace RE.Core.World
                         {
                             var array = rotationElement.EnumerateArray().Select(s => s.GetSingle())
                                 .Select(MathHelper.DegreesToRadians).ToList();
-                            gameObject.Transform.Rotation = new Quaternion(array[0], array[1], array[2]);
+                            gameObject.Transform.Rotation = new Quaternion(
+
+                                MathHelper.DegreesToRadians(array[0]),
+                                MathHelper.DegreesToRadians(array[1]),
+                                MathHelper.DegreesToRadians(array[2]));
                         }
 
                         if (transformElement.TryGetProperty("scale", out var scaleElement))
@@ -190,17 +224,21 @@ namespace RE.Core.World
                         foreach (var component in components.EnumerateObject())
                         {
                             var type = assemblyTypes
-                                .First(s => s.Name.ToLower().Replace("component", "") == component.Name.ToLower().Replace("component", ""));
+                                .First(s => s.Name.ToLower().Replace("component", "") ==
+                                            component.Name.ToLower().Replace("component", ""));
 
                             object instance;
 
-                            if (component.Value.TryGetProperty("args", out var argsElement) && argsElement.ValueKind == JsonValueKind.Array)
+                            if (component.Value.TryGetProperty("args", out var argsElement) &&
+                                argsElement.ValueKind == JsonValueKind.Array)
                             {
                                 var ctors = type.GetConstructors();
-                                ConstructorInfo? matchingCtor = ctors.FirstOrDefault(c => c.GetParameters().Length == argsElement.GetArrayLength());
+                                ConstructorInfo? matchingCtor = ctors.FirstOrDefault(c =>
+                                    c.GetParameters().Length == argsElement.GetArrayLength());
 
                                 if (matchingCtor == null)
-                                    throw new InvalidOperationException($"No constructor with {argsElement.GetArrayLength()} arguments found for {type.Name}");
+                                    throw new InvalidOperationException(
+                                        $"No constructor with {argsElement.GetArrayLength()} arguments found for {type.Name}");
 
                                 var paramInfos = matchingCtor.GetParameters();
                                 var parsedArgs = new object?[paramInfos.Length];
@@ -211,8 +249,10 @@ namespace RE.Core.World
                                     var argElement = argsElement[i];
 
                                     parsedArgs[i] = JsonSerializer.Deserialize(argElement.GetRawText(), paramType)
-                                                    ?? throw new InvalidOperationException($"Failed to deserialize argument {i} to {paramType}");
+                                                    ?? throw new InvalidOperationException(
+                                                        $"Failed to deserialize argument {i} to {paramType}");
                                 }
+
                                 instance = Activator.CreateInstance(type, parsedArgs)!;
                             }
                             else
@@ -227,11 +267,13 @@ namespace RE.Core.World
                                     continue;
 
                                 var propertyName = prop.Name;
-                                var propertyInfo = type.GetProperty(propertyName, BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
+                                var propertyInfo = type.GetProperty(propertyName,
+                                    BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
 
                                 if (propertyInfo == null)
                                 {
-                                    Log.Error("Property '{PropertyName}' not found on type '{TypeName}'", propertyName, type.Name);
+                                    Log.Error("Property '{PropertyName}' not found on type '{TypeName}'", propertyName,
+                                        type.Name);
                                     continue;
                                 }
 
@@ -251,6 +293,7 @@ namespace RE.Core.World
                             }
                         }
                     }
+
                     scene.GameObjects.Add(gameObject, true);
                 }
 
@@ -261,7 +304,7 @@ namespace RE.Core.World
                         c.Start();
                     }
                 }
-                CurrentScene = temp;
+
                 return scene;
             }
             catch (Exception e)
@@ -269,6 +312,16 @@ namespace RE.Core.World
                 Log.Error(e, "Failed to deserialize scene");
                 throw;
             }
+            finally
+            {
+                CurrentScene = temp;
+            }
+        }
+
+        public static Scene Reload(Scene scene)
+        {
+            var newScene = DeserializeScene(SerializeScene(scene), scene.Name);
+            return newScene;
         }
     }
 }

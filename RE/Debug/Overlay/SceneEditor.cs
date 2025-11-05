@@ -58,10 +58,6 @@ namespace RE.Debug.Overlay
         private static readonly ModelRenderer SelectedObjectOutline = new() { Outline = true };
 
 
-        private static GizmosRenderable _xAxisArrow = new(null, GizmosRenderable.Axis.X);
-        private static GizmosRenderable _yAxisArrow = new(null, GizmosRenderable.Axis.Y);
-        private static GizmosRenderable _zAxisArrow = new(null, GizmosRenderable.Axis.Z);
-
         private static readonly int LogoImage;
 
         static SceneEditor()
@@ -164,9 +160,6 @@ namespace RE.Debug.Overlay
         private void SelectObject(GameObject? obj)
         {
             _selectedObject = obj;
-            _xAxisArrow.GameObject = obj;
-            _yAxisArrow.GameObject = obj;
-            _zAxisArrow.GameObject = obj;
             UpdateSelection();
         }
 
@@ -185,7 +178,7 @@ namespace RE.Debug.Overlay
 
             _scene = SceneManager.CurrentScene;//SceneManager.ParseScene(SceneManager.CurrentScene.Name!/*костыль*/);
                                                // TODO: set json path to scene's property
-            SceneManager.LoadScene(_scene, true);
+                                               //SceneManager.LoadScene(_scene, true);
             SelectObject(null);
             IsVisible = true;
 
@@ -209,9 +202,8 @@ namespace RE.Debug.Overlay
             {
                 string[] pathSegments = entry.Key.Split('/');
                 Node currentNode = _rootNode;
-                for (int i = 0; i < pathSegments.Length; i++)
+                foreach (var segment in pathSegments)
                 {
-                    string segment = pathSegments[i];
                     if (!currentNode.Children.TryGetValue(segment, out Node nextNode))
                     {
                         nextNode = new Node { Name = segment };
@@ -241,19 +233,10 @@ namespace RE.Debug.Overlay
             Enabled = false;
             IsVisible = false;
             SelectedObjectOutline?.StopRender();
-            if (_scene?.GameObjects != null)
-            {
-                foreach (var o in _scene?.GameObjects!.ToList()!)
-                {
-                    foreach (var c in o.Components)
-                    {
-                        //todo: maybe we should save scene to memory and load "new" from there
-                        c.Start();
-                    }
-                }
-            }
-            SceneManager.LoadScene(_scene);
-            // _scene.Dispose(); //todo: do something with thi shi 🥀
+
+            var reloaded = SceneManager.Reload(_scene);
+            _scene.Dispose();
+            SceneManager.LoadScene(reloaded);
         }
 
         public override void Render(FrameEventArgs args)
@@ -488,8 +471,8 @@ namespace RE.Debug.Overlay
                 {
                     if (Matrix4x4.Decompose(model, out var scale, out var rotation, out var translation))
                     {
-                        _selectedObject.Transform.Position = translation.ToOpenTkVector3();
-                        _selectedObject.Transform.Rotation = rotation.ToOpenTkQuaternion();
+                        _selectedObject.SetPosition(translation.ToOpenTkVector3());
+                        _selectedObject.SetRotation(rotation.ToOpenTkQuaternion());
                         _selectedObject.Transform.Scale = scale.ToOpenTkVector3();
 
                         UpdateSelection();
@@ -511,7 +494,7 @@ namespace RE.Debug.Overlay
                 SameLine();
                 if (Button("Save and Quit"))
                 {
-                    SceneManager.SaveScene(_scene, $"Assets/Maps/{_scene.Name}");
+                    SceneManager.SaveSceneToFile(_scene, $"Assets/Maps/{_scene.Name}");
                     CloseCurrentPopup();
                     Disable();
                 }
@@ -611,7 +594,7 @@ namespace RE.Debug.Overlay
                 Text("Name:");
                 TableSetColumnIndex(1);
                 {
-                    if (Button(_selectedObject.Name ?? "<unnamed>"))
+                    if (Button((_selectedObject.Name ?? "<unnamed>") + "##name"))
                     {
                         OpenPopup("prop_new_value");
                         _valStr = _selectedObject.Name ?? "<unnamed>";
@@ -628,14 +611,14 @@ namespace RE.Debug.Overlay
 
                 TableSetColumnIndex(1);
                 {
-                    if (Button(_selectedObject.Transform.Position.ToString()))
+                    if (Button(_selectedObject.Transform.Position + "##pos"))
                     {
                         OpenPopup("prop_new_value");
                         (_valX, _valY, _valZ) = _selectedObject.Transform.Position;
-                        _p = GetType().GetProperty("obj_Position", f)!;
+                        _p = GetType().GetProperty(nameof(obj_Position), f)!;
                         _hash = _p.GetHashCode();
                     }
-                    if (GetType().GetProperty("obj_Position", f)?.GetHashCode() == _hash)
+                    if (GetType().GetProperty(nameof(obj_Position), f)?.GetHashCode() == _hash)
                         DrawValueChangePopup(_p, this);
                 }
                 TableNextRow();
@@ -647,14 +630,14 @@ namespace RE.Debug.Overlay
                     var v = new OpenTK.Mathematics.Vector3(MathHelper.RadiansToDegrees(transformRotation.X),
                         MathHelper.RadiansToDegrees(transformRotation.Y),
                         MathHelper.RadiansToDegrees(radians: transformRotation.Z));
-                    if (Button(v.ToString()))
+                    if (Button(v + "##rot"))
                     {
                         OpenPopup("prop_new_value");
                         (_valX, _valY, _valZ) = v;
-                        _p = GetType().GetProperty("obj_Rotation", f)!;
+                        _p = GetType().GetProperty(nameof(obj_Rotation), f)!;
                         _hash = _p.GetHashCode();
                     }
-                    if (GetType().GetProperty("obj_Rotation", f)!?.GetHashCode() == _hash)
+                    if (GetType().GetProperty(nameof(obj_Rotation), f)!?.GetHashCode() == _hash)
                         DrawValueChangePopup(_p, this);
                 }
                 TableNextRow();
@@ -666,10 +649,10 @@ namespace RE.Debug.Overlay
                     {
                         OpenPopup("prop_new_value");
                         (_valX, _valY, _valZ) = _selectedObject.Transform.Scale;
-                        _p = typeof(Transform).GetProperty("Scale")!;
+                        _p = typeof(Transform).GetProperty(nameof(Transform.Scale))!;
                         _hash = _p.GetHashCode();
                     }
-                    if (typeof(Transform).GetProperty("Scale")?.GetHashCode() == _hash)
+                    if (typeof(Transform).GetProperty(nameof(Transform.Scale))?.GetHashCode() == _hash)
                         DrawValueChangePopup(_p, _selectedObject.Transform);
                 }
                 TableNextRow();
@@ -685,7 +668,13 @@ namespace RE.Debug.Overlay
             End();
         }
 
+#pragma warning disable IDE1006
+        private OpenTK.Mathematics.Vector3 obj_Position { get => _selectedObject.Transform.Position; set => _selectedObject.SetPosition(value); }
+        private OpenTK.Mathematics.Quaternion obj_Rotation { get => _selectedObject.Transform.Rotation; set => _selectedObject.SetRotation(value); }
+#pragma warning restore
+
         private PropertyInfo _p = null!;
+
         //refactor_me
         private void DrawComponents(GameObject obj)
         {

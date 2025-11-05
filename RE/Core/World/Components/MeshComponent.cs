@@ -1,13 +1,12 @@
 ﻿using System.Text.Json.Nodes;
 using OpenTK.Windowing.Common;
 using RE.Core.Scripting;
-using RE.Debug;
 using RE.Rendering.Renderables;
 
 namespace RE.Core.World.Components
 {
     [ComponentInfo("World", Description = $"MeshComponent renders object's model, specified by the '{nameof(Path)}' property")]
-    public class MeshComponent : Component, IDebugRenderer
+    public class MeshComponent : Component
     {
         public readonly ModelRenderer ModelRenderer;
 
@@ -55,7 +54,5 @@ namespace RE.Core.World.Components
             root.Add("args", args);
             return root;
         }
-
-        public void DebugRender(FrameEventArgs args) => Render(args);
     }
 }

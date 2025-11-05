@@ -20,7 +20,7 @@ namespace RE.Core
         [JsonIgnore]
         public GameObject Owner { get; internal set; } = null!;
         /// <summary>
-        /// Whether this component should be stored when the scene is being saved (see <see cref="SceneManager.SaveScene"/>).
+        /// Whether this component should be stored when the scene is being saved (see <see cref="SceneManager.SaveSceneToFile"/>).
         /// </summary>
         [JsonIgnore]
         public bool SaveComponent { get; set; } = true;

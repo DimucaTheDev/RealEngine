@@ -27,8 +27,6 @@ public class Camera
     public Vector3 Up;
     public float Yaw = -90f;
 
-    private Camera() { }
-
     private Camera(Vector3 position, Vector3 up, float aspectRatio)
     {
         Position = position;
@@ -37,7 +35,6 @@ public class Camera
     }
 
     public static Camera Instance { get; private set; }
-
 
     public static void Init()
     {

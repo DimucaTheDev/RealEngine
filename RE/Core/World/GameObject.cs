@@ -56,7 +56,7 @@ namespace RE.Core.World
         public string? Tag { get; set; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether this object should be excluded from saving (see <see cref="SceneManager.SaveScene"/>).
+        /// Gets or sets a value indicating whether this object should be excluded from saving (see <see cref="SceneManager.SaveSceneToFile"/>).
         /// </summary>
         public bool DoNotSave { get; set; } = false;
 
