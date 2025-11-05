@@ -1,7 +1,7 @@
 ﻿using System.Collections.ObjectModel;
-using System.Diagnostics;
 using OpenTK.Graphics.OpenGL4;
 using OpenTK.Mathematics;
+using RE.Core.Assets;
 using Serilog;
 using SharpFont;
 
@@ -23,7 +23,7 @@ public class FreeTypeFont
 
     public FreeTypeFont(uint pixelheight, string ttfPath)
     {
-        if(Cache.TryGetValue((pixelheight, ttfPath), out var cache))
+        if (Cache.TryGetValue((pixelheight, ttfPath), out var cache))
         {
             _vao = cache.vao;
             _vbo = cache.vbo;
@@ -34,7 +34,7 @@ public class FreeTypeFont
         PixelHeight = pixelheight;
         var lib = new Library();
 
-        Stream resource_stream = File.OpenRead(ttfPath);
+        Stream resource_stream = ContentManager.Open(ttfPath);
         var ms = new MemoryStream();
         resource_stream.CopyTo(ms);
         var face = new Face(lib, ms.ToArray(), 0);
@@ -46,7 +46,7 @@ public class FreeTypeFont
 
         // set texture unit
         GL.ActiveTexture(TextureUnit.Texture0);
-        
+
         // Load first X characters of UTF set
         for (uint c = 0; c < face.GlyphCount; c++)
             try

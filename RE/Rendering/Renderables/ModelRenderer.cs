@@ -6,8 +6,8 @@ using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using RE.Core;
 using RE.Core.Assets;
+using RE.Core.World;
 using RE.Debug.Overlay;
-using RE.Rendering.Lightning;
 using RE.Rendering.Renderables.ModelFormat;
 using RE.Rendering.Text;
 using RE.Utils;
@@ -16,6 +16,7 @@ using StbImageSharp;
 using Material = RE.Rendering.Lightning.Material;
 using PrimitiveType = OpenTK.Graphics.OpenGL4.PrimitiveType;
 using Quaternion = OpenTK.Mathematics.Quaternion;
+using Scene = Assimp.Scene;
 
 namespace RE.Rendering.Renderables
 {
@@ -123,8 +124,6 @@ namespace RE.Rendering.Renderables
             Render(args, model);
         }
 
-
-
         public void Render(FrameEventArgs args, Matrix4 model)
         {
             Matrix4 view = Camera.Instance.GetViewMatrix();
@@ -148,7 +147,12 @@ namespace RE.Rendering.Renderables
             {
                 _program.SetValue("ignoreLight", false);
                 _program.SetValue("viewPos", Camera.Instance.Position);
-                _program.SetStruct("spotLight", new SpotLight()
+                var lights = SceneManager.CurrentScene.LightSources;
+                foreach (var light in lights)
+                {
+                    light.SetParams(_program);
+                }
+                /*_program.SetStruct("spotLight", new SpotLight()
                 {
                     Position = Camera.Instance.Position,
                     Direction = Camera.Instance.Front,
@@ -159,10 +163,7 @@ namespace RE.Rendering.Renderables
                     Quadratic = 0.032f,
                     CutOff = MathF.Cos(MathHelper.DegreesToRadians(12.5f)),
                     OuterCutOff = MathF.Cos(MathHelper.DegreesToRadians(17.5f))
-                });
-
-                if (Core.World.SceneManager.CurrentScene.SunLight != null)
-                    _program.SetStruct("dirLight", Core.World.SceneManager.CurrentScene.SunLight.Value);
+                });*/
             }
 
             GL.BindVertexArray(_vao);
@@ -218,7 +219,6 @@ namespace RE.Rendering.Renderables
 
             if (MeshCache.TryGetValue(path, out var meshData))
             {
-                //todo: cache min max bounds
                 (_vao, _vbo, _ebo, _indexCount, renderVertices, PhysicsIndices, MinBounds, MaxBounds) = meshData;
                 PhysicsVertices = new float[renderVertices.Count / 8 * 3];
                 for (int i = 0, j = 0; i < renderVertices.Count; i += 8, j += 3)
@@ -334,7 +334,7 @@ namespace RE.Rendering.Renderables
                 MeshCache[path] = (_vao, _vbo, _ebo, _indexCount, renderVertices, indices.Select(s => (int)s).ToList(), MinBounds, MaxBounds);
 
                 PhysicsVertices = physicsVerticesTemp.ToArray();
-                PhysicsIndices = indices.Select(i => (int)i).ToList();
+                PhysicsIndices = indices.Select(indie => (int)indie).ToList();
                 _texture = GetOrLoadTexture(path);
 
                 return true;
@@ -466,10 +466,10 @@ namespace RE.Rendering.Renderables
 
             if (path.EndsWith(".smdl", true, CultureInfo.InvariantCulture))
             {
-                if (!File.Exists(path + ".png"))
+                if (!ContentManager.Exists(path + ".png"))
                     return Util.CreateMissingTexture();
 
-                var readAllBytes = File.ReadAllBytes(path + ".png");
+                var readAllBytes = ContentManager.GetBytes(path + ".png");
                 var t = ImageResult.FromMemory(readAllBytes, ColorComponents.RedGreenBlueAlpha);
                 var lt = LoadTexture(t);
                 TextureCache[path] = lt;
@@ -490,9 +490,9 @@ namespace RE.Rendering.Renderables
             string? texPath = mat?.TextureDiffuse.FilePath;
 
 
-            if (texPath != null && File.Exists(texPath))
+            if (texPath != null && ContentManager.Exists(texPath))
             {
-                using var s = File.OpenRead(texPath);
+                using var s = ContentManager.Open(texPath);
                 texId = LoadTexture(ImageResult.FromStream(s, ColorComponents.RedGreenBlueAlpha));
             }
             else if (mat?.HasTextureDiffuse ?? false)

@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Text.RegularExpressions;
 using OpenTK.Graphics.OpenGL;
 using RE.Audio;
+using RE.Core.Assets;
 using RE.Core.World;
 using RE.Debug.Overlay;
 using RE.Rendering;
@@ -209,13 +210,12 @@ namespace RE.Core.Scripting
                     return;
                 }
 
-                if (!File.Exists(list[0]))
+                if (!ContentManager.Exists(list[0]))
                 {
-                    Console.WriteLine(Path.GetFullPath("."));
                     Log.Error("File not found: {FilePath}", list[0]);
                     return;
                 }
-                string src = File.ReadAllText(list[0]);
+                string src = ContentManager.GetString(list[0]);
                 foreach (var line in src.Split('\n'))
                 {
                     ExecuteCommandSafe(line);

@@ -8,6 +8,7 @@ using OpenTK.Windowing.Common;
 using OpenTK.Windowing.Common.Input;
 using OpenTK.Windowing.Desktop;
 using RE.Audio;
+using RE.Core.Assets;
 using RE.Core.PluginSystem;
 using RE.Core.Scripting;
 using RE.Core.World.Physics;
@@ -91,6 +92,14 @@ internal class Game : GameWindow
             });
         Instance = game;
 
+        Instance.JoystickConnected += static e =>
+        {
+            if (e.IsConnected)
+                Log.Information("Joystick connected: {Name} ({JoystickId})", Instance.JoystickStates[e.JoystickId].Name, e.JoystickId);
+            else
+                Log.Information("Joystick disconnected: {JoystickId}", e.JoystickId);
+        };
+
         if (Renderdoc.IsAvailable)
             Log.Information("RenderDoc available: {Version}", Renderdoc.Version);
 
@@ -126,6 +135,9 @@ internal class Game : GameWindow
         GL.Enable(EnableCap.DebugOutput);
         GL.Enable(EnableCap.DebugOutputSynchronous);
         GL.DebugMessageCallback(GlLogCallback, 0);
+
+        ContentManager.Register(new ZipContentProvider());
+        ContentManager.Register(ContentManager.Default = new FileContentProvider());
 
         RenderManager.Init();
         Time.Init();
@@ -294,6 +306,7 @@ internal class Game : GameWindow
         Log.Logger = new LoggerConfiguration()
             .MinimumLevel.Debug()
             .Enrich.WithThreadName()
+            .Enrich.With(new EngineLoggerEnricher("Engine"))
             .WriteTo.Sink(new GameLogger("[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}"))
             .WriteTo.Console(outputTemplate: consoleTemplate)
             .CreateLogger()
@@ -317,6 +330,8 @@ internal class Game : GameWindow
             DebugSeverity.DebugSeverityNotification => Serilog.Events.LogEventLevel.Verbose,
             _ => Serilog.Events.LogEventLevel.Information
         }, "[{OpenGL}:{Type}] {Message}", "OpenGL", type, msg);
+        if (severity == DebugSeverity.DebugSeverityHigh)
+            throw new Exception(msg);
     }
     private static WindowIcon? LoadIcon()
     {

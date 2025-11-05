@@ -10,6 +10,7 @@ using OpenTK.Graphics.OpenGL;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using RE.Core;
+using RE.Core.Assets;
 using RE.Core.PluginSystem;
 using RE.Core.Scripting;
 using RE.Core.World;
@@ -89,7 +90,7 @@ namespace RE.Debug.Overlay
 
             GL.BindTexture(TextureTarget.Texture2D, LogoImage);
 
-            if (File.Exists(iconPath))
+            if (ContentManager.Exists(iconPath))
             {
                 using var icon = new Icon(iconPath, new Size(0, 0));
 
@@ -177,6 +178,8 @@ namespace RE.Debug.Overlay
                 return;
             }
             Enabled = true;
+
+            Game.Instance.CursorState = CursorState.Normal;
 
             Log.Information("Starting Scene Editor for \"{SceneName}\"...", SceneManager.CurrentScene.Name);
 
@@ -283,8 +286,6 @@ namespace RE.Debug.Overlay
                 {
                     if (com is IDebugRenderer s)
                     {
-                        if (com is SkyboxComponent && !PreviewSkybox)
-                            continue;
                         s.DebugRender(args);
                     }
                 }
@@ -432,6 +433,7 @@ namespace RE.Debug.Overlay
         public void DrawObjectGizmos()
         {
             SetNextWindowPos(new Vector2(10, 10), ImGuiCond.FirstUseEver);
+
             Begin("##mode_selector", ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoSavedSettings);
 
             var imTextureId1 = new ImTextureID((ulong)_translateIcon);
@@ -470,7 +472,7 @@ namespace RE.Debug.Overlay
             var vr = (Matrix4x4)Camera.Instance.GetViewMatrix();
             var one = Matrix4x4.Identity;
 
-            ImGuizmo.DrawGrid(ref vr, ref pr, ref one, 100);
+            //ImGuizmo.DrawGrid(ref vr, ref pr, ref one, 100);
 
             if (_selectedObject != null)
             {
@@ -811,7 +813,7 @@ namespace RE.Debug.Overlay
 
                                     _valBTemp = _valB;
                                 }
-                                else if (Button(prop.GetValue(com)?.ToString() ?? "<null>"))
+                                else if (Button((prop.GetValue(com)?.ToString() ?? "<null>") + $"##id_{prop.Name}"))
                                 {
                                     OpenPopup("prop_new_value");
                                     _hash = prop.GetHashCode();
@@ -876,7 +878,8 @@ namespace RE.Debug.Overlay
             }
             if (BeginPopup("new_component"))
             {
-                BeginChild("ComponentListChild", new Vector2(200, 300), ImGuiChildFlags.AlwaysAutoResize);
+                BeginChild("ComponentListChild", new Vector2(200, 300),
+                    ImGuiChildFlags.AlwaysAutoResize | ImGuiChildFlags.AutoResizeX | ImGuiChildFlags.AutoResizeY);
 
                 float fullWidth = GetContentRegionAvail().X;
                 PushItemWidth(fullWidth);
@@ -1134,9 +1137,9 @@ namespace RE.Debug.Overlay
                 {
                     var l = prop.GetCustomAttribute<ValueLimitAttribute>();
                     if (l != null)
-                        DragFloat($"Value[{l.Min}; {l.Max}]:", ref _valF, 0.05f, (float)l.Min, (float)l.Max);
+                        DragFloat($"Value[{l.Min}; {l.Max}]:", ref _valF, (float)l.Step, (float)l.Min, (float)l.Max);
                     else
-                        DragFloat("Value:", ref _valF, 0.05f, float.MinValue, float.MaxValue);
+                        DragFloat("Value:", ref _valF, (float)l.Step, float.MinValue, float.MaxValue);
                     if (Button("Apply"))
                     {
                         prop.SetValue(instance, _valF);

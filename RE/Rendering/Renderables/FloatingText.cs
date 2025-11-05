@@ -3,7 +3,7 @@ using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using RE.Core.Assets;
 using RE.Rendering.Text;
-using RE.Utils; 
+using RE.Utils;
 
 namespace RE.Rendering.Renderables;
 
@@ -28,7 +28,7 @@ public class FloatingText : Renderable
     public FloatingText(string content, Vector3 pos, FreeTypeFont font, bool bottomToTop = false)
         : this(content, pos, font, 1, Color4.White, new(0.3f, 0.3f, 0.3f, .5f), bottomToTop) { }
     public FloatingText(string content, Vector3 pos, FreeTypeFont font, float scale, Color4 foregroundColor, Color4 backgroundColor, bool bottomToTop)
-    { 
+    {
         Position = pos;
         Text = content;
         Scale = scale;
@@ -89,7 +89,7 @@ public class FloatingText : Renderable
     }
 
     public override void Render(FrameEventArgs args)
-    { 
+    {
         if (string.IsNullOrEmpty(Text))
             return;
 

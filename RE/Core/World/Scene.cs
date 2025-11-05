@@ -10,7 +10,7 @@ namespace RE.Core.World
     {
         public string? Name { get; set; }
         public GameObjectList GameObjects { get; }
-        public DirectionalLight? SunLight { get; set; } = null; // scene doesnt contain sun by default.. maybe
+        public List<ILightSource> LightSources { get; set; } = [];
 
         public Scene() => GameObjects = new GameObjectList(this);
 

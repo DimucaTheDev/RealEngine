@@ -1,5 +1,4 @@
 ﻿using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using System.Text.RegularExpressions;
 using OpenTK.Graphics.OpenGL4;
@@ -104,13 +103,13 @@ namespace RE.Core.Assets
                 ".geom" => ShaderType.GeometryShader,
                 _ => throw new NotSupportedException("Unknown shader type!")
             });
-            if (!File.Exists(AssetPath))
+            if (!ContentManager.Exists(AssetPath))
             {
                 Log.Error("Shader {Path} does not exist!", AssetPath);
                 GL.DeleteShader(Handle);
                 return;
             }
-            var content = File.ReadAllText(AssetPath!);
+            var content = ContentManager.GetString(AssetPath!);
 
             _seenDecl = new HashSet<string>();
             content = PreprocessShader(content, AssetPath);
@@ -159,9 +158,9 @@ namespace RE.Core.Assets
                     {
                         case "include":
                             var includePath = Path.Combine(Path.GetDirectoryName(shaderPath)!, match.Groups[2].Value);
-                            if (!File.Exists(includePath))
+                            if (!ContentManager.Exists(includePath))
                                 throw new FileNotFoundException($"INCLUDE shader not found: '{includePath}'");
-                            var src = File.ReadAllText(includePath);
+                            var src = ContentManager.GetString(includePath);
                             //todo: add check for stackoverflow
                             string includeShader = PreprocessShader(src, includePath, true);
                             finalShader.AppendLine($"\n/* begin include {includePath} */\n{includeShader}\n/* end include {includePath} */\n");
@@ -178,7 +177,7 @@ namespace RE.Core.Assets
                     if (line.StartsWith("in ") || line.StartsWith("out ") || line.StartsWith("uniform "))
                     {
                         if (!_seenDecl.Add(line.Trim()))
-                        { 
+                        {
                             Log.Warning("Duplicate shader declaration skipped: {Line}", line.Trim());
                             continue;
                         }

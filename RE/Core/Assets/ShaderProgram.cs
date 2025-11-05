@@ -1,7 +1,5 @@
 ﻿using System.Reflection;
-using OpenTK.Graphics.OpenGL4;
 using OpenTK.Mathematics;
-using RE.Rendering.Lightning;
 using RE.Utils;
 using GL = OpenTK.Graphics.OpenGL4.GL;
 using Log = Serilog.Log;
@@ -25,6 +23,7 @@ namespace RE.Core.Assets
 
         private bool _linked;
         private readonly List<Shader> _linkedShaders = [];
+        private List<string> _unknownLocations = new();
 
         /// <inheritdoc cref="GL.AttachShader(int, int)"/>
         public void AttachShader(string path) => AttachShader(new Shader(path));
@@ -49,6 +48,13 @@ namespace RE.Core.Assets
             GL.UseProgram(this);
         }
 
+        /// <inheritdoc cref="GL.DeleteProgram(int)"/>>
+        public void Delete()
+        {
+            if (GL.IsProgram(this))
+                GL.DeleteProgram(this);
+        }
+
         /// <summary>
         /// Sets the value of a uniform variable in the shader program by name.
         /// </summary>
@@ -62,10 +68,19 @@ namespace RE.Core.Assets
         /// <exception cref="NotSupportedException">Thrown if the type of <typeparamref name="T"/> is not supported as a uniform variable.</exception>
         public void SetValue<T>(string name, T value) where T : notnull
         {
+            if (_unknownLocations.Contains(name))
+            {
+                // Skip setting value for previously unknown uniform
+                //todo: update docs
+                return;
+            }
+
             int location = GL.GetUniformLocation(this, name);
             if (location == -1)
             {
                 Log.Error("Unknown uniform location: {Name}", name);
+                if (!_unknownLocations.Contains(name))
+                    _unknownLocations.Add(name);
                 return;
             }
 
@@ -128,7 +143,7 @@ namespace RE.Core.Assets
             {
                 var propNameAttr = prop.GetCustomAttribute<GlPropertyNameAttribute>();
                 var propName = propNameAttr?.PropertyName ?? prop.Name;
-                var method = methodInfo?.MakeGenericMethod(prop.PropertyType); 
+                var method = methodInfo?.MakeGenericMethod(prop.PropertyType);
 
                 for (int i = 0; i < valArray.Length; i++)
                 {
@@ -138,7 +153,7 @@ namespace RE.Core.Assets
 
                     if (propValue is null)
                         continue;
-                     
+
                     method?.Invoke(this, [uniformName, propValue]);
                 }
             }
@@ -158,14 +173,14 @@ namespace RE.Core.Assets
             foreach (var prop in typeof(T).GetProperties())
             {
                 var propNameAttr = prop.GetCustomAttribute<GlPropertyNameAttribute>();
-                var propName = propNameAttr?.PropertyName ?? prop.Name; 
+                var propName = propNameAttr?.PropertyName ?? prop.Name;
 
                 string uniformName = $"{structName}.{propName}";
                 object? propValue = prop.GetValue(value);
 
                 if (propValue is null)
                     continue;
-                 
+
                 var method = GetType()
                     .GetMethod(nameof(SetValue))?
                     .MakeGenericMethod(propValue.GetType());
@@ -183,7 +198,7 @@ namespace RE.Core.Assets
 
             if (Handle != 0)
             {
-                GL.DeleteProgram(Handle);
+                Delete();
                 Handle = 0;
             }
             _linkedShaders.Clear();

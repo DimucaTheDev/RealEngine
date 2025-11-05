@@ -1,9 +1,11 @@
 ﻿using System.Collections.ObjectModel;
+using System.Runtime.InteropServices;
 using System.Text.Json;
 using FmodAudio;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using RE.Core;
+using RE.Core.Assets;
 using RE.Rendering;
 using RE.Utils;
 using Serilog;
@@ -26,6 +28,8 @@ namespace RE.Audio
         /// <remarks>Use this field to access FMOD system-level functionality throughout the application.</remarks>
         public static FmodSystem FmodSystem;
 
+        public const int MaxChannels = 256;
+
         private static readonly Dictionary<string, List<string>> _soundMap = new();
         private static readonly Dictionary<string, FmodAudio.Sound> _buffers = new();
         private static readonly List<Sound> _activeSounds = new();
@@ -36,13 +40,13 @@ namespace RE.Audio
 
             Fmod.SetLibraryLocation("Dll/Win32");
             FmodSystem = Fmod.CreateSystem();
-            FmodSystem.Init(256);
+            FmodSystem.Init(MaxChannels);
 
             Log.Information("FMOD Version: {FmodVersion}", FmodSystem.Version);
 
 
             var path = Path.Combine("Assets", "soundmap.json");
-            var json = File.ReadAllText(path);
+            var json = ContentManager.GetString(path);
             _soundMap.Clear();
             var map = JsonSerializer.Deserialize<Dictionary<string, List<string>>>(json);
             foreach (var kvp in map!)
@@ -58,7 +62,7 @@ namespace RE.Audio
             var pos = cam.Position.ToSystemVector3();
             var forward = System.Numerics.Vector3.Normalize(cam.Front.ToSystemVector3());
             var right = -System.Numerics.Vector3.Normalize(Vector3.Cross(forward.ToOpenTkVector3(), cam.Up).ToSystemVector3());
-            var up = System.Numerics.Vector3.Cross(right, forward); // точно ортогонален
+            var up = System.Numerics.Vector3.Cross(right, forward);
             var vel = System.Numerics.Vector3.Zero;
 
             foreach (var sound in _activeSounds.Where(s => s.ShowDebugInfo))
@@ -67,9 +71,21 @@ namespace RE.Audio
             }
 
             FmodSystem.Update();
+            unsafe
+            {
+                delegate* unmanaged[Swift]<void> abc = &a;
+                abc();
+            }
+
             FmodSystem.Set3DListenerAttributes(0, in pos, in vel, in forward, in up);
         }
 
+        class CallConvTest
+        {
+
+        }
+        [UnmanagedCallersOnly(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvSwift)])]
+        static void a() { }
         /// <summary>
         /// Retrieves a sound instance associated with the specified sound identifier.
         /// </summary>

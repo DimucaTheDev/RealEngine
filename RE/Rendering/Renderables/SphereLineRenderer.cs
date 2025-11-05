@@ -107,6 +107,6 @@ public class SphereLineRenderer : Renderable
         this.StopRender();
         GL.DeleteBuffer(_vbo);
         GL.DeleteVertexArray(_vao);
-        GL.DeleteProgram(_shaderProgram);
+        _shaderProgram.Delete();
     }
 }

@@ -45,7 +45,7 @@ public class LineRenderer : Renderable
 
         if (_shaderProgram != 0)
         {
-            GL.DeleteProgram(_shaderProgram);
+            _shaderProgram.Delete();
             _shaderProgram = null!;
         }
     }

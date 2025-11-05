@@ -1,14 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using OpenTK.Mathematics;
+﻿using OpenTK.Mathematics;
+using RE.Core.Assets;
 using RE.Utils;
 
 namespace RE.Rendering.Lightning
 {
-    [GlStructName("DirLight")]
-    public struct DirectionalLight
+    [GlStructName(StructName)]
+    public struct DirectionalLight : ILightSource
     {
+        const string StructName = "DirLight";
+
         [GlPropertyName("direction")]
         public Vector3 Direction { get; set; }
 
@@ -20,5 +20,10 @@ namespace RE.Rendering.Lightning
 
         [GlPropertyName("specular")]
         public Vector3 SpecularColor { get; set; }
+
+        public void SetParams(ShaderProgram program)
+        {
+            program.SetStruct(StructName, this);
+        }
     }
 }

@@ -3,6 +3,7 @@ using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using RE.Core.Scripting;
 using RE.Debug;
+using RE.Rendering.Lightning;
 using RE.Rendering.Renderables;
 
 namespace RE.Core.World.Components.Lighting
@@ -16,6 +17,7 @@ namespace RE.Core.World.Components.Lighting
         Point,
         Spot,
     }
+
     /// <summary>
     /// wip
     /// </summary>
@@ -23,50 +25,183 @@ namespace RE.Core.World.Components.Lighting
     {
         [EditorProperty] public LightType LightType { get; set; }
 
-        [EditorProperty, IfNot(nameof(LightType), LightType.Point)]
-        public Vector3 Direction { get; set; } = -Vector3.UnitY;
+        [EditorProperty]
+        public Vector3 AmbientColor
+        {
+            get;
+            set
+            {
+                field = value;
+                UpdateLight();
+            }
+        } = Vector3.Zero;
 
-        [EditorProperty] public Vector3 AmbientColor { get; set; } = Vector3.Zero;
+        [EditorProperty]
+        public Vector3 DiffuseColor
+        {
+            get;
+            set
+            {
+                field = value;
+                UpdateLight();
+            }
+        } = Vector3.One;
 
-        [EditorProperty] public Vector3 DiffuseColor { get; set; } = Vector3.One;
+        [EditorProperty]
+        public Vector3 SpecularColor
+        {
+            get;
+            set
+            {
+                field = value;
+                UpdateLight();
+            }
+        } = Vector3.One;
 
-        [EditorProperty] public Vector3 SpecularColor { get; set; } = Vector3.One;
+        [EditorProperty, IfNot(nameof(LightType), LightType.Directional), ValueLimit(Min = 0f, Max = 1f)]
+        public float Constant
+        {
+            get;
+            set
+            {
+                field = value;
+                UpdateLight();
+            }
+        } = 1.0f;
 
-        [EditorProperty, IfNot(nameof(LightType), LightType.Directional)]
-        public Vector3 /*maybe add pos type: offset or absolute*/ Position { get; set; } = Vector3.Zero;
+        [EditorProperty, IfNot(nameof(LightType), LightType.Directional), ValueLimit(Min = 0f, Max = 1f, Step = 0.01f)]
+        public float Linear
+        {
+            get;
+            set
+            {
+                field = value;
+                UpdateLight();
+            }
+        } = 0.09f;
 
-        [EditorProperty, IfNot(nameof(LightType), LightType.Directional), ValueLimit(Min = 0.5f, Max = 1)]
-        public float Constant { get; set; } = 1.0f;
+        [EditorProperty, IfNot(nameof(LightType), LightType.Directional), ValueLimit(Min = 0, Max = 1f, Step = 0.001f)]
+        public float Quadratic
+        {
+            get;
+            set
+            {
+                field = value;
+                UpdateLight();
+            }
+        } = 0.032f;
 
-        [EditorProperty, IfNot(nameof(LightType), LightType.Directional), ValueLimit(Min = 0.001f, Max = 0.3f)]
-        public float Linear { get; set; } = 0.09f;
+        [EditorProperty, If(nameof(LightType), LightType.Spot), ValueLimit(Min = 0, Max = 90, Step = 0.1f /* 180? */)]
+        public float CutOff
+        {
+            get;
+            set
+            {
+                field = value;
+                UpdateLight();
+            }
+        } = 12.5f;
 
-        [EditorProperty, IfNot(nameof(LightType), LightType.Directional), ValueLimit(Min = 0.00001f, Max = 0.1f)]
-        public float Quadratic { get; set; } = 0.032f;
+        [EditorProperty, If(nameof(LightType), LightType.Spot), ValueLimit(Min = 0f, Max = 90, Step = 0.1f /* 180? */)]
+        public float OuterCutOff
+        {
+            get;
+            set
+            {
+                field = value;
+                UpdateLight();
+            }
+        } = 17.5f;
 
-        [EditorProperty, If(nameof(LightType), LightType.Spot), ValueLimit(Min = 0.7071f, Max = 0.9962f)]
-        public float CutOff { get; set; } = MathF.Cos(MathHelper.DegreesToRadians(12.5f));
+        private SpriteRenderer _bulbSprite = new(Vector3.Zero, "assets/sprites/editor/bulb.png", scale: 0.3f);
+        private ILightSource _lightSource = null!;
 
-        [EditorProperty, If(nameof(LightType), LightType.Spot), ValueLimit(Min = 0.5f, Max = 0.9962f)]
-        public float OuterCutOff { get; set; } = MathF.Cos(MathHelper.DegreesToRadians(17.5f));
+        // we should rethink how we call this.... maybe
+        private void UpdateLight()
+        {
+            Owner.Scene.LightSources.Remove(_lightSource);
+            Vector3 v = new(0, -1, 0);
+            Quaternion q = Owner.Transform.Rotation;
+            Vector3 qv = new(q.X, q.Y, q.Z);
+            Vector3 t = 2f * Vector3.Cross(qv, v);
+            Vector3 result = v + q.W * t + Vector3.Cross(qv, t);
 
-        private SpriteRenderer _bulbSprite = new(Vector3.Zero, "assets/sprites/editor/bulb.png", scale: 0.5f);
+            switch (LightType)
+            {
+                case LightType.Directional:
+
+                    _lightSource = new DirectionalLight()
+                    {
+                        AmbientColor = AmbientColor,
+                        DiffuseColor = DiffuseColor,
+                        Direction = result,
+                        SpecularColor = SpecularColor
+                    };
+                    break;
+                case LightType.Point:
+                    _lightSource = new PointLight()
+                    {
+                        AmbientColor = AmbientColor,
+                        SpecularColor = SpecularColor,
+                        DiffuseColor = DiffuseColor,
+                        Constant = Constant,
+                        Linear = Linear,
+                        Position = Owner.Transform.Position,
+                        Quadratic = Quadratic,
+                    };
+                    break;
+                case LightType.Spot:
+
+                    _lightSource = new SpotLight()
+                    {
+                        AmbientColor = AmbientColor,
+                        DiffuseColor = DiffuseColor,
+                        Constant = Constant,
+                        CutOff = MathF.Cos(MathHelper.DegreesToRadians(CutOff)),
+                        Direction = result,
+                        Linear = Linear,
+                        OuterCutOff = MathF.Cos(MathHelper.DegreesToRadians(OuterCutOff)),
+                        Position = Owner.Transform.Position,
+                        Quadratic = Quadratic,
+                        SpecularColor = SpecularColor
+                    };
+                    break;
+            }
+
+            Owner.Scene.LightSources.Add(_lightSource);
+        }
+
+        public override void Update(FrameEventArgs args)
+        {
+            UpdateLight();
+        }
+
+        public override void OnDestroy()
+        {
+            Owner.Scene.LightSources.Remove(_lightSource);
+        }
 
         public override JsonNode GetSaveData()
         {
             return GetDataForProperties();
         }
-
         public void DebugRender(FrameEventArgs args)
         {
-            //todo: see comment on Position
-            _bulbSprite.Position = Owner.Transform.Position + Position;
+            UpdateLight();
+            _bulbSprite.Position = Owner.Transform.Position;
             _bulbSprite.Render(args);
             switch (LightType)
             {
                 case LightType.Spot:
+
+                    Vector3 v = new(0, -1, 0);
+                    Quaternion q = Owner.Transform.Rotation;
+                    Vector3 qv = new(q.X, q.Y, q.Z);
+                    Vector3 t = 2f * Vector3.Cross(qv, v);
+                    Vector3 result = v + q.W * t + Vector3.Cross(qv, t);
+
                     const int lines = 16;
-                    Vector3 forward = Vector3.Normalize(Direction);
+                    Vector3 forward = Vector3.Normalize(result);
                     Vector3 up = Vector3.UnitY;
                     if (Math.Abs(Vector3.Dot(forward, up)) > 0.99f)
                         up = Vector3.UnitX;
@@ -74,7 +209,7 @@ namespace RE.Core.World.Components.Lighting
                     Vector3 right = Vector3.Normalize(Vector3.Cross(forward, up));
                     up = Vector3.Normalize(Vector3.Cross(right, forward));
 
-                    float angle = MathF.Acos(OuterCutOff);
+                    float angle = MathF.Acos(MathF.Cos(MathHelper.DegreesToRadians(OuterCutOff)));
                     float radius = MathF.Tan(angle);
 
                     Vector3[] ringPoints = new Vector3[lines];

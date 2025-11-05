@@ -11,5 +11,6 @@
     {
         public double Min { get; set; } = double.MinValue;
         public double Max { get; set; } = double.MaxValue;
+        public double Step { get; set; } = 0.05;
     }
 }

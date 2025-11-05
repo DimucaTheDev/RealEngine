@@ -1,14 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using OpenTK.Mathematics;
+﻿using OpenTK.Mathematics;
+using RE.Core.Assets;
 using RE.Utils;
 
 namespace RE.Rendering.Lightning
 {
-    [GlStructName("SpotLight")]
-    public struct SpotLight()
+    [GlStructName(StructName)]
+    public struct SpotLight() : ILightSource
     {
+        const string StructName = "SpotLight";
+
         [GlPropertyName("position")]
         public Vector3 Position { get; set; } = Vector3.Zero;
 
@@ -38,5 +38,10 @@ namespace RE.Rendering.Lightning
 
         [GlPropertyName("specular")]
         public Vector3 SpecularColor { get; set; } = Vector3.One;
+
+        public void SetParams(ShaderProgram program)
+        {
+            program.SetStruct("spotLight", this);
+        }
     }
 }

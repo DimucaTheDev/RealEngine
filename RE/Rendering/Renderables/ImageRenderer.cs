@@ -96,7 +96,7 @@ public class ImageRenderer : Renderable
         int texID = GL.GenTexture();
         GL.BindTexture(TextureTarget.Texture2D, texID);
 
-        using var stream = File.OpenRead(path);
+        using var stream = ContentManager.Open(path);
         var image = ImageResult.FromStream(stream, ColorComponents.RedGreenBlueAlpha);
 
         GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba,
@@ -116,6 +116,6 @@ public class ImageRenderer : Renderable
         GL.DeleteBuffer(_vbo);
         GL.DeleteBuffer(_ebo);
         GL.DeleteVertexArray(_vao);
-        GL.DeleteProgram(_shaderProgram);
+        _shaderProgram.Delete();
     }
 }

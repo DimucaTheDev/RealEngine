@@ -1,4 +1,5 @@
 ﻿using Hexa.NET.ImGui;
+using Hexa.NET.ImGuizmo;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using OpenTK.Windowing.GraphicsLibraryFramework;
@@ -65,6 +66,8 @@ public class Camera
         };
         Game.Instance.MouseDown += args =>
         {
+            Instance._lastMouseDownPos = Game.Instance.MousePosition;
+
             if (ImGui.GetIO().WantCaptureMouse)
                 return;
 
@@ -73,7 +76,6 @@ public class Camera
                 ImGui.GetIO().AddMouseButtonEvent(0, true);
                 if (args.Button == MouseButton.Button2)
                 {
-                    Instance._lastMouseDownPos = Game.Instance.MousePosition;
                     Game.Instance.CursorState = CursorState.Grabbed;
                     Instance.FirstMove = true;
                 }
@@ -111,7 +113,7 @@ public class Camera
 
     public void HandleMouseMove(float mouseX, float mouseY)
     {
-        if (Game.Instance.CursorState != CursorState.Grabbed || ImGui.GetIO().WantCaptureMouse)
+        if (Game.Instance.CursorState != CursorState.Grabbed || (ImGui.GetIO().WantCaptureMouse && ImGuizmo.IsUsing()))
             return;
         if (FirstMove)
         {

@@ -5,9 +5,12 @@ using OpenTK.Windowing.Common;
 using RE.Core.Assets;
 using RE.Core.Scripting;
 using RE.Debug;
+using RE.Debug.Overlay;
 using RE.Rendering;
+using RE.Rendering.Renderables;
 using Serilog;
 using SixLabors.ImageSharp.Processing;
+using Vector3 = OpenTK.Mathematics.Vector3;
 
 namespace RE.Core.World.Components
 {
@@ -15,6 +18,7 @@ namespace RE.Core.World.Components
     internal class SkyboxComponent(string path) : Component, IDebugRenderer
     {
         private ShaderProgram _program = null!;
+        private SpriteRenderer _sprite = new(Vector3.Zero, "assets/sprites/editor/skybox.png", scale: 0.5f);
 
         private static int _vao, _vbo;
         private static readonly float[] _cubeVertices =
@@ -67,7 +71,7 @@ namespace RE.Core.World.Components
                 for (int i = 0; i < _faces.Length; i++)
                 {
                     var pathToFace = Path + _faces[i];
-                    if (File.Exists(pathToFace))
+                    if (ContentManager.Exists(pathToFace))
                     {
                         using var image =
                             SixLabors.ImageSharp.Image.Load<SixLabors.ImageSharp.PixelFormats.Rgba32>(pathToFace);
@@ -196,6 +200,12 @@ namespace RE.Core.World.Components
             return root;
         }
 
-        public void DebugRender(FrameEventArgs args) => Render(args);
+        public void DebugRender(FrameEventArgs args)
+        {
+            if (SceneEditor.PreviewSkybox)
+                Render(args);
+            _sprite.Position = Owner.Transform.Position;
+            _sprite.Render(args);
+        }
     }
 }

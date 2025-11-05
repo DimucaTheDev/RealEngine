@@ -1,4 +1,6 @@
-﻿namespace RE.Libs.Grille.ImGuiTK;
+﻿using RE.Core.Assets;
+
+namespace RE.Libs.Grille.ImGuiTK;
 
 public static class ShaderCode
 {
@@ -7,7 +9,7 @@ public static class ShaderCode
 
     private static string GetText(string name)
     {
-        using var stream = File.OpenRead(name);
+        using var stream = ContentManager.Open(name);
         using var reader = new StreamReader(stream, leaveOpen: true);
         return reader.ReadToEnd();
     }

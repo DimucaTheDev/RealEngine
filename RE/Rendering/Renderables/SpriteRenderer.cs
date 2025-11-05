@@ -143,7 +143,7 @@ namespace RE.Rendering.Renderables
             this.StopRender();
             GL.DeleteVertexArray(_vao);
             GL.DeleteBuffer(_vbo);
-            GL.DeleteProgram(_shaderProgram);
+            _shaderProgram.Delete();
 
             //this comment prevents lagyshit-9000 from happening in particle renderer
             //GL.DeleteTexture(_texture); 
@@ -159,14 +159,20 @@ namespace RE.Rendering.Renderables
                 return t.texture;
             }
 
-            if (!File.Exists(path))
+            if (!ContentManager.Exists(path))
             {
                 Log.Error("Texture at path {Path} does not exist!", path);
                 var missingTexture = (int)Util.CreateMissingTexture(4);
 
                 return missingTexture;
             }
-            var image = ImageResult.FromStream(File.OpenRead(path), ColorComponents.RedGreenBlueAlpha);
+
+            var stream = ContentManager.Open(path);
+            using var tempStream = new MemoryStream();
+            stream.CopyTo(tempStream);
+            tempStream.Position = 0;
+            var image = ImageResult.FromStream(tempStream, ColorComponents.RedGreenBlueAlpha);
+
             (_texWidth, _texHeight) = (image.Width, image.Height);
             int tex = GL.GenTexture();
             GL.BindTexture(TextureTarget.Texture2D, tex);
