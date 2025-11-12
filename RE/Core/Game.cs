@@ -137,7 +137,7 @@ internal class Game : GameWindow
         GL.DebugMessageCallback(GlLogCallback, 0);
 
         ContentManager.Register(new ZipContentProvider());
-        ContentManager.Register(ContentManager.Default = new FileContentProvider());
+        ContentManager.Register(new FileContentProvider());
 
         RenderManager.Init();
         Time.Init();
