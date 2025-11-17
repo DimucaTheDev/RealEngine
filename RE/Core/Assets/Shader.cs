@@ -2,6 +2,7 @@
 using System.Text;
 using System.Text.RegularExpressions;
 using OpenTK.Graphics.OpenGL4;
+using RE.Rendering;
 using Log = Serilog.Log;
 
 namespace RE.Core.Assets
@@ -50,25 +51,13 @@ namespace RE.Core.Assets
         /// <summary>
         /// Gets the source code of the shader as a string based on OpenGL handle.
         /// </summary>
-        public string Source
+        public string SourceCode
         {
             get
             {
                 GL.GetShader(Handle, ShaderParameter.ShaderSourceLength, out int length);
                 GL.GetShaderSource(Handle, length, out _, out string source);
                 return source;
-            }
-        }
-
-        /// <summary>
-        /// Determines whether the shader has been deleted in OpenGL.
-        /// </summary>
-        public bool IsDeleted
-        {
-            get
-            {
-                GL.GetShader(Handle, ShaderParameter.DeleteStatus, out var deleted);
-                return deleted == (int)All.True;
             }
         }
 
@@ -121,13 +110,11 @@ namespace RE.Core.Assets
             if (status != (int)All.True)
             {
                 var shaderInfoLog = GL.GetShaderInfoLog(Handle);
-                Log.Error(new Exception(shaderInfoLog), "Cant compile shader id:{Handle} src:{AssetPath}", Handle, AssetPath);
+                throw new GlException($"Cant compile shader id:{Handle} src:{AssetPath}. {shaderInfoLog}");
             }
-            else
-            {
-                Log.Debug("Compiled shader id:{Handle} src:{AssetPath}", Handle, AssetPath);
-                CompiledShaders.Add(this);
-            }
+
+            Log.Debug("Compiled shader id:{Handle} src:{AssetPath}", Handle, AssetPath);
+            CompiledShaders.Add(this);
         }
 
         /// <summary>
@@ -206,6 +193,7 @@ namespace RE.Core.Assets
             if (Handle != 0)
             {
                 GL.DeleteShader(Handle);
+                CompiledShaders.Remove(this);
                 Handle = 0;
             }
         }

@@ -63,7 +63,7 @@ namespace RE.Core.Assets
         public static string GetString(string path)
         {
             var provider = FindProvider(path)
-                ?? throw new InvalidOperationException("No matching content provider found and Default is not set.");
+                ?? throw new InvalidOperationException($"No matching content provider found and {nameof(Default)} is not set.");
 
             if (!provider.Exists(path))
                 throw new FileNotFoundException($"Asset not found: {path}");

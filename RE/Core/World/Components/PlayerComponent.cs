@@ -46,6 +46,8 @@ namespace RE.Core.World.Components
 
         private SpriteRenderer _spriteSpawnpoint = new SpriteRenderer(Vector3.Zero, "assets/sprites/editor/spawn.png", scale: 1);
 
+        private float _soundCooldown = 0f;
+
         [EditorProperty] public string InteractDenySound { get; set; } = "common/wpn_denyselect";
 
         public override void Start()
@@ -107,6 +109,25 @@ namespace RE.Core.World.Components
                     moveDir += camRight;
                 if (input.IsKeyDown(Keys.A))
                     moveDir -= camRight;
+
+                _soundCooldown += (float)args.Time;
+
+                if ((input.IsKeyDown(Keys.W) || input.IsKeyDown(Keys.S) || input.IsKeyDown(Keys.D) ||
+                     input.IsKeyDown(Keys.A)) && !_isCrouching && _wasGrounded)
+                {
+                    if (_soundCooldown >= 0.45f)
+                    {
+                        SoundManager.Play("hardboot_generic", new SoundPlaybackSettings()
+                        {
+                            //  InWorld = true,
+                            Position = PlayerGameObject.Transform.Position,
+                            ShowDebugInfo = true,
+                            Volume = .3f
+                        });
+                        _soundCooldown = 0f;
+                    }
+                }
+
 
                 if (moveDir.LengthSquared > 1e-5f)
                     moveDir = moveDir.Normalized();

@@ -136,8 +136,8 @@ internal class Game : GameWindow
         GL.Enable(EnableCap.DebugOutputSynchronous);
         GL.DebugMessageCallback(GlLogCallback, 0);
 
-        ContentManager.Register(new ZipContentProvider());
         ContentManager.Register(new FileContentProvider());
+        ContentManager.Register(new ZipContentProvider());
 
         RenderManager.Init();
         Time.Init();
@@ -331,7 +331,8 @@ internal class Game : GameWindow
             _ => Serilog.Events.LogEventLevel.Information
         }, "[{OpenGL}:{Type}] {Message}", "OpenGL", type, msg);
         if (severity == DebugSeverity.DebugSeverityHigh)
-            throw new Exception(msg);
+            throw new GlException(msg);
+        // fixme: кружочки линии крашат 
     }
     private static WindowIcon? LoadIcon()
     {

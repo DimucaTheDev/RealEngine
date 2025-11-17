@@ -193,5 +193,6 @@ public class FloatingText : Renderable
         this.StopRender();
         GL.DeleteVertexArray(_vao);
         GL.DeleteBuffer(_vbo);
+        _shaderProgram.Delete();
     }
 }

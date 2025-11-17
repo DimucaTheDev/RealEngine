@@ -1,5 +1,7 @@
 ﻿using System.Reflection;
+using OpenTK.Graphics.OpenGL4;
 using OpenTK.Mathematics;
+using RE.Rendering;
 using RE.Utils;
 using GL = OpenTK.Graphics.OpenGL4.GL;
 using Log = Serilog.Log;
@@ -19,14 +21,33 @@ namespace RE.Core.Assets
         /// <summary>
         /// OpenGL handle for the shader program.
         /// </summary>
-        public int Handle { get; private set; } = GL.CreateProgram();
+        public int Handle { get; private set; }
+
+        public bool IsDeleted
+        {
+            get
+            {
+                GL.GetProgram(this, GetProgramParameterName.DeleteStatus, out var i);
+                return i == (int)All.True;
+            }
+        }
 
         private bool _linked;
         private readonly List<Shader> _linkedShaders = [];
         private List<string> _unknownLocations = new();
 
+        public ShaderProgram()
+        {
+            Handle = GL.CreateProgram();
+            if (Handle is 0 or -1)
+            {
+                throw new GlException("Unable to create shader program");
+            }
+        }
+
         /// <inheritdoc cref="GL.AttachShader(int, int)"/>
         public void AttachShader(string path) => AttachShader(new Shader(path));
+
         /// <inheritdoc cref="GL.AttachShader(int, int)"/>
         public void AttachShader(Shader shader)
         {
@@ -42,7 +63,8 @@ namespace RE.Core.Assets
             {
                 GL.LinkProgram(this);
 
-                _linkedShaders.ForEach(s => GL.DeleteShader(s));
+                // Эта мразь крашит игру!!!!!!!!! 
+                //_linkedShaders.ForEach(s => { s.OnUnload(); });
                 _linked = true;
             }
             GL.UseProgram(this);
@@ -52,7 +74,10 @@ namespace RE.Core.Assets
         public void Delete()
         {
             if (GL.IsProgram(this))
+            {
                 GL.DeleteProgram(this);
+                Handle = 0;
+            }
         }
 
         /// <summary>
@@ -196,11 +221,7 @@ namespace RE.Core.Assets
         {
             base.OnUnload();
 
-            if (Handle != 0)
-            {
-                Delete();
-                Handle = 0;
-            }
+            Delete();
             _linkedShaders.Clear();
         }
 
