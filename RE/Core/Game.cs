@@ -158,7 +158,6 @@ internal class Game : GameWindow
         Initializer.AddStep(("Registering Commands", CommandHandler.RegisterAllCommands));
         Initializer.AddStep(("Running default.cfg", () => { CommandHandler.ExecuteCommand("source assets/cfg/default.cfg"); }
         ));
-
         base.OnLoad();
     }
 
@@ -171,6 +170,7 @@ internal class Game : GameWindow
 
     protected override void OnRenderFrame(FrameEventArgs args)
     {
+        RenderProfiler.StopAll();
 
         if (Initializer.Render(args))
         {
@@ -192,6 +192,8 @@ internal class Game : GameWindow
         #endregion
 
         ImGuiController.Get().Update(this, Time.DeltaTime);
+
+        RenderProfiler.StartNew("render");
 
         base.OnRenderFrame(args);
         RenderManager.RenderAll(args);
@@ -332,7 +334,6 @@ internal class Game : GameWindow
         }, "[{OpenGL}:{Type}] {Message}", "OpenGL", type, msg);
         if (severity == DebugSeverity.DebugSeverityHigh)
             throw new GlException(msg);
-        // fixme: кружочки линии крашат 
     }
     private static WindowIcon? LoadIcon()
     {

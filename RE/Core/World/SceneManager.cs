@@ -4,6 +4,7 @@ using System.Text.Json.Nodes;
 using OpenTK.Mathematics;
 using RE.Core.Assets;
 using RE.Core.PluginSystem;
+using RE.Debug;
 using Serilog;
 using Quaternion = OpenTK.Mathematics.Quaternion;
 
@@ -56,6 +57,8 @@ namespace RE.Core.World
                 }
 
                 afterLoaded?.Invoke();
+
+                RenderProfiler.AddEvent($"scene '{scene.Name}'");
             }
             ));
         }

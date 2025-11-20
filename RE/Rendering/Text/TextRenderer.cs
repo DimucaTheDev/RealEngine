@@ -6,7 +6,7 @@ using RE.Rendering.Renderables;
 
 namespace RE.Rendering.Text;
 
-internal class TextRenderer
+internal static class TextRenderer
 {
     private static ShaderProgram _shaderProgram = null!;
 

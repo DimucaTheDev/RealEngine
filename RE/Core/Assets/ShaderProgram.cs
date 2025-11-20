@@ -18,6 +18,9 @@ namespace RE.Core.Assets
     /// Thread safety is not guaranteed; use from the same thread that owns the OpenGL context.</remarks>
     public class ShaderProgram : DynamicAsset
     {
+        public const int NoProgram = 0;
+
+
         /// <summary>
         /// OpenGL handle for the shader program.
         /// </summary>

@@ -113,7 +113,7 @@ namespace RE.Core.World.Components
                 _soundCooldown += (float)args.Time;
 
                 if ((input.IsKeyDown(Keys.W) || input.IsKeyDown(Keys.S) || input.IsKeyDown(Keys.D) ||
-                     input.IsKeyDown(Keys.A)) && !_isCrouching && _wasGrounded)
+                     input.IsKeyDown(Keys.A)) && !_isCrouching && _wasGrounded && moveDir.Length > 0.75f)
                 {
                     if (_soundCooldown >= 0.45f)
                     {
@@ -121,8 +121,8 @@ namespace RE.Core.World.Components
                         {
                             //  InWorld = true,
                             Position = PlayerGameObject.Transform.Position,
-                            ShowDebugInfo = true,
-                            Volume = .3f
+                            ShowDebugInfo = false,
+                            Volume = .15f
                         });
                         _soundCooldown = 0f;
                     }

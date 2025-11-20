@@ -1,6 +1,7 @@
 ﻿using Hexa.NET.ImGui;
 using Hexa.NET.ImGui.Backends.OpenGL3;
 using Hexa.NET.ImGuizmo;
+using Hexa.NET.ImPlot;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using OpenTK.Windowing.Desktop;
@@ -102,9 +103,11 @@ public class ImGuiController : IDisposable
 
         _frameBegun = true;
         ImGuizmo.SetImGuiContext(ImGui.GetCurrentContext());
+        ImPlot.SetImGuiContext(ImGui.GetCurrentContext());
 
         ImGuiImplOpenGL3.NewFrame();
         ImGui.NewFrame();
+        ImPlot.CreateContext();
         ImGuizmo.BeginFrame();
         ImGuizmo.SetRect(0, 0, Game.Instance.ClientSize.X, Game.Instance.ClientSize.Y);
     }

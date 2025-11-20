@@ -36,13 +36,13 @@ public class ImageRenderer : Renderable
     public void ReplaceImage(string path) => _texture = LoadTexture(path);
     public override void Render(FrameEventArgs args)
     {
-        GL.UseProgram(_shaderProgram);
+        _shaderProgram.Use();
 
         Matrix4 model = Matrix4.CreateScale(Scale.X, Scale.Y, 1f) * Matrix4.CreateTranslation(Position.X, Position.Y, 1);
         Matrix4 projection = Matrix4.CreateOrthographicOffCenter(0, Game.Instance.ClientSize.X, Game.Instance.ClientSize.Y, 0, -1, 1);
 
-        GL.UniformMatrix4(GL.GetUniformLocation(_shaderProgram, "uModel"), false, ref model);
-        GL.UniformMatrix4(GL.GetUniformLocation(_shaderProgram, "uProjection"), false, ref projection);
+        _shaderProgram.SetValue("uModel", model);
+        _shaderProgram.SetValue("uProjection", projection);
 
         GL.BindTexture(TextureTarget.Texture2D, _texture);
         GL.BindVertexArray(_vao);
@@ -110,7 +110,7 @@ public class ImageRenderer : Renderable
         return texID;
     }
 
-    public void Dispose()
+    public override void Dispose()
     {
         GL.DeleteTexture(_texture);
         GL.DeleteBuffer(_vbo);

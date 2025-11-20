@@ -149,7 +149,6 @@ public class FreeTypeFont
             return;
         }
 
-
         y += scale;
         GL.ActiveTexture(TextureUnit.Texture0);
         GL.BindVertexArray(_vao);

@@ -2,6 +2,7 @@
 using System.Text;
 using System.Text.RegularExpressions;
 using OpenTK.Graphics.OpenGL4;
+using RE.Debug;
 using RE.Rendering;
 using Log = Serilog.Log;
 
@@ -69,7 +70,8 @@ namespace RE.Core.Assets
         /// If a shader with the same <see cref="AssetPath"/> has already been compiled, this method reuses the existing OpenGL handle.
         /// </para>
         /// <para>
-        /// Supported shader file extensions are: <c>.vert</c> for vertex shaders, <c>.frag</c> for fragment shaders, and <c>.geom</c> for geometry shaders.
+        /// Supported shader file extensions are: <c>.vert</c> for vertex shaders, <c>.frag</c> for fragment shaders,
+        /// <c>.geom</c> for geometry shaders, <c>.tesc</c> for tesselation control shader, <c>.tese</c> for tesselation evaluation shader.
         /// </para>
         /// <para>
         /// Before compilation, the shader source is preprocessed to handle custom directives such as <c>#include "file"</c> (see <see cref="PreprocessShader"/>).
@@ -84,19 +86,19 @@ namespace RE.Core.Assets
                 //do not recompile shader again, get cached handle
                 return;
             }
-
             Handle = GL.CreateShader(Path.GetExtension(AssetPath!).ToLower() switch
             {
                 ".vert" => ShaderType.VertexShader,
                 ".frag" => ShaderType.FragmentShader,
                 ".geom" => ShaderType.GeometryShader,
+                ".tesc" => ShaderType.TessControlShader,
+                ".tese" => ShaderType.TessEvaluationShader,
                 _ => throw new NotSupportedException("Unknown shader type!")
             });
             if (!ContentManager.Exists(AssetPath))
             {
-                Log.Error("Shader {Path} does not exist!", AssetPath);
                 GL.DeleteShader(Handle);
-                return;
+                throw new FileNotFoundException($"Shader does not exist!", AssetPath);
             }
             var content = ContentManager.GetString(AssetPath!);
 
@@ -114,6 +116,7 @@ namespace RE.Core.Assets
             }
 
             Log.Debug("Compiled shader id:{Handle} src:{AssetPath}", Handle, AssetPath);
+            RenderProfiler.AddEvent($"shader '{Path.GetFileName(AssetPath)}'");
             CompiledShaders.Add(this);
         }
 
