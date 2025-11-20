@@ -57,7 +57,6 @@ namespace RE.Debug.Overlay
         private static readonly ImFontPtr _bigFont;
         private static readonly ModelRenderer SelectedObjectOutline = new() { Outline = true };
 
-
         private static readonly int LogoImage;
 
         static SceneEditor()
@@ -155,6 +154,10 @@ namespace RE.Debug.Overlay
 
                 GL.BindTexture(TextureTarget.Texture2D, 0);*/
             }
+
+            //todo: СРОЧНО ЗАРЕФАКТОРИТЬ
+            //todo: иконка папки
+            WindowsShell._folderIconId = WindowsShell.GetSystemIcon(null, WindowsShell.SHGFI.LargeIcon | WindowsShell.SHGFI.Icon | WindowsShell.SHGFI.OpenIcon);
         }
 
         private void SelectObject(GameObject? obj)
@@ -258,7 +261,7 @@ namespace RE.Debug.Overlay
             if (input.IsKeyDown(Keys.LeftShift))
                 p -= TkVector3.UnitY * speed;
 
-            if (!ImGui.GetIO().WantCaptureKeyboard)
+            if (!GetIO().WantCaptureKeyboard)
                 Camera.Instance.Position = (p);
 
             DrawObjectGizmos();
@@ -381,8 +384,6 @@ namespace RE.Debug.Overlay
                 EndMenuBar();
             }
 
-
-
             foreach (var obj in _scene.GameObjects.Where(s => s is { DoNotShowInEditor: false, Parent: null }).ToList())
             {
                 DrawObjectTree(obj);
@@ -409,6 +410,167 @@ namespace RE.Debug.Overlay
             SetNextWindowSize(inspectorWindowSize, ImGuiCond.Always);
 
             DrawInspector();
+            DrawAssetBrowser();
+        }
+
+
+        private static string _assetRootPath = Path.Combine(Directory.GetCurrentDirectory(), "Assets");
+        private static string _currentDirectory = _assetRootPath;
+
+        private static void DrawDirectoryTree(string path)
+        {
+            string folderName = new DirectoryInfo(path).Name;
+
+            ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags.OpenOnArrow;
+
+            if (path == _currentDirectory)
+            {
+                flags |= ImGuiTreeNodeFlags.Selected;
+            }
+
+            bool nodeOpen = TreeNodeEx(folderName, flags);
+
+            if (IsItemClicked())
+            {
+                _currentDirectory = path;
+            }
+
+            if (nodeOpen)
+            {
+                foreach (var dir in Directory.GetDirectories(path))
+                {
+                    DrawDirectoryTree(dir);
+                }
+
+                foreach (var file in Directory.GetFiles(path))
+                {
+                    string fileName = Path.GetFileName(file);
+
+                    ImGuiTreeNodeFlags fileFlags = ImGuiTreeNodeFlags.Leaf | ImGuiTreeNodeFlags.NoTreePushOnOpen;
+
+                    TreeNodeEx(fileName, fileFlags);
+
+                    if (IsItemClicked())
+                    { }
+                }
+
+                TreePop();
+            }
+        }
+
+        private static void DrawDirectoryContents(string path)
+        {
+            Text($"Current Directory: {path}");
+            Separator();
+
+            if (path != _assetRootPath)
+            {
+                if (Button(".."))
+                {
+                    _currentDirectory = Directory.GetParent(path)?.FullName ?? _assetRootPath;
+                }
+                Separator();
+            }
+
+            float availableWidth = GetContentRegionAvail().X;
+            float tileSize = 75.0f;
+            float cellPadding = 10.0f;
+
+            int columns = (int)Math.Max(1, Math.Floor(availableWidth / (tileSize + cellPadding)));
+
+            ImGuiTableFlags flags = ImGuiTableFlags.SizingFixedFit | ImGuiTableFlags.ScrollY;
+
+            var items = Directory.GetDirectories(path)
+                .Select(dir => (Path: dir, IsDirectory: true))
+                .Concat(Directory.GetFiles(path).Select(file => (Path: file, IsDirectory: false)))
+                .ToList();
+
+            if (BeginTable("##AssetGrid", columns, flags))
+            {
+                for (int i = 0; i < columns; i++)
+                {
+                    TableSetupColumn($"Col{i}", ImGuiTableColumnFlags.WidthFixed, tileSize + cellPadding);
+                }
+
+                foreach (var item in items)
+                {
+                    TableNextColumn();
+
+                    string name = item.IsDirectory ? new DirectoryInfo(item.Path).Name : Path.GetFileName(item.Path);
+
+                    DrawTileInTable(name, item.IsDirectory, tileSize, item.Path);
+                }
+
+                EndTable();
+            }
+        }
+
+        private static void DrawTileInTable(string name, bool isDirectory, float size, string fullPath)
+        {
+            PushID(fullPath);
+
+            BeginGroup();
+
+
+            IntPtr iconIntPtr = isDirectory ? WindowsShell._folderIconId : WindowsShell.GetFileIcon(fullPath);
+            var t = new ImTextureRef() { TexID = (IntPtr)iconIntPtr };
+            bool isClicked = ImageButton(
+                $"##IconBtn{name}",
+                t, new Vector2(size, size),
+                Vector2.Zero,
+                Vector2.One,
+                new Vector4(0, 0, 0, 0));
+            if (IsItemHovered() && IsMouseDoubleClicked(ImGuiMouseButton.Left))
+            {
+                if (isDirectory)
+                {
+                    _currentDirectory = fullPath;
+                }
+                else
+                {
+                    Process.Start(new ProcessStartInfo(fullPath) { UseShellExecute = true });
+                }
+            }
+
+
+            string displayName = name.Length > 15 ? name.Substring(0, 12) + "..." : name;
+            float textWidth = CalcTextSize(displayName).X;
+            SetCursorPosX(GetCursorPosX() + (size - textWidth) * 0.5f);
+            Text(displayName);
+            if (IsItemHovered())
+                SetTooltip(name);
+
+            EndGroup();
+            PopID();
+        }
+        public void DrawAssetBrowser()
+        {
+            var vp = GetMainViewport();
+            SetNextWindowPos(new Vector2(0, vp.WorkSize.Y - 300), ImGuiCond.Always);
+            SetNextWindowSize(new Vector2(vp.WorkSize.X - 400, 300), ImGuiCond.Always);
+
+            if (Begin("Asset browser",
+                    ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoMove |
+                    ImGuiWindowFlags.NoResize))
+            {
+                float treePaneWidth = 200f;
+
+                BeginChild("##AssetTreePane", new Vector2(treePaneWidth, 0), ImGuiChildFlags.ResizeX);
+                {
+                    DrawDirectoryTree(_assetRootPath);
+                }
+                EndChild();
+
+                SameLine();
+
+                BeginChild("##AssetContentsPane", Vector2.Zero, ImGuiChildFlags.None);
+                {
+                    DrawDirectoryContents(_currentDirectory);
+                }
+                EndChild();
+
+                End();
+            }
         }
 
         ImGuizmoOperation _operation = ImGuizmoOperation.Translate;
@@ -505,6 +667,7 @@ namespace RE.Debug.Overlay
                 EndPopup();
             }
         }
+
         private void DrawAbout()
         {
             SetNextWindowSize(new Vector2(500, 400), ImGuiCond.FirstUseEver);
@@ -513,7 +676,7 @@ namespace RE.Debug.Overlay
                 Image(new ImTextureRef() { TexID = (IntPtr)LogoImage }, new Vector2(100, 100));
                 SameLine();
 
-                float textHeight = ImGui.GetTextLineHeightWithSpacing();
+                float textHeight = GetTextLineHeightWithSpacing();
                 float imageHeight = 60;
                 float yOffset = (imageHeight - textHeight) * 0.5f;
 
@@ -670,7 +833,7 @@ namespace RE.Debug.Overlay
 
 #pragma warning disable IDE1006
         private OpenTK.Mathematics.Vector3 obj_Position { get => _selectedObject.Transform.Position; set => _selectedObject.SetPosition(value); }
-        private OpenTK.Mathematics.Quaternion obj_Rotation { get => _selectedObject.Transform.Rotation; set => _selectedObject.SetRotation(value); }
+        private Quaternion obj_Rotation { get => _selectedObject.Transform.Rotation; set => _selectedObject.SetRotation(value); }
 #pragma warning restore
 
         private PropertyInfo _p = null!;

@@ -306,6 +306,10 @@ namespace RE.Core.Scripting
                 }
                 Log.Information("Dumped {Count} textures.", index);
             }, "Dumps all GL textures to dump/ folder");
+            RegisterSingleArgHandler("debug", s =>
+            {
+                DebugOverlay.Instance.IsVisible = !DebugOverlay.Instance.IsVisible;
+            }, "Open or close debug overlay");
         }
 
         private static string Format(object? obj)

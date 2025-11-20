@@ -57,8 +57,6 @@ internal class DebugOverlay : Renderable
 
             ImPlot.EndPlot();
         }
-
-
         End();
     }
 

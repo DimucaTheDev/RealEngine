@@ -208,6 +208,8 @@ internal class Game : GameWindow
             Game.Instance.ToggleFullscreen();
         if (KeyboardState.IsKeyPressed(Keys.F4))
             CommandHandler.ExecuteCommand("editor");
+        if (KeyboardState.IsKeyPressed(Keys.F5))
+            CommandHandler.ExecuteCommand("debug");
         if (KeyboardState.IsKeyPressed(Keys.F1))
         {
             RenderManager.RemoveCameraFrustum();
