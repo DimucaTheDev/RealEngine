@@ -157,7 +157,7 @@ namespace RE.Debug.Overlay
 
             //todo: СРОЧНО ЗАРЕФАКТОРИТЬ
             //todo: иконка папки
-            WindowsShell._folderIconId = WindowsShell.GetSystemIcon(null, WindowsShell.SHGFI.LargeIcon | WindowsShell.SHGFI.Icon | WindowsShell.SHGFI.OpenIcon);
+            //WindowsShell._folderIconId = WindowsShell.GetSystemIcon("C:\\Dummy_folder", WindowsShell.SHGFI.LargeIcon | WindowsShell.SHGFI.Icon | WindowsShell.SHGFI.OpenIcon);
         }
 
         private void SelectObject(GameObject? obj)
@@ -512,7 +512,7 @@ namespace RE.Debug.Overlay
             BeginGroup();
 
 
-            IntPtr iconIntPtr = isDirectory ? WindowsShell._folderIconId : WindowsShell.GetFileIcon(fullPath);
+            IntPtr iconIntPtr = WindowsShell.GetFileIcon(fullPath);
             var t = new ImTextureRef() { TexID = (IntPtr)iconIntPtr };
             bool isClicked = ImageButton(
                 $"##IconBtn{name}",

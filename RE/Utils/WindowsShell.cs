@@ -10,36 +10,29 @@ internal static class WindowsShell
     public static readonly Dictionary<string, IntPtr> _iconCache = new Dictionary<string, IntPtr>();
     public static IntPtr _folderIconId = IntPtr.Zero;
 
-    public static IntPtr GetSystemIcon(string extensionOrPath, WindowsShell.SHGFI flags = WindowsShell.SHGFI.LargeIcon | WindowsShell.SHGFI.Icon)
+    public static IntPtr GetSystemIcon(string extensionOrPath, SHGFI flags = SHGFI.LargeIcon | SHGFI.Icon)
     {
-        string key = extensionOrPath ?? "folder";
 
-        if (_iconCache.TryGetValue(key, out IntPtr cachedId))
+        if (_iconCache.TryGetValue(extensionOrPath, out IntPtr cachedId))
         {
             return cachedId;
         }
 
-        WindowsShell.SHFILEINFO shfi = new WindowsShell.SHFILEINFO();
+        SHFILEINFO shfi = new SHFILEINFO();
         uint dwAttribs = 0;
 
-        if (extensionOrPath != null)
+        if (!Directory.Exists(extensionOrPath))
         {
-            dwAttribs = (uint)System.IO.FileAttributes.Normal;
-            flags |= WindowsShell.SHGFI.UseFileAttributes;
+            dwAttribs = (uint)FileAttributes.Normal;
+            flags |= SHGFI.UseFileAttributes;
         }
         else
         {
-            dwAttribs = (uint)System.IO.FileAttributes.Directory;
-            flags |= WindowsShell.SHGFI.UseFileAttributes;
+            dwAttribs = (uint)FileAttributes.Directory;
+            flags |= SHGFI.UseFileAttributes;
         }
 
-        IntPtr handle = WindowsShell.SHGetFileInfo(
-            extensionOrPath ?? string.Empty,
-            dwAttribs,
-            ref shfi,
-            (uint)Marshal.SizeOf(shfi),
-            (uint)flags
-        );
+        IntPtr handle = SHGetFileInfo(extensionOrPath, dwAttribs, ref shfi, (uint)Marshal.SizeOf(shfi), (uint)flags);
 
         if (handle == IntPtr.Zero)
         {
@@ -50,20 +43,18 @@ internal static class WindowsShell
 
         try
         {
-            using (Icon icon = Icon.FromHandle(shfi.hIcon))
-            using (Bitmap bitmap = icon.ToBitmap())
-            {
-                textureId = ConvertBitmapToImGuiTexture(bitmap);
-            }
+            using Icon icon = Icon.FromHandle(shfi.hIcon);
+            using Bitmap bitmap = icon.ToBitmap();
+            textureId = ConvertBitmapToImGuiTexture(bitmap);
         }
         finally
         {
-            WindowsShell.DestroyIcon(shfi.hIcon);
+            DestroyIcon(shfi.hIcon);
         }
 
         if (textureId != IntPtr.Zero)
         {
-            _iconCache[key] = textureId;
+            _iconCache[extensionOrPath] = textureId;
         }
 
         return textureId;
@@ -112,7 +103,7 @@ internal static class WindowsShell
             return cachedId;
         }
 
-        return GetSystemIcon(extension);
+        return GetSystemIcon(filePath);
     }
 
 
