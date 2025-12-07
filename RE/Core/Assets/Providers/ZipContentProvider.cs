@@ -1,7 +1,7 @@
 ﻿using System.IO.Compression;
 using Serilog;
 
-namespace RE.Core.Assets
+namespace RE.Core.Assets.Providers
 {
     internal class ZipContentProvider : IContentProvider
     {

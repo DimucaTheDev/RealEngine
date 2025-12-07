@@ -1,5 +1,4 @@
 ﻿using System.Collections;
-using System.Diagnostics;
 using System.Globalization;
 using System.Text.RegularExpressions;
 using OpenTK.Graphics.OpenGL;
@@ -11,6 +10,7 @@ using RE.Rendering;
 using RE.Utils;
 using Serilog;
 using SixLabors.ImageSharp;
+using SceneEditor = RE.Debug.Overlay.Editor.SceneEditor;
 
 namespace RE.Core.Scripting
 {
@@ -302,7 +302,6 @@ namespace RE.Core.Scripting
                     using var img = SixLabors.ImageSharp.Image.LoadPixelData<SixLabors.ImageSharp.PixelFormats.Rgba32>(pixels, width, height);
                     img.SaveAsPng($"dump/{tex}.png");
                     index++;
-                    Debugger.Break();
                 }
                 Log.Information("Dumped {Count} textures.", index);
             }, "Dumps all GL textures to dump/ folder");
@@ -310,6 +309,10 @@ namespace RE.Core.Scripting
             {
                 DebugOverlay.Instance.IsVisible = !DebugOverlay.Instance.IsVisible;
             }, "Open or close debug overlay");
+            RegisterSingleArgHandler("init_test", s =>
+            {
+                Initializer.AddStep(("Testing!", () => { Thread.Sleep(3000); }));
+            }, "test: add dummy init step");
         }
 
         private static string Format(object? obj)

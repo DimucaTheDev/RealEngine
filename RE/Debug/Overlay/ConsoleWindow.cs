@@ -1,4 +1,5 @@
 ﻿using System.Numerics;
+using System.Text.RegularExpressions;
 using Hexa.NET.ImGui;
 using OpenTK.Windowing.Common;
 using RE.Core;
@@ -15,20 +16,21 @@ namespace RE.Debug.Overlay
         public override RenderLayer RenderLayer => RenderLayer.ImGui;
         public override bool IsVisible { get; set; } = false;
 
-        private ConsoleWindow()
-        {
-            RenderManager.AddRenderable(this);
-        }
-
+        private static bool _shouldScrollToBottom = true;
         private static string _inputBuffer = string.Empty;
-        private static Vector2 _consoleSize = new(600, 300);
-        private static Vector2 _consolePos = new(20, 20);
-        private static bool _scrollToBottom = true;
-
+        private static readonly Vector2 _consoleSize = new(600, 300);
+        private static readonly Vector2 _consolePos = new(20, 20);
+        private static readonly Vector4 _colorDefault = new(0.5f, 0.5f, 0.5f, 1.0f);
+        private static readonly Vector4 _colorInfo = new(0.75f, 0.75f, 0.75f, 1.0f);
+        private static readonly Vector4 _colorWarning = new(1.0f, 1.0f, 0.0f, 1.0f);
+        private static readonly Vector4 _colorError = new(1.0f, 0.4f, 0.4f, 1.0f);
 
         private bool _focusNextFrame = false;
+        private bool _showInfo = true;
+        private bool _showWarn = true;
+        private bool _showError = true;
 
-        public void Focus() => _focusNextFrame = true;
+        public required string Id;
 
         public override void Render(FrameEventArgs args)
         {
@@ -36,19 +38,55 @@ namespace RE.Debug.Overlay
             ImGui.SetNextWindowPos(_consolePos, ImGuiCond.FirstUseEver);
             ImGui.SetNextWindowBgAlpha(.80f);
 
-            if (ImGui.Begin("Console", ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoDocking))
+            if (ImGui.Begin("Console ##" + Id))
             {
-                var w = (bool)Variables.GetVariable("wrapConsole")!;
-                ImGui.BeginChild("ScrollRegion", new Vector2(0, -ImGui.GetFrameHeightWithSpacing()), ImGuiChildFlags.Borders, w ? ImGuiWindowFlags.None : ImGuiWindowFlags.HorizontalScrollbar);
-                if (w)
-                    ImGui.TextWrapped(GameLogger.Log);
-                else
-                    ImGui.TextUnformatted(GameLogger.Log);
+                ImGui.Checkbox($"Info ({Regex.Matches(GameLogger.Log, "INF]", RegexOptions.Compiled).Count})", ref _showInfo);
+                ImGui.SameLine();
+                ImGui.Checkbox($"Warning ({Regex.Matches(GameLogger.Log, "WRN]", RegexOptions.Compiled).Count})", ref _showWarn);
+                ImGui.SameLine();
+                ImGui.Checkbox($"Error ({Regex.Matches(GameLogger.Log, "ERR]", RegexOptions.Compiled).Count})", ref _showError);
 
-                if (_scrollToBottom)
+                ImGui.Separator();
+
+                var w = (bool)Variables.GetVariable("wrapConsole")!;
+
+                string[] logLines = GameLogger.Log.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries);
+
+                ImGui.BeginChild("ScrollRegion",
+                    new Vector2(0, -ImGui.GetFrameHeightWithSpacing()),
+                    ImGuiChildFlags.Borders | ImGuiChildFlags.ResizeY,
+                    w ? ImGuiWindowFlags.None : ImGuiWindowFlags.HorizontalScrollbar);
+
+                float scrollMaxY = ImGui.GetScrollMaxY();
+                float scrollY = ImGui.GetScrollY();
+
+                if (scrollY < scrollMaxY)
                 {
-                    ImGui.SetScrollHereY(1f);
-                    _scrollToBottom = false;
+                    _shouldScrollToBottom = false;
+                } 
+                if (scrollY >= scrollMaxY)
+                {
+                    _shouldScrollToBottom = true;
+                }
+
+
+                ImGui.PushStyleVar(ImGuiStyleVar.ItemSpacing, new Vector2(4, 1));
+                foreach (string line in logLines)
+                {
+                    //todo: logger should add info about logging level, in case log pattern will be different
+                    if (line.Contains("INF] ") && !_showInfo)
+                        continue;
+                    if (line.Contains("WRN] ") && !_showWarn)
+                        continue;
+                    if (line.Contains("ERR] ") && !_showError)
+                        continue;
+                    DrawLogLine(line, w);
+                }
+                ImGui.PopStyleVar();
+
+                if (_shouldScrollToBottom)
+                { 
+                    ImGui.SetScrollHereY(1.0f);
                 }
                 ImGui.EndChild();
 
@@ -68,7 +106,7 @@ namespace RE.Debug.Overlay
                         Log.Information(">>> {Input}", _inputBuffer);
                         CommandHandler.ExecuteCommand(_inputBuffer);
                         _inputBuffer = string.Empty;
-                        _scrollToBottom = true;
+                        _shouldScrollToBottom = true;
 
                         _focusNextFrame = true; // отложим фокус
                     }
@@ -79,10 +117,40 @@ namespace RE.Debug.Overlay
             ImGui.End();
             //ImGui.PopStyleColor();
         }
+        private void DrawLogLine(string logLine, bool wrap)
+        {
+            Vector4 color;
 
+            if (logLine.Contains(" INF] "))
+            {
+                color = _colorInfo;
+            }
+            else if (logLine.Contains(" WRN] "))
+            {
+                color = _colorWarning;
+            }
+            else if (logLine.Contains(" ERR] "))
+            {
+                color = _colorError;
+            }
+            else
+            {
+                color = _colorDefault;
+            }
+
+            ImGui.PushStyleColor(ImGuiCol.Text, color);
+
+            if (wrap)
+                ImGui.TextWrapped(logLine);
+            else
+                ImGui.TextUnformatted(logLine);
+
+            ImGui.PopStyleColor();
+        }
         public static void Init()
         {
-            Instance ??= new ConsoleWindow();
+            Instance ??= new ConsoleWindow() { Id = "Main" };
+            RenderManager.AddRenderable(Instance);
         }
     }
 }

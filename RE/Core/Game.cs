@@ -2,6 +2,7 @@
 using System.Numerics;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using Hexa.NET.ImGuizmo;
 using OpenTK.Graphics.OpenGL;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
@@ -9,11 +10,14 @@ using OpenTK.Windowing.Common.Input;
 using OpenTK.Windowing.Desktop;
 using RE.Audio;
 using RE.Core.Assets;
+using RE.Core.Assets.Providers;
 using RE.Core.PluginSystem;
 using RE.Core.Scripting;
 using RE.Core.World.Physics;
 using RE.Debug;
 using RE.Debug.Overlay;
+using RE.Debug.Overlay.Editor;
+using RE.Debug.Overlay.Editor.Panels;
 using RE.Libs.Grille.ImGuiTK;
 using RE.Rendering;
 using RE.Utils;
@@ -52,6 +56,11 @@ internal class Game : GameWindow
         get => (bool)(Variables.GetVariable("wireframe") ?? false);
         set => Variables.SetVariable("wireframe", value);
     }
+
+    public int SceneFboId;
+    public int SceneTextureId;
+    public int SceneRboId;
+
     public static void Start()
     {
         Thread.CurrentThread.Name = "Render Thread";
@@ -112,7 +121,10 @@ internal class Game : GameWindow
     {
         PhysicsManager.Update((float)args.Time);
 
-        if (KeyboardState.IsKeyPressed(Keys.GraveAccent))
+        if (SceneEditor.Enabled)
+            ConsoleWindow.Instance!.IsVisible = false;
+
+        if (KeyboardState.IsKeyPressed(Keys.GraveAccent) && !SceneEditor.Enabled)
         {
             if (ConsoleWindow.Instance!.IsVisible)
             {
@@ -163,14 +175,50 @@ internal class Game : GameWindow
 
     protected override void OnResize(ResizeEventArgs e)
     {
-        Camera.Instance.AspectRatio = (float)e.Width / e.Height;
-        GL.Viewport(0, 0, e.Width, e.Height);
+        Camera.Instance.RenderWidth = SceneEditor.Enabled ? (int)ViewportPanel.ViewportSize.X : e.Width;
+        Camera.Instance.RenderHeight = SceneEditor.Enabled ? (int)ViewportPanel.ViewportSize.Y : e.Height;
+
+        var h = Camera.Instance.RenderHeight;
+        var w = Camera.Instance.RenderWidth;
+        GL.Viewport(0, 0, w, h);
+        SetupSceneFbo(w, h);
         base.OnResize(e);
     }
+    public void SetupSceneFbo(int width, int height)
+    {
+        if (SceneFboId != 0)
+        {
+            GL.DeleteFramebuffer(SceneFboId);
+            GL.DeleteTexture(SceneTextureId);
+            GL.DeleteRenderbuffer(SceneRboId);
+        }
 
+        GL.GenFramebuffers(1, out SceneFboId);
+        GL.BindFramebuffer(FramebufferTarget.Framebuffer, SceneFboId);
+
+        GL.GenTextures(1, out SceneTextureId);
+        GL.BindTexture(TextureTarget.Texture2D, SceneTextureId);
+        GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba, width, height, 0, PixelFormat.Rgba, PixelType.UnsignedByte, IntPtr.Zero);
+        GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Linear);
+        GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Linear);
+        GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2D, SceneTextureId, 0);
+
+        GL.GenRenderbuffers(1, out SceneRboId);
+        GL.BindRenderbuffer(RenderbufferTarget.Renderbuffer, SceneRboId);
+        GL.RenderbufferStorage(RenderbufferTarget.Renderbuffer, RenderbufferStorage.Depth24Stencil8, width, height);
+        GL.FramebufferRenderbuffer(FramebufferTarget.Framebuffer, FramebufferAttachment.DepthStencilAttachment, RenderbufferTarget.Renderbuffer, SceneRboId);
+
+        if (GL.CheckFramebufferStatus(FramebufferTarget.Framebuffer) != FramebufferErrorCode.FramebufferComplete)
+        {
+            Log.Error("{Method}: GL Framebuffer is not complete", nameof(SetupSceneFbo));
+        }
+
+        GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
+    }
     protected override void OnRenderFrame(FrameEventArgs args)
     {
         RenderProfiler.StopAll();
+        RenderProfiler.StartNew("render");
 
         if (Initializer.Render(args))
         {
@@ -183,20 +231,37 @@ internal class Game : GameWindow
         GL.DepthFunc(DepthFunction.Lequal);
         GL.Enable(EnableCap.DepthTest);
         GL.Enable(EnableCap.Blend);
-        //GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
         GL.ClearColor(Color.CadetBlue);
         GL.PolygonMode(TriangleFace.FrontAndBack, Wireframe ? PolygonMode.Line : PolygonMode.Fill);
-        //GL.Enable(EnableCap.CullFace);
-        //GL.CullFace(CullFaceMode.Back);
-        //GL.FrontFace(FrontFaceDirection.Ccw);
-        #endregion
 
+        #endregion
         ImGuiController.Get().Update(this, Time.DeltaTime);
 
-        RenderProfiler.StartNew("render");
+        if (SceneEditor.Enabled)
+            GL.BindFramebuffer(FramebufferTarget.Framebuffer, SceneFboId);
 
-        base.OnRenderFrame(args);
-        RenderManager.RenderAll(args);
+        var w = Camera.Instance.RenderWidth;
+        var h = Camera.Instance.RenderHeight;
+        GL.Viewport(0, 0, w, h);
+
+        GL.ClearColor(Color.Black);//CadetBlue
+        GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
+
+        GL.DepthFunc(DepthFunction.Lequal);
+        GL.Enable(EnableCap.DepthTest);
+        GL.Enable(EnableCap.Blend);
+        GL.PolygonMode(TriangleFace.FrontAndBack, Wireframe ? PolygonMode.Line : PolygonMode.Fill);
+
+        RenderManager.RenderAll(args); 
+
+        if (SceneEditor.Enabled)
+        {
+            GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
+            GL.Viewport(0, 0, ClientSize.X, ClientSize.Y);
+            GL.ClearColor(Color4.Black);
+            GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
+        }
+
         ImGuiController.Get().Render();
 
         SwapBuffers();

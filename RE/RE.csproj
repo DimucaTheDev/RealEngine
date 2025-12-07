@@ -18,9 +18,16 @@
 		<Description>REAL Engine!!!!!! A replacement for Unreal Engine 7</Description>
 		<Configurations>Debug;Release;Production</Configurations>
 		<GenerateDocumentationFile>False</GenerateDocumentationFile>
+		<Platforms>AnyCPU;x64</Platforms>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Production|AnyCPU'">
+	  <DefineConstants>$(DefineConstants);PROD;PRODUCTION</DefineConstants>
+	  <Optimize>True</Optimize>
+	  <NoWarn>1701;1702</NoWarn>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Production|x64'">
 	  <DefineConstants>$(DefineConstants);PROD;PRODUCTION</DefineConstants>
 	  <Optimize>True</Optimize>
 	  <NoWarn>1701;1702</NoWarn>
@@ -30,7 +37,15 @@
 	  <NoWarn>1701;1702</NoWarn>
 	</PropertyGroup>
 
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+	  <NoWarn>1701;1702</NoWarn>
+	</PropertyGroup>
+
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+	  <NoWarn>1701;1702</NoWarn>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
 	  <NoWarn>1701;1702</NoWarn>
 	</PropertyGroup>
 

@@ -4,9 +4,9 @@ using RE.Core.Assets;
 using RE.Core.Scripting;
 using RE.Core.World.Components;
 using RE.Core.World.Components.Physics;
-using RE.Debug.Overlay;
 using RE.Utils;
 using Log = Serilog.Log;
+using SceneEditor = RE.Debug.Overlay.Editor.SceneEditor;
 using TaskScheduler = BulletSharp.TaskScheduler;
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
 

@@ -1,7 +1,13 @@
 <Solution>
+  <Configurations>
+    <Platform Name="Any CPU" />
+    <Platform Name="x64" />
+  </Configurations>
   <Folder Name="/Solution Items/">
     <File Path=".editorconfig" />
   </Folder>
-  <Project Path="RE/RE.csproj" />
+  <Project Path="RE/RE.csproj">
+    <Platform Solution="*|x64" Project="x64" />
+  </Project>
   <Project Path="TestPlugin/TestPlugin.csproj" />
 </Solution>

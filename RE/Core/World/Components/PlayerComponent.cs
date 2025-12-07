@@ -9,12 +9,12 @@ using RE.Core.Scripting;
 using RE.Core.World.Components.Physics;
 using RE.Core.World.Physics;
 using RE.Debug;
-using RE.Debug.Overlay;
 using RE.Rendering.Renderables;
 using RE.Utils;
 using Serilog;
 using Camera = RE.Rendering.Camera;
 using Keys = OpenTK.Windowing.GraphicsLibraryFramework.Keys;
+using SceneEditor = RE.Debug.Overlay.Editor.SceneEditor;
 
 namespace RE.Core.World.Components
 {

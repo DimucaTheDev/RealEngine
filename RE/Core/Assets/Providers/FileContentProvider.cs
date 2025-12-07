@@ -1,4 +1,4 @@
-namespace RE.Core.Assets
+namespace RE.Core.Assets.Providers
 {
     public class FileContentProvider : IContentProvider
     {

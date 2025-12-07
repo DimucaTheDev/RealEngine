@@ -1,10 +1,17 @@
 ﻿using System.Numerics;
+using Assimp;
+using Hexa.NET.ImGuizmo;
+using Hexa.NET.OpenGL;
+using OpenTK.Graphics.OpenGL4;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using RE.Core;
 using RE.Core.Scripting;
 using RE.Debug;
+using RE.Debug.Overlay.Editor.Panels;
 using RE.Utils;
+using GL = OpenTK.Graphics.OpenGL4.GL;
+using Plane = System.Numerics.Plane;
 using Quaternion = OpenTK.Mathematics.Quaternion;
 using Vector3 = OpenTK.Mathematics.Vector3;
 using Vector4 = OpenTK.Mathematics.Vector4;
@@ -188,7 +195,7 @@ public class RenderManager
     public static void RenderAll(FrameEventArgs args)
     {
         GenerateFrustum();
-
+          
         var camPos = Camera.Instance.Position;
         RenderingComponents.Sort((a, b) =>
         {
@@ -196,9 +203,7 @@ public class RenderManager
             float db = (b.Owner.Transform.Position - camPos).LengthSquared;
             return db.CompareTo(da);
         });
-
-
-
+         
         RenderingComponents.ToList().ForEach(s =>
         {
             s.Render(args);

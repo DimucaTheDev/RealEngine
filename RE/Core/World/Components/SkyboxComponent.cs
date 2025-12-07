@@ -5,11 +5,11 @@ using OpenTK.Windowing.Common;
 using RE.Core.Assets;
 using RE.Core.Scripting;
 using RE.Debug;
-using RE.Debug.Overlay;
 using RE.Rendering;
 using RE.Rendering.Renderables;
 using Serilog;
 using SixLabors.ImageSharp.Processing;
+using SceneEditor = RE.Debug.Overlay.Editor.SceneEditor;
 using Vector3 = OpenTK.Mathematics.Vector3;
 
 namespace RE.Core.World.Components

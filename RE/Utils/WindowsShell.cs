@@ -1,64 +1,15 @@
 ﻿using System.Drawing.Imaging;
 using System.Runtime.InteropServices;
+using Hexa.NET.ImGui;
 using OpenTK.Graphics.OpenGL;
 using PixelFormat = OpenTK.Graphics.OpenGL.PixelFormat;
 
 namespace RE.Utils;
 
-internal static class WindowsShell
+internal static partial class WindowsShell
 {
-    public static readonly Dictionary<string, IntPtr> _iconCache = new Dictionary<string, IntPtr>();
-    public static IntPtr _folderIconId = IntPtr.Zero;
-
-    public static IntPtr GetSystemIcon(string extensionOrPath, SHGFI flags = SHGFI.LargeIcon | SHGFI.Icon)
-    {
-
-        if (_iconCache.TryGetValue(extensionOrPath, out IntPtr cachedId))
-        {
-            return cachedId;
-        }
-
-        SHFILEINFO shfi = new SHFILEINFO();
-        uint dwAttribs = 0;
-
-        if (!Directory.Exists(extensionOrPath))
-        {
-            dwAttribs = (uint)FileAttributes.Normal;
-            flags |= SHGFI.UseFileAttributes;
-        }
-        else
-        {
-            dwAttribs = (uint)FileAttributes.Directory;
-            flags |= SHGFI.UseFileAttributes;
-        }
-
-        IntPtr handle = SHGetFileInfo(extensionOrPath, dwAttribs, ref shfi, (uint)Marshal.SizeOf(shfi), (uint)flags);
-
-        if (handle == IntPtr.Zero)
-        {
-            return IntPtr.Zero;
-        }
-
-        IntPtr textureId = IntPtr.Zero;
-
-        try
-        {
-            using Icon icon = Icon.FromHandle(shfi.hIcon);
-            using Bitmap bitmap = icon.ToBitmap();
-            textureId = ConvertBitmapToImGuiTexture(bitmap);
-        }
-        finally
-        {
-            DestroyIcon(shfi.hIcon);
-        }
-
-        if (textureId != IntPtr.Zero)
-        {
-            _iconCache[extensionOrPath] = textureId;
-        }
-
-        return textureId;
-    }
+    private static readonly Dictionary<string, IntPtr> _iconCache = new();
+    private static readonly List<string> ImageExtensions = [".jpg", ".jpeg", ".png", ".ico", ".bmp"];
 
     private static IntPtr ConvertBitmapToImGuiTexture(Bitmap bitmap)
     {
@@ -93,17 +44,91 @@ internal static class WindowsShell
     public static IntPtr GetFileIcon(string filePath)
     {
         string extension = Path.GetExtension(filePath).ToLowerInvariant();
+
+        bool isImage = ImageExtensions.Contains(extension);
+
         if (string.IsNullOrEmpty(extension))
         {
             extension = "file_no_ext";
         }
 
-        if (_iconCache.TryGetValue(extension, out IntPtr cachedId))
+        if (!isImage && _iconCache.TryGetValue(extension, out IntPtr cachedId))
+            return cachedId;
+        if (isImage && _iconCache.TryGetValue(filePath, out IntPtr cacheId))
+            return cacheId;
+
+        if (!isImage)
+            return GetSystemIcon(filePath);
+        return LoadImageIcon(filePath);
+    }
+    public static IntPtr LoadImageIcon(string filePath)
+    {
+        if (_iconCache.TryGetValue(filePath, out IntPtr cachedId))
+        {
+            return cachedId;
+        }
+        try
+        {
+            using var bitmap = new Bitmap(filePath);
+            var textureId = ConvertBitmapToImGuiTexture(bitmap);
+            if (textureId != IntPtr.Zero)
+            {
+                _iconCache[filePath] = textureId;
+            }
+
+            return textureId;
+        }
+        catch
+        {
+            return GetSystemIcon(filePath);
+        }
+    }
+    public static IntPtr GetSystemIcon(string extensionOrPath, SHGFI flags = SHGFI.LargeIcon | SHGFI.Icon)
+    {
+
+        if (_iconCache.TryGetValue(extensionOrPath, out IntPtr cachedId))
         {
             return cachedId;
         }
 
-        return GetSystemIcon(filePath);
+        var iconOverride = $"Assets/Sprites/IconOverride/{Path.GetExtension(extensionOrPath).Replace(".", "")}.png";
+        if (File.Exists(iconOverride))
+        {
+            return LoadImageIcon(iconOverride);
+        }
+
+        SHFILEINFO shfi = new SHFILEINFO();
+        uint dwAttribs = 0;
+
+        flags |= SHGFI.UseFileAttributes;
+        dwAttribs = !Directory.Exists(extensionOrPath) ? (uint)FileAttributes.Normal : (uint)FileAttributes.Directory;
+
+        IntPtr handle = SHGetFileInfo(extensionOrPath, dwAttribs, ref shfi, (uint)Marshal.SizeOf(shfi), (uint)flags);
+
+        if (handle == IntPtr.Zero)
+        {
+            return IntPtr.Zero;
+        }
+
+        IntPtr textureId = IntPtr.Zero;
+
+        try
+        {
+            using Icon icon = Icon.FromHandle(shfi.hIcon);
+            using Bitmap bitmap = icon.ToBitmap();
+            textureId = ConvertBitmapToImGuiTexture(bitmap);
+        }
+        finally
+        {
+            DestroyIcon(shfi.hIcon);
+        }
+
+        if (textureId != IntPtr.Zero)
+        {
+            _iconCache[extensionOrPath] = textureId;
+        }
+
+        return textureId;
     }
 
 

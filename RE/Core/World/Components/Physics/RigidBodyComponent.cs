@@ -12,11 +12,9 @@ using RE.Utils;
 namespace RE.Core.World.Components.Physics
 {
     [ComponentInfo("Physics", Description = "Represents a dynamic physics body with mass and velocity")]
-    internal class RigidBodyComponent(float mass) : Component, IPhysicsComponent, IDebugRenderer
+    internal class RigidBodyComponent(float mass) : Component, IPhysicsComponent
     {
-        public RigidBody RigidBody = null!;
-
-        private FloatingText? _debugText = null!;
+        public RigidBody RigidBody = null!; 
 
         [EditorProperty]
         public float Mass
@@ -57,8 +55,7 @@ namespace RE.Core.World.Components.Physics
             if (IsPhysicsObjectInitialized)
                 return;
             TryInitializePhysics();
-            RigidBody.Activate();
-            _debugText = new("", OpenTK.Mathematics.Vector3.Zero, (FreeTypeFont)Fonts.Consolas);
+            RigidBody.Activate(); 
         }
 
         public void TryInitializePhysics()
@@ -95,15 +92,7 @@ namespace RE.Core.World.Components.Physics
         }
 
         public override void Update(FrameEventArgs args)
-        {
-            if (_debugText != null)
-            {
-                _debugText.Position = Owner.Transform.Position + (0, Owner.Transform.Scale.Y + 1, 0);
-                _debugText.Text = $"Mass: {Mass}\n" +
-                                  $"Velocity: {RigidBody?.LinearVelocity.Length ?? 0f:0.00}\n" +
-                                  $"Angular Velocity: {RigidBody?.AngularVelocity.Length ?? 0f:0.00}";
-            }
-
+        { 
             if (RigidBody == null || RigidBody.MotionState == null || Mass == 0f)
                 return;
 
@@ -130,11 +119,6 @@ namespace RE.Core.World.Components.Physics
         {
             JsonObject root = new() { { nameof(Mass), Mass } };
             return root;
-        }
-
-        public void DebugRender(FrameEventArgs args)
-        {
-            _debugText?.Render(args);
-        }
+        } 
     }
 }

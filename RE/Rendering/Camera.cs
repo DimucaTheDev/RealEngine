@@ -8,7 +8,8 @@ using RE.Core.Scripting;
 using RE.Core.World;
 using RE.Core.World.Components;
 using RE.Core.World.Components.Physics;
-using RE.Debug.Overlay;
+using RE.Debug.Overlay.Editor.Panels;
+using SceneEditor = RE.Debug.Overlay.Editor.SceneEditor;
 
 namespace RE.Rendering;
 
@@ -19,27 +20,28 @@ public class Camera
     private Vector2 _lastMouseDownPos;
 
     public bool FirstMove = true;
-    public float AspectRatio;
+    public float AspectRatio => (float)RenderWidth / RenderHeight;
     public Vector3 Front = -Vector3.UnitZ;
     public float Pitch;
     public float Fov = 60;
     public Vector3 Position;
     public Vector3 Up;
     public float Yaw = -90f;
+    public int RenderWidth, RenderHeight;
 
-    private Camera(Vector3 position, Vector3 up, float aspectRatio)
+    private Camera(Vector3 position, Vector3 up, int width, int height)
     {
         Position = position;
         Up = up;
-        AspectRatio = aspectRatio;
+        RenderWidth = width;
+        RenderHeight = height;
     }
 
     public static Camera Instance { get; private set; }
 
     public static void Init()
     {
-        Instance = new Camera(new(15, 3, 8), Vector3.UnitY, //todo: refactor
-            Game.Instance.ClientSize.X / (float)Game.Instance.ClientSize.Y);
+        Instance = new Camera(new(15, 3, 8), Vector3.UnitY, Game.Instance.ClientSize.X, Game.Instance.ClientSize.Y);
         Variables.VariableChanged += (s, e) =>
         {
             if (s == "fov")
@@ -54,7 +56,7 @@ public class Camera
         {
             if (SceneEditor.Enabled && args.Button == MouseButton.Button2)
             {
-                if (ImGui.GetIO().WantCaptureMouse || ImGui.GetIO().WantCaptureKeyboard)
+                if ((ImGui.GetIO().WantCaptureMouse || ImGui.GetIO().WantCaptureKeyboard) && !ViewportPanel.MouseDown)
                     return;
 
                 Game.Instance.CursorState = CursorState.Normal;
@@ -65,7 +67,7 @@ public class Camera
         {
             Instance._lastMouseDownPos = Game.Instance.MousePosition;
 
-            if (ImGui.GetIO().WantCaptureMouse)
+            if (ImGui.GetIO().WantCaptureMouse && !ViewportPanel.MouseDown)
                 return;
 
             if (SceneEditor.Enabled)
@@ -84,34 +86,15 @@ public class Camera
 
 
             if (!SceneEditor.Enabled && args.Button == MouseButton.Button2)
-            {
-                GameObject obj = new GameObject();
-                obj.Components.Add(new MeshComponent("assets/models/crate.fbx"));
-
-                Vector3 front = Instance.Front;
-
-                obj.Components.Add(new BoxColliderComponent());
-                var rb = new RigidBodyComponent(20);
-                obj.Components.Add(rb);
-
-                SceneManager.CurrentScene.GameObjects.Add(obj);
-
-                BulletSharp.Math.Vector3 cameraFrontBullet = new BulletSharp.Math.Vector3(front.X, front.Y, front.Z);
-                rb.RigidBody.Restitution = 0.2f;
-                rb.RigidBody.Friction = 1;
-                float impulseStrength = 5.0f;
-                BulletSharp.Math.Vector3 impulseVector = cameraFrontBullet * impulseStrength;
-                rb.RigidBody.ApplyImpulse(impulseVector, BulletSharp.Math.Vector3.Zero);
-
-                obj.SetPosition(2 * front + Instance.Position);
-            }
+                AddDummyCube();
         };
     }
 
-    public void HandleMouseMove(float mouseX, float mouseY)
+    public void HandleMouseMove(float mouseX, float mouseY, bool force = false)
     {
-        if (Game.Instance.CursorState != CursorState.Grabbed || (ImGui.GetIO().WantCaptureMouse && ImGuizmo.IsUsing()))
-            return;
+        if (!force)
+            if ((Game.Instance.CursorState != CursorState.Grabbed || (ImGui.GetIO().WantCaptureMouse && ImGuizmo.IsUsing())))
+                return;
         if (FirstMove)
         {
             _lastMousePos = new Vector2(mouseX, mouseY);
@@ -136,6 +119,28 @@ public class Camera
         Front = Vector3.Normalize(front);
     }
 
+    private static void AddDummyCube()
+    {
+        GameObject obj = new GameObject();
+        obj.Components.Add(new MeshComponent("assets/models/crate.fbx"));
+
+        Vector3 front = Instance.Front;
+
+        obj.Components.Add(new BoxColliderComponent());
+        var rb = new RigidBodyComponent(20);
+        obj.Components.Add(rb);
+
+        SceneManager.CurrentScene.GameObjects.Add(obj);
+
+        BulletSharp.Math.Vector3 cameraFrontBullet = new BulletSharp.Math.Vector3(front.X, front.Y, front.Z);
+        rb.RigidBody.Restitution = 0.2f;
+        rb.RigidBody.Friction = 1;
+        float impulseStrength = 5.0f;
+        BulletSharp.Math.Vector3 impulseVector = cameraFrontBullet * impulseStrength;
+        rb.RigidBody.ApplyImpulse(impulseVector, BulletSharp.Math.Vector3.Zero);
+
+        obj.SetPosition(2 * front + Instance.Position);
+    }
 
     public Matrix4 GetViewMatrix() => Matrix4.LookAt(Position, Position + Front, Up);
     public Matrix4 GetProjectionMatrix() => GetProjectionMatrix(Fov);

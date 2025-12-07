@@ -16,11 +16,9 @@ namespace RE.Libs.Grille.ImGuiTK;
 public class ImGuiController : IDisposable
 {
     private readonly List<char> PressedChars = new();
-    private bool _frameBegun;
-
     private readonly Vector2 _scaleFactor = Vector2.One;
+    private bool _frameBegun;
     private int _windowHeight;
-
     private int _windowWidth;
 
     public static ImGuiController? Instance { get; private set; }
@@ -41,9 +39,13 @@ public class ImGuiController : IDisposable
             Game.Instance.Resize += args => WindowResized(args.Width, args.Height);
             Game.Instance.MouseWheel += args => MouseScroll(args.Offset);
             Game.Instance.TextInput += args => PressChar((char)args.Unicode);
+            Game.Instance.MouseDown += _ => UpdateImGuiInput(Game.Instance);
 
             var context = ImGui.CreateContext();
+            var imPlotContextPtr = ImPlot.CreateContext();
+
             ImGui.SetCurrentContext(context);
+            ImPlot.SetCurrentContext(imPlotContextPtr);
             ImGuiImplOpenGL3.SetCurrentContext(context);
             ImGuiImplOpenGL3.Init("#version 150");
 
@@ -107,7 +109,6 @@ public class ImGuiController : IDisposable
 
         ImGuiImplOpenGL3.NewFrame();
         ImGui.NewFrame();
-        ImPlot.CreateContext();
         ImGuizmo.BeginFrame();
         ImGuizmo.SetRect(0, 0, Game.Instance.ClientSize.X, Game.Instance.ClientSize.Y);
     }

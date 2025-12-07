@@ -3,8 +3,8 @@ using Hexa.NET.ImGui;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using RE.Core.Scripting;
-using RE.Debug.Overlay;
 using RE.Rendering.Renderables;
+using SceneEditor = RE.Debug.Overlay.Editor.SceneEditor;
 
 namespace RE.Core.World.Components
 {

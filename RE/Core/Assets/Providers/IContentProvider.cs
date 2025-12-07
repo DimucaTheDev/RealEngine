@@ -1,6 +1,6 @@
 ﻿using System.Text;
 
-namespace RE.Core.Assets
+namespace RE.Core.Assets.Providers
 {
     public interface IContentProvider
     {

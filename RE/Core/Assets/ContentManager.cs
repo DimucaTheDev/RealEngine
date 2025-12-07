@@ -1,4 +1,5 @@
 ﻿using System.Text;
+using RE.Core.Assets.Providers;
 using Serilog;
 
 namespace RE.Core.Assets

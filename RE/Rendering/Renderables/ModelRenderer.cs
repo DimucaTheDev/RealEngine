@@ -7,7 +7,6 @@ using OpenTK.Windowing.Common;
 using RE.Core;
 using RE.Core.Assets;
 using RE.Core.World;
-using RE.Debug.Overlay;
 using RE.Rendering.Renderables.ModelFormat;
 using RE.Rendering.Text;
 using RE.Utils;
@@ -17,6 +16,7 @@ using Material = RE.Rendering.Lightning.Material;
 using PrimitiveType = OpenTK.Graphics.OpenGL4.PrimitiveType;
 using Quaternion = OpenTK.Mathematics.Quaternion;
 using Scene = Assimp.Scene;
+using SceneEditor = RE.Debug.Overlay.Editor.SceneEditor;
 
 namespace RE.Rendering.Renderables
 {
@@ -40,6 +40,9 @@ namespace RE.Rendering.Renderables
             get;
             set
             {
+                _noModelSprite?.StopRender();
+                _noModelText?.StopRender();
+                this.IsVisible = false;
                 TryLoad(value);
                 InitShader();
                 field = value;

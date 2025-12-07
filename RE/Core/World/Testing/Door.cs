@@ -5,7 +5,7 @@ using RE.Audio;
 using RE.Core.Scripting;
 using RE.Core.World.Components;
 using RE.Core.World.Components.Physics;
-using RE.Debug.Overlay;
+using SceneEditor = RE.Debug.Overlay.Editor.SceneEditor;
 
 namespace RE.Core.World.Testing
 {
