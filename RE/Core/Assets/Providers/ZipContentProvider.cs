@@ -30,7 +30,7 @@ namespace RE.Core.Assets.Providers
                 }
             }
 
-            Log.ForContext<ZipContentProvider>().Information("Loaded PAKs: {@Paks}", _zips.Keys.Select(pack => Path.GetRelativePath(".", pack)));
+            Log.Information("Loaded PAKs: {@Paks}", _zips.Keys.Select(pack => Path.GetRelativePath(".", pack)));
         }
 
         public byte[] GetBytes(string path)

@@ -1,4 +1,5 @@
-﻿using OpenTK.Mathematics;
+﻿using BulletSharp;
+using OpenTK.Mathematics;
 using RE.Core.World.Components;
 using RE.Core.World.Components.Physics;
 using RE.Utils;
@@ -10,8 +11,11 @@ namespace RE.Core.World
     /// </summary>
     public class GameObject
     {
-        private static int _next = 0;
+        // this is used in the viewport for selection. todo: make public
+        internal CollisionObject ViewportObject;
 
+        private static int _next = 0;
+         
         /// <summary>
         /// Initializes a new instance of <see cref="GameObject"/> with no parent.
         /// </summary>
@@ -25,7 +29,7 @@ namespace RE.Core.World
         {
             Components = new ComponentList(this);
             Parent = parent;
-            Transform = new Transform()
+            Transform = new Transform
             {
                 Position = Vector3.Zero,
                 Rotation = Quaternion.Identity,
@@ -82,7 +86,7 @@ namespace RE.Core.World
         public void SetPosition(Vector3 position)
         {
             //todo: move all children [ childPos + (newPos - oldPos) ]
-            Transform.Position = position;
+            Transform.Position = position; 
 
             var rigidBody = GetComponent<RigidBodyComponent>()?.RigidBody
                             ?? GetComponent<ColliderComponent>()?.RigidBody;
@@ -102,7 +106,8 @@ namespace RE.Core.World
         /// <param name="q">The new rotation quaternion to set.</param>
         public void SetRotation(Quaternion q)
         {
-            Transform.Rotation = q;
+            Transform.Rotation = q; 
+
             var rigidBodyComponent = GetComponent<RigidBodyComponent>();
             if (rigidBodyComponent != null!)
             {

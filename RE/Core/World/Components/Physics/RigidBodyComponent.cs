@@ -4,9 +4,6 @@ using BulletSharp.Math;
 using OpenTK.Windowing.Common;
 using RE.Core.Scripting;
 using RE.Core.World.Physics;
-using RE.Debug;
-using RE.Rendering.Renderables;
-using RE.Rendering.Text;
 using RE.Utils;
 
 namespace RE.Core.World.Components.Physics
@@ -14,7 +11,7 @@ namespace RE.Core.World.Components.Physics
     [ComponentInfo("Physics", Description = "Represents a dynamic physics body with mass and velocity")]
     internal class RigidBodyComponent(float mass) : Component, IPhysicsComponent
     {
-        public RigidBody RigidBody = null!; 
+        public RigidBody RigidBody = null!;
 
         [EditorProperty]
         public float Mass
@@ -23,7 +20,7 @@ namespace RE.Core.World.Components.Physics
             set
             {
                 if (IsPhysicsObjectInitialized)
-                { 
+                {
                     PhysicsManager.DynamicsWorld.RemoveRigidBody(RigidBody);
 
                     float newMass = value;
@@ -49,13 +46,12 @@ namespace RE.Core.World.Components.Physics
 
         public RigidBodyComponent() : this(mass: 1) { }
 
-
         public override void Start()
         {
             if (IsPhysicsObjectInitialized)
                 return;
             TryInitializePhysics();
-            RigidBody.Activate(); 
+            RigidBody.Activate();
         }
 
         public void TryInitializePhysics()
@@ -92,7 +88,7 @@ namespace RE.Core.World.Components.Physics
         }
 
         public override void Update(FrameEventArgs args)
-        { 
+        {
             if (RigidBody == null || RigidBody.MotionState == null || Mass == 0f)
                 return;
 
@@ -119,6 +115,6 @@ namespace RE.Core.World.Components.Physics
         {
             JsonObject root = new() { { nameof(Mass), Mass } };
             return root;
-        } 
+        }
     }
 }

@@ -26,7 +26,7 @@ namespace RE.Debug.Overlay.Editor.Panels
             { typeof(MeshComponent), new MeshComponentDrawer() },
             { typeof(Enum), new EnumDrawer() }
         };
-        public static Vector2 ViewportSize = new Vector2(1, 1);
+        public static Vector2 ViewportSize = new(1, 1);
         public void Draw()
         {
             ImGuiViewportPtr viewport = GetMainViewport();

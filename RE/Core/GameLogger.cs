@@ -34,42 +34,51 @@ namespace RE.Core
         }
     }
 
-    internal class EngineLoggerEnricher(string baseContext) : ILogEventEnricher
+    internal class EngineLoggerEnricher : ILogEventEnricher
     {
         public void Enrich(LogEvent logEvent, ILogEventPropertyFactory propertyFactory)
         {
-            // Если SourceContext уже явно задан — не трогаем
             if (logEvent.Properties.ContainsKey("SourceContext"))
                 return;
 
-            var assembly = GetCallingAssembly();
-            var asmName = assembly?.GetName().Name ?? baseContext;
+            var method = GetCallingMethod();
 
-            var contextProp = propertyFactory.CreateProperty("SourceContext", asmName);
+            System.Diagnostics.Debug.Assert(method != null);
+
+            var type = method.DeclaringType!;
+            var dllFileName = Path.GetFileNameWithoutExtension(type.Assembly.Location);
+            var name = $"{dllFileName}:{type.Name}/{method.Name}";
+
+            var contextProp = propertyFactory.CreateProperty("SourceContext", name);
             logEvent.AddOrUpdateProperty(contextProp);
         }
 
-        private static Assembly? GetCallingAssembly()
+        private static MethodBase? GetCallingMethod()
         {
-            var trace = new StackTrace();
-            for (int i = 0; i < trace.FrameCount; i++)
+            var trace = new StackTrace(fNeedFileInfo: false);
+            for (int i = 1; i < trace.FrameCount; i++)
             {
                 var method = trace.GetFrame(i)?.GetMethod();
-                if (method == null)
+                var declaringType = method?.DeclaringType;
+
+                if (declaringType == null)
                     continue;
 
-                var asm = method.DeclaringType?.Assembly;
-                if (asm == null)
-                    continue;
+                var assemblyName = declaringType.Assembly.GetName().Name;
 
-                // Пропускаем системные и Serilog-сборки
-                var name = asm.GetName().Name;
-                if (name != null &&
-                    !name.StartsWith("Serilog", StringComparison.OrdinalIgnoreCase) &&
-                    !name.StartsWith("System", StringComparison.OrdinalIgnoreCase) &&
-                    !name.StartsWith("Microsoft", StringComparison.OrdinalIgnoreCase))
+                if (assemblyName != null &&
+                    !assemblyName.StartsWith("Serilog", StringComparison.OrdinalIgnoreCase) &&
+                    !assemblyName.StartsWith("System", StringComparison.OrdinalIgnoreCase) &&
+                    !assemblyName.StartsWith("Microsoft", StringComparison.OrdinalIgnoreCase))
                 {
-                    return asm;
+                    var name = declaringType.Name;
+
+                    if (name.Contains('<') || name.Contains('>') || name == "EngineLoggerEnricher")
+                    {
+                        continue;
+                    }
+
+                    return method;
                 }
             }
             return null;

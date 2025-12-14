@@ -40,7 +40,7 @@ namespace RE.Core.World.Components
             RenderManager.RenderingComponents.Add(c);
             _components.Add(c);
             if (!doNotCallStart)
-                c.Start();
+                c.Start(); 
         }
 
         public void Remove(Component c)
@@ -57,7 +57,7 @@ namespace RE.Core.World.Components
 
             _components.Remove(c);
 
-            c.Owner = null!;
+            c.Owner = null!; 
         }
         public void Clear()
         {

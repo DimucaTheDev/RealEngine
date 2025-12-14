@@ -1,11 +1,8 @@
 ﻿using System.Collections.ObjectModel;
-using System.Runtime.InteropServices;
-using System.Text.Json;
 using FmodAudio;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using RE.Core;
-using RE.Core.Assets;
 using RE.Rendering;
 using RE.Utils;
 using Serilog;
@@ -22,6 +19,7 @@ namespace RE.Audio
         /// </remarks>
         public static ReadOnlyDictionary<string, List<string>>? SoundMap;
         public static ReadOnlyCollection<Sound> ActiveSounds => _activeSounds.AsReadOnly();
+
         /// <summary>
         /// Represents the global instance of the FMOD audio system.
         /// </summary>
@@ -30,9 +28,10 @@ namespace RE.Audio
 
         public const int MaxChannels = 256;
 
-        private static readonly Dictionary<string, List<string>> _soundMap = new();
+        private static Dictionary<string, List<string>> _soundMap = new();
         private static readonly Dictionary<string, FmodAudio.Sound> _buffers = new();
         private static readonly List<Sound> _activeSounds = new();
+        private static readonly List<string> AudioFileExtensions = [".wav", ".mp3", ".ogg", ".flac", ".aiff"];
 
         public static void Init()
         {
@@ -44,16 +43,10 @@ namespace RE.Audio
 
             Log.Information("FMOD Version: {FmodVersion}", FmodSystem.Version);
 
+            var files = Directory.GetFiles("Assets/Audio", "*", SearchOption.AllDirectories)
+                .Where(s => AudioFileExtensions.Contains(Path.GetExtension(s)));
+            _soundMap = ProcessFiles(files, "Assets/Audio");
 
-            var path = Path.Combine("Assets", "soundmap.json");
-            var json = ContentManager.GetString(path);
-            _soundMap.Clear();
-            var map = JsonSerializer.Deserialize<Dictionary<string, List<string>>>(json);
-            foreach (var kvp in map!)
-            {
-                _soundMap[kvp.Key] = kvp.Value;
-            }
-            SoundMap = new ReadOnlyDictionary<string, List<string>>(_soundMap);
             Log.Information("Mapped {Count} sounds.", _soundMap.Count);
         }
         public static void Update(FrameEventArgs args)
@@ -71,21 +64,9 @@ namespace RE.Audio
             }
 
             FmodSystem.Update();
-            unsafe
-            {
-                delegate* unmanaged[Swift]<void> abc = &a;
-                abc();
-            }
-
             FmodSystem.Set3DListenerAttributes(0, in pos, in vel, in forward, in up);
         }
 
-        class CallConvTest
-        {
-
-        }
-        [UnmanagedCallersOnly(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvSwift)])]
-        static void a() { }
         /// <summary>
         /// Retrieves a sound instance associated with the specified sound identifier.
         /// </summary>
@@ -161,7 +142,7 @@ namespace RE.Audio
                 sound.IsRelative = true;
             }
             sound.Play();
-            //Log.Debug($"Playing sound {id}:{variant}");
+            Log.Verbose("Playing sound {Id}: {Variant}", id, variant);
             return sound;
         }
 
@@ -179,6 +160,60 @@ namespace RE.Audio
                 sound.Dispose();
             }
             _activeSounds.Clear();
+        }
+
+        private static Dictionary<string, List<string>> ProcessFiles(IEnumerable<string> files, string basePath)
+        {
+            Dictionary<string, List<string>> fileMap = new();
+
+            foreach (var file in files)
+            {
+                string nameWithoutExt = Path.GetFileNameWithoutExtension(file);
+
+                int suffixStart = nameWithoutExt.Length;
+
+                bool digitFound = false;
+                for (int i = nameWithoutExt.Length - 1; i >= 0; i--)
+                {
+                    if (char.IsDigit(nameWithoutExt[i]))
+                    {
+                        digitFound = true;
+                        suffixStart = i;
+                    }
+                    else if (digitFound)
+                    {
+                        suffixStart = i + 1;
+                        break;
+                    }
+                }
+
+                string cleanedName = nameWithoutExt.Substring(0, suffixStart);
+
+                string? directory = Path.GetDirectoryName(file);
+                string combinedPath = Path.Join(directory, cleanedName);
+
+                string fileNameKey = Path.GetRelativePath("Assets/Audio", combinedPath
+                    .Replace(basePath, "")
+                    .Replace('\\', '/')
+                    .TrimStart('/', '\\')
+                    .TrimEnd('_', '-'));
+
+                string relativePath = file
+                    .Replace(basePath, "")
+                    .Replace('\\', '/');
+
+                string assetsAudioPath = $"Assets/Audio{relativePath}";
+
+                if (!fileMap.TryGetValue(fileNameKey, out List<string>? list))
+                {
+                    list = new List<string>();
+                    fileMap.Add(fileNameKey, list);
+                }
+
+                list.Add(assetsAudioPath);
+            }
+
+            return fileMap;
         }
     }
 }

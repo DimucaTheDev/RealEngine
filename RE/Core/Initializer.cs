@@ -24,6 +24,7 @@ namespace RE.Core
         private static Queue<(string label, Action action)> _initSteps = new();
         private static string _currentStep = "";
         private static bool _initDone;
+        private static bool _isScreenShowing;
         private static bool _shouldExecuteAction;
         private static Action? _pendingAction;
         private static int _step = 1;
@@ -69,6 +70,7 @@ namespace RE.Core
                 _textTitle.StopRender();
                 _textTitleDemo.StopRender();
                 _textPastSteps.ForEach(s => s.StopRender());
+                _isScreenShowing = false;
             };
         }
 
@@ -79,12 +81,11 @@ namespace RE.Core
             _textSteps.StartRender();
             _textTitle.StartRender();
             _textTitleDemo.StartRender();
+            _isScreenShowing = true;
         }
+        //todo: AddAsyncStep
         public static void AddStep((string label, Action action) step)
         {
-            if (!_initSteps.Any())
-                SetupScreen();
-
             _initDone = false;
             _initSteps.Enqueue(step);
             _steps++;
@@ -94,6 +95,9 @@ namespace RE.Core
         {
             if (!_initDone)
             {
+                if(!_isScreenShowing)
+                    SetupScreen();
+
                 if (_shouldExecuteAction)
                 {
                     Serilog.Log.Information(_currentStep);

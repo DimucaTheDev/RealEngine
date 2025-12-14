@@ -1,16 +1,9 @@
-﻿using System.Numerics;
-using Assimp;
-using Hexa.NET.ImGuizmo;
-using Hexa.NET.OpenGL;
-using OpenTK.Graphics.OpenGL4;
-using OpenTK.Mathematics;
+﻿using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using RE.Core;
 using RE.Core.Scripting;
 using RE.Debug;
-using RE.Debug.Overlay.Editor.Panels;
 using RE.Utils;
-using GL = OpenTK.Graphics.OpenGL4.GL;
 using Plane = System.Numerics.Plane;
 using Quaternion = OpenTK.Mathematics.Quaternion;
 using Vector3 = OpenTK.Mathematics.Vector3;
@@ -344,15 +337,15 @@ public class RenderManager
         Matrix4 inv = Matrix4.Invert(view * proj);
         Vector3[] ndcCorners = new Vector3[]
         {
-            new Vector3(-1, -1, -1), // near bottom left
-            new Vector3(1, -1, -1),  // near bottom right
-            new Vector3(1, 1, -1),   // near top right
-            new Vector3(-1, 1, -1),  // near top left
+            new(-1, -1, -1), // near bottom left
+            new(1, -1, -1),  // near bottom right
+            new(1, 1, -1),   // near top right
+            new(-1, 1, -1),  // near top left
 
-            new Vector3(-1, -1, 1),  // far bottom left
-            new Vector3(1, -1, 1),   // far bottom right
-            new Vector3(1, 1, 1),    // far top right
-            new Vector3(-1, 1, 1)    // far top left
+            new(-1, -1, 1),  // far bottom left
+            new(1, -1, 1),   // far bottom right
+            new(1, 1, 1),    // far top right
+            new(-1, 1, 1)    // far top left
         };
 
         Vector3[] worldCorners = new Vector3[8];

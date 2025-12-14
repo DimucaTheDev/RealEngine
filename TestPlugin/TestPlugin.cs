@@ -1,5 +1,7 @@
-﻿using RE.Core.PluginSystem;
+﻿using RE.Core;
+using RE.Core.PluginSystem;
 using Serilog;
+using Serilog.Core;
 
 namespace TestPlugin
 {
@@ -18,7 +20,8 @@ namespace TestPlugin
 
         public override void OnLoad()
         {
-            Logger.Information("Loading testing plugin omg!");
+            Log.Information("Loading testing plugin omg!");
+            Initializer.AddStep(("plugin loading!", () => Thread.Sleep(100)));
         }
     }
 }

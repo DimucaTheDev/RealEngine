@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using RE.Utils;
+﻿using RE.Utils;
 
 namespace RE.Rendering.Lightning
 {

@@ -100,6 +100,11 @@ namespace RE.Core.Scripting
 
         public static void RegisterSingleArgHandler(string name, Action<string> handler, string description = "")
         {
+            if (!CommandDescriptions.TryAdd(name, description))
+            {
+                Log.Warning("Command {Command} is already registered!", name);
+                return;
+            }
             CommandExecuted += (cmd, args, full) =>
             {
                 if (cmd.Equals(name, StringComparison.OrdinalIgnoreCase))

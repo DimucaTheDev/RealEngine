@@ -1,6 +1,5 @@
 ﻿using System.Drawing.Imaging;
 using System.Runtime.InteropServices;
-using Hexa.NET.ImGui;
 using OpenTK.Graphics.OpenGL;
 using PixelFormat = OpenTK.Graphics.OpenGL.PixelFormat;
 

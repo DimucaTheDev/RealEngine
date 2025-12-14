@@ -1,5 +1,4 @@
-﻿using System.Numerics;
-using System.Text.Json.Nodes;
+﻿using System.Text.Json.Nodes;
 using OpenTK.Graphics.OpenGL4;
 using OpenTK.Windowing.Common;
 using RE.Core.Assets;

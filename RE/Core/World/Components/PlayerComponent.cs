@@ -44,7 +44,7 @@ namespace RE.Core.World.Components
         private float _bobBlend = 0f;
         private float _currentCameraYOffset2 = 0f;
 
-        private SpriteRenderer _spriteSpawnpoint = new SpriteRenderer(Vector3.Zero, "assets/sprites/editor/spawn.png", scale: 1);
+        private SpriteRenderer _spriteSpawnpoint = new(Vector3.Zero, "assets/sprites/editor/spawn.png", scale: 1);
 
         private float _soundCooldown = 0f;
 

@@ -27,7 +27,7 @@ namespace RE.Core.World.Testing
             _door.DoNotSave = true;
             _door.DoNotShowInEditor = true;
             _door.Parent = Owner;
-            _door.Transform = (Transform)Owner.Transform.Clone();
+            _door.Transform = (Transform)Owner.Transform.Clone(); 
             _door.Components.Add(new BoxColliderComponent());
             _door.Components.Add(new MeshComponent("assets/models/crate.fbx"));
             _door.Components.Add(new UsableComponent()

@@ -1,9 +1,5 @@
 ﻿using System.Text.Json.Nodes;
-using OpenTK.Mathematics;
-using OpenTK.Windowing.Common;
 using RE.Core.Scripting;
-using RE.Debug;
-using RE.Rendering.Renderables;
 
 namespace RE.Core.World.Components
 {

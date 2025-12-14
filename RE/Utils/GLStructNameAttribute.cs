@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace RE.Utils
+﻿namespace RE.Utils
 {
     [AttributeUsage(AttributeTargets.Struct)]
     public class GlStructNameAttribute(string name) : Attribute

@@ -1,12 +1,10 @@
-﻿using System.Drawing.Imaging;
-using System.Numerics;
-using System.Reflection;
+﻿using System.CommandLine;
+using System.ComponentModel;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
-using Hexa.NET.ImGuizmo;
 using OpenTK.Graphics.OpenGL;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
-using OpenTK.Windowing.Common.Input;
 using OpenTK.Windowing.Desktop;
 using RE.Audio;
 using RE.Core.Assets;
@@ -23,58 +21,36 @@ using RE.Rendering;
 using RE.Utils;
 using RenderdocSharp;
 using Serilog;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.PixelFormats;
-using SixLabors.ImageSharp.Processing;
 using Camera = RE.Rendering.Camera;
 using Color = System.Drawing.Color;
-using Image = OpenTK.Windowing.Common.Input.Image;
 using Keys = OpenTK.Windowing.GraphicsLibraryFramework.Keys;
-using PixelFormat = OpenTK.Graphics.OpenGL.PixelFormat;
-using Rectangle = System.Drawing.Rectangle;
 using TextRenderer = RE.Rendering.Text.TextRenderer;
 
 namespace RE.Core;
 
 //todo: refactor this class into smaller parts
-internal class Game : GameWindow
+internal partial class Game : GameWindow
 {
-    private Game(GameWindowSettings gws, NativeWindowSettings nws) : base(gws, nws) { }
-
-    public static Game Instance { get; private set; } = null!;
-    public static readonly DateTime BuildDate =
-        Assembly.GetExecutingAssembly().GetCustomAttribute<BuildDateAttribute>()?.DateTime.ToLocalTime() ??
-        DateTime.MinValue;
-    public static readonly string CommitHash = Assembly.GetExecutingAssembly().GetCustomAttribute<GitCommitAttribute>()?.CommitHash ?? "unknown";
+    public static ParseResult CommandParseResult = null!;
     public const int FpsLock = 165; // fixme: fpsLock above 200 may cause physics issues
-    public const string ProductName = "Real Engine";
 
-    private static readonly Dictionary<nint, string> LoadedLibs = new();
-
-    private static bool Wireframe
-    {
-        get => (bool)(Variables.GetVariable("wireframe") ?? false);
-        set => Variables.SetVariable("wireframe", value);
-    }
-
-    public int SceneFboId;
-    public int SceneTextureId;
-    public int SceneRboId;
-
-    public static void Start()
+    public static void Start(string[] args)
     {
         Thread.CurrentThread.Name = "Render Thread";
         Environment.CurrentDirectory = AppContext.BaseDirectory;
 
+        ParseArguments(args);
         SetupLogger();
 
         Log.Information("{ProductName}; build {BuildDate:dd.MM.yyyy HH:mm:ss}; commit {CommitHash}", ProductName, BuildDate, CommitHash[..7]);
-        Log.Information("Startup args: {@Args}", Environment.GetCommandLineArgs()[1..]);
+        Log.Information("Startup args: {@Args}", args);
 
         if (Directory.Exists("Debug"))
             Directory.Delete("Debug", true);
 
-        foreach (var lib in Directory.GetFiles("Dll\\WIN32", "*.dll"))
+        var nativesPath = CommandParseResult.GetValue<string>("--natives-path")!;
+
+        foreach (var lib in Directory.GetFiles(nativesPath, "*.dll"))
         {
             nint handle;
             LoadedLibs.Add(handle = WinApi.LoadLibrary(lib), lib);
@@ -84,18 +60,21 @@ internal class Game : GameWindow
             if (errCode == 0)
                 Log.Debug("Loaded DLL {FileName,-15}: 0x{Handle,-16:x} Code: {ErrorCode}", fName, handle, errCode);
             else
-                Log.Debug("Loaded DLL {FileName,-15}: 0x{Handle,-16:x} Code: {ErrorCode}, {ErrorMessage}", fName, handle, errCode, Marshal.GetLastPInvokeErrorMessage());
+                Log.Debug("Error loading DLL {FileName,-15}: {ErrorCode}, {ErrorMessage}", fName, errCode, Marshal.GetLastPInvokeErrorMessage());
         }
 
         PluginManager.ResolvePlugins();
+
+        var width = CommandParseResult.GetValue<int>("--width");
+        var height = CommandParseResult.GetValue<int>("--height");
 
         using var game = new Game(
             new GameWindowSettings { UpdateFrequency = FpsLock },
             new NativeWindowSettings
             {
                 Title = $"{ProductName} - {BuildDate:g} - {CommitHash}",
-                ClientSize = new Vector2i(1280, 720),
-                Location = new Vector2i(Screen.PrimaryScreen!.Bounds.Width / 2 - 640, Screen.PrimaryScreen.Bounds.Height / 2 - 360),
+                ClientSize = new Vector2i(width, height),
+                Location = new Vector2i(Screen.PrimaryScreen!.Bounds.Width / 2 - width / 2, Screen.PrimaryScreen.Bounds.Height / 2 - height / 2),
                 Icon = LoadIcon(),
                 WindowState = WindowState.Normal
             });
@@ -104,17 +83,59 @@ internal class Game : GameWindow
         Instance.JoystickConnected += static e =>
         {
             if (e.IsConnected)
-                Log.Information("Joystick connected: {Name} ({JoystickId})", Instance.JoystickStates[e.JoystickId].Name, e.JoystickId);
+            {
+                Log.Information("Joystick connected: {Name} ({JoystickId})", Instance.JoystickStates[e.JoystickId].Name,
+                    e.JoystickId);
+                JoystickNames[e.JoystickId] = Instance.JoystickStates[e.JoystickId].Name;
+            }
             else
-                Log.Information("Joystick disconnected: {JoystickId}", e.JoystickId);
+            {
+                Log.Information("Joystick disconnected: {Name} ({JoystickId})", JoystickNames[e.JoystickId], e.JoystickId);
+                JoystickNames.Remove(e.JoystickId);
+            }
         };
 
         if (Renderdoc.IsAvailable)
             Log.Information("RenderDoc available: {Version}", Renderdoc.Version);
-
+         
         game.Run();
 
         Log.Information("End");
+    }
+
+    protected override void OnLoad()
+    {
+        GL.Enable(EnableCap.DebugOutput);
+        GL.Enable(EnableCap.DebugOutputSynchronous);
+        GL.DebugMessageCallback(GlLogCallback, 0);
+
+        ContentManager.Register(new FileContentProvider());
+        ContentManager.Register(new ZipContentProvider());
+
+        RenderManager.Init();
+        Time.Init();
+        ImGuiController.Get();
+        Camera.Init();
+        TextRenderer.Init();
+        Initializer.Init();
+
+        Initializer.AddStep(("Bootstrapping...", () =>
+                {
+                    DebugOverlay.Init();
+                    LineRenderer.Main!.StartRender();
+                    ConsoleWindow.Init();
+                    SoundManager.Init();
+                    PhysicsManager.Init();
+                }
+        ));
+        Initializer.AddStep(("Initializing Scene Editor...", () =>
+                {
+                    SceneEditor.Instance = new();
+                }
+        ));
+        Initializer.AddStep(("Registering Commands", CommandHandler.RegisterAllCommands));
+        Initializer.AddStep(("Running default.cfg", () => CommandHandler.ExecuteCommand("source assets/cfg/default.cfg")));
+        base.OnLoad();
     }
 
     protected override void OnUpdateFrame(FrameEventArgs args)
@@ -141,38 +162,6 @@ internal class Game : GameWindow
 
         base.OnUpdateFrame(args);
     }
-
-    protected override void OnLoad()
-    {
-        GL.Enable(EnableCap.DebugOutput);
-        GL.Enable(EnableCap.DebugOutputSynchronous);
-        GL.DebugMessageCallback(GlLogCallback, 0);
-
-        ContentManager.Register(new FileContentProvider());
-        ContentManager.Register(new ZipContentProvider());
-
-        RenderManager.Init();
-        Time.Init();
-        ImGuiController.Get();
-        Camera.Init();
-        TextRenderer.Init();
-        Initializer.Init();
-
-        Initializer.AddStep(("Bootstrapping...", () =>
-        {
-            DebugOverlay.Init();
-            LineRenderer.Main!.StartRender();
-            ConsoleWindow.Init();
-            SoundManager.Init();
-            PhysicsManager.Init();
-        }
-        ));
-        Initializer.AddStep(("Registering Commands", CommandHandler.RegisterAllCommands));
-        Initializer.AddStep(("Running default.cfg", () => { CommandHandler.ExecuteCommand("source assets/cfg/default.cfg"); }
-        ));
-        base.OnLoad();
-    }
-
     protected override void OnResize(ResizeEventArgs e)
     {
         Camera.Instance.RenderWidth = SceneEditor.Enabled ? (int)ViewportPanel.ViewportSize.X : e.Width;
@@ -183,37 +172,6 @@ internal class Game : GameWindow
         GL.Viewport(0, 0, w, h);
         SetupSceneFbo(w, h);
         base.OnResize(e);
-    }
-    public void SetupSceneFbo(int width, int height)
-    {
-        if (SceneFboId != 0)
-        {
-            GL.DeleteFramebuffer(SceneFboId);
-            GL.DeleteTexture(SceneTextureId);
-            GL.DeleteRenderbuffer(SceneRboId);
-        }
-
-        GL.GenFramebuffers(1, out SceneFboId);
-        GL.BindFramebuffer(FramebufferTarget.Framebuffer, SceneFboId);
-
-        GL.GenTextures(1, out SceneTextureId);
-        GL.BindTexture(TextureTarget.Texture2D, SceneTextureId);
-        GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba, width, height, 0, PixelFormat.Rgba, PixelType.UnsignedByte, IntPtr.Zero);
-        GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Linear);
-        GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Linear);
-        GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2D, SceneTextureId, 0);
-
-        GL.GenRenderbuffers(1, out SceneRboId);
-        GL.BindRenderbuffer(RenderbufferTarget.Renderbuffer, SceneRboId);
-        GL.RenderbufferStorage(RenderbufferTarget.Renderbuffer, RenderbufferStorage.Depth24Stencil8, width, height);
-        GL.FramebufferRenderbuffer(FramebufferTarget.Framebuffer, FramebufferAttachment.DepthStencilAttachment, RenderbufferTarget.Renderbuffer, SceneRboId);
-
-        if (GL.CheckFramebufferStatus(FramebufferTarget.Framebuffer) != FramebufferErrorCode.FramebufferComplete)
-        {
-            Log.Error("{Method}: GL Framebuffer is not complete", nameof(SetupSceneFbo));
-        }
-
-        GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
     }
     protected override void OnRenderFrame(FrameEventArgs args)
     {
@@ -252,7 +210,7 @@ internal class Game : GameWindow
         GL.Enable(EnableCap.Blend);
         GL.PolygonMode(TriangleFace.FrontAndBack, Wireframe ? PolygonMode.Line : PolygonMode.Fill);
 
-        RenderManager.RenderAll(args); 
+        RenderManager.RenderAll(args);
 
         if (SceneEditor.Enabled)
         {
@@ -293,24 +251,17 @@ internal class Game : GameWindow
         #endregion
     }
 
-    /// <summary>
-    /// Toggles window state between fullscreen and windowed mode.
-    /// </summary>
-    public void ToggleFullscreen()
+    protected override void OnClosing(CancelEventArgs e)
     {
-        if (WindowState == WindowState.Fullscreen)
+        if (SceneEditor.Enabled)
         {
-            Log.Debug("Switching to windowed mode");
-            WindowState = WindowState.Normal;
-            WindowBorder = WindowBorder.Resizable;
-        }
-        else
-        {
-            Log.Debug("Switching to fullscreen mode");
-            WindowState = WindowState.Fullscreen;
-            WindowBorder = WindowBorder.Hidden;
+            if (SceneEditor.ShowExitConfirmationModal)
+                return;
+            SceneEditor.ShowExitConfirmationModal = true;
+            e.Cancel = true;
         }
     }
+
     protected override void OnUnload()
     {
         base.OnUnload();
@@ -321,129 +272,6 @@ internal class Game : GameWindow
         {
             Log.Debug("Unloading library {Library}", lib.Value);
             WinApi.FreeLibrary(lib.Key);
-        }
-    }
-
-    /// <summary>
-    /// Takes a screenshot of the current frame and saves it to the <c>My Pictures</c> folder.
-    /// </summary>
-    /// <remarks>
-    /// The screenshot will be saved in a subfolder named <see cref="ProductName"/> with a filename <c>re_yyyy-MM-dd_HH-mm-ss.png</c>.
-    /// </remarks>
-    /// <returns>Absolute path to saved screenshot</returns>
-    public static string TakeScreenshot() => TakeScreenshot(Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.MyPictures), ProductName,
-        $"re_{DateTime.Now:yyyy-MM-dd_HH-mm-ss}.png"));
-    //todo: make methods non-static
-    /// <summary>
-    /// Takes a screenshot of the current frame and saves it to the specified file.
-    /// </summary>
-    /// <param name="fileName">Path that screenshot will be saved to</param>
-    /// <returns>Absolute path to saved screenshot</returns>
-    public static unsafe string TakeScreenshot(string fileName)
-    {
-        var a = new byte[Instance.ClientSize.X * Instance.ClientSize.Y * 3];
-        fixed (byte* ptr = a)
-            GL.ReadPixels(0, 0, Instance.ClientSize.X, Instance.ClientSize.Y, PixelFormat.Rgb, PixelType.UnsignedByte, (IntPtr)ptr);
-        Image<Rgb24> image = SixLabors.ImageSharp.Image.LoadPixelData<Rgb24>(a, Instance.ClientSize.X, Instance.ClientSize.Y);
-        image.Mutate(s => s.Flip(FlipMode.Vertical));
-
-        Directory.CreateDirectory(Path.GetDirectoryName(fileName)!);
-
-        image.SaveAsPng(fileName);
-        image.Dispose();
-        return Path.GetFullPath(fileName);
-    }
-
-    private static void SetupLogger()
-    {
-        string logTemplatePath = "Assets/logTemplate.txt";
-        string[] args = Environment.GetCommandLineArgs();
-        //todo: add System.CommandLine
-        for (int i = 0; i < args.Length; i++)
-        {
-            if (args[i] == "-log" && i + 1 < args.Length)
-            {
-                logTemplatePath = args[i + 1];
-                break;
-            }
-        }
-        var hasTemplate = File.Exists(logTemplatePath);
-        var consoleTemplate = hasTemplate ? File.ReadAllText(logTemplatePath) :
-            "[{Timestamp:HH:mm:ss.fff} {Level:u3}] [{ThreadName}] [{SourceContext:Name}] {Message:lj}{NewLine}{Exception}";
-
-        Log.Logger = new LoggerConfiguration()
-            .MinimumLevel.Debug()
-            .Enrich.WithThreadName()
-            .Enrich.With(new EngineLoggerEnricher("Engine"))
-            .WriteTo.Sink(new GameLogger("[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}"))
-            .WriteTo.Console(outputTemplate: consoleTemplate)
-            .CreateLogger()
-            .ForContext("SourceContext", "Engine");
-
-        Log.Information("Hello, World!");
-        if (hasTemplate)
-            Log.Information("Using log template from: {LogTemplatePath}", logTemplatePath);
-    }
-
-    // OpenGL debug callback
-    private static void GlLogCallback(DebugSource source, DebugType type, int id, DebugSeverity severity, int length, IntPtr message, IntPtr userParam)
-    {
-        string msg = Marshal.PtrToStringAnsi(message, length);
-        Log.Write(severity switch
-        {
-            DebugSeverity.DontCare => Serilog.Events.LogEventLevel.Verbose,
-            DebugSeverity.DebugSeverityHigh => Serilog.Events.LogEventLevel.Error,
-            DebugSeverity.DebugSeverityMedium => Serilog.Events.LogEventLevel.Warning,
-            DebugSeverity.DebugSeverityLow => Serilog.Events.LogEventLevel.Information,
-            DebugSeverity.DebugSeverityNotification => Serilog.Events.LogEventLevel.Verbose,
-            _ => Serilog.Events.LogEventLevel.Information
-        }, "[{OpenGL}:{Type}] {Message}", "OpenGL", type, msg);
-        if (severity == DebugSeverity.DebugSeverityHigh)
-            throw new GlException(msg);
-    }
-    private static WindowIcon? LoadIcon()
-    {
-        var path = "Assets/RealEngine2.ico";
-        if (!File.Exists(path))
-        {
-            Log.Error("Icon file not found: {IconPath}", path);
-            return null;
-        }
-        try
-        {
-            using var icon = new Icon(path);
-            using var bitmap = icon.ToBitmap();
-
-            var data = new byte[bitmap.Width * bitmap.Height * 4];
-            var bitmapData = bitmap.LockBits(
-                new Rectangle(0, 0, bitmap.Width, bitmap.Height),
-                ImageLockMode.ReadOnly,
-                System.Drawing.Imaging.PixelFormat.Format32bppArgb);
-
-            Marshal.Copy(bitmapData.Scan0, data, 0, data.Length);
-            bitmap.UnlockBits(bitmapData);
-
-            for (int i = 0; i < data.Length; i += 4)
-            {
-                byte a = data[i + 3];
-                byte r = data[i + 2];
-                byte g = data[i + 1];
-                byte b = data[i + 0];
-
-                data[i + 0] = r;
-                data[i + 1] = g;
-                data[i + 2] = b;
-                data[i + 3] = a;
-            }
-
-            var image = new Image(bitmap.Width, bitmap.Height, data);
-            return new WindowIcon(image);
-        }
-        catch (Exception e)
-        {
-            Log.Error(e, "An error occurred while loading the icon.");
-            throw;
         }
     }
 }

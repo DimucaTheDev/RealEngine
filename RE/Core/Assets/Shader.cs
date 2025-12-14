@@ -18,8 +18,7 @@ namespace RE.Core.Assets
     {
         private static readonly List<Shader> CompiledShaders = [];
         private static HashSet<string> _seenDecl = new(); // this hash set stores var's names to prevent variable dupe
-
-
+         
         /// <summary>
         /// Initializes a new instance of the Shader class using the specified file path.
         /// </summary>
@@ -181,7 +180,7 @@ namespace RE.Core.Assets
                 Directory.CreateDirectory("Debug");
                 GL.GetShader(Handle, ShaderParameter.ShaderType, out var type);
                 var path = $"Debug/shader_{(ShaderType)type}_{Handle}__{new string(shaderPath.Select(c => Path.GetInvalidFileNameChars().Contains(c) ? '_' : c).ToArray())}.txt";
-                Log.Debug("New processed shader: {Path}", path);
+                Log.Verbose("New processed shader: {Path}", path);
                 File.WriteAllText(path, finalShader.ToString());
             }
             return finalShader.ToString();

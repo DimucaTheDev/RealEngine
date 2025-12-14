@@ -1,5 +1,4 @@
-﻿using System.Diagnostics;
-using System.Numerics;
+﻿using System.Numerics;
 using Hexa.NET.ImGui;
 using RE.Core.World;
 using static Hexa.NET.ImGui.ImGui;
@@ -7,12 +6,7 @@ using static Hexa.NET.ImGui.ImGui;
 namespace RE.Debug.Overlay.Editor.Panels
 {
     internal class HierarchyPanel
-    {
-        private void SelectObject(GameObject obj)
-        {
-            SceneEditor.SelectedObject = obj;
-        }
-
+    { 
         public void Draw()
         {
             ImGuiViewportPtr viewport = GetMainViewport();
@@ -31,92 +25,7 @@ namespace RE.Debug.Overlay.Editor.Panels
             bool renderAbout = false;
             bool renderQuit = false;
 
-            Begin("Scene Hierarchy", flags);
-
-            if (BeginMenuBar())
-            {
-                if (BeginMenu("Editor"))
-                {
-                    if (MenuItem("Create new scene"))
-                    { }
-                    if (MenuItem("Open scene"))
-                    { }
-                    if (MenuItem("Save scene"))
-                    { }
-                    if (MenuItem("Save scene as"))
-                    { }
-                    if (BeginMenu("Preferences"))
-                    {
-                        Selectable("Render Skybox", ref SceneEditor.PreviewSkybox);
-                        Selectable("Preview Light", ref SceneEditor.PreviewLight);
-                        EndMenu();
-                    }
-                    if (MenuItem("Settings"))
-                    { }
-                    Separator();
-                    if (MenuItem("Exit"))
-                    {
-                        renderQuit = true;
-                    }
-                    EndMenu();
-                }
-
-                if (BeginMenu("Objects"))
-                {
-                    if (MenuItem("New Blank"))
-                    {
-                        var newObject = new GameObject();
-                        SceneManager.CurrentScene.GameObjects.Add(newObject);
-                        SelectObject(newObject);
-                    }
-                    if (MenuItem("New Blank 2"))
-                    {
-                        var newObject = new GameObject();
-                        SceneManager.CurrentScene.GameObjects.Add(newObject);
-
-                        var newObject2 = new GameObject();
-                        SceneManager.CurrentScene.GameObjects.Add(newObject2);
-                        newObject.Parent = newObject2;
-
-                        SelectObject(newObject);
-                    }
-
-                    EndMenu();
-                }
-
-                if (BeginMenu("Tools"))
-                {
-                    if (MenuItem("Skybox Editor"))
-                    { }
-                    if (MenuItem("Particle Editor"))
-                    { }
-                    if (MenuItem("Model Browser"))
-                    { }
-                    if (MenuItem("Model Converter"))
-                    { }
-                    if (MenuItem("Var Editor"))
-                    { }
-                    EndMenu();
-
-                }
-                if (BeginMenu("Help"))
-                {
-                    if (MenuItem("Open Docs"))
-                    {
-                        Process.Start("explorer", "https://dimucathedev.github.io/RealEngine/docs/editor/about.html");
-                    }
-
-                    Separator();
-
-                    if (MenuItem("About"))
-                    {
-                        renderAbout = true;
-                    }
-
-                    EndMenu();
-                }
-                EndMenuBar();
-            }
+            Begin("Scene Hierarchy", flags); 
 
             foreach (var obj in SceneManager.CurrentScene.GameObjects.Where(s => s is { DoNotShowInEditor: false, Parent: null }).ToList())
             {
@@ -167,9 +76,8 @@ namespace RE.Debug.Overlay.Editor.Panels
             PopStyleColor();
 
             if (IsItemClicked())
-            {
-                SelectObject(obj);
-                SceneEditor.Instance.UpdateSelection();
+            { 
+                SceneEditor.SelectedObject = obj;
             }
 
             if (hasVisibleChildren && nodeOpen)

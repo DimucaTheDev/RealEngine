@@ -1,5 +1,4 @@
-﻿using Serilog;
-using Serilog.Core;
+﻿using Serilog.Core;
 
 namespace RE.Core.PluginSystem
 {
@@ -15,12 +14,12 @@ namespace RE.Core.PluginSystem
         /// <summary>
         /// Logger instance for logging messages within the plugin context.
         /// </summary>
-        public ILogger Logger { get; protected set; }
+        // public ILogger Logger { get; protected set; }
 
         protected Plugin()
         {
             // ReSharper disable once VirtualMemberCallInConstructor
-            Logger = Log.Logger.ForContext("SourceContext", Path.GetFileName(PluginInformation.Assembly.Location));
+          //  Logger = Log.Logger.ForContext("SourceContext", Path.GetFileName(PluginInformation.Assembly.Location));
         }
 
         /// <summary>

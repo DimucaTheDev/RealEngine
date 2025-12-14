@@ -44,7 +44,7 @@ namespace RE.Core.World.Physics
 
             if (_init)
             {
-                Log.Warning("Physics Manager is already initialized!");
+                Log.Error("Physics Manager is already initialized!");
                 return;
             }
 
@@ -67,6 +67,7 @@ namespace RE.Core.World.Physics
                 _parallelSolver, _collisionConfiguration);
             DynamicsWorld.SolverInfo.SolverMode = SolverModes.Simd | SolverModes.UseWarmStarting;
             DynamicsWorld.Gravity = new BulletSharp.Math.Vector3(0, -9.81f, 0);
+            DynamicsWorld.DebugDrawer = new BulletDebugDrawer();
 
             Variables.VariableChanged += (s, e) =>
             {
@@ -166,6 +167,13 @@ namespace RE.Core.World.Physics
 
         private static void NextTaskScheduler()
         {
+            if (!Schedulers.Any())
+            {
+                Log.Fatal("No Bullet physics scheduler specified.");
+                Environment.Exit(-1);
+                return;
+            }
+
             _currentScheduler++;
             if (_currentScheduler >= Schedulers.Count)
             {
@@ -178,25 +186,29 @@ namespace RE.Core.World.Physics
 
         private static void CreateSchedulers()
         {
-            var args = Environment.GetCommandLineArgs();
-            if (args.Contains("-s"))
+            if (Game.CommandParseResult.GetValue<bool>("--phys-sequential"))
             {
                 Log.Information("Using Sequential Task Scheduler");
                 AddScheduler(Threads.GetSequentialTaskScheduler());
             }
-            if (args.Contains("-mpt"))
+
+            if (Game.CommandParseResult.GetValue<bool>("--phys-mp"))
             {
                 Log.Information("Using Multi-Processing Task Scheduler");
                 AddScheduler(Threads.GetOpenMPTaskScheduler());
             }
-            if (args.Contains("-tbb"))
+
+            if (Game.CommandParseResult.GetValue<bool>("--phys-tbb"))
             {
                 Log.Information("Using TBB Task Scheduler");
                 AddScheduler(Threads.GetTbbTaskScheduler());
             }
 
-            Log.Debug("Using PPL Task Scheduler");
-            AddScheduler(Threads.GetPplTaskScheduler());
+            if (Game.CommandParseResult.GetValue<bool>("--phys-ppl"))
+            {
+                Log.Information("Using PPL Task Scheduler");
+                AddScheduler(Threads.GetPplTaskScheduler());
+            }
         }
 
         private static void AddScheduler(TaskScheduler scheduler)

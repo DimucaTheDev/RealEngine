@@ -1,10 +1,8 @@
-﻿using System.Drawing.Imaging;
-using System.Globalization;
-using System.Numerics;
+﻿using System.Diagnostics;
+using System.Drawing.Imaging;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using Hexa.NET.ImGui;
-using Hexa.NET.ImGuizmo;
 using OpenTK.Graphics.OpenGL;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
@@ -13,19 +11,14 @@ using RE.Core.Assets;
 using RE.Core.PluginSystem;
 using RE.Core.Scripting;
 using RE.Core.World;
-using RE.Core.World.Components;
 using RE.Debug.Overlay.Editor.Panels;
 using RE.Rendering;
 using RE.Rendering.Renderables;
 using RE.Utils;
 using Serilog;
 using static Hexa.NET.ImGui.ImGui;
-using Keys = OpenTK.Windowing.GraphicsLibraryFramework.Keys;
 using PixelFormat = OpenTK.Graphics.OpenGL.PixelFormat;
-using Quaternion = OpenTK.Mathematics.Quaternion;
-using TkVector3 = OpenTK.Mathematics.Vector3;
 using Vector2 = System.Numerics.Vector2;
-using Vector3 = System.Numerics.Vector3;
 
 namespace RE.Debug.Overlay.Editor
 {
@@ -43,10 +36,11 @@ namespace RE.Debug.Overlay.Editor
         public override RenderLayer RenderLayer => RenderLayer.ImGui;
         public override bool IsVisible { get; set; } = false;
 
-        public static SceneEditor Instance = new();
+        public static SceneEditor Instance;
         public static bool Enabled = false;
         public static bool PreviewLight, PreviewSkybox, ShowAxis = true, ShowGrid = true;
         public static GameObject? SelectedObject;
+        public static bool ShowExitConfirmationModal = false;
 
         private static readonly ImFontPtr _bigFont;
         private static readonly ModelRenderer SelectedObjectOutline = new() { Outline = true };
@@ -59,12 +53,11 @@ namespace RE.Debug.Overlay.Editor
         private List<Type> _customPopups = new();
         private Dictionary<string, List<Type>> _componentDict = new();
         private Node _rootNode = new();
-        private HierarchyPanel hierarchyPanel = new HierarchyPanel();
-        private InspectorPanel inspectorPanel = new InspectorPanel();
-        private AssetBrowserPanel assetBrowserPanel = new AssetBrowserPanel();
-        private ViewportPanel viewportPanel = new ViewportPanel();
-        private ConsoleWindow consoleWindow = new ConsoleWindow() { Id = "Editor" };
-
+        private HierarchyPanel hierarchyPanel = new();
+        private InspectorPanel inspectorPanel = new();
+        private AssetBrowserPanel assetBrowserPanel = new();
+        private ViewportPanel viewportPanel = new();
+        private ConsoleWindow consoleWindow = new() { Id = "Editor" };
 
         static SceneEditor()
         {
@@ -139,12 +132,6 @@ namespace RE.Debug.Overlay.Editor
             }
         }
 
-        private void SelectObject(GameObject? obj)
-        {
-            _selectedObject = obj;
-            UpdateSelection();
-        }
-
         public void Enable()
         {
             if (SceneManager.CurrentScene == null!)
@@ -159,7 +146,7 @@ namespace RE.Debug.Overlay.Editor
             Log.Information("Starting Scene Editor for \"{SceneName}\"...", SceneManager.CurrentScene.Name);
 
             _scene = SceneManager.CurrentScene;
-            SelectObject(null);
+            // SelectObject(null);
             IsVisible = true;
 
             foreach (var type in Assembly.GetExecutingAssembly().GetTypes().Where(t => typeof(IEditorPopup).IsAssignableFrom(t)))
@@ -213,8 +200,6 @@ namespace RE.Debug.Overlay.Editor
 
         public override void Render(FrameEventArgs args)
         {
-            DrawObjectGizmos();
-
             foreach (var obj in _scene.GameObjects)
             {
                 foreach (var com in obj.Components)
@@ -236,9 +221,48 @@ namespace RE.Debug.Overlay.Editor
             assetBrowserPanel.Draw();
             viewportPanel.Draw();
             consoleWindow.Render(args);
+
+            ShowExitModalWindow();
         }
 
-        public static void SetupDockSpace()
+        private double _exitButtonWait;
+        private void ShowExitModalWindow()
+        {
+            if (ShowExitConfirmationModal)
+            {
+                OpenPopup("Exit Confirmation");
+                if (BeginPopupModal("Exit Confirmation", ref ShowExitConfirmationModal,
+                        ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoSavedSettings))
+                {
+                    Text("Are you sure you want to exit the Scene Editor?\nUnsaved changes will be lost.");
+                    Separator();
+
+                    BeginDisabled((_exitButtonWait += Time.DeltaTime) <= 4);
+
+                    var label = _exitButtonWait > 4 ? "Yes" : $"Yes ({(4 - (int)_exitButtonWait)}s)";
+                    if (Button(label))
+                    {
+                        _exitButtonWait = 0;
+                        Disable();
+                        CloseCurrentPopup();
+                        Environment.Exit(0);
+                    }
+                    EndDisabled();
+
+                    SameLine(90); 
+                    if (Button("No"))
+                    {
+                        CloseCurrentPopup();
+                        _exitButtonWait = 0;
+                        ShowExitConfirmationModal = false;
+                    }
+
+                    EndPopup();
+                }
+            }
+        }
+
+        private void SetupDockSpace()
         {
             ImGuiIOPtr io = GetIO();
 
@@ -247,12 +271,98 @@ namespace RE.Debug.Overlay.Editor
 
             ImGuiWindowFlags windowFlags = ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoResize |
                                            ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoBringToFrontOnFocus |
-                                           ImGuiWindowFlags.NoBackground;
+                                           ImGuiWindowFlags.NoBackground | ImGuiWindowFlags.MenuBar;
 
             PushStyleVar(ImGuiStyleVar.WindowRounding, 0.0f);
             PushStyleVar(ImGuiStyleVar.WindowBorderSize, 0.0f);
 
             ImGui.Begin("MainDockspaceWindow", ref _isDockspaceOpen, windowFlags);
+
+            if (BeginMenuBar())
+            {
+                if (BeginMenu("Editor"))
+                {
+                    if (MenuItem("Create new scene"))
+                    { }
+                    if (MenuItem("Open scene"))
+                    { }
+                    if (MenuItem("Save scene"))
+                    { }
+                    if (MenuItem("Save scene as"))
+                    { }
+                    if (BeginMenu("Preferences"))
+                    {
+                        Selectable("Render Skybox", ref SceneEditor.PreviewSkybox);
+                        Selectable("Preview Light", ref SceneEditor.PreviewLight);
+                        EndMenu();
+                    }
+                    if (MenuItem("Settings"))
+                    { }
+                    Separator();
+                    if (MenuItem("Exit"))
+                    {
+                        // renderQuit = true;
+                    }
+                    EndMenu();
+                }
+
+                if (BeginMenu("Objects"))
+                {
+                    if (MenuItem("New Blank"))
+                    {
+                        var newObject = new GameObject();
+                        SceneManager.CurrentScene.GameObjects.Add(newObject);
+                        //Instance.SelectObject(newObject);
+                    }
+                    if (MenuItem("New Blank 2"))
+                    {
+                        var newObject = new GameObject();
+                        SceneManager.CurrentScene.GameObjects.Add(newObject);
+
+                        var newObject2 = new GameObject();
+                        SceneManager.CurrentScene.GameObjects.Add(newObject2);
+                        newObject.Parent = newObject2;
+
+                        //Instance.SelectObject(newObject);
+                    }
+
+                    EndMenu();
+                }
+
+                if (BeginMenu("Tools"))
+                {
+                    if (MenuItem("Skybox Editor"))
+                    { }
+                    if (MenuItem("Particle Editor"))
+                    { }
+                    if (MenuItem("Model Browser"))
+                    { }
+                    if (MenuItem("Model Converter"))
+                    { }
+                    if (MenuItem("Var Editor"))
+                    { }
+                    EndMenu();
+
+                }
+                if (BeginMenu("Help"))
+                {
+                    if (MenuItem("Open Docs"))
+                    {
+                        Process.Start("explorer", "https://dimucathedev.github.io/RealEngine/docs/editor/about.html");
+                    }
+
+                    Separator();
+
+                    if (MenuItem("About"))
+                    {
+                        // renderAbout = true;
+                    }
+
+                    EndMenu();
+                }
+                EndMenuBar();
+            }
+
 
             PopStyleVar(2);
 
@@ -263,43 +373,7 @@ namespace RE.Debug.Overlay.Editor
             End();
         }
 
-        public void DrawObjectGizmos()
-        {
-            var pr = (Matrix4x4)Camera.Instance.GetProjectionMatrix();
-            var vr = (Matrix4x4)Camera.Instance.GetViewMatrix();
-            var one = Matrix4x4.Identity;
-
-            if (_selectedObject != null)
-            {
-                var rot = _selectedObject!.Transform.Rotation;
-                var model =
-                    Matrix4x4.CreateScale(_selectedObject!.Transform.Scale.ToSystemVector3())
-                    * Matrix4x4.CreateFromQuaternion(rot.ToSystemQuaternion())
-                    * Matrix4x4.CreateTranslation(_selectedObject!.Transform.Position.ToSystemVector3());
-
-                if (ImGuizmo.Manipulate(ref vr.M11, ref pr.M11, viewportPanel.Operation, viewportPanel.Mode,
-                        ref model.M11))
-                {
-                    if (Matrix4x4.Decompose(model, out var scale, out var rotation, out var translation))
-                    {
-                        _selectedObject.SetPosition(translation.ToOpenTkVector3());
-                        _selectedObject.SetRotation(rotation.ToOpenTkQuaternion());
-                        _selectedObject.Transform.Scale = scale.ToOpenTkVector3();
-
-                        UpdateSelection();
-                    }
-                }
-            }
-        }
-
-#pragma warning disable IDE1006
-        private OpenTK.Mathematics.Vector3 obj_Position { get => _selectedObject.Transform.Position; set => _selectedObject.SetPosition(value); }
-        private Quaternion obj_Rotation { get => _selectedObject.Transform.Rotation; set => _selectedObject.SetRotation(value); }
-#pragma warning restore
-
         private PropertyInfo _p = null!;
-
-
         private string _searchComponent = null!;
 
         void DrawButton(Type type)
@@ -409,58 +483,9 @@ namespace RE.Debug.Overlay.Editor
         private static int _hash;
 
 
-        private object ConvertFromString(string str, Type type)
-        {
-            if (type == typeof(OpenTK.Mathematics.Vector3))
-            {
-                var match = Regex.Match(str, @"\(\s*([-+]?\d*\.?\d+)\s*;\s*([-+]?\d*\.?\d+)\s*;\s*([-+]?\d*\.?\d+)\s*\)");
-                if (match.Success)
-                {
-                    float x = float.Parse(match.Groups[1].Value, CultureInfo.InvariantCulture);
-                    float y = float.Parse(match.Groups[2].Value, CultureInfo.InvariantCulture);
-                    float z = float.Parse(match.Groups[3].Value, CultureInfo.InvariantCulture);
-                    return new OpenTK.Mathematics.Vector3(x, y, z);
-                }
-            }
-
-            if (type == typeof(Vector3))
-                return ((OpenTK.Mathematics.Vector3)ConvertFromString(str, typeof(OpenTK.Mathematics.Vector3))!).ToSystemVector3();
-
-            throw new NotImplementedException(type.Name);
-        }
-
         private bool _popupOpened;
 
-        public void UpdateSelection()
-        {
-            if (_selectedObject == null)
-            {
-                SelectedObjectOutline.StopRender();
-                return;
-            }
 
-            var mesh = _selectedObject?.GetComponent<MeshComponent>();
-
-            if (mesh == null! || string.IsNullOrWhiteSpace(mesh.Path))
-            {
-                SelectedObjectOutline.StopRender();
-            }
-            else
-            {
-                SelectedObjectOutline.StartRender();
-
-                SelectedObjectOutline.Position = _selectedObject!.Transform.Position;
-                SelectedObjectOutline.Rotation = _selectedObject.Transform.Rotation;
-                SelectedObjectOutline.Scale = _selectedObject.Transform.Scale;
-                var f = 0.05f;
-                SelectedObjectOutline.Scale += (f, f, f);
-
-                if (mesh != null!)
-                {
-                    SelectedObjectOutline.Path = mesh.Path;
-                }
-            }
-        }
         private string AddSpacesToCamelCase(string text)
         {
             if (string.IsNullOrEmpty(text))
