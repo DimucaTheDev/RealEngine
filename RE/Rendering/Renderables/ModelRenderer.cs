@@ -7,7 +7,6 @@ using OpenTK.Windowing.Common;
 using RE.Core;
 using RE.Core.Assets;
 using RE.Core.World;
-using RE.Rendering.Lightning;
 using RE.Rendering.Renderables.ModelFormat;
 using RE.Rendering.Text;
 using RE.Utils;
@@ -72,6 +71,7 @@ namespace RE.Rendering.Renderables
         public bool ShouldCull { get; set; } = true;
         public Quaternion Rotation { get; set; }
         public Vector3 Scale { get; set; }
+        public Matrix4 RotationMatrix { get; set; }
         public string Name { get; set; }
         public float[]? PhysicsVertices { get; private set; }
         public List<int>? PhysicsIndices { get; private set; }
@@ -101,22 +101,14 @@ namespace RE.Rendering.Renderables
 
         public bool TryLoad(string path)
         {
-            _noModelSprite?.Dispose();
-            _noModelText?.Dispose();
-            _noModelSprite = null;
-            _noModelText = null;
-
             if (!(_modelLoaded = LoadModel(path)))
             {
                 _noModelSprite = new SpriteRenderer(Position, "Assets/Sprites/Editor/no_model.png");
                 _noModelText = new FloatingText($"[{Name}]\n{path}\n{_exception}", Position + new Vector3(0, .5f, 0), Font, true);
                 _noModelSprite.StartRender();
                 _noModelText.StartRender();
-                IsVisible = false;
                 return false;
             }
-
-            IsVisible = true;
             return true;
         }
 
@@ -132,14 +124,13 @@ namespace RE.Rendering.Renderables
                 Matrix4.CreateScale(ConstantSize ? new(constantScale) : Scale) *
                 Matrix4.CreateFromQuaternion(Rotation) *
                 Matrix4.CreateTranslation(Position);
-            if (IsVisible)
-                Render(args, model, Camera.Instance);
+            Render(args, model);
         }
 
-        public void Render(FrameEventArgs args, Matrix4 model, Camera camera)
+        public void Render(FrameEventArgs args, Matrix4 model)
         {
-            Matrix4 view = camera.GetViewMatrix();
-            Matrix4 proj = camera.GetProjectionMatrix();
+            Matrix4 view = Camera.Instance.GetViewMatrix();
+            Matrix4 proj = Camera.Instance.GetProjectionMatrix();
 
             GL.ActiveTexture(TextureUnit.Texture0);
             GL.BindTexture(TextureTarget.Texture2D, _texture);
@@ -169,13 +160,9 @@ namespace RE.Rendering.Renderables
                 _program.SetValue("ignoreLight", true);
             else
             {
-                var lights = SceneManager.CurrentScene.LightSources;
-
                 _program.SetValue("ignoreLight", false);
-                _program.SetValue("hasSpotLight", lights.Any(s => s is SpotLight));
-                _program.SetValue("hasDirLight", lights.Any(s => s is DirectionalLight));
                 _program.SetValue("viewPos", Camera.Instance.Position);
-
+                var lights = SceneManager.CurrentScene.LightSources;
                 foreach (var light in lights)
                 {
                     light.SetParams(_program);
@@ -214,10 +201,8 @@ namespace RE.Rendering.Renderables
         }
 
         private static int i = 0;
-        public void SetTexture(uint texture, bool deleteCurrent = false)
+        public void SetTexture(uint texture)
         {
-            if (deleteCurrent)
-                GL.DeleteTexture(_texture);
             _texture = texture;
         }
 

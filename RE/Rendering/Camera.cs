@@ -13,7 +13,7 @@ using SceneEditor = RE.Debug.Overlay.Editor.SceneEditor;
 
 namespace RE.Rendering;
 
-public class Camera(Vector3 position, Vector3 up, int width, int height)
+public class Camera
 {
     private const float MouseSensitivity = 0.2f;
     private Vector2 _lastMousePos;
@@ -24,10 +24,18 @@ public class Camera(Vector3 position, Vector3 up, int width, int height)
     public Vector3 Front = -Vector3.UnitZ;
     public float Pitch;
     public float Fov = 60;
-    public Vector3 Position = position;
-    public Vector3 Up = up;
+    public Vector3 Position;
+    public Vector3 Up;
     public float Yaw = -90f;
-    public int RenderWidth = width, RenderHeight = height;
+    public int RenderWidth, RenderHeight;
+
+    private Camera(Vector3 position, Vector3 up, int width, int height)
+    {
+        Position = position;
+        Up = up;
+        RenderWidth = width;
+        RenderHeight = height;
+    }
 
     public static Camera Instance { get; private set; }
 

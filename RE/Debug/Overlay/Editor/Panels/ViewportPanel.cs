@@ -1,7 +1,7 @@
 ﻿using BulletSharp;
 using Hexa.NET.ImGui;
 using Hexa.NET.ImGuizmo;
-using OpenTK.Graphics.OpenGL;
+using OpenTK.Graphics.ES11;
 using OpenTK.Mathematics;
 using RE.Core;
 using RE.Core.World;
@@ -224,6 +224,8 @@ namespace RE.Debug.Overlay.Editor.Panels
 
                 var callback = new AllHitsRayResultCallback(pStart, pEnd);
 
+                LineRenderer.Main.AddLine(pStart.ToOpenTkVector3(), pEnd.ToOpenTkVector3(), (0, 1, 0, 1), (0, 1, 0, 1), 5000);
+
                 CollisionWorld.RayTest(pStart, pEnd, callback);
 
                 if (callback.HasHit)
@@ -257,20 +259,24 @@ namespace RE.Debug.Overlay.Editor.Panels
                     {
                         _lastSelectedIndex = 0;
                         _lastHitObjects = currentHitObjects;
+                        Console.WriteLine(0);
                     }
                     else
                     {
                         _lastSelectedIndex = (_lastSelectedIndex + 1) % currentHitObjects.Count;
+                        Console.WriteLine(_lastSelectedIndex);
                     }
 
                     if (currentHitObjects.Any())
                     {
                         var objectToSelect = currentHitObjects[_lastSelectedIndex];
                         SceneEditor.SelectedObject = objectToSelect;
+                        Console.WriteLine(objectToSelect.Name);
                     }
                     else
                     {
                         SceneEditor.SelectedObject = null;
+                        Console.WriteLine("null");
                         _lastSelectedIndex = -1;
                         _lastHitObjects.Clear();
                     }
@@ -280,6 +286,7 @@ namespace RE.Debug.Overlay.Editor.Panels
                 else
                 {
                     SceneEditor.SelectedObject = null;
+                    Console.WriteLine("no hit, null");
                 }
             }
         }
@@ -387,16 +394,6 @@ namespace RE.Debug.Overlay.Editor.Panels
         }
         private void DrawToolbar()
         {
-            void TextTooltip(string text)
-            {
-                if (IsItemHovered(ImGuiHoveredFlags.DelayShort))
-                {
-                    BeginTooltip();
-                    Text(text);
-                    EndTooltip();
-                }
-            }
-
             var imTextureId1 = new ImTextureID((ulong)_translateIcon);
             var imTextureId2 = new ImTextureID((ulong)_rotateIcon);
             var imTextureId3 = new ImTextureID((ulong)_scaleIcon);
@@ -416,22 +413,18 @@ namespace RE.Debug.Overlay.Editor.Panels
             if (ImageButton("##translate", new ImTextureRef() { TexID = imTextureId1 }, new Vector2(size, size)))
                 Operation = ImGuizmoOperation.Translate;
             EndDisabled();
-            TextTooltip("Move selected object in XYZ axis.");
-
 
             BeginDisabled(Operation == ImGuizmoOperation.Rotate);
             SameLine();
             if (ImageButton("##rotate", new ImTextureRef() { TexID = imTextureId2 }, new Vector2(size, size)))
                 Operation = ImGuizmoOperation.Rotate;
             EndDisabled();
-            TextTooltip("Rotate selected object.");
 
             BeginDisabled(Operation == ImGuizmoOperation.Scale);
             SameLine();
             if (ImageButton("##scale", new ImTextureRef() { TexID = imTextureId3 }, new Vector2(size, size)))
                 Operation = ImGuizmoOperation.Scale;
             EndDisabled();
-            TextTooltip("Resize selected object.");
 
             SameLine(150);
             AlignTextToFramePadding();
@@ -449,33 +442,23 @@ namespace RE.Debug.Overlay.Editor.Panels
                     _ => Mode
                 };
             }
-            TextTooltip("Should be object moved, rotated, or scaled relatively to itself or world.");
 
             SameLine(350);
 
             if (ImageButton("##light", new ImTextureRef() { TexID = SceneEditor.PreviewLight ? imTextureId5 : imTextureId4 }, new Vector2(size, size)))
                 SceneEditor.PreviewLight = !SceneEditor.PreviewLight;
-            TextTooltip("Preview light on objects");
-
             SameLine();
             if (ImageButton("##skybox", new ImTextureRef() { TexID = SceneEditor.PreviewSkybox ? imTextureId7 : imTextureId6 }, new Vector2(size, size)))
                 SceneEditor.PreviewSkybox = !SceneEditor.PreviewSkybox;
-            TextTooltip("Show skybox in background");
-
             SameLine();
             if (ImageButton("##axis", new ImTextureRef() { TexID = SceneEditor.ShowAxis ? imTextureId9 : imTextureId8 }, new Vector2(size, size)))
                 SceneEditor.ShowAxis = !SceneEditor.ShowAxis;
-            TextTooltip("Show XYZ axis lines in center of the world.");
-
             SameLine();
             if (ImageButton("##grid", new ImTextureRef() { TexID = SceneEditor.ShowGrid ? imTextureId11 : imTextureId10 }, new Vector2(size, size)))
                 SceneEditor.ShowGrid = !SceneEditor.ShowGrid;
-            TextTooltip("Show gray grid on XZ axis. Can be laggy!");
-
             SameLine();
             if (ImageButton("##phys", new ImTextureRef() { TexID = imTextureId12 }, new Vector2(size, size)))
                 _showPhysOptions = true;
-            TextTooltip("Show Bullet Physics engine overlay settings.");
             if (_showPhysOptions)
                 ShowPhysTooltip();
         }
@@ -506,18 +489,12 @@ namespace RE.Debug.Overlay.Editor.Panels
 
                 EndDisabled();
 
-                if (_showOverlay)
-                {
-                    BulletDebugDrawer.Mode = _showAabb ? DebugDrawModes.DrawAabb : 0;
-                    BulletDebugDrawer.Mode |= _showWireframe ? DebugDrawModes.DrawWireframe : 0;
-                }
-                else
-                {
-                    BulletDebugDrawer.Mode = 0;
-                }
-
+                BulletDebugDrawer.Mode = (DebugDrawModes)(((uint)(_showOverlay ? 0xffffffffff : 0)) &
+                                                                              (
+                                                                                  ((uint)DebugDrawModes.DrawAabb & (uint)(_showAabb ? 0xffffffffff : 0)) |
+                                                                                  ((uint)DebugDrawModes.DrawWireframe & (uint)(_showWireframe ? 0xffffffffff : 0))
+                                                                              ));
                 BulletDebugDrawer.Xray = _xray;
-                
                 if (IsWindowHovered() && !_physHasHovered)
                     _physHasHovered = true;
                 if (!IsWindowFocused() && _physHasHovered)
@@ -570,7 +547,7 @@ namespace RE.Debug.Overlay.Editor.Panels
             image.CopyPixelDataTo(pixels);
 
             GL.TexImage2D(TextureTarget.Texture2D, 0,
-                PixelInternalFormat.Rgba,
+                InternalFormat.Rgba,
                 image.Width, image.Height, 0,
                 PixelFormat.Rgba,
                 PixelType.UnsignedByte,

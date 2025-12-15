@@ -18,7 +18,6 @@ using RE.Debug.Overlay.Editor;
 using RE.Debug.Overlay.Editor.Panels;
 using RE.Libs.Grille.ImGuiTK;
 using RE.Rendering;
-using RE.Rendering.Renderables;
 using RE.Utils;
 using RenderdocSharp;
 using Serilog;
@@ -174,9 +173,8 @@ internal partial class Game : GameWindow
         SetupSceneFbo(w, h);
         base.OnResize(e);
     }
-     
     protected override void OnRenderFrame(FrameEventArgs args)
-    {  
+    {
         RenderProfiler.StopAll();
         RenderProfiler.StartNew("render");
 
@@ -193,8 +191,8 @@ internal partial class Game : GameWindow
         GL.Enable(EnableCap.Blend);
         GL.ClearColor(Color.CadetBlue);
         GL.PolygonMode(TriangleFace.FrontAndBack, Wireframe ? PolygonMode.Line : PolygonMode.Fill);
-        #endregion
 
+        #endregion
         ImGuiController.Get().Update(this, Time.DeltaTime);
 
         if (SceneEditor.Enabled)
@@ -213,16 +211,16 @@ internal partial class Game : GameWindow
         GL.PolygonMode(TriangleFace.FrontAndBack, Wireframe ? PolygonMode.Line : PolygonMode.Fill);
 
         RenderManager.RenderAll(args);
-          
-        if (SceneEditor.Enabled)    
+
+        if (SceneEditor.Enabled)
         {
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
+            GL.Viewport(0, 0, ClientSize.X, ClientSize.Y);
             GL.ClearColor(Color4.Black);
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
-            GL.Viewport(0, 0, ClientSize.X, ClientSize.Y);
         }
 
-        ImGuiController.Get().Render();  
+        ImGuiController.Get().Render();
 
         SwapBuffers();
 

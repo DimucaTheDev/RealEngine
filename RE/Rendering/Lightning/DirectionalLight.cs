@@ -7,7 +7,7 @@ namespace RE.Rendering.Lightning
     [GlStructName(StructName)]
     public struct DirectionalLight : ILightSource
     {
-        const string StructName = "dirLight";
+        const string StructName = "DirLight";
 
         [GlPropertyName("direction")]
         public Vector3 Direction { get; set; }

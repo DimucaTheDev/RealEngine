@@ -2,22 +2,12 @@
 using System.Reflection;
 using System.Text.RegularExpressions;
 using Hexa.NET.ImGui;
-using OpenTK.Graphics.OpenGL;
-using OpenTK.Mathematics;
-using OpenTK.Windowing.Common;
 using RE.Core;
 using RE.Core.Scripting;
 using RE.Core.World.Components;
-using RE.Debug.Overlay.Editor.Panels.MaterialPreview;
 using RE.Debug.Overlay.Editor.PropertyDrawers;
-using RE.Rendering;
-using RE.Rendering.Lightning;
-using RE.Rendering.Renderables;
-using RE.Utils;
-using Serilog;
 using static Hexa.NET.ImGui.ImGui;
 using Vector2 = System.Numerics.Vector2;
-using Vector3 = OpenTK.Mathematics.Vector3;
 
 namespace RE.Debug.Overlay.Editor.Panels
 {
@@ -36,23 +26,7 @@ namespace RE.Debug.Overlay.Editor.Panels
             { typeof(MeshComponent), new MeshComponentDrawer() },
             { typeof(Enum), new EnumDrawer() }
         };
-
-        private MaterialModelRenderer? _materialPreviewModel;
-        private MaterialModelRenderer? _materialPreviewFloor;
-        private readonly Camera _materialPreviewCamera = new(new Vector3(-5, 2, 0), new Vector3(0, 1, 0), 200, 200);
-        private Vector2 _materialPreviewSize;
-        private int _materialPreviewFboId;
-        private int _materialPreviewTextureId;
-        private int _materialPreviewRboId;
-        private readonly int _cubeModelButtonTexture;
-        private readonly int _sphereModelButtonTexture;
-
-        public InspectorPanel()
-        {
-            _cubeModelButtonTexture = LoadTexture("assets/sprites/editor/previewCube.png");
-            _sphereModelButtonTexture = LoadTexture("assets/sprites/editor/previewSphere.png");
-        }
-
+        public static Vector2 ViewportSize = new(1, 1);
         public void Draw()
         {
             ImGuiViewportPtr viewport = GetMainViewport();
@@ -70,13 +44,11 @@ namespace RE.Debug.Overlay.Editor.Panels
 
             if (SceneEditor.SelectedObject == null)
             {
-                Text("Todo: Scene settings");
                 End();
                 return;
             }
 
-            SetNextWindowSize(new Vector2(0, GetWindowSize().Y - 400));
-            BeginChild("Props");
+
             if (BeginTable("InspectorTable", 2, ImGuiTableFlags.BordersOuterH | ImGuiTableFlags.BordersInnerH | ImGuiTableFlags.RowBg | ImGuiTableFlags.SizingStretchProp))
             {
                 TableSetupColumn("Label");
@@ -122,187 +94,16 @@ namespace RE.Debug.Overlay.Editor.Panels
                 TableSetColumnIndex(1);
                 PushItemWidth(-1);
                 if (SceneEditor.SelectedObject != null)
-                    foreach (var selectedObject in SceneEditor.SelectedObject.Components)
+                    foreach (var _selectedObject in SceneEditor.SelectedObject.Components)
                     {
-                        DrawComponent(selectedObject);
+                        DrawComponent(_selectedObject);
                     }
 
                 EndTable();
             }
-            EndChild();
-
-            MaterialWindow();
-
             End();
         }
 
-        private void SetupSceneFbo(int width, int height)
-        {
-            if (_materialPreviewFboId != 0)
-            {
-                GL.DeleteFramebuffer(_materialPreviewFboId);
-                GL.DeleteTexture(_materialPreviewTextureId);
-                GL.DeleteRenderbuffer(_materialPreviewRboId);
-            }
-
-            GL.GenFramebuffers(1, out _materialPreviewFboId);
-            GL.BindFramebuffer(FramebufferTarget.Framebuffer, _materialPreviewFboId);
-
-            GL.GenTextures(1, out _materialPreviewTextureId);
-            GL.BindTexture(TextureTarget.Texture2D, _materialPreviewTextureId);
-            GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba, width, height, 0, OpenTK.Graphics.OpenGL.PixelFormat.Rgba, PixelType.UnsignedByte, IntPtr.Zero);
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Linear);
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Linear);
-            GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2D, _materialPreviewTextureId, 0);
-
-            GL.GenRenderbuffers(1, out _materialPreviewRboId);
-            GL.BindRenderbuffer(RenderbufferTarget.Renderbuffer, _materialPreviewRboId);
-            GL.RenderbufferStorage(RenderbufferTarget.Renderbuffer, RenderbufferStorage.Depth24Stencil8, width, height);
-            GL.FramebufferRenderbuffer(FramebufferTarget.Framebuffer, FramebufferAttachment.DepthStencilAttachment, RenderbufferTarget.Renderbuffer, _materialPreviewRboId);
-
-            if (GL.CheckFramebufferStatus(FramebufferTarget.Framebuffer) != FramebufferErrorCode.FramebufferComplete)
-            {
-                Log.Error("{Method}: GL Framebuffer is not complete", nameof(SetupSceneFbo));
-            }
-
-            GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
-        }
-
-        private Vector3 _baseColor = Vector3.One;
-        private float _shininess = 32; //todo: change whole material, so we dont have to manually set defaults
-        private void MaterialWindow()
-        {
-            const string boxModelPath = "assets/models/cub.smdl";
-            const string sphereModelPath = "assets/models/krug.fbx";
-
-            var cubeTexture = new ImTextureRef() { TexID = new ImTextureID(_cubeModelButtonTexture) };
-            var sphereTexture = new ImTextureRef() { TexID = new ImTextureID(_sphereModelButtonTexture) };
-
-            SetNextWindowSize(new Vector2(0, 0), ImGuiCond.Always);
-            BeginChild("materialSettings", ImGuiChildFlags.Borders);
-            Text("Material Settings");
-
-            if (_materialPreviewModel == null)
-            {
-                _materialPreviewModel = new (boxModelPath);
-                _materialPreviewModel.SetTexture(Util.CreateMonoColorTexture(_baseColor), false);
-            }
-            if (_materialPreviewFloor == null)
-            {
-                _materialPreviewFloor = new (boxModelPath);
-                _materialPreviewFloor.SetTexture(Util.CreateMissingTexture(48, [110, 110, 110, 255], [35, 35, 35, 255]));
-                _materialPreviewFloor.IgnoreLight = true;
-            }
-
-            var treeFlags = ImGuiTreeNodeFlags.OpenOnArrow | ImGuiTreeNodeFlags.OpenOnArrow;
-
-            if (TreeNodeEx("Preview", treeFlags))
-            {
-                BeginChild("mpreview");
-
-                GL.GetInteger(GetPName.FramebufferBinding, out var oldBuf);
-                GL.BindFramebuffer(FramebufferTarget.Framebuffer, _materialPreviewFboId);
-                GL.Viewport(0, 0, (int)_materialPreviewSize.X, (int)_materialPreviewSize.Y);
-                GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
-                GL.DepthFunc(DepthFunction.Lequal);
-                GL.Enable(EnableCap.DepthTest);
-                GL.Enable(EnableCap.Blend);
-                GL.ClearColor(Color.CadetBlue);
-
-
-                var matrixModel = Matrix4.CreateTranslation(0, 0, 0) *
-                         Matrix4.CreateRotationY(MathHelper.DegreesToRadians(180) * MathF.Sin(Time.ElapsedTime));
-                var matrixFloor = Matrix4.CreateScale((10, 0.1f, 10)) *
-                                  Matrix4.CreateRotationZ(MathHelper.DegreesToRadians(30)) *
-                                  Matrix4.CreateTranslation(3, -1, 0);
-                _materialPreviewCamera.Fov = 40;
-                _materialPreviewCamera.Front = new Vector3(1, -0.425f, 0).Normalized();
-                _materialPreviewModel.Render(new FrameEventArgs(Time.DeltaTime), matrixModel, _materialPreviewCamera);
-                _materialPreviewFloor.Render(new FrameEventArgs(Time.DeltaTime), matrixFloor, _materialPreviewCamera);
-
-                var w = Camera.Instance.RenderWidth;
-                var h = Camera.Instance.RenderHeight;
-                GL.BindFramebuffer(FramebufferTarget.Framebuffer, oldBuf);
-                GL.Viewport(0, 0, w, h);
-
-
-                var r = ImGui.GetContentRegionAvail();
-                r.X -= 40;
-                if (r != _materialPreviewSize)
-                {
-                    _materialPreviewSize = r;
-                    SetupSceneFbo((int)_materialPreviewSize.X, (int)_materialPreviewSize.Y);
-                    _materialPreviewCamera.RenderWidth = (int)_materialPreviewSize.X;
-                    _materialPreviewCamera.RenderHeight = (int)_materialPreviewSize.Y;
-                }
-
-                var cursor = GetCursorPos();
-
-                Image(new ImTextureRef() { TexID = new ImTextureID(_materialPreviewTextureId) }, _materialPreviewSize, new Vector2(1, 1),
-                    new Vector2(0, 0));
-
-                void ModelButton(ImTextureRef texture, string path)
-                {
-                    SetCursorPosX(cursor.X + _materialPreviewSize.X + 7);
-                    if (ImageButton(path, texture, new Vector2(24, 24)))
-                    {
-                        _materialPreviewModel.Path = path;
-                        _materialPreviewModel.SetTexture(Util.CreateMonoColorTexture(_baseColor));
-                    }
-                }
-
-                SetCursorPos(cursor with { X = cursor.X + _materialPreviewSize.X + 7 });
-
-                ModelButton(cubeTexture, boxModelPath);
-                ModelButton(sphereTexture, sphereModelPath);
-
-                EndChild();
-                TreePop();
-            }
-            if (TreeNodeEx("Surface", treeFlags))
-            {
-                BeginChild("surface");
-                if (ColorEdit3("Base Color", ref _baseColor.X))
-                {
-                    _materialPreviewModel.SetTexture(Util.CreateMonoColorTexture(_baseColor), true);
-                }
-                //todo: texture as surface color
-
-                SliderFloat("Shininess", ref _shininess, 0.1f, 100); 
-                
-                EndChild();
-                TreePop();
-            }
-
-            _materialPreviewModel.Material = _materialPreviewModel.Material with { Shininess = _shininess };
-
-
-            EndChild();
-        }
-        private int LoadTexture(string path)
-        {
-            var t = GL.GenTexture();
-            GL.BindTexture(TextureTarget.Texture2D, t);
-
-            var pathToFace = path;
-
-            using var image = SixLabors.ImageSharp.Image.Load<SixLabors.ImageSharp.PixelFormats.Rgba32>(pathToFace);
-            var pixels = new byte[4 * image.Width * image.Height];
-            image.CopyPixelDataTo(pixels);
-
-            GL.TexImage2D(TextureTarget.Texture2D, 0,
-                PixelInternalFormat.Rgba,
-                image.Width, image.Height, 0,
-                PixelFormat.Rgba,
-                PixelType.UnsignedByte,
-                pixels);
-
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Linear);
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Linear);
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)TextureWrapMode.ClampToEdge);
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)TextureWrapMode.ClampToEdge);
-            return t;
-        }
         /*private void DrawComponents(GameObject obj)
         {
             foreach (var com in obj.Components.ToList())
@@ -527,8 +328,8 @@ namespace RE.Debug.Overlay.Editor.Panels
             {
                 float gray = 0.075f;
                 float grayAlt = 0.1f;
-                PushStyleColor(ImGuiCol.TableRowBg, new System.Numerics.Vector4(gray, gray, gray, 1));
-                PushStyleColor(ImGuiCol.TableRowBgAlt, new System.Numerics.Vector4(grayAlt, grayAlt, grayAlt, 1));
+                PushStyleColor(ImGuiCol.TableRowBg, new Vector4(gray, gray, gray, 1));
+                PushStyleColor(ImGuiCol.TableRowBgAlt, new Vector4(grayAlt, grayAlt, grayAlt, 1));
 
                 var props = component.GetType().GetProperties()
                     .Where(p => p.GetCustomAttribute<EditorPropertyAttribute>() != null);
