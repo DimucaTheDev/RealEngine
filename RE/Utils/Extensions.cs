@@ -10,7 +10,7 @@ using RE.Rendering;
 namespace RE.Utils
 {
     public static class Extensions
-    {
+    {  
         // Time
         public static void InvokeNow(this Time.ScheduledTask task)
         {
