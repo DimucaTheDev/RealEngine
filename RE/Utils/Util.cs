@@ -5,7 +5,7 @@ namespace RE.Utils
 {
     internal static class Util
     {
-        public static uint CreateMissingTexture(int size = 100)
+        public static uint CreateMissingTexture(int size = 100, byte[]? color1 = null, byte[]? color2 = null)
         {
             uint texID = (uint)GL.GenTexture();
             GL.BindTexture(TextureTarget.Texture2D, texID);
@@ -22,8 +22,8 @@ namespace RE.Utils
             // Random color for the texture
 
 
-            byte[] purple = [255, 0, 255, 255];
-            byte[] black = [0, 0, 0, 255];
+            byte[] purple = color1 ?? [255, 0, 255, 255];
+            byte[] black = color2 ?? [0, 0, 0, 255];
 
             for (int y = 0; y < size; y++)
             {

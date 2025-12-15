@@ -1,15 +1,21 @@
 ﻿using System.Diagnostics;
 using System.Runtime.InteropServices;
 using BulletSharp;
+using Hexa.NET.ImGui;
 using Hexa.NET.ImPlot;
+using OpenTK.Graphics.OpenGL;
+using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using RE.Core;
 using RE.Core.World.Components.Physics;
 using RE.Core.World.Physics;
 using RE.Debug.Overlay.Editor.Panels;
 using RE.Rendering;
+using RE.Rendering.Renderables;
 using RE.Utils;
+using Serilog;
 using static Hexa.NET.ImGui.ImGui;
+using Vector2 = System.Numerics.Vector2;
 
 namespace RE.Debug.Overlay;
 
@@ -30,8 +36,10 @@ internal class DebugOverlay : Renderable
 
     public override void Render(FrameEventArgs args)
     {
-        RenderProfilersWindow(args);
+        RenderProfilersWindow(args); 
     }
+     
+
     public static void Init()
     {
         Instance ??= new DebugOverlay();
