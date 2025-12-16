@@ -61,6 +61,8 @@ namespace RE.Core.World.Components
 
         private void LoadSkybox()
         {
+            // I aint porting this to Texture class 🙏
+
             GL.DeleteTexture(_cubemap);
             _cubemap = GL.GenTexture();
             GL.BindTexture(TextureTarget.TextureCubeMap, _cubemap);
@@ -101,7 +103,7 @@ namespace RE.Core.World.Components
             }
             catch (Exception e)
             {
-                Log.Error(e, "Unable to load panorama");
+                Log.Error(e, "Unable to load skybox");
             }
 
             GL.TexParameter(TextureTarget.TextureCubeMap, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Linear);

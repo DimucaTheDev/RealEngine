@@ -12,7 +12,7 @@ namespace RE.Rendering.Renderables;
 /// </summary>
 public class ImageRenderer : Renderable
 {
-    private int _texture;
+    private Texture _texture;
     private int _vao, _vbo, _ebo;
     private ShaderProgram _shaderProgram;
     private string _pathToImg;
@@ -29,11 +29,15 @@ public class ImageRenderer : Renderable
         Scale = size ?? new Vector2(100, 100);
 
         _shaderProgram = CompileShaders();
-        _texture = LoadTexture(_pathToImg);
+        _texture = new Texture(_pathToImg);
         SetupQuad();
     }
 
-    public void ReplaceImage(string path) => _texture = LoadTexture(path);
+    public void ReplaceImage(string path)
+    {
+        _texture.Delete();
+        _texture = new Texture(path);
+    }
     public override void Render(FrameEventArgs args)
     {
         _shaderProgram.Use();
@@ -44,7 +48,7 @@ public class ImageRenderer : Renderable
         _shaderProgram.SetValue("uModel", model);
         _shaderProgram.SetValue("uProjection", projection);
 
-        GL.BindTexture(TextureTarget.Texture2D, _texture);
+        GL.BindTexture(TextureTarget.Texture2D, _texture.AsOpenGl());
         GL.BindVertexArray(_vao);
         GL.DrawElements(PrimitiveType.Triangles, 6, DrawElementsType.UnsignedInt, 0);
     }
@@ -90,29 +94,10 @@ public class ImageRenderer : Renderable
 
         return program;
     }
-
-    private int LoadTexture(string path)
-    {
-        int texID = GL.GenTexture();
-        GL.BindTexture(TextureTarget.Texture2D, texID);
-
-        using var stream = ContentManager.Open(path);
-        var image = ImageResult.FromStream(stream, ColorComponents.RedGreenBlueAlpha);
-
-        GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba,
-            image.Width, image.Height, 0, PixelFormat.Rgba, PixelType.UnsignedByte, image.Data);
-
-        GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Linear);
-        GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
-        GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)TextureWrapMode.ClampToEdge);
-        GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)TextureWrapMode.ClampToEdge);
-
-        return texID;
-    }
-
+     
     public override void Dispose()
     {
-        GL.DeleteTexture(_texture);
+        _texture.Delete();
         GL.DeleteBuffer(_vbo);
         GL.DeleteBuffer(_ebo);
         GL.DeleteVertexArray(_vao);

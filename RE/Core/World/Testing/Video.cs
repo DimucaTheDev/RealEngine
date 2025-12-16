@@ -1,15 +1,18 @@
-﻿using System.Text.Json.Nodes;
+﻿using System;
+using System.Runtime.InteropServices;
+using System.Text.Json.Nodes;
 using OpenCvSharp;
 using OpenTK.Graphics.OpenGL;
 using OpenTK.Windowing.Common;
 using RE.Core.World.Components;
+using RE.Rendering;
 
 namespace RE.Core.World.Testing
 {
 #pragma warning disable
     internal class Video : Component
     {
-        List<int> textures = [];
+        List<Texture> textures = [];
         private float fps;
         public Video()
         {
@@ -19,16 +22,11 @@ namespace RE.Core.World.Testing
             using Mat m = new();
             while (v.Read(m))
             {
-                var t = GL.GenTexture();
-                GL.BindTexture(TextureTarget.Texture2D, t);
-                GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgb,
-                    m.Width, m.Height, 0, PixelFormat.Bgr, PixelType.UnsignedByte, m.Data);
-                GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
-                GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
-                GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)TextureWrapMode.ClampToEdge);
-                GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)TextureWrapMode.ClampToEdge);
-                textures.Add(t);
-                GL.BindTexture(TextureTarget.Texture2D, 0);
+                throw new NotImplementedException("legacy");
+                //byte[] managedArray = new byte[m.];
+                //Marshal.Copy(m.Data, managedArray, 0, length);
+                //var t = new Texture(managedArray, m.Width, m.Height);
+                //textures.Add(t);
             }
         }
 
@@ -45,7 +43,7 @@ namespace RE.Core.World.Testing
                 timeAccumulator -= frameDuration;
 
                 frame = (frame + 1) % textures.Count;
-                GetComponent<SpriteComponent>().Sprite.SetTexture((uint)textures[frame]);
+                GetComponent<SpriteComponent>().Sprite.SetTexture(textures[frame]);
             }
 
             GetComponent<BillboardTextComponent>().Text = $"frames: {frame}/{textures.Count} {frameDuration * frame:0.0}/{frameDuration * textures.Count:0.0} s";
@@ -55,7 +53,7 @@ namespace RE.Core.World.Testing
         {
             foreach (var texture in textures)
             {
-                GL.DeleteTexture(texture);
+                texture.Delete();
             }
             textures.Clear();
 

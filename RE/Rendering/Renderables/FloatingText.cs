@@ -13,7 +13,7 @@ public class FloatingText : Renderable
     private readonly int _vao;
     private readonly int _vbo;
     private readonly ShaderProgram _shaderProgram;
-    private readonly int _whiteTexture;
+    private readonly Texture _whiteTexture;
     private readonly bool _bottomToTop;
     private float _scale => Scale * 0.005f;
 
@@ -67,25 +67,12 @@ public class FloatingText : Renderable
 
         GL.BindVertexArray(0);
 
-        _whiteTexture = CreateWhiteTexture();
+        _whiteTexture = Util.CreateMonoColorTexture(Vector3.One);
 
         // GL.Enable(EnableCap.DepthTest);
         // GL.DepthFunc(DepthFunction.Less);
         // GL.Enable(EnableCap.Blend);
         // GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
-    }
-
-    private static int CreateWhiteTexture()
-    {
-        int tex = GL.GenTexture();
-        GL.BindTexture(TextureTarget.Texture2D, tex);
-        byte[] px = { 255, 255, 255, 255 };
-        GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba, 1, 1, 0,
-            PixelFormat.Rgba, PixelType.UnsignedByte, px);
-        GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
-        GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
-        GL.BindTexture(TextureTarget.Texture2D, 0);
-        return tex;
     }
 
     public override void Render(FrameEventArgs args)
@@ -146,7 +133,7 @@ public class FloatingText : Renderable
 
 
         GL.BindVertexArray(_vao);
-        GL.BindTexture(TextureTarget.Texture2D, _whiteTexture);
+        GL.BindTexture(TextureTarget.Texture2D, _whiteTexture.AsOpenGl());
         GL.DrawArrays(PrimitiveType.Triangles, 0, 6);
 
         _shaderProgram.SetValue("uColor", ForegroundColor);

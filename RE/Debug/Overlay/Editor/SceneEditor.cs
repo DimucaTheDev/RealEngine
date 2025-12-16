@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics;
 using System.Drawing.Imaging;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using Hexa.NET.ImGui;
 using OpenTK.Graphics.OpenGL;
@@ -17,6 +18,7 @@ using RE.Rendering.Renderables;
 using RE.Utils;
 using Serilog;
 using static Hexa.NET.ImGui.ImGui;
+using Image = System.Drawing.Image;
 using PixelFormat = OpenTK.Graphics.OpenGL.PixelFormat;
 using Vector2 = System.Numerics.Vector2;
 
@@ -44,20 +46,20 @@ namespace RE.Debug.Overlay.Editor
 
         private static readonly ImFontPtr _bigFont;
         private static readonly ModelRenderer SelectedObjectOutline = new() { Outline = true };
-        private static readonly int LogoImage;
+        private static readonly Texture LogoImage;
 
         private static bool _isDockspaceOpen;
 
         private Scene _scene = null!;
         private GameObject? _selectedObject;
-        private List<Type> _customPopups = new();
         private Dictionary<string, List<Type>> _componentDict = new();
         private Node _rootNode = new();
-        private HierarchyPanel hierarchyPanel = new();
-        private InspectorPanel inspectorPanel = new();
-        private AssetBrowserPanel assetBrowserPanel = new();
-        private ViewportPanel viewportPanel = new();
-        private ConsoleWindow consoleWindow = new() { Id = "Editor" };
+        private readonly List<Type> _customPopups = new();
+        private readonly HierarchyPanel _hierarchyPanel = new();
+        private readonly InspectorPanel _inspectorPanel = new();
+        private readonly AssetBrowserPanel _assetBrowserPanel = new();
+        private readonly ViewportPanel _viewportPanel = new();
+        private readonly ConsoleWindow _consoleWindow = new() { Id = "Editor" };
 
         static SceneEditor()
         {
@@ -76,59 +78,47 @@ namespace RE.Debug.Overlay.Editor
                         return;
                     }
 
-                    Color4 color = (Color4)propertyInfo.GetValue(null)!;
+                    var color = (Color4)propertyInfo.GetValue(null)!;
                     OpenTK.Mathematics.Vector4 outlineColor = new(color.R, color.G, color.B, color.A);
                     SelectedObjectOutline.OutlineColor = outlineColor;
                 }
             };
-            string iconPath = Path.GetFullPath($"Assets/RealEngine{(Random.Shared.Next(100) > 50 ? "2" : "")}.ico");
-
-            GL.BindTexture(TextureTarget.Texture2D, LogoImage);
+            var iconPath = Path.GetFullPath($"Assets/RealEngine{(Random.Shared.Next(100) > 50 ? "2" : "")}.ico");
 
             if (ContentManager.Exists(iconPath))
             {
                 using var icon = new Icon(iconPath, new Size(0, 0));
 
-                Size maxSize = new Size(0, 0);
-                using Icon tmp = new Icon(iconPath, new Size(512, 512));
+                var maxSize = new Size(0, 0);
+                using var tmp = new Icon(iconPath, new Size(512, 512));
                 if (tmp.Width > maxSize.Width && tmp.Height > maxSize.Height)
                     maxSize = new Size(tmp.Width, tmp.Height);
 
                 using var bestIcon = new Icon(iconPath, maxSize);
-                using Bitmap bmp = bestIcon.ToBitmap();
-
+                using var bmp = bestIcon.ToBitmap();
 
                 var data = bmp.LockBits(new Rectangle(0, 0, bmp.Width, bmp.Height),
                     ImageLockMode.ReadOnly,
                     System.Drawing.Imaging.PixelFormat.Format32bppArgb);
 
-                GL.TexImage2D(TextureTarget.Texture2D,
-                    level: 0,
-                    internalformat: PixelInternalFormat.Rgba,
-                    width: data.Width,
-                    height: data.Height,
-                    border: 0,
-                    format: PixelFormat.Bgra,
-                    type: PixelType.UnsignedByte,
-                    pixels: data.Scan0);
-
+                var bytesPerPixel = Image.GetPixelFormatSize(bmp.PixelFormat) / 8;
+                var stride = bmp.Width * bytesPerPixel;
+                var totalBytes = stride * bmp.Height;
+                var pixelData = new byte[totalBytes];
+                Marshal.Copy(data.Scan0, pixelData, 0, totalBytes);
                 bmp.UnlockBits(data);
 
-                GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
-                GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
-                GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)TextureWrapMode.ClampToEdge);
-                GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)TextureWrapMode.ClampToEdge);
-
-                GL.GenerateMipmap(GenerateMipmapTarget.Texture2D);
+                LogoImage = new Texture(pixelData, bmp.Width, bmp.Height);
             }
             else
             {
-                LogoImage = (int)Util.CreateMissingTexture(6);
+                LogoImage = Util.CreateMissingTexture(6);
             }
             GL.BindTexture(TextureTarget.Texture2D, 0);
 
             unsafe
             {
+                // cyrillic font for imgui
             }
         }
 
@@ -216,11 +206,11 @@ namespace RE.Debug.Overlay.Editor
 
             SetupDockSpace();
 
-            hierarchyPanel.Draw();
-            inspectorPanel.Draw();
-            assetBrowserPanel.Draw();
-            viewportPanel.Draw();
-            consoleWindow.Render(args);
+            _hierarchyPanel.Draw();
+            _inspectorPanel.Draw();
+            _assetBrowserPanel.Draw();
+            _viewportPanel.Draw();
+            _consoleWindow.Render(args);
 
             ShowExitModalWindow();
         }
@@ -249,7 +239,7 @@ namespace RE.Debug.Overlay.Editor
                     }
                     EndDisabled();
 
-                    SameLine(90); 
+                    SameLine(90);
                     if (Button("No"))
                     {
                         CloseCurrentPopup();
@@ -373,9 +363,9 @@ namespace RE.Debug.Overlay.Editor
             End();
         }
 
+        #region Code bellow never gets called. legacy :)
         private PropertyInfo _p = null!;
         private string _searchComponent = null!;
-
         void DrawButton(Type type)
         {
             bool SatisfiesCondition(Type c, out List<Type> missing)
@@ -484,7 +474,7 @@ namespace RE.Debug.Overlay.Editor
 
 
         private bool _popupOpened;
-
+        #endregion
 
         private string AddSpacesToCamelCase(string text)
         {

@@ -25,12 +25,14 @@ namespace RE.Rendering.Renderables
     public class ModelRenderer : Renderable, ICullable
     {
         private static readonly FreeTypeFont Font = new(32, "Assets/Fonts/consola.ttf");
-        private static readonly Dictionary<string, uint> TextureCache = new();
+        private static readonly Dictionary<string, Texture> TextureCache = new();
         private static readonly Dictionary<string, (uint vao, uint vbo, uint ebo, int indexCount, List<float> vertices, List<int> indices, Vector3 min, Vector3 max)> MeshCache = new();
         private static ShaderProgram _program = null!;
         private static bool _shaderInitialized = false;
-        private uint _vao, _vbo, _ebo, _texture;
+  
+        private uint _vao, _vbo, _ebo;
         private int _indexCount;
+        private Texture _texture;
         private FloatingText? _noModelText;
         private SpriteRenderer? _noModelSprite;
         private bool _modelLoaded = false;
@@ -142,7 +144,7 @@ namespace RE.Rendering.Renderables
             Matrix4 proj = camera.GetProjectionMatrix();
 
             GL.ActiveTexture(TextureUnit.Texture0);
-            GL.BindTexture(TextureTarget.Texture2D, _texture);
+            GL.BindTexture(TextureTarget.Texture2D, _texture.AsOpenGl());
             //todo: same for Texture1 and specular map
 
             if (Outline)
@@ -212,12 +214,11 @@ namespace RE.Rendering.Renderables
             }
             // LineRenderer.DrawLine(Position + (0, 2, 0) + dirLightDirection, Position + (0, 2, 0), new(1, 0, 0, 1), new(0, 0, 1, 1));
         }
-
-        private static int i = 0;
-        public void SetTexture(uint texture, bool deleteCurrent = false)
+         
+        public void SetTexture(Texture texture, bool deleteCurrent = false)
         {
             if (deleteCurrent)
-                GL.DeleteTexture(_texture);
+                _texture.Delete();
             _texture = texture;
         }
 
@@ -486,7 +487,7 @@ namespace RE.Rendering.Renderables
             }
         }
 
-        private uint GetOrLoadTexture(string path, Scene? scene = null)
+        private Texture GetOrLoadTexture(string path, Scene? scene = null)
         {
             if (TextureCache.TryGetValue(path, out var texId))
                 return texId;
@@ -498,7 +499,7 @@ namespace RE.Rendering.Renderables
 
                 var readAllBytes = ContentManager.GetBytes(path + ".png");
                 var t = ImageResult.FromMemory(readAllBytes, ColorComponents.RedGreenBlueAlpha);
-                var lt = LoadTexture(t);
+                var lt = new Texture(t.Data, t.Width, t.Height);
                 TextureCache[path] = lt;
 
                 return lt;
@@ -519,13 +520,12 @@ namespace RE.Rendering.Renderables
 
             if (texPath != null && ContentManager.Exists(texPath))
             {
-                using var s = ContentManager.Open(texPath);
-                texId = LoadTexture(ImageResult.FromStream(s, ColorComponents.RedGreenBlueAlpha));
+                texId = new Texture(texPath);
             }
             else if (mat?.HasTextureDiffuse ?? false)
             {
                 var t = ImageResult.FromMemory(importFile.Textures.First().CompressedData, ColorComponents.RedGreenBlueAlpha);
-                texId = LoadTexture(t);
+                texId = new Texture(t.Data, t.Width, t.Height);
             }
             else
             {
@@ -536,20 +536,6 @@ namespace RE.Rendering.Renderables
             importFile.Clear();
 
             TextureCache[path] = texId;
-            return texId;
-        }
-
-        private uint LoadTexture(ImageResult img)
-        {
-            uint texId = (uint)GL.GenTexture();
-            GL.BindTexture(TextureTarget.Texture2D, texId);
-
-            GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba,
-                img.Width, img.Height, 0, PixelFormat.Rgba, PixelType.UnsignedByte, img.Data);
-
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
-            GL.GenerateMipmap(GenerateMipmapTarget.Texture2D);
             return texId;
         }
 
@@ -575,7 +561,7 @@ namespace RE.Rendering.Renderables
             GL.DeleteVertexArray(_vao);
             GL.DeleteBuffer(_vbo);
             GL.DeleteBuffer(_ebo);
-            GL.DeleteTexture(_texture);
+            _texture.Delete();
         }
     }
 }

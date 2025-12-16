@@ -316,8 +316,10 @@ namespace RE.Core.Scripting
             }, "Open or close debug overlay");
             RegisterSingleArgHandler("init_test", s =>
             {
-                Initializer.AddStep(("Testing!", () => { Thread.Sleep(3000); }));
+                Initializer.AddStep(("Testing!", () => { Thread.Sleep(3000); }
+                ));
             }, "test: add dummy init step");
+            RegisterHandler("gc", _ => GC.Collect(), "Call GC.Collect");
         }
 
         private static string Format(object? obj)

@@ -2,6 +2,10 @@
   "profiles": {
     "Start RealEngine": {
       "commandName": "Project"
+    },
+    "Start RealEngine (Verbose)": {
+      "commandName": "Project",
+      "commandLineArgs": "-l 0"
     }
   }
 }

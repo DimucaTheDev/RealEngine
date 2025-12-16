@@ -26,12 +26,12 @@ namespace RE.Debug.Overlay.Editor.Panels.MaterialPreview
     [DebuggerDisplay("{Name}")]
     public class MaterialModelRenderer : Renderable
     {
-        private static readonly FreeTypeFont Font = new(32, "Assets/Fonts/consola.ttf");
-        private static readonly Dictionary<string, uint> TextureCache = new();
+        private static readonly Dictionary<string, Texture> TextureCache = new();
         private static readonly Dictionary<string, (uint vao, uint vbo, uint ebo, int indexCount, List<float> vertices, List<int> indices)> MeshCache = new();
         private static ShaderProgram _program = null!;
         private static bool _shaderInitialized = false;
-        private uint _vao, _vbo, _ebo, _texture;
+        private uint _vao, _vbo, _ebo;
+        private Texture _texture;
         private int _indexCount;
 
         public string Path
@@ -79,7 +79,7 @@ namespace RE.Debug.Overlay.Editor.Panels.MaterialPreview
             Matrix4 proj = camera.GetProjectionMatrix();
 
             GL.ActiveTexture(TextureUnit.Texture0);
-            GL.BindTexture(TextureTarget.Texture2D, _texture);
+            GL.BindTexture(TextureTarget.Texture2D, _texture.AsOpenGl());
             //todo: same for Texture1 and specular map
 
             _program.Use();
@@ -117,10 +117,10 @@ namespace RE.Debug.Overlay.Editor.Panels.MaterialPreview
         }
 
         private static int i = 0;
-        public void SetTexture(uint texture, bool deleteCurrent = false)
+        public void SetTexture(Texture texture, bool deleteCurrent = false)
         {
             if (deleteCurrent)
-                GL.DeleteTexture(_texture);
+                _texture.Delete();
             _texture = texture;
         }
 
@@ -352,7 +352,7 @@ namespace RE.Debug.Overlay.Editor.Panels.MaterialPreview
             }
         }
 
-        private uint GetOrLoadTexture(string path, Scene? scene = null)
+        private Texture GetOrLoadTexture(string path, Scene? scene = null)
         {
             if (TextureCache.TryGetValue(path, out var texId))
                 return texId;
@@ -364,10 +364,11 @@ namespace RE.Debug.Overlay.Editor.Panels.MaterialPreview
 
                 var readAllBytes = ContentManager.GetBytes(path + ".png");
                 var t = ImageResult.FromMemory(readAllBytes, ColorComponents.RedGreenBlueAlpha);
-                var lt = LoadTexture(t);
-                TextureCache[path] = lt;
+                var tex = new Texture(t.Data, t.Width, t.Height);
 
-                return lt;
+                TextureCache[path] = tex;
+
+                return tex;
             }
 
             Scene importFile = scene!;
@@ -385,13 +386,12 @@ namespace RE.Debug.Overlay.Editor.Panels.MaterialPreview
 
             if (texPath != null && ContentManager.Exists(texPath))
             {
-                using var s = ContentManager.Open(texPath);
-                texId = LoadTexture(ImageResult.FromStream(s, ColorComponents.RedGreenBlueAlpha));
+                texId = new Texture(texPath);
             }
             else if (mat?.HasTextureDiffuse ?? false)
             {
                 var t = ImageResult.FromMemory(importFile.Textures.First().CompressedData, ColorComponents.RedGreenBlueAlpha);
-                texId = LoadTexture(t);
+                texId = new Texture(t.Data, t.Width, t.Height);
             }
             else
             {
@@ -403,21 +403,7 @@ namespace RE.Debug.Overlay.Editor.Panels.MaterialPreview
 
             TextureCache[path] = texId;
             return texId;
-        }
-
-        private uint LoadTexture(ImageResult img)
-        {
-            uint texId = (uint)GL.GenTexture();
-            GL.BindTexture(TextureTarget.Texture2D, texId);
-
-            GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba,
-                img.Width, img.Height, 0, PixelFormat.Rgba, PixelType.UnsignedByte, img.Data);
-
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
-            GL.GenerateMipmap(GenerateMipmapTarget.Texture2D);
-            return texId;
-        }
+        } 
 
         private void InitShader()
         {
@@ -437,7 +423,7 @@ namespace RE.Debug.Overlay.Editor.Panels.MaterialPreview
             GL.DeleteVertexArray(_vao);
             GL.DeleteBuffer(_vbo);
             GL.DeleteBuffer(_ebo);
-            GL.DeleteTexture(_texture);
+            _texture.Delete();
         }
     }
 }

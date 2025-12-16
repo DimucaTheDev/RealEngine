@@ -5,7 +5,7 @@ using PixelFormat = OpenTK.Graphics.OpenGL.PixelFormat;
 
 namespace RE.Utils;
 
-internal static partial class WindowsShell
+internal static class WindowsShell
 {
     private static readonly Dictionary<string, IntPtr> _iconCache = new();
     private static readonly List<string> ImageExtensions = [".jpg", ".jpeg", ".png", ".ico", ".bmp"];

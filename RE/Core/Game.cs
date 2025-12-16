@@ -33,8 +33,8 @@ namespace RE.Core;
 internal partial class Game : GameWindow
 {
     public static ParseResult CommandParseResult = null!;
-    public const int FpsLock = 165; // fixme: fpsLock above 200 may cause physics issues
-
+    public const int FpsLock = 165; // fixme: fpsLock above 200 may (and will) cause physics issues
+     
     public static void Start(string[] args)
     {
         Thread.CurrentThread.Name = "Render Thread";
@@ -54,7 +54,7 @@ internal partial class Game : GameWindow
         foreach (var lib in Directory.GetFiles(nativesPath, "*.dll"))
         {
             nint handle;
-            LoadedLibs.Add(handle = WinApi.LoadLibrary(lib), lib);
+            LoadedLibs.TryAdd(handle = WinApi.LoadLibrary(lib), lib);
             var fName = Path.GetFileName(lib);
             var errCode = Marshal.GetLastWin32Error();
 
@@ -98,7 +98,7 @@ internal partial class Game : GameWindow
 
         if (Renderdoc.IsAvailable)
             Log.Information("RenderDoc available: {Version}", Renderdoc.Version);
-         
+
         game.Run();
 
         Log.Information("End");
@@ -174,9 +174,9 @@ internal partial class Game : GameWindow
         SetupSceneFbo(w, h);
         base.OnResize(e);
     }
-     
+
     protected override void OnRenderFrame(FrameEventArgs args)
-    {  
+    {
         RenderProfiler.StopAll();
         RenderProfiler.StartNew("render");
 
@@ -213,8 +213,8 @@ internal partial class Game : GameWindow
         GL.PolygonMode(TriangleFace.FrontAndBack, Wireframe ? PolygonMode.Line : PolygonMode.Fill);
 
         RenderManager.RenderAll(args);
-          
-        if (SceneEditor.Enabled)    
+
+        if (SceneEditor.Enabled)
         {
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
             GL.ClearColor(Color4.Black);
@@ -222,7 +222,7 @@ internal partial class Game : GameWindow
             GL.Viewport(0, 0, ClientSize.X, ClientSize.Y);
         }
 
-        ImGuiController.Get().Render();  
+        ImGuiController.Get().Render();
 
         SwapBuffers();
 

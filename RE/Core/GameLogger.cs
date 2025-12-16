@@ -43,12 +43,15 @@ namespace RE.Core
 
             var method = GetCallingMethod();
 
-            System.Diagnostics.Debug.Assert(method != null);
-
-            var type = method.DeclaringType!;
-            var dllFileName = Path.GetFileNameWithoutExtension(type.Assembly.Location);
-            var name = $"{dllFileName}:{type.Name}/{method.Name}";
-
+            string name;
+            if (method != null)
+            {
+                var type = method.DeclaringType!;
+                var dllFileName = Path.GetFileNameWithoutExtension(type.Assembly.Location);
+                name = $"{dllFileName}:{type.Name}/{method.Name}";
+            }
+            else
+                name = "???";
             var contextProp = propertyFactory.CreateProperty("SourceContext", name);
             logEvent.AddOrUpdateProperty(contextProp);
         }

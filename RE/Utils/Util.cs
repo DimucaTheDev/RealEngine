@@ -1,26 +1,14 @@
 ﻿using OpenTK.Graphics.OpenGL;
 using OpenTK.Mathematics;
+using RE.Rendering;
 
 namespace RE.Utils
 {
     internal static class Util
     {
-        public static uint CreateMissingTexture(int size = 100, byte[]? color1 = null, byte[]? color2 = null)
+        public static Texture CreateMissingTexture(int size = 100, byte[]? color1 = null, byte[]? color2 = null)
         {
-            uint texID = (uint)GL.GenTexture();
-            GL.BindTexture(TextureTarget.Texture2D, texID);
-
             byte[] data = new byte[size * size * 4];
-
-            //byte[] r =
-            //[
-            //    (byte)Random.Shared.Next(255),
-            //    (byte)Random.Shared.Next(255),
-            //    (byte)Random.Shared.Next(255), 
-            //    255
-            //]; 
-            // Random color for the texture
-
 
             byte[] purple = color1 ?? [255, 0, 255, 255];
             byte[] black = color2 ?? [0, 0, 0, 255];
@@ -37,41 +25,23 @@ namespace RE.Utils
                 }
             }
 
-            GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba,
-                size, size, 0, PixelFormat.Rgba, PixelType.UnsignedByte, data);
-
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
-
-            return texID;
+            var t = new Texture(data, size, size);
+            return t;
         }
 
-        public static uint CreateMonoColorTexture(Vector3 color)
+        public static Texture CreateMonoColorTexture(Vector3 color) =>
+            CreateMonoColorTexture(new Vector4(color.Xzy, 1));
+        public static Texture CreateMonoColorTexture(Vector4 color)
         {
-            uint texID = (uint)GL.GenTexture();
-            GL.BindTexture(TextureTarget.Texture2D, texID);
-
             byte[] data =
             [
                 (byte)(color.X * 255f),
                 (byte)(color.Y * 255f),
                 (byte)(color.Z * 255f),
-                255
+                (byte)(color.W * 255f)
             ];
-
-            GL.TexImage2D(TextureTarget.Texture2D,
-                0,
-                PixelInternalFormat.Rgba, 1, 1, 0,
-                PixelFormat.Rgba,
-                PixelType.UnsignedByte,
-                data);
-
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
-
-            GL.BindTexture(TextureTarget.Texture2D, 0);
-
-            return texID;
+            var t = new Texture(data, 1, 1);
+            return t;
         }
     }
 }

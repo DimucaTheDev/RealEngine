@@ -150,7 +150,7 @@ namespace RE.Core.World.Physics
                 return;
             if (!SceneEditor.Enabled)
             {
-                DynamicsWorld.StepSimulation(deltaTime, EnableSimulation ? 5 : 0, Time.DeltaTime);
+                DynamicsWorld.StepSimulation(deltaTime, EnableSimulation ? 5 : 0, deltaTime);
             }
         }
 

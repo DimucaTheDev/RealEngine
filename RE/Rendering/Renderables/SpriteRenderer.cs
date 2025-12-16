@@ -12,14 +12,13 @@ namespace RE.Rendering.Renderables
     {
         private readonly int _vao;
         private readonly int _vbo;
-        private int _texture;
+        private Texture _texture;
         private float _texWidth = 0, _texHeight = 0;
         private readonly bool _constantSize;
         private readonly ShaderProgram _shaderProgram;
 
-        private static readonly Dictionary<string, (int texture, int width, int height)> TextureCache = new();
-
-
+        private static readonly Dictionary<string, (Texture texture, int width, int height)> TextureCache = new();
+         
         public Vector3 Position { get; set; }
         public override RenderLayer RenderLayer => RenderLayer.World;
         public override bool IsVisible { get; set; } = true;
@@ -125,12 +124,12 @@ namespace RE.Rendering.Renderables
             _shaderProgram.SetValue("uView", view);
             _shaderProgram.SetValue("uProjection", projection);
 
-            GL.BindTexture(TextureTarget.Texture2D, _texture);
+            GL.BindTexture(TextureTarget.Texture2D, _texture.AsOpenGl());
             GL.BindVertexArray(_vao);
             GL.DrawElements(PrimitiveType.Triangles, 6, DrawElementsType.UnsignedInt, 0);
         }
 
-        public void SetTexture(uint id) => _texture = (int)id;
+        public void SetTexture(Texture texture) => _texture = texture;
         public void ChangeTexture(string path)
         {
             if (Path == path)
@@ -149,7 +148,7 @@ namespace RE.Rendering.Renderables
             //GL.DeleteTexture(_texture); 
         }
 
-        private int LoadTexture(string path)
+        private Texture LoadTexture(string path)
         {
             Path = path;
             if (TextureCache.TryGetValue(path, out var t))
@@ -162,28 +161,17 @@ namespace RE.Rendering.Renderables
             if (!ContentManager.Exists(path))
             {
                 Log.Error("Texture at path {Path} does not exist!", path);
-                var missingTexture = (int)Util.CreateMissingTexture(4);
+                var missingTexture = Util.CreateMissingTexture(4);
 
                 return missingTexture;
             }
 
-            var stream = ContentManager.Open(path);
-            using var tempStream = new MemoryStream();
-            stream.CopyTo(tempStream);
-            tempStream.Position = 0;
-            var image = ImageResult.FromStream(tempStream, ColorComponents.RedGreenBlueAlpha);
+            var texture = new Texture(path);
 
-            (_texWidth, _texHeight) = (image.Width, image.Height);
-            int tex = GL.GenTexture();
-            GL.BindTexture(TextureTarget.Texture2D, tex);
-            GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba,
-                image.Width, image.Height, 0, PixelFormat.Rgba, PixelType.UnsignedByte, image.Data);
-            GL.GenerateMipmap(GenerateMipmapTarget.Texture2D);
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Linear);
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
-
-            TextureCache.Add(path, (tex, image.Width, image.Height));
-            return tex;
+            (_texWidth, _texHeight) = (texture.Width, texture.Height);
+            
+            TextureCache.Add(path, (texture, texture.Width, texture.Height));
+            return texture;
         }
     }
 }

@@ -29,18 +29,18 @@ namespace RE.Debug.Overlay.Editor.Panels
 
         private static readonly TkVector3 WorldUp = new(0, 1, 0);
 
-        private readonly int _translateIcon;
-        private readonly int _rotateIcon;
-        private readonly int _scaleIcon;
-        private readonly int _lightOffIcon;
-        private readonly int _lightOnIcon;
-        private readonly int _skyboxOffIcon;
-        private readonly int _skyboxOnIcon;
-        private readonly int _axisOffIcon;
-        private readonly int _axisOnIcon;
-        private readonly int _gridOffIcon;
-        private readonly int _gridOnIcon;
-        private readonly int _physOptionsIcon;
+        private readonly Texture _translateIcon;
+        private readonly Texture _rotateIcon;
+        private readonly Texture _scaleIcon;
+        private readonly Texture _lightOffIcon;
+        private readonly Texture _lightOnIcon;
+        private readonly Texture _skyboxOffIcon;
+        private readonly Texture _skyboxOnIcon;
+        private readonly Texture _axisOffIcon;
+        private readonly Texture _axisOnIcon;
+        private readonly Texture _gridOffIcon;
+        private readonly Texture _gridOnIcon;
+        private readonly Texture _physOptionsIcon;
 
         private readonly string[] _options = ["World", "Local"];
 
@@ -61,18 +61,18 @@ namespace RE.Debug.Overlay.Editor.Panels
         {
             SetupBullet();
 
-            _translateIcon = LoadTexture("assets/sprites/editor/translate.png");
-            _rotateIcon = LoadTexture("assets/sprites/editor/rotate.png");
-            _scaleIcon = LoadTexture("assets/sprites/editor/scale.png");
-            _lightOffIcon = LoadTexture("assets/sprites/editor/lightOff.png");
-            _lightOnIcon = LoadTexture("assets/sprites/editor/lightOn.png");
-            _skyboxOffIcon = LoadTexture("assets/sprites/editor/skyboxOff.png");
-            _skyboxOnIcon = LoadTexture("assets/sprites/editor/skyboxOn.png");
-            _axisOffIcon = LoadTexture("assets/sprites/editor/axisOff.png");
-            _axisOnIcon = LoadTexture("assets/sprites/editor/axisOn.png");
-            _gridOffIcon = LoadTexture("assets/sprites/editor/gridOff.png");
-            _gridOnIcon = LoadTexture("assets/sprites/editor/gridOn.png");
-            _physOptionsIcon = (int)Util.CreateMissingTexture(4);
+            _translateIcon = new("assets/sprites/editor/translate.png");
+            _rotateIcon = new("assets/sprites/editor/rotate.png");
+            _scaleIcon = new("assets/sprites/editor/scale.png");
+            _lightOffIcon = new("assets/sprites/editor/lightOff.png");
+            _lightOnIcon = new("assets/sprites/editor/lightOn.png");
+            _skyboxOffIcon = new("assets/sprites/editor/skyboxOff.png");
+            _skyboxOnIcon = new("assets/sprites/editor/skyboxOn.png");
+            _axisOffIcon = new("assets/sprites/editor/axisOff.png");
+            _axisOnIcon = new("assets/sprites/editor/axisOn.png");
+            _gridOffIcon = new("assets/sprites/editor/gridOff.png");
+            _gridOnIcon = new("assets/sprites/editor/gridOn.png");
+            _physOptionsIcon = Util.CreateMissingTexture(4);
         }
 
         private void SetupBullet()
@@ -397,23 +397,23 @@ namespace RE.Debug.Overlay.Editor.Panels
                 }
             }
 
-            var imTextureId1 = new ImTextureID((ulong)_translateIcon);
-            var imTextureId2 = new ImTextureID((ulong)_rotateIcon);
-            var imTextureId3 = new ImTextureID((ulong)_scaleIcon);
-            var imTextureId4 = new ImTextureID((ulong)_lightOffIcon);
-            var imTextureId5 = new ImTextureID((ulong)_lightOnIcon);
-            var imTextureId6 = new ImTextureID((ulong)_skyboxOffIcon);
-            var imTextureId7 = new ImTextureID((ulong)_skyboxOnIcon);
-            var imTextureId8 = new ImTextureID((ulong)_axisOffIcon);
-            var imTextureId9 = new ImTextureID((ulong)_axisOnIcon);
-            var imTextureId10 = new ImTextureID((ulong)_gridOffIcon);
-            var imTextureId11 = new ImTextureID((ulong)_gridOnIcon);
-            var imTextureId12 = new ImTextureID((ulong)_physOptionsIcon);
+            var imTextureId1 = _translateIcon;
+            var imTextureId2 = _rotateIcon;
+            var imTextureId3 = _scaleIcon;
+            var imTextureId4 = _lightOffIcon;
+            var imTextureId5 = _lightOnIcon;
+            var imTextureId6 = _skyboxOffIcon;
+            var imTextureId7 = _skyboxOnIcon;
+            var imTextureId8 = _axisOffIcon;
+            var imTextureId9 = _axisOnIcon;
+            var imTextureId10 = _gridOffIcon;
+            var imTextureId11 = _gridOnIcon;
+            var imTextureId12 = _physOptionsIcon;
 
             const int size = 20;
 
             BeginDisabled(Operation == ImGuizmoOperation.Translate);
-            if (ImageButton("##translate", new ImTextureRef() { TexID = imTextureId1 }, new Vector2(size, size)))
+            if (ImageButton("##translate", _translateIcon, new Vector2(size, size)))
                 Operation = ImGuizmoOperation.Translate;
             EndDisabled();
             TextTooltip("Move selected object in XYZ axis.");
@@ -421,14 +421,14 @@ namespace RE.Debug.Overlay.Editor.Panels
 
             BeginDisabled(Operation == ImGuizmoOperation.Rotate);
             SameLine();
-            if (ImageButton("##rotate", new ImTextureRef() { TexID = imTextureId2 }, new Vector2(size, size)))
+            if (ImageButton("##rotate", _rotateIcon, new Vector2(size, size)))
                 Operation = ImGuizmoOperation.Rotate;
             EndDisabled();
             TextTooltip("Rotate selected object.");
 
             BeginDisabled(Operation == ImGuizmoOperation.Scale);
             SameLine();
-            if (ImageButton("##scale", new ImTextureRef() { TexID = imTextureId3 }, new Vector2(size, size)))
+            if (ImageButton("##scale", _scaleIcon, new Vector2(size, size)))
                 Operation = ImGuizmoOperation.Scale;
             EndDisabled();
             TextTooltip("Resize selected object.");
@@ -453,27 +453,27 @@ namespace RE.Debug.Overlay.Editor.Panels
 
             SameLine(350);
 
-            if (ImageButton("##light", new ImTextureRef() { TexID = SceneEditor.PreviewLight ? imTextureId5 : imTextureId4 }, new Vector2(size, size)))
+            if (ImageButton("##light", SceneEditor.PreviewLight ? _lightOnIcon : _lightOffIcon, new Vector2(size, size)))
                 SceneEditor.PreviewLight = !SceneEditor.PreviewLight;
             TextTooltip("Preview light on objects");
 
             SameLine();
-            if (ImageButton("##skybox", new ImTextureRef() { TexID = SceneEditor.PreviewSkybox ? imTextureId7 : imTextureId6 }, new Vector2(size, size)))
+            if (ImageButton("##skybox", SceneEditor.PreviewSkybox ? _skyboxOnIcon : _skyboxOffIcon, new Vector2(size, size)))
                 SceneEditor.PreviewSkybox = !SceneEditor.PreviewSkybox;
             TextTooltip("Show skybox in background");
 
             SameLine();
-            if (ImageButton("##axis", new ImTextureRef() { TexID = SceneEditor.ShowAxis ? imTextureId9 : imTextureId8 }, new Vector2(size, size)))
+            if (ImageButton("##axis", SceneEditor.ShowAxis ? _axisOnIcon : _axisOffIcon, new Vector2(size, size)))
                 SceneEditor.ShowAxis = !SceneEditor.ShowAxis;
             TextTooltip("Show XYZ axis lines in center of the world.");
 
             SameLine();
-            if (ImageButton("##grid", new ImTextureRef() { TexID = SceneEditor.ShowGrid ? imTextureId11 : imTextureId10 }, new Vector2(size, size)))
+            if (ImageButton("##grid", SceneEditor.ShowGrid ? _gridOnIcon : _gridOffIcon, new Vector2(size, size)))
                 SceneEditor.ShowGrid = !SceneEditor.ShowGrid;
             TextTooltip("Show gray grid on XZ axis. Can be laggy!");
 
             SameLine();
-            if (ImageButton("##phys", new ImTextureRef() { TexID = imTextureId12 }, new Vector2(size, size)))
+            if (ImageButton("##phys", _physOptionsIcon, new Vector2(size, size)))
                 _showPhysOptions = true;
             TextTooltip("Show Bullet Physics engine overlay settings.");
             if (_showPhysOptions)
@@ -517,7 +517,7 @@ namespace RE.Debug.Overlay.Editor.Panels
                 }
 
                 BulletDebugDrawer.Xray = _xray;
-                
+
                 if (IsWindowHovered() && !_physHasHovered)
                     _physHasHovered = true;
                 if (!IsWindowFocused() && _physHasHovered)
@@ -557,30 +557,6 @@ namespace RE.Debug.Overlay.Editor.Panels
 
             if (!GetIO().WantTextInput)
                 Camera.Instance.Position = (p);
-        }
-        private int LoadTexture(string path)
-        {
-            var t = GL.GenTexture();
-            GL.BindTexture(TextureTarget.Texture2D, t);
-
-            var pathToFace = path;
-
-            using var image = SixLabors.ImageSharp.Image.Load<SixLabors.ImageSharp.PixelFormats.Rgba32>(pathToFace);
-            var pixels = new byte[4 * image.Width * image.Height];
-            image.CopyPixelDataTo(pixels);
-
-            GL.TexImage2D(TextureTarget.Texture2D, 0,
-                PixelInternalFormat.Rgba,
-                image.Width, image.Height, 0,
-                PixelFormat.Rgba,
-                PixelType.UnsignedByte,
-                pixels);
-
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Linear);
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Linear);
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)TextureWrapMode.ClampToEdge);
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)TextureWrapMode.ClampToEdge);
-            return t;
         }
         private TkVector3 GetRightVector()
         {

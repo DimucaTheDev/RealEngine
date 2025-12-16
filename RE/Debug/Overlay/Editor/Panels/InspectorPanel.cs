@@ -44,14 +44,8 @@ namespace RE.Debug.Overlay.Editor.Panels
         private int _materialPreviewFboId;
         private int _materialPreviewTextureId;
         private int _materialPreviewRboId;
-        private readonly int _cubeModelButtonTexture;
-        private readonly int _sphereModelButtonTexture;
-
-        public InspectorPanel()
-        {
-            _cubeModelButtonTexture = LoadTexture("assets/sprites/editor/previewCube.png");
-            _sphereModelButtonTexture = LoadTexture("assets/sprites/editor/previewSphere.png");
-        }
+        private readonly Texture _cubeModelButtonTexture = new("assets/sprites/editor/previewCube.png");
+        private readonly Texture _sphereModelButtonTexture = new("assets/sprites/editor/previewSphere.png");
 
         public void Draw()
         {
@@ -174,10 +168,7 @@ namespace RE.Debug.Overlay.Editor.Panels
         {
             const string boxModelPath = "assets/models/cub.smdl";
             const string sphereModelPath = "assets/models/krug.fbx";
-
-            var cubeTexture = new ImTextureRef() { TexID = new ImTextureID(_cubeModelButtonTexture) };
-            var sphereTexture = new ImTextureRef() { TexID = new ImTextureID(_sphereModelButtonTexture) };
-
+              
             SetNextWindowSize(new Vector2(0, 0), ImGuiCond.Always);
             BeginChild("materialSettings", ImGuiChildFlags.Borders);
             Text("Material Settings");
@@ -253,8 +244,8 @@ namespace RE.Debug.Overlay.Editor.Panels
 
                 SetCursorPos(cursor with { X = cursor.X + _materialPreviewSize.X + 7 });
 
-                ModelButton(cubeTexture, boxModelPath);
-                ModelButton(sphereTexture, sphereModelPath);
+                ModelButton(_cubeModelButtonTexture, boxModelPath);
+                ModelButton(_sphereModelButtonTexture, sphereModelPath);
 
                 EndChild();
                 TreePop();
@@ -278,31 +269,7 @@ namespace RE.Debug.Overlay.Editor.Panels
 
 
             EndChild();
-        }
-        private int LoadTexture(string path)
-        {
-            var t = GL.GenTexture();
-            GL.BindTexture(TextureTarget.Texture2D, t);
-
-            var pathToFace = path;
-
-            using var image = SixLabors.ImageSharp.Image.Load<SixLabors.ImageSharp.PixelFormats.Rgba32>(pathToFace);
-            var pixels = new byte[4 * image.Width * image.Height];
-            image.CopyPixelDataTo(pixels);
-
-            GL.TexImage2D(TextureTarget.Texture2D, 0,
-                PixelInternalFormat.Rgba,
-                image.Width, image.Height, 0,
-                PixelFormat.Rgba,
-                PixelType.UnsignedByte,
-                pixels);
-
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Linear);
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Linear);
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)TextureWrapMode.ClampToEdge);
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)TextureWrapMode.ClampToEdge);
-            return t;
-        }
+        } 
         /*private void DrawComponents(GameObject obj)
         {
             foreach (var com in obj.Components.ToList())
