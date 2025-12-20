@@ -373,7 +373,7 @@ namespace RE.Rendering.Renderables
                 Scene scene;
                 try
                 {
-                    scene = importer.ImportFile(path,
+                    scene = importer.ImportFileFromStream(ContentManager.Open(path),
                         PostProcessSteps.Triangulate | PostProcessSteps.GenerateNormals | PostProcessSteps.FlipUVs);
                 }
                 catch (Exception ex)
@@ -510,7 +510,7 @@ namespace RE.Rendering.Renderables
             if (scene == null)
             {
                 using var assimpContext = new AssimpContext();
-                importFile = assimpContext.ImportFile(path);
+                importFile = assimpContext.ImportFileFromStream(ContentManager.Open(path));
             }
 
 

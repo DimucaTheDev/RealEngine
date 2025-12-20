@@ -1,5 +1,6 @@
 ﻿using System.Text;
 using OpenTK.Mathematics;
+using RE.Core.Assets;
 
 namespace RE.Rendering.Renderables.ModelFormat
 {
@@ -20,8 +21,7 @@ namespace RE.Rendering.Renderables.ModelFormat
         {
             try
             {
-                using var fileStream = new FileStream(modelPath, FileMode.Open, FileAccess.Read);
-                using var reader = new BinaryReader(fileStream, Encoding.UTF8, false);
+                using var reader = new BinaryReader(ContentManager.Open(modelPath), Encoding.UTF8, false);
                 if (reader.ReadString() != "SMDL") //file header
                 {
                     throw new InvalidDataException("The file is not a valid Static Model.");

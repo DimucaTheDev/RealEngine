@@ -1,13 +1,22 @@
 <Solution>
   <Configurations>
+    <BuildType Name="Debug" />
+    <BuildType Name="Production" />
+    <BuildType Name="Release" />
     <Platform Name="Any CPU" />
     <Platform Name="x64" />
   </Configurations>
   <Folder Name="/Solution Items/">
     <File Path=".editorconfig" />
   </Folder>
+  <Project Path="RE.BuildTask/RE.BuildTask.csproj" Id="bab6b8f1-e6e8-4193-bcb5-1e431fcecc16">
+    <BuildType Solution="Production|*" Project="Release" />
+  </Project>
   <Project Path="RE/RE.csproj">
+    <BuildType Solution="Production|Any CPU" Project="Debug" />
     <Platform Solution="*|x64" Project="x64" />
   </Project>
-  <Project Path="TestPlugin/TestPlugin.csproj" />
+  <Project Path="TestPlugin/TestPlugin.csproj">
+    <BuildType Solution="Production|Any CPU" Project="Debug" />
+  </Project>
 </Solution>

@@ -10,7 +10,15 @@ using RE.Rendering;
 namespace RE.Utils
 {
     public static class Extensions
-    {  
+    {
+        public static MemoryStream AsMemoryStream(this Stream s)
+        {
+            var ms = new MemoryStream();
+            s.CopyTo(ms);
+            ms.Position = 0;
+            return ms;
+        }
+
         // Time
         public static void InvokeNow(this Time.ScheduledTask task)
         {
@@ -24,18 +32,23 @@ namespace RE.Utils
         }
         public static void Terminate(this Time.ScheduledTask task) => Time.RemoveTask(task);
         // Renderable
-        public static void StartRender<T>(this T r) where T : Renderable => RenderManager.AddRenderable(r);
-        public static bool IsRendering<T>(this T r) where T : Renderable
+        extension<T>(T r) where T : Renderable
         {
-            return RenderManager.Renderables.TryGetValue(r.RenderLayer, out var types) &&
-                   types.TryGetValue(typeof(T), out var list) &&
-                   list.Contains(r);
+            public void StartRender() => RenderManager.AddRenderable(r);
+
+            public bool IsRendering()
+            {
+                return RenderManager.Renderables.TryGetValue(r.RenderLayer, out var types) &&
+                       types.TryGetValue(typeof(T), out var list) &&
+                       list.Contains(r);
+            }
+
+            public void StopRender()
+            {
+                RenderManager.RemoveRenderable(r);
+            }
         }
 
-        public static void StopRender<T>(this T r) where T : Renderable
-        {
-            RenderManager.RemoveRenderable(r);
-        }
         // Conversions
 
         public static OpenTK.Mathematics.Vector3 ToOpenTkVector3(this BulletSharp.Math.Vector3 v) => new(v.X, v.Y, v.Z);
@@ -56,9 +69,10 @@ namespace RE.Utils
         public static JsonArray ToJsonArray(this OpenTK.Mathematics.Vector3 v) => new(v.X, v.Y, v.Z);
 
 
-        public static void Disable(this RigidBody r) => PhysicsManager.DynamicsWorld.RemoveRigidBody(r);
-        public static void Enable(this RigidBody r) => PhysicsManager.DynamicsWorld.AddRigidBody(r);
-
-        public static GameObject? GetSpawnPoint(this Scene scene) => scene.GameObjects.FirstOrDefault(s => s.Components.Any(s => s is PlayerComponent));
+        extension(RigidBody r)
+        {
+            public void Disable() => PhysicsManager.DynamicsWorld.RemoveRigidBody(r);
+            public void Enable() => PhysicsManager.DynamicsWorld.AddRigidBody(r);
+        }
     }
 }

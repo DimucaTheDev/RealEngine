@@ -75,7 +75,7 @@ namespace RE.Core.World.Components
                     if (ContentManager.Exists(pathToFace))
                     {
                         using var image =
-                            SixLabors.ImageSharp.Image.Load<SixLabors.ImageSharp.PixelFormats.Rgba32>(pathToFace);
+                            SixLabors.ImageSharp.Image.Load<SixLabors.ImageSharp.PixelFormats.Rgba32>(ContentManager.Open(pathToFace));
                         image.Mutate(x => x.Flip(FlipMode.Horizontal)); // OpenGL flip
                         var pixels = new byte[4 * image.Width * image.Height];
                         image.CopyPixelDataTo(pixels);

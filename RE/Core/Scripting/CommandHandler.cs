@@ -259,7 +259,7 @@ namespace RE.Core.Scripting
                 {
                     SceneEditor.Instance?.Disable();
                     var name = args[0];
-                    if (!File.Exists($"assets/maps/{name}/data.json"))
+                    if (!ContentManager.Exists($"assets/maps/{name}/data.json"))
                     {
                         Log.Error("File not found: {FilePath}", $"assets/maps/{name}/data.json");
                         return;

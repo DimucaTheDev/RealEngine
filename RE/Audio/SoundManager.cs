@@ -3,6 +3,7 @@ using FmodAudio;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using RE.Core;
+using RE.Core.Assets;
 using RE.Rendering;
 using RE.Utils;
 using Serilog;
@@ -42,7 +43,7 @@ namespace RE.Audio
             FmodSystem.Init(MaxChannels);
 
             Log.Information("FMOD Version: {FmodVersion}", FmodSystem.Version);
-
+            
             var files = Directory.GetFiles("Assets/Audio", "*", SearchOption.AllDirectories)
                 .Where(s => AudioFileExtensions.Contains(Path.GetExtension(s)));
             _soundMap = ProcessFiles(files, "Assets/Audio");

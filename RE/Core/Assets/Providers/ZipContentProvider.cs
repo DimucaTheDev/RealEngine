@@ -1,4 +1,5 @@
 ﻿using System.IO.Compression;
+using RE.Utils;
 using Serilog;
 
 namespace RE.Core.Assets.Providers
@@ -74,14 +75,14 @@ namespace RE.Core.Assets.Providers
             if (entry == null)
                 throw new FileNotFoundException($"File not found in any pak: {path}");
 
-            return entry.Open();
+            return entry.Open().AsMemoryStream();
         }
 
         public string Prefix => "pak:";
 
         private ZipArchiveEntry? GetEntry(string path)
         {
-            var normalized = path.Replace('\\', '/');
+            var normalized = Path.GetRelativePath("Assets", path).Replace('\\', '/');
             if (!_fileMap.TryGetValue(normalized, out var pakPath))
                 return null;
 

@@ -55,6 +55,12 @@
 		</AssemblyAttribute>
 	</ItemGroup>
 
+
+	<Target Name="RunPostBuildTasks" AfterTargets="Publish" Condition="'$(Configuration)'=='Production'">
+		<Message Importance="high" Text="$(PublishDir)"/>
+		<Exec Command="dotnet run --project ../RE.BuildTask $(PublishDir)\assets $(PublishDir)\paks" ContinueOnError="false" ConsoleToMSBuild="true" />
+	</Target>
+
 	<Target Name="AddGitCommitHash" BeforeTargets="CoreGenerateAssemblyInfo">
 		<Exec Command="git rev-parse HEAD" ConsoleToMSBuild="true" ContinueOnError="true">
 			<Output TaskParameter="ConsoleOutput" PropertyName="GitCommitHash" />

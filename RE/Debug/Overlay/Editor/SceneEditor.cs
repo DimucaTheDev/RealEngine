@@ -83,19 +83,24 @@ namespace RE.Debug.Overlay.Editor
                     SelectedObjectOutline.OutlineColor = outlineColor;
                 }
             };
-            var iconPath = Path.GetFullPath($"Assets/RealEngine{(Random.Shared.Next(100) > 50 ? "2" : "")}.ico");
+
+            var iconPath = ($"Assets/RealEngine{(Random.Shared.Next(100) > 50 ? "2" : "")}.ico");
 
             if (ContentManager.Exists(iconPath))
-            {
-                using var icon = new Icon(iconPath, new Size(0, 0));
-
+            {  
                 var maxSize = new Size(0, 0);
-                using var tmp = new Icon(iconPath, new Size(512, 512));
+                var mem = ContentManager.Open(iconPath);
+
+                using var tmp = new Icon(mem, new Size(512, 512));
                 if (tmp.Width > maxSize.Width && tmp.Height > maxSize.Height)
                     maxSize = new Size(tmp.Width, tmp.Height);
 
-                using var bestIcon = new Icon(iconPath, maxSize);
+                mem.Position = 0;
+
+                using var bestIcon = new Icon(mem, maxSize);
                 using var bmp = bestIcon.ToBitmap();
+                
+                mem.Position = 0;
 
                 var data = bmp.LockBits(new Rectangle(0, 0, bmp.Width, bmp.Height),
                     ImageLockMode.ReadOnly,
