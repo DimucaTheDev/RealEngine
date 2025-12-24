@@ -15,10 +15,10 @@ Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor i
 
 ## Images:
 Ingame:
-![Runtime](https://github.com/dimucathedev/realengine/blob/master/Images/running.png?raw=true)
+![Runtime](https://github.com/dimucathedev/realengine/blob/master/misc/Images/running.png?raw=true)
 
 Editor:
-![Editor](https://github.com/dimucathedev/realengine/blob/master/Images/editor.png?raw=true)
+![Editor](https://github.com/dimucathedev/realengine/blob/master/Images/misc/editor.png?raw=true)
 
 About :) :
-![About](https://github.com/dimucathedev/realengine/blob/master/Images/about.png?raw=true)
+![About](https://github.com/dimucathedev/realengine/blob/master/Images/misc/about.png?raw=true)
