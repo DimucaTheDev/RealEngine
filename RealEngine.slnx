@@ -6,8 +6,13 @@
     <Platform Name="Any CPU" />
     <Platform Name="x64" />
   </Configurations>
+  <Folder Name="/Build Targets/">
+    <File Path="BuildTargets/RE.Common.targets" />
+    <File Path="BuildTargets/RE.Publish.targets" />
+  </Folder>
   <Folder Name="/Solution Items/">
     <File Path=".editorconfig" />
+    <File Path="README.md" />
   </Folder>
   <Project Path="RE.BuildTask/RE.BuildTask.csproj" Id="bab6b8f1-e6e8-4193-bcb5-1e431fcecc16">
     <BuildType Solution="Production|*" Project="Release" />

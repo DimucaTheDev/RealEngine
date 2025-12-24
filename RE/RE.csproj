@@ -19,75 +19,23 @@
 		<Configurations>Debug;Release;Production</Configurations>
 		<GenerateDocumentationFile>False</GenerateDocumentationFile>
 		<Platforms>AnyCPU;x64</Platforms>
+		<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+		<NoWarn>1701;1702</NoWarn>
 	</PropertyGroup>
 
-	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Production|AnyCPU'">
-	  <DefineConstants>$(DefineConstants);PROD;PRODUCTION</DefineConstants>
-	  <Optimize>True</Optimize>
-	  <NoWarn>1701;1702</NoWarn>
+	<PropertyGroup Condition="'$(Configuration)'=='Production'">
+		<OutputType>WinExe</OutputType>
 	</PropertyGroup>
 
-	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Production|x64'">
-	  <DefineConstants>$(DefineConstants);PROD;PRODUCTION</DefineConstants>
-	  <Optimize>True</Optimize>
-	  <NoWarn>1701;1702</NoWarn>
-	</PropertyGroup>
-
-	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-	  <NoWarn>1701;1702</NoWarn>
-	</PropertyGroup>
-
-	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-	  <NoWarn>1701;1702</NoWarn>
-	</PropertyGroup>
-
-	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-	  <NoWarn>1701;1702</NoWarn>
-	</PropertyGroup>
-
-	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-	  <NoWarn>1701;1702</NoWarn>
-	</PropertyGroup>
-
-	<ItemGroup>
-		<AssemblyAttribute Include="RE.Utils.BuildDateAttribute">
-			<_Parameter1>$([System.DateTime]::UtcNow.ToString("yyyyMMddHHmmss"))</_Parameter1>
-		</AssemblyAttribute>
-	</ItemGroup>
-
-
-	<Target Name="RunPostBuildTasks" AfterTargets="Publish" Condition="'$(Configuration)'=='Production'">
-		<Message Importance="high" Text="$(PublishDir)"/>
-		<Exec Command="dotnet run --project ../RE.BuildTask $(PublishDir)\assets $(PublishDir)\paks" ContinueOnError="false" ConsoleToMSBuild="true" />
-	</Target>
-
-	<Target Name="AddGitCommitHash" BeforeTargets="CoreGenerateAssemblyInfo">
-		<Exec Command="git rev-parse HEAD" ConsoleToMSBuild="true" ContinueOnError="true">
-			<Output TaskParameter="ConsoleOutput" PropertyName="GitCommitHash" />
-		</Exec>
-
-		<ItemGroup>
-			<AssemblyAttribute Include="RE.Utils.GitCommitAttribute">
-				<_Parameter1>$(GitCommitHash)</_Parameter1>
-			</AssemblyAttribute>
-		</ItemGroup>
-	</Target>
-
-
-
-
+	<Import Project="..\BuildTargets\RE.Common.targets" />
+	<Import Project="..\BuildTargets\RE.Publish.targets" />
+ 
 	<ItemGroup>
 		<Compile Remove="Assets\GenerateStaticModel.cs" />
-	</ItemGroup>
 
-	<ItemGroup>
 		<Resource Include="Assets\RealEngine.ico" />
 		<Resource Include="RealEngine.ico" />
-	</ItemGroup>
 
-
-
-	<ItemGroup>
 		<PackageReference Include="AssimpNet" Version="4.1.0" />
 		<PackageReference Include="BulletSharp" Version="0.11.1" />
 		<PackageReference Include="FmodAudio" Version="2.2.5" />
@@ -111,34 +59,14 @@
 		<PackageReference Include="SpaceWizards.SharpFont" Version="1.0.2" />
 		<PackageReference Include="StbImageSharp" Version="2.30.15" />
 		<PackageReference Include="System.CommandLine" Version="2.0.0" />
-		<PackageReference Include="System.Drawing.Common" Version="9.0.8" />
-	</ItemGroup>
+		<PackageReference Include="System.Drawing.Common" Version="10.0.1" />
 
-
-	<ItemGroup>
-		<None Update="Assets\**">
+		<None Include="Assets\**; Dll\**;">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</None>
-	</ItemGroup>
 
-
-	<ItemGroup>
-		<None Update="Dll\**">
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-		</None>
-	</ItemGroup>
-
-
-	<ItemGroup>
 		<Folder Include="Assets\Audio\" />
 		<Folder Include="Assets\Cfg\" />
 	</ItemGroup>
-
-
-	<ItemGroup>
-		<None Include="Assets\GenerateStaticModel.cs">
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-		</None>
-	</ItemGroup> 
 
 </Project>

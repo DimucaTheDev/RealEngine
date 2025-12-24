@@ -1,0 +1,15 @@
+<Project>
+ 
+	<PropertyGroup Condition="'$(Configuration)'=='Production'">
+		<DefineConstants>$(DefineConstants);PROD;PRODUCTION</DefineConstants>
+		<Optimize>True</Optimize>
+	</PropertyGroup>
+
+	<!-- Yeah I better do something with this mess, oops -->
+
+	<Target Name="RunPostBuildTasks" AfterTargets="Publish" Condition="'$(Configuration)'=='Production'">
+		<Message Importance="high" Text="$(PublishDir)"/>
+		<Exec Command="dotnet run --project $(SolutionDir)/RE.BuildTask $(PublishDir)\assets $(PublishDir)\paks $(PackAllResourcesToPakFile) " ContinueOnError="false" ConsoleToMSBuild="true" />
+	</Target>
+
+</Project>

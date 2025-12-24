@@ -10,47 +10,55 @@ namespace RE.BuildTask
         {
             try
             {
-                if (args == null || args.Length < 2)
+                if (args == null || args.Length < 3)
                 {
-                    Console.Error.WriteLine("Usage: RE.BuildTask <assetsFolder> <outputFolder>");
+                    Console.Error.WriteLine("Usage: RE.BuildTask <assetsFolder> <outputFolder> <compressAssets>");
                     return 1;
                 }
 
                 var assetsDir = args[0];
                 var outputDir = args[1];
 
+                var doPakOrNotIDontEvenKnow = args[2] == "true";
+
                 Console.WriteLine($"Working directory: {Environment.CurrentDirectory}");
-                Console.WriteLine($"Assets folder: {assetsDir}");
-                Console.WriteLine($"Output folder: {outputDir}");
 
-                if (!Directory.Exists(assetsDir))
+                if (doPakOrNotIDontEvenKnow)
                 {
-                    Console.Error.WriteLine($"Assets folder does not exist: {assetsDir}");
-                    return 2;
-                }
+                    Console.WriteLine($"Assets folder: {assetsDir}");
+                    Console.WriteLine($"Output folder: {outputDir}");
 
-                Directory.CreateDirectory(outputDir);
+                    if (!Directory.Exists(assetsDir))
+                    {
+                        Console.Error.WriteLine($"Assets folder does not exist: {assetsDir}");
+                        return 2;
+                    }
 
-                var pakPath = Path.Combine(outputDir, "assets.pak");
+                    Directory.CreateDirectory(outputDir);
 
-                if (File.Exists(pakPath))
-                {
-                    Console.WriteLine($"Removing existing pak: {pakPath}");
-                    File.Delete(pakPath);
-                }
+                    var pakPath = Path.Combine(outputDir, "assets.pak");
 
-                Console.WriteLine($"Creating pak: {pakPath}");
-                ZipFile.CreateFromDirectory(assetsDir, pakPath, CompressionLevel.Optimal, includeBaseDirectory: false);
-                Console.WriteLine("Pak created successfully.");
+                    if (File.Exists(pakPath))
+                    {
+                        Console.WriteLine($"Removing existing pak: {pakPath}");
+                        File.Delete(pakPath);
+                    }
 
-                try
-                {
-                    Directory.Delete(assetsDir, recursive: true);
-                    Console.WriteLine($"Deleted assets directory: {assetsDir}");
-                }
-                catch (Exception ex)
-                {
-                    Console.Error.WriteLine($"Warning: could not delete assets directory '{assetsDir}': {ex.Message}");
+                    Console.WriteLine($"Creating pak: {pakPath}");
+                    ZipFile.CreateFromDirectory(assetsDir, pakPath, CompressionLevel.Optimal,
+                        includeBaseDirectory: false);
+                    Console.WriteLine("Pak created successfully.");
+
+                    try
+                    {
+                        Directory.Delete(assetsDir, recursive: true);
+                        Console.WriteLine($"Deleted assets directory: {assetsDir}");
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.Error.WriteLine(
+                            $"Warning: could not delete assets directory '{assetsDir}': {ex.Message}");
+                    }
                 }
 
                 var assetsFull = Path.GetFullPath(assetsDir);

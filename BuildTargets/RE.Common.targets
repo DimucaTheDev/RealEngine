@@ -1,0 +1,19 @@
+<Project>
+	<ItemGroup>
+		<AssemblyAttribute Include="RE.Utils.BuildDateAttribute">
+			<_Parameter1>$([System.DateTime]::UtcNow.ToString("yyyyMMddHHmmss"))</_Parameter1>
+		</AssemblyAttribute>
+	</ItemGroup> 
+
+	<Target Name="AddGitCommitHash" BeforeTargets="CoreGenerateAssemblyInfo">
+		<Exec Command="git rev-parse HEAD" ConsoleToMSBuild="true" ContinueOnError="true">
+			<Output TaskParameter="ConsoleOutput" PropertyName="GitCommitHash" />
+		</Exec>
+
+		<ItemGroup>
+			<AssemblyAttribute Include="RE.Utils.GitCommitAttribute">
+				<_Parameter1>$(GitCommitHash)</_Parameter1>
+			</AssemblyAttribute>
+		</ItemGroup>
+	</Target>
+</Project>
