@@ -161,7 +161,7 @@ namespace RE.Rendering.Renderables
             if (!ContentManager.Exists(path))
             {
                 Log.Error("Texture at path {Path} does not exist!", path);
-                var missingTexture = Util.CreateMissingTexture(4);
+                var missingTexture = Texture.CreateMissingTexture(4);
 
                 return missingTexture;
             }

@@ -76,7 +76,7 @@ namespace RE.Debug.Overlay.Editor.Panels
             _axisOnIcon = new("assets/sprites/editor/axisOn.png");
             _gridOffIcon = new("assets/sprites/editor/gridOff.png");
             _gridOnIcon = new("assets/sprites/editor/gridOn.png");
-            _physOptionsIcon = Util.CreateMissingTexture(4);
+            _physOptionsIcon = Texture.CreateMissingTexture(4);
         }
 
         private void SetupBullet()

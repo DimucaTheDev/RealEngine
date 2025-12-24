@@ -176,12 +176,12 @@ namespace RE.Debug.Overlay.Editor.Panels
             if (_materialPreviewModel == null)
             {
                 _materialPreviewModel = new (boxModelPath);
-                _materialPreviewModel.SetTexture(Util.CreateMonoColorTexture(_baseColor), false);
+                _materialPreviewModel.SetTexture(Texture.CreateMonoColorTexture(_baseColor), false);
             }
             if (_materialPreviewFloor == null)
             {
                 _materialPreviewFloor = new (boxModelPath);
-                _materialPreviewFloor.SetTexture(Util.CreateMissingTexture(48, [110, 110, 110, 255], [35, 35, 35, 255]));
+                _materialPreviewFloor.SetTexture(Texture.CreateMissingTexture(48, [110, 110, 110, 255], [35, 35, 35, 255]));
                 _materialPreviewFloor.IgnoreLight = true;
             }
 
@@ -238,7 +238,7 @@ namespace RE.Debug.Overlay.Editor.Panels
                     if (ImageButton(path, texture, new Vector2(24, 24)))
                     {
                         _materialPreviewModel.Path = path;
-                        _materialPreviewModel.SetTexture(Util.CreateMonoColorTexture(_baseColor));
+                        _materialPreviewModel.SetTexture(Texture.CreateMonoColorTexture(_baseColor));
                     }
                 }
 
@@ -255,7 +255,7 @@ namespace RE.Debug.Overlay.Editor.Panels
                 BeginChild("surface");
                 if (ColorEdit3("Base Color", ref _baseColor.X))
                 {
-                    _materialPreviewModel.SetTexture(Util.CreateMonoColorTexture(_baseColor), true);
+                    _materialPreviewModel.SetTexture(Texture.CreateMonoColorTexture(_baseColor), true);
                 }
                 //todo: texture as surface color
 

@@ -67,7 +67,7 @@ public class FloatingText : Renderable
 
         GL.BindVertexArray(0);
 
-        _whiteTexture = Util.CreateMonoColorTexture(Vector3.One);
+        _whiteTexture = Texture.CreateMonoColorTexture(Vector3.One);
 
         // GL.Enable(EnableCap.DepthTest);
         // GL.DepthFunc(DepthFunction.Less);

@@ -495,7 +495,7 @@ namespace RE.Rendering.Renderables
             if (path.EndsWith(".smdl", true, CultureInfo.InvariantCulture))
             {
                 if (!ContentManager.Exists(path + ".png"))
-                    return Util.CreateMissingTexture();
+                    return Texture.CreateMissingTexture();
 
                 var readAllBytes = ContentManager.GetBytes(path + ".png");
                 var t = ImageResult.FromMemory(readAllBytes, ColorComponents.RedGreenBlueAlpha);
@@ -530,7 +530,7 @@ namespace RE.Rendering.Renderables
             else
             {
                 Log.Warning("No texture for {Path}", path);
-                texId = Util.CreateMissingTexture();
+                texId = Texture.CreateMissingTexture();
             }
 
             importFile.Clear();

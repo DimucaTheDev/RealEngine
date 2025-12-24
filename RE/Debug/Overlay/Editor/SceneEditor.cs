@@ -117,7 +117,7 @@ namespace RE.Debug.Overlay.Editor
             }
             else
             {
-                LogoImage = Util.CreateMissingTexture(6);
+                LogoImage = Texture.CreateMissingTexture(6);
             }
             GL.BindTexture(TextureTarget.Texture2D, 0);
 

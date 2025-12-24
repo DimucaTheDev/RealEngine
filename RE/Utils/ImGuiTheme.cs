@@ -3,7 +3,7 @@ using Hexa.NET.ImGui;
 
 namespace RE.Utils
 {
-    public class ImGuiTheme
+    internal class ImGuiTheme
     {
         public static void ApplyDarkTheme()
         {

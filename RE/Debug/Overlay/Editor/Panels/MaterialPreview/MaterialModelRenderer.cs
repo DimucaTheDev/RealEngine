@@ -360,7 +360,7 @@ namespace RE.Debug.Overlay.Editor.Panels.MaterialPreview
             if (path.EndsWith(".smdl", true, CultureInfo.InvariantCulture))
             {
                 if (!ContentManager.Exists(path + ".png"))
-                    return Util.CreateMissingTexture();
+                    return Texture.CreateMissingTexture();
 
                 var readAllBytes = ContentManager.GetBytes(path + ".png");
                 var t = ImageResult.FromMemory(readAllBytes, ColorComponents.RedGreenBlueAlpha);
@@ -396,7 +396,7 @@ namespace RE.Debug.Overlay.Editor.Panels.MaterialPreview
             else
             {
                 Log.Warning("No texture for {Path}", path);
-                texId = Util.CreateMissingTexture();
+                texId = Texture.CreateMissingTexture();
             }
 
             importFile.Clear();

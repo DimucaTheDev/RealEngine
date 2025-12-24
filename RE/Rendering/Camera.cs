@@ -121,7 +121,6 @@ public class Camera(Vector3 position, Vector3 up, int width, int height)
     {
         GameObject obj = new GameObject();
         obj.Components.Add(new MeshComponent("assets/models/crate.fbx"));
-
         Vector3 front = Main.Front;
 
         obj.Components.Add(new BoxColliderComponent());
