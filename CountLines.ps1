@@ -4,6 +4,10 @@ $totalCharsNoSpaces = 0
 $totalFiles = 0
 
 foreach ($file in $csFiles) {
+    if ($file.FullName -match '[\\/](bin|obj)[\\/]') { 
+        continue
+    } 
+
     $totalFiles++
     $content = Get-Content $file.FullName -Raw
     $lines = $content -split "`r?`n"
