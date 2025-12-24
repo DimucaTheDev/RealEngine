@@ -227,8 +227,14 @@ namespace RE.Core.World
                         foreach (var component in components.EnumerateObject())
                         {
                             var type = assemblyTypes
-                                .First(s => s.Name.ToLower().Replace("component", "") ==
+                                .FirstOrDefault(s => s.Name.ToLower().Replace("component", "") ==
                                             component.Name.ToLower().Replace("component", ""));
+
+                            if (type == null)
+                            {
+                                Log.Error("Unknown component {ComponentName} on object {ObjectName} in {SceneName}", component.Name, gameObject.Name, scene.Name);
+                                continue;
+                            }
 
                             object instance;
 

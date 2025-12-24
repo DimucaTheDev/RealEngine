@@ -2,6 +2,8 @@ namespace RE.Core.Assets.Providers
 {
     public class FileContentProvider : IContentProvider
     {
+        public string Prefix => "file:";
+
         public byte[] GetBytes(string path, int offset, int count)
         {
             using var fs = File.OpenRead(path);
@@ -21,11 +23,21 @@ namespace RE.Core.Assets.Providers
         {
             return File.Exists(path);
         }
+        public bool DirectoryExists(string path)
+        {
+            return Directory.Exists(path);
+        }
         public Stream Open(string path)
         {
             return File.OpenRead(path);
         }
-
-        public string Prefix => "file:";
+        public string[] GetFiles(string path, bool recursive = false)
+        {
+            return Directory.GetFiles(path, "*", recursive ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly);
+        }
+        public string[] GetDirectories(string path, bool recursive = false)
+        {
+            return Directory.GetDirectories(path, "*", recursive ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly);
+        }
     }
 }

@@ -10,6 +10,7 @@ using OpenTK.Graphics.OpenGL;
 using OpenTK.Windowing.Common;
 using OpenTK.Windowing.Common.Input;
 using OpenTK.Windowing.Desktop;
+using RE.Core.Assets;
 using RE.Core.Scripting;
 using RE.Rendering;
 using RE.Utils;
@@ -137,14 +138,14 @@ namespace RE.Core
         private static WindowIcon? LoadIcon()
         {
             var path = "Assets/RealEngine2.ico";
-            if (!File.Exists(path))
+            if (!ContentManager.Exists(path))
             {
                 Log.Error("Icon file not found: {IconPath}", path);
                 return null;
             }
             try
             {
-                using var icon = new Icon(path);
+                using var icon = new Icon(ContentManager.Open(path));
                 using var bitmap = icon.ToBitmap();
 
                 var data = new byte[bitmap.Width * bitmap.Height * 4];
@@ -321,8 +322,17 @@ namespace RE.Core
             {
                 Action = new AttachDebuggerAction()
             };
+            Option<bool> consoleOption = new("--console", "-c")
+            {
+                Description = "Allocate console.",
+                CustomParser = _ =>
+                {
+                    WinApi.AllocConsole();
+                    return true;
+                }
+            }; 
 
-            RootCommand rootCommand = new("Real Engine command line options")
+            RootCommand rootCommand = new($"{ProductName} command line options")
             {
                 widthOption,
                 heightOption,
@@ -333,7 +343,8 @@ namespace RE.Core
                 usePplTaskSchedulerOption,
                 nativesPathOption,
                 logLevelOption,
-                attachDebugger
+                attachDebugger,
+                consoleOption
             };
             rootCommand.TreatUnmatchedTokensAsErrors = true;
 

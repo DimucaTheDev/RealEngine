@@ -1,4 +1,5 @@
 ﻿using System.Text;
+using System.Windows.Forms.VisualStyles;
 using RE.Core.Assets.Providers;
 using Serilog;
 
@@ -33,6 +34,7 @@ namespace RE.Core.Assets
                 {
                     provider.Register();
                     _providers.Add(provider);
+                    Log.Information("Registered content provider {Name} ('{Prefix}').", provider.GetType().Name, provider.Prefix);
                 }
                 catch (Exception e)
                 {
@@ -105,10 +107,24 @@ namespace RE.Core.Assets
             return provider.Open(path);
         }
 
+        public static string[] GetFiles(string path, bool recursive = false)
+        {
+            var provider = FindProvider(path)
+                ?? throw new InvalidOperationException("No matching content provider found and Default is not set.");
+            return provider.GetFiles(path, recursive);
+        }
+
+        public static string[] GetDirectories(string path, bool recursive = false)
+        {
+            var provider = FindProvider(path)
+                ?? throw new InvalidOperationException("No matching content provider found and Default is not set.");
+            return provider.GetDirectories(path, recursive);
+        }
+
         private static IContentProvider? FindProvider(string path)
         {
             if (!HasPrefix(path) && ResolveAssetsInAllContentProviders)
-                return _providers.FirstOrDefault(s => s.Exists(path)) ?? Default;
+                return _providers.FirstOrDefault(s => s.Exists(path) || s.DirectoryExists(path)) ?? Default;
 
             return ResolveProvider(ref path);
         }

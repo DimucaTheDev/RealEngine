@@ -29,21 +29,23 @@ public class Camera(Vector3 position, Vector3 up, int width, int height)
     public float Yaw = -90f;
     public int RenderWidth = width, RenderHeight = height;
 
-    public static Camera Instance { get; private set; }
+    public static Camera Main { get; private set; }
+    public static Camera Editor { get; private set; }
 
     public static void Init()
     {
-        Instance = new Camera(new(15, 3, 8), Vector3.UnitY, Game.Instance.ClientSize.X, Game.Instance.ClientSize.Y);
+        Main = new Camera(new(15, 3, 8), Vector3.UnitY, Game.Instance.ClientSize.X, Game.Instance.ClientSize.Y);
+        Editor = new Camera(new(), Vector3.UnitY, Game.Instance.ClientSize.X, Game.Instance.ClientSize.Y);
         Variables.VariableChanged += (s, e) =>
         {
             if (s == "fov")
             {
-                Instance.Fov = (float)e!;
+                Main.Fov = (float)e!;
             }
         };
         Game.Instance.CursorState = CursorState.Grabbed;
-        Game.Instance.MouseMove += s => Instance.HandleMouseMove(s.X, s.Y);
-        //Game.Instance.UpdateFrame += _ => Instance.HandleInput(Game.Instance.KeyboardState);
+        Game.Instance.MouseMove += s => GetActiveCamera().HandleMouseMove(s.X, s.Y);
+        //Game.Main.UpdateFrame += _ => Main.HandleInput(Game.Main.KeyboardState);
         Game.Instance.MouseUp += args =>
         {
             if (SceneEditor.Enabled && args.Button == MouseButton.Button2)
@@ -52,12 +54,13 @@ public class Camera(Vector3 position, Vector3 up, int width, int height)
                     return;
 
                 Game.Instance.CursorState = CursorState.Normal;
-                Game.Instance.MousePosition = Instance._lastMouseDownPos;
+                Game.Instance.MousePosition = GetActiveCamera()._lastMouseDownPos;
             }
         };
         Game.Instance.MouseDown += args =>
         {
-            Instance._lastMouseDownPos = Game.Instance.MousePosition;
+            GetActiveCamera()._lastMousePos = Game.Instance.MousePosition;
+
 
             if (ImGui.GetIO().WantCaptureMouse && !ViewportPanel.MouseDown)
                 return;
@@ -67,8 +70,9 @@ public class Camera(Vector3 position, Vector3 up, int width, int height)
                 ImGui.GetIO().AddMouseButtonEvent(0, true);
                 if (args.Button == MouseButton.Button2)
                 {
+                    GetActiveCamera()._lastMouseDownPos = Game.Instance.MousePosition;
                     Game.Instance.CursorState = CursorState.Grabbed;
-                    Instance.FirstMove = true;
+                    GetActiveCamera().FirstMove = true;
                 }
 
                 return;
@@ -81,6 +85,8 @@ public class Camera(Vector3 position, Vector3 up, int width, int height)
                 AddDummyCube();
         };
     }
+
+    public static Camera GetActiveCamera() => SceneEditor.Enabled ? Editor : Main;
 
     public void HandleMouseMove(float mouseX, float mouseY, bool force = false)
     {
@@ -116,7 +122,7 @@ public class Camera(Vector3 position, Vector3 up, int width, int height)
         GameObject obj = new GameObject();
         obj.Components.Add(new MeshComponent("assets/models/crate.fbx"));
 
-        Vector3 front = Instance.Front;
+        Vector3 front = Main.Front;
 
         obj.Components.Add(new BoxColliderComponent());
         var rb = new RigidBodyComponent(20);
@@ -131,7 +137,7 @@ public class Camera(Vector3 position, Vector3 up, int width, int height)
         BulletSharp.Math.Vector3 impulseVector = cameraFrontBullet * impulseStrength;
         rb.RigidBody.ApplyImpulse(impulseVector, BulletSharp.Math.Vector3.Zero);
 
-        obj.SetPosition(2 * front + Instance.Position);
+        obj.SetPosition(2 * front + Main.Position);
     }
 
     public Matrix4 GetViewMatrix() => Matrix4.LookAt(Position, Position + Front, Up);
@@ -139,6 +145,17 @@ public class Camera(Vector3 position, Vector3 up, int width, int height)
     public Matrix4 GetProjectionMatrix(float fov) => Matrix4.CreatePerspectiveFieldOfView(MathHelper.DegreesToRadians(fov), AspectRatio, 0.1f, 10000f);
     public Matrix4 GetBillboard(Vector3 objectPosition, bool lockX = false, bool lockY = false)
     {
+        Func<int, int> d = _ =>
+        {
+            Console.WriteLine();
+            return 1;
+        };
+
+        Dictionary<string, Func<int, int>> a = new();
+        a.Add("fuckme", d);
+
+        a["fuckme"](2);
+
         Matrix4 view = GetViewMatrix();
 
         view.Row3.Xyz = Vector3.Zero;

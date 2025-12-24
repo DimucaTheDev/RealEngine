@@ -124,7 +124,7 @@ namespace RE.Rendering.Renderables
 
         public override void Render(FrameEventArgs args)
         {
-            var viewPos = Camera.Instance.Position;
+            var viewPos = Camera.GetActiveCamera().Position;
             float distance = (viewPos - Position).Length;
 
             const float baseScaleFactor = 0.075f;
@@ -135,7 +135,7 @@ namespace RE.Rendering.Renderables
                 Matrix4.CreateFromQuaternion(Rotation) *
                 Matrix4.CreateTranslation(Position);
             if (IsVisible)
-                Render(args, model, Camera.Instance);
+                Render(args, model, Camera.GetActiveCamera());
         }
 
         public void Render(FrameEventArgs args, Matrix4 model, Camera camera)
@@ -176,7 +176,7 @@ namespace RE.Rendering.Renderables
                 _program.SetValue("ignoreLight", false);
                 _program.SetValue("hasSpotLight", lights.Any(s => s is SpotLight));
                 _program.SetValue("hasDirLight", lights.Any(s => s is DirectionalLight));
-                _program.SetValue("viewPos", Camera.Instance.Position);
+                _program.SetValue("viewPos", Camera.GetActiveCamera().Position);
 
                 foreach (var light in lights)
                 {
@@ -184,8 +184,8 @@ namespace RE.Rendering.Renderables
                 }
                 /*_program.SetStruct("spotLight", new SpotLight()
                 {
-                    Position = Camera.Instance.Position,
-                    Direction = Camera.Instance.Front,
+                    Position = Camera.Main.Position,
+                    Direction = Camera.Main.Front,
                     DiffuseColor = Vector3.One,
                     SpecularColor = Vector3.One,
                     Constant = 1.0f,

@@ -21,7 +21,7 @@ namespace RE.Core.World.Components
     [ComponentInfo("World/Player", Description = "Handles player logic")]
     internal class PlayerComponent : Component, IDebugRenderer
     {
-        private Camera _camera = Camera.Instance;
+        private Camera _camera = Camera.Main;
         protected GameObject PlayerGameObject = null!;
         private bool _isCrouching = false;
         private const float StandHeight = 1.75f;

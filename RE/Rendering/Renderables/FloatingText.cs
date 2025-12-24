@@ -84,9 +84,9 @@ public class FloatingText : Renderable
 
         //fixme: "nuck z-buffer" ahh gl 🙏😭
 
-        var camPos = Camera.Instance.Position;
-        var view = Camera.Instance.GetViewMatrix();
-        var projection = Camera.Instance.GetProjectionMatrix();
+        var camPos = Camera.GetActiveCamera().Position;
+        var view = Camera.GetActiveCamera().GetViewMatrix();
+        var projection = Camera.GetActiveCamera().GetProjectionMatrix();
         Vector3 lookDir = Vector3.Normalize(camPos - Position);
 
         string[] lines = Text.Split('\n');
@@ -122,7 +122,7 @@ public class FloatingText : Renderable
 
         var modelBg = Matrix4.CreateScale(bgWidth, bgHeight, 1f)
                       * Matrix4.CreateTranslation(bgOffset)
-                      * Camera.Instance.GetBillboard(bgPos)
+                      * Camera.GetActiveCamera().GetBillboard(bgPos)
                       * Matrix4.CreateTranslation(bgPos)
                       * Matrix4.CreateTranslation(0, _bottomToTop ? bgHeight / 2 : 0, 0);
 
@@ -158,7 +158,7 @@ public class FloatingText : Renderable
 
                 var modelCh = Matrix4.CreateScale(w, h, 1f)
                                 * Matrix4.CreateTranslation(xrel, yoff, 0f)
-                                * Camera.Instance.GetBillboard(Position)
+                                * Camera.GetActiveCamera().GetBillboard(Position)
                                 * Matrix4.CreateTranslation(Position)
                                 * Matrix4.CreateTranslation(0, _bottomToTop ? bgHeight / 2 : 0, 0);
 

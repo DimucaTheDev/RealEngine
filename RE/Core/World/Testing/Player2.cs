@@ -12,7 +12,7 @@ namespace RE.Core.World.Testing
             base.Update(args);
             if (Game.Instance.MouseState.IsButtonPressed(0))
             {
-                var forward = Camera.Instance.Front.Normalized();
+                var forward = Camera.Main.Front.Normalized();
 
                 // Сила отдачи
                 float recoilForce = 16f;

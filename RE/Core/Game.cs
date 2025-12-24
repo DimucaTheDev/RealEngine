@@ -36,7 +36,7 @@ internal partial class Game : GameWindow
     public const int FpsLock = 165; // fixme: fpsLock above 200 may (and will) cause physics issues
      
     public static void Start(string[] args)
-    {
+    {  
         Thread.CurrentThread.Name = "Render Thread";
         Environment.CurrentDirectory = AppContext.BaseDirectory;
 
@@ -76,7 +76,6 @@ internal partial class Game : GameWindow
                 Title = $"{ProductName} - {BuildDate:g} - {CommitHash}",
                 ClientSize = new Vector2i(width, height),
                 Location = new Vector2i(Screen.PrimaryScreen!.Bounds.Width / 2 - width / 2, Screen.PrimaryScreen.Bounds.Height / 2 - height / 2),
-                Icon = LoadIcon(),
                 WindowState = WindowState.Normal
             });
         Instance = game;
@@ -112,6 +111,8 @@ internal partial class Game : GameWindow
 
         ContentManager.Register(new FileContentProvider());
         ContentManager.Register(new ZipContentProvider());
+
+        Icon = LoadIcon();
 
         RenderManager.Init();
         Time.Init();
@@ -157,7 +158,7 @@ internal partial class Game : GameWindow
             {
                 ConsoleWindow.Instance!.IsVisible = true;
                 Game.Instance.CursorState = CursorState.Normal;
-                Camera.Instance.FirstMove = true;
+                Camera.GetActiveCamera().FirstMove = true;
             }
         }
 
@@ -165,11 +166,11 @@ internal partial class Game : GameWindow
     }
     protected override void OnResize(ResizeEventArgs e)
     {
-        Camera.Instance.RenderWidth = SceneEditor.Enabled ? (int)ViewportPanel.ViewportSize.X : e.Width;
-        Camera.Instance.RenderHeight = SceneEditor.Enabled ? (int)ViewportPanel.ViewportSize.Y : e.Height;
+        Camera.Main.RenderWidth = SceneEditor.Enabled ? (int)ViewportPanel.ViewportSize.X : e.Width;
+        Camera.Main.RenderHeight = SceneEditor.Enabled ? (int)ViewportPanel.ViewportSize.Y : e.Height;
 
-        var h = Camera.Instance.RenderHeight;
-        var w = Camera.Instance.RenderWidth;
+        var w = Camera.Main.RenderWidth;
+        var h = Camera.Main.RenderHeight;
         GL.Viewport(0, 0, w, h);
         SetupSceneFbo(w, h);
         base.OnResize(e);
@@ -200,8 +201,8 @@ internal partial class Game : GameWindow
         if (SceneEditor.Enabled)
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, SceneFboId);
 
-        var w = Camera.Instance.RenderWidth;
-        var h = Camera.Instance.RenderHeight;
+        var w = Camera.GetActiveCamera().RenderWidth;
+        var h = Camera.GetActiveCamera().RenderHeight;
         GL.Viewport(0, 0, w, h);
 
         GL.ClearColor(Color.Black);//CadetBlue

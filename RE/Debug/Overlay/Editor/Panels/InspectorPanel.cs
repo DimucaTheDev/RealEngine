@@ -211,8 +211,8 @@ namespace RE.Debug.Overlay.Editor.Panels
                 _materialPreviewModel.Render(new FrameEventArgs(Time.DeltaTime), matrixModel, _materialPreviewCamera);
                 _materialPreviewFloor.Render(new FrameEventArgs(Time.DeltaTime), matrixFloor, _materialPreviewCamera);
 
-                var w = Camera.Instance.RenderWidth;
-                var h = Camera.Instance.RenderHeight;
+                var w = Camera.GetActiveCamera().RenderWidth;
+                var h = Camera.GetActiveCamera().RenderHeight;
                 GL.BindFramebuffer(FramebufferTarget.Framebuffer, oldBuf);
                 GL.Viewport(0, 0, w, h);
 
@@ -278,7 +278,7 @@ namespace RE.Debug.Overlay.Editor.Panels
                 if (TreeNodeEx(AddSpacesToCamelCase(type.Name.Replace("Component", "")),
                         ImGuiTreeNodeFlags.OpenOnArrow))
                 {
-                    BindingFlags flags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance |
+                    BindingFlags flags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Main |
                                          BindingFlags.Static;
 
                     foreach (var method in type.GetMethods(flags)

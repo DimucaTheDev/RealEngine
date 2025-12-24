@@ -32,6 +32,7 @@ namespace RE.Audio
         private static Dictionary<string, List<string>> _soundMap = new();
         private static readonly Dictionary<string, FmodAudio.Sound> _buffers = new();
         private static readonly List<Sound> _activeSounds = new();
+        private static readonly List<string> MissingSounds = [];
         private static readonly List<string> AudioFileExtensions = [".wav", ".mp3", ".ogg", ".flac", ".aiff"];
 
         public static void Init()
@@ -43,16 +44,17 @@ namespace RE.Audio
             FmodSystem.Init(MaxChannels);
 
             Log.Information("FMOD Version: {FmodVersion}", FmodSystem.Version);
+
+            var files = ContentManager.GetFiles("Assets/Audio", true)
+                .Where(s => AudioFileExtensions.Contains(Path.GetExtension(s))).ToArray();
             
-            var files = Directory.GetFiles("Assets/Audio", "*", SearchOption.AllDirectories)
-                .Where(s => AudioFileExtensions.Contains(Path.GetExtension(s)));
             _soundMap = ProcessFiles(files, "Assets/Audio");
 
             Log.Information("Mapped {Count} sounds.", _soundMap.Count);
         }
         public static void Update(FrameEventArgs args)
         {
-            var cam = Camera.Instance;
+            var cam = Camera.GetActiveCamera();
             var pos = cam.Position.ToSystemVector3();
             var forward = System.Numerics.Vector3.Normalize(cam.Front.ToSystemVector3());
             var right = -System.Numerics.Vector3.Normalize(Vector3.Cross(forward.ToOpenTkVector3(), cam.Up).ToSystemVector3());
@@ -82,7 +84,11 @@ namespace RE.Audio
         {
             if (!_soundMap.TryGetValue(id, out var files) || files.Count == 0)
             {
-                Log.Error("Sound ID {Id} not found in the sound map.", id);
+                if (!MissingSounds.Contains(id))
+                {
+                    MissingSounds.Add(id);
+                    Log.Error("Sound ID {Id} not found in the sound map.", id);
+                }
                 return null!;
             }
 
@@ -90,7 +96,8 @@ namespace RE.Audio
 
             if (!_buffers.TryGetValue(file, out FmodAudio.Sound fmodSound))
             {
-                fmodSound = FmodSystem.CreateSound(file);
+                ReadOnlySpan<byte> raw = ContentManager.GetBytes(file);
+                fmodSound = FmodSystem.CreateSound(raw, Mode.OpenMemory, new CreateSoundInfo() { Length = (uint)raw.Length });
                 _buffers[file] = fmodSound;
             }
 
@@ -114,7 +121,11 @@ namespace RE.Audio
         {
             if (!_soundMap.TryGetValue(id, out var files) || files.Count == 0)
             {
-                Log.Error("Sound ID {Id} not found in the sound map.", id);
+                if (!MissingSounds.Contains(id))
+                {
+                    MissingSounds.Add(id);
+                    Log.Error("Sound ID {Id} not found in the sound map.", id);
+                }
                 return null!;
             }
 

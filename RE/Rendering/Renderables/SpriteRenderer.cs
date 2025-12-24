@@ -81,14 +81,14 @@ namespace RE.Rendering.Renderables
 
             float aspectRatio = _texWidth / _texHeight;
             float baseSize = 1.0f;
-            float distance = (Position - Camera.Instance.Position).Length;
+            float distance = (Position - Camera.GetActiveCamera().Position).Length;
             float scale = distance * baseSize;
 
             float size = 1.0f;
 
             Matrix4 translateToCenter = Matrix4.CreateTranslation(-0.5f, -0.5f, 0f);
             float finalScale = _constantSize ? scale * Scale : size * Scale;
-            Matrix4 billboard = Camera.Instance.GetBillboard(Position);
+            Matrix4 billboard = Camera.GetActiveCamera().GetBillboard(Position);
 
             // lock axes
             if (LockRotationX || LockRotationY || LockRotationZ)
@@ -117,8 +117,8 @@ namespace RE.Rendering.Renderables
                 Matrix4.CreateTranslation(Position);
 
 
-            var view = Camera.Instance.GetViewMatrix();
-            var projection = Camera.Instance.GetProjectionMatrix();
+            var view = Camera.GetActiveCamera().GetViewMatrix();
+            var projection = Camera.GetActiveCamera().GetProjectionMatrix();
 
             _shaderProgram.SetValue("uModel", model);
             _shaderProgram.SetValue("uView", view);

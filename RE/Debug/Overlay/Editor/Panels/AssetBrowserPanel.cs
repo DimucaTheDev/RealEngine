@@ -9,7 +9,7 @@ namespace RE.Debug.Overlay.Editor.Panels
     internal class AssetBrowserPanel
     {
         private static readonly string _assetRootPath = Path.Combine(Directory.GetCurrentDirectory(), "Assets");
-        private static string _currentDirectory = _assetRootPath;
+        private static string _currentDirectory = Directory.Exists(_assetRootPath) ? _assetRootPath : ".";
         private static int TileSize = 75;
 
         public void Draw()

@@ -62,8 +62,8 @@ public class LineRenderer : Renderable
             return;
 
         _shaderProgram.Use();
-        var view = Camera.Instance.GetViewMatrix();
-        var proj = Camera.Instance.GetProjectionMatrix();
+        var view = Camera.GetActiveCamera().GetViewMatrix();
+        var proj = Camera.GetActiveCamera().GetProjectionMatrix();
 
         _shaderProgram.SetValue("uView", view);
         _shaderProgram.SetValue("uProjection", proj);
@@ -87,8 +87,8 @@ public class LineRenderer : Renderable
     public void RenderLine(Vector3 start, Vector3 end, Vector4 colorStart, Vector4 colorEnd)
     {
         _shaderProgram.Use();
-        var view = Camera.Instance.GetViewMatrix();
-        var proj = Camera.Instance.GetProjectionMatrix();
+        var view = Camera.GetActiveCamera().GetViewMatrix();
+        var proj = Camera.GetActiveCamera().GetProjectionMatrix();
 
         _shaderProgram.SetValue("uView", view);
         _shaderProgram.SetValue("uProjection", proj);

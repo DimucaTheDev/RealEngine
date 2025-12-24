@@ -164,7 +164,7 @@ public class RenderManager
         if (_hasCameraFrustum)
             mvp = model * _cachedViewMatrix * _cachedProjMatrix;
         else
-            mvp = model * Camera.Instance.GetViewMatrix() * Camera.Instance.GetProjectionMatrix(120);
+            mvp = model * Camera.GetActiveCamera().GetViewMatrix() * Camera.GetActiveCamera().GetProjectionMatrix(120);
 
         foreach (var corner in localCorners)
         {
@@ -188,15 +188,15 @@ public class RenderManager
     public static void RenderAll(FrameEventArgs args)
     {
         GenerateFrustum();
-          
-        var camPos = Camera.Instance.Position;
+
+        var camPos = Camera.GetActiveCamera().Position;
         RenderingComponents.Sort((a, b) =>
         {
             float da = (a.Owner.Transform.Position - camPos).LengthSquared;
             float db = (b.Owner.Transform.Position - camPos).LengthSquared;
             return db.CompareTo(da);
         });
-         
+
         RenderingComponents.ToList().ForEach(s =>
         {
             s.Render(args);
@@ -240,8 +240,8 @@ public class RenderManager
 
     private static void GenerateFrustum()
     {
-        Matrix4 view = Camera.Instance.GetViewMatrix();
-        Matrix4 proj = Camera.Instance.GetProjectionMatrix();
+        Matrix4 view = Camera.GetActiveCamera().GetViewMatrix();
+        Matrix4 proj = Camera.GetActiveCamera().GetProjectionMatrix();
         Matrix4 vp = view * proj;
 
         FrustumPlanes[0] = new Plane( // Left
@@ -290,11 +290,11 @@ public class RenderManager
     public static void CreateCameraFrustum()
     {
         _hasCameraFrustum = true;
-        _cachedViewMatrix = Camera.Instance.GetViewMatrix();
-        _cachedProjMatrix = Camera.Instance.GetProjectionMatrix(120);
+        _cachedViewMatrix = Camera.Main.GetViewMatrix();
+        _cachedProjMatrix = Camera.Main.GetProjectionMatrix();
         FrustumRenderer.Clear();
 
-        float r = .1f;
+        float r = .5f;
 
         var corners = GetFrustumCorners(_cachedProjMatrix, _cachedViewMatrix);
         FrustumRenderer.AddLine(corners[0], corners[1], new Vector4(r, 0, 0, 1), new Vector4(r, 0, 0, 1), 0);
@@ -310,20 +310,28 @@ public class RenderManager
         {
             FrustumRenderer.AddLine(corners[i], corners[i + 4], new Vector4(r, 0, 0, 1), new Vector4(r, 0, 0, 1), 0);
         }
+    }
 
-        r = 1f;
-        corners = GetFrustumCorners(Camera.Instance.GetProjectionMatrix(), _cachedViewMatrix);
-        FrustumRenderer.AddLine(corners[0], corners[1], new Vector4(r, 0, 0, 1), new Vector4(r, 0, 0, 1), 0);
-        FrustumRenderer.AddLine(corners[1], corners[2], new Vector4(r, 0, 0, 1), new Vector4(r, 0, 0, 1), 0);
-        FrustumRenderer.AddLine(corners[2], corners[3], new Vector4(r, 0, 0, 1), new Vector4(r, 0, 0, 1), 0);
-        FrustumRenderer.AddLine(corners[3], corners[0], new Vector4(r, 0, 0, 1), new Vector4(r, 0, 0, 1), 0);
-        FrustumRenderer.AddLine(corners[4], corners[5], new Vector4(r, 0, 0, 1), new Vector4(r, 0, 0, 1), 0);
-        FrustumRenderer.AddLine(corners[5], corners[6], new Vector4(r, 0, 0, 1), new Vector4(r, 0, 0, 1), 0);
-        FrustumRenderer.AddLine(corners[6], corners[7], new Vector4(r, 0, 0, 1), new Vector4(r, 0, 0, 1), 0);
-        FrustumRenderer.AddLine(corners[7], corners[4], new Vector4(r, 0, 0, 1), new Vector4(r, 0, 0, 1), 0);
+    public static void DrawCameraFrustum()
+    {
+        _cachedViewMatrix = Camera.Main.GetViewMatrix();
+        _cachedProjMatrix = Camera.Main.GetProjectionMatrix();
+
+        Vector4 color = (0.3f, 0.3f, 0.3f, 1);
+
+        var corners = GetFrustumCorners(_cachedProjMatrix, _cachedViewMatrix, 1.3f);
+        LineRenderer.DrawLine(corners[0], corners[1], color, color);
+        LineRenderer.DrawLine(corners[1], corners[2], color, color);
+        LineRenderer.DrawLine(corners[2], corners[3], color, color);
+        LineRenderer.DrawLine(corners[3], corners[0], color, color);
+        LineRenderer.DrawLine(corners[4], corners[5], color, color);
+        LineRenderer.DrawLine(corners[5], corners[6], color, color);
+        LineRenderer.DrawLine(corners[6], corners[7], color, color);
+        LineRenderer.DrawLine(corners[7], corners[4], color, color);
+
         for (int i = 0; i < 4; i++)
         {
-            FrustumRenderer.AddLine(corners[i], corners[i + 4], new Vector4(r, 0, 0, 1), new Vector4(r, 0, 0, 1), 0);
+            LineRenderer.DrawLine(corners[i], corners[i + 4], color, color);
         }
     }
 
@@ -332,40 +340,49 @@ public class RenderManager
         FrustumRenderer.Clear();
         _hasCameraFrustum = false;
     }
-    private static Vector3[] GetFrustumCorners(Matrix4 proj, Matrix4 view, float maxDistance = 1000f)
+    private static Vector3[] GetFrustumCorners(
+        Matrix4 proj,
+        Matrix4 view,
+        float maxDistance = 1000f)
     {
         Matrix4 inv = Matrix4.Invert(view * proj);
-        Vector3[] ndcCorners = new Vector3[]
-        {
-            new(-1, -1, -1), // near bottom left
-            new(1, -1, -1),  // near bottom right
-            new(1, 1, -1),   // near top right
-            new(-1, 1, -1),  // near top left
+        Vector3 camPos = Camera.Main.Position;
 
-            new(-1, -1, 1),  // far bottom left
-            new(1, -1, 1),   // far bottom right
-            new(1, 1, 1),    // far top right
-            new(-1, 1, 1)    // far top left
+        Vector3[] ndc =
+        {
+            new(-1, -1, -1),
+            new( 1, -1, -1),
+            new( 1,  1, -1),
+            new(-1,  1, -1),
+
+            new(-1, -1,  1),
+            new( 1, -1,  1),
+            new( 1,  1,  1),
+            new(-1,  1,  1),
         };
 
-        Vector3[] worldCorners = new Vector3[8];
+        Vector3[] corners = new Vector3[8];
 
         for (int i = 0; i < 8; i++)
         {
-            Vector4 corner = new Vector4(ndcCorners[i], 1.0f);
-            Vector4 worldPos = Vector4.TransformRow(corner, inv);
-            worldPos /= worldPos.W; // перспективное деление
+            Vector4 clip = new Vector4(ndc[i], 1f);
+            Vector4 world = Vector4.TransformRow(clip, inv);
+            world /= world.W;
 
-            Vector3 pos = worldPos.Xyz;
+            Vector3 pos = world.Xyz;
 
-            float length = pos.Length;
-            if (length > maxDistance)
+            Vector3 dir = pos - camPos;
+            float dist = dir.Length;
+
+            if (dist > maxDistance)
             {
-                pos = pos.Normalized() * maxDistance;
+                pos = camPos + dir.Normalized() * maxDistance;
             }
-            worldCorners[i] = pos;
+
+            corners[i] = pos;
         }
-        return worldCorners;
+
+        return corners;
     }
 
 }

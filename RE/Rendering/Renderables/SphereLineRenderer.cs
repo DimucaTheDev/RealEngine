@@ -55,8 +55,8 @@ public class SphereLineRenderer : Renderable
         UpdateVertices();
 
         _shaderProgram.Use();
-        var viewMatrix = Camera.Instance.GetViewMatrix();
-        var projectionMatrix = Camera.Instance.GetProjectionMatrix();
+        var viewMatrix = Camera.GetActiveCamera().GetViewMatrix();
+        var projectionMatrix = Camera.GetActiveCamera().GetProjectionMatrix();
         _shaderProgram.SetValue("uView", viewMatrix);
         _shaderProgram.SetValue("uProj", projectionMatrix);
         _shaderProgram.SetValue("uColor", Color);

@@ -143,8 +143,8 @@ namespace RE.Core.World.Components
 
             _program.Use();
 
-            var view = Camera.Instance.GetViewMatrix();
-            var proj = Camera.Instance.GetProjectionMatrix();
+            var view = Camera.GetActiveCamera().GetViewMatrix();
+            var proj = Camera.GetActiveCamera().GetProjectionMatrix();
 
             view.Row3.X = 0;
             view.Row3.Y = 0;

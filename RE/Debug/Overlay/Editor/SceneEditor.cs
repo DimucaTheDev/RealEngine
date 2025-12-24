@@ -87,7 +87,7 @@ namespace RE.Debug.Overlay.Editor
             var iconPath = ($"Assets/RealEngine{(Random.Shared.Next(100) > 50 ? "2" : "")}.ico");
 
             if (ContentManager.Exists(iconPath))
-            {  
+            {
                 var maxSize = new Size(0, 0);
                 var mem = ContentManager.Open(iconPath);
 
@@ -99,7 +99,7 @@ namespace RE.Debug.Overlay.Editor
 
                 using var bestIcon = new Icon(mem, maxSize);
                 using var bmp = bestIcon.ToBitmap();
-                
+
                 mem.Position = 0;
 
                 var data = bmp.LockBits(new Rectangle(0, 0, bmp.Width, bmp.Height),
@@ -123,12 +123,17 @@ namespace RE.Debug.Overlay.Editor
 
             unsafe
             {
-                // cyrillic font for imgui
+                //todo: cyrillic font for imgui
             }
         }
 
         public void Enable()
         {
+#if PRODUCTION || PROD // + RELEASE?
+            Log.Error("Scene Editor is disabled in production builds.");
+            return;
+#endif
+
             if (SceneManager.CurrentScene == null!)
             {
                 Log.Error("Editor can not be opened if no scene is loaded.");
@@ -140,8 +145,7 @@ namespace RE.Debug.Overlay.Editor
 
             Log.Information("Starting Scene Editor for \"{SceneName}\"...", SceneManager.CurrentScene.Name);
 
-            _scene = SceneManager.CurrentScene;
-            // SelectObject(null);
+            _scene = SceneManager.CurrentScene; 
             IsVisible = true;
 
             foreach (var type in Assembly.GetExecutingAssembly().GetTypes().Where(t => typeof(IEditorPopup).IsAssignableFrom(t)))
@@ -307,7 +311,7 @@ namespace RE.Debug.Overlay.Editor
                     {
                         var newObject = new GameObject();
                         SceneManager.CurrentScene.GameObjects.Add(newObject);
-                        //Instance.SelectObject(newObject);
+                        //Main.SelectObject(newObject);
                     }
                     if (MenuItem("New Blank 2"))
                     {
@@ -318,7 +322,7 @@ namespace RE.Debug.Overlay.Editor
                         SceneManager.CurrentScene.GameObjects.Add(newObject2);
                         newObject.Parent = newObject2;
 
-                        //Instance.SelectObject(newObject);
+                        //Main.SelectObject(newObject);
                     }
 
                     EndMenu();

@@ -8,6 +8,7 @@ using RE.Core.World;
 using RE.Core.World.Components.Physics;
 using RE.Core.World.Physics;
 using RE.Rendering;
+using RE.Rendering.Renderables;
 using RE.Utils;
 using Keys = OpenTK.Windowing.GraphicsLibraryFramework.Keys;
 using TkVector3 = OpenTK.Mathematics.Vector3;
@@ -54,12 +55,15 @@ namespace RE.Debug.Overlay.Editor.Panels
         private bool _showAabb, _showWireframe, _xray;
         private CollisionDispatcher _dispatcher;
         private DbvtBroadphase _broadphase;
+        private SpriteRenderer _cameraSprite;
 
         ~ViewportPanel() => CollisionWorld.Dispose();
 
         public ViewportPanel()
         {
             SetupBullet();
+
+            _cameraSprite = new(Vector3.Zero, "Assets/sprites/editor/camera.png", scale: 0.5f);
 
             _translateIcon = new("assets/sprites/editor/translate.png");
             _rotateIcon = new("assets/sprites/editor/rotate.png");
@@ -83,12 +87,15 @@ namespace RE.Debug.Overlay.Editor.Panels
 
             //CollisionWorld = new CollisionWorld(PhysicsManager.DynamicsWorld.Dispatcher, PhysicsManager.DynamicsWorld.Broadphase, defaultCollisionConfiguration);
             CollisionWorld = new CollisionWorld(_dispatcher, _broadphase, defaultCollisionConfiguration);
-            CollisionWorld.DebugDrawer = new BulletDebugDrawer();
-
+            CollisionWorld.DebugDrawer = new BulletDebugDrawer(); 
         }
 
         public void Draw()
         {
+            _cameraSprite.Position = Camera.Main.Position;
+            _cameraSprite.Render(new(Time.DeltaTime));
+            RenderManager.DrawCameraFrustum();
+
             UpdateBulletObjects();
             PhysicsManager.DynamicsWorld.DebugDrawWorld();
 
@@ -116,8 +123,8 @@ namespace RE.Debug.Overlay.Editor.Panels
                 {
                     ViewportSize = contentSize;
                     Game.Instance.SetupSceneFbo((int)ViewportSize.X, (int)ViewportSize.Y);
-                    Camera.Instance.RenderWidth = (int)ViewportSize.X;
-                    Camera.Instance.RenderHeight = (int)ViewportSize.Y;
+                    Camera.Editor.RenderWidth = (int)ViewportSize.X;
+                    Camera.Editor.RenderHeight = (int)ViewportSize.Y;
                 }
 
                 SetImGuizmoRect();
@@ -148,8 +155,8 @@ namespace RE.Debug.Overlay.Editor.Panels
         {
             if (SceneEditor.SelectedObject != null)
             {
-                var v = Camera.Instance.GetViewMatrix().ToBulletMatrix();
-                var p = Camera.Instance.GetProjectionMatrix().ToBulletMatrix();
+                var v = Camera.Editor.GetViewMatrix().ToBulletMatrix();
+                var p = Camera.Editor.GetProjectionMatrix().ToBulletMatrix();
                 var transform = SceneEditor.SelectedObject.Transform;
                 var pos = transform.Position;
                 var rot = transform.Rotation;
@@ -191,7 +198,7 @@ namespace RE.Debug.Overlay.Editor.Panels
 
                 var yOpentk = viewportAvailableSize.Y - viewportY;
 
-                var currentCamera = Camera.Instance;
+                var currentCamera = Camera.Editor;
 
                 var mView = currentCamera.GetViewMatrix();
                 var mProj = currentCamera.GetProjectionMatrix();
@@ -333,14 +340,14 @@ namespace RE.Debug.Overlay.Editor.Panels
 
             offset += -up * -mouseDelta.Y * panSpeed;
 
-            Camera.Instance.Position += offset;
+            Camera.Editor.Position += offset;
         }
         private void DrawGrid()
         {
             //var color = new OpenTK.Mathematics.Vector4(0.25f, 0.25f, 0.25f, 0.1f);
             var color = new OpenTK.Mathematics.Vector4(0.75f, 0.75f, 0.75f, 0.3f);
             var size = 50;
-            var camPos = (Vector3i)Camera.Instance.Position;
+            var camPos = (Vector3i)Camera.Editor.Position;
 
             if (SceneEditor.ShowGrid)
             {
@@ -373,10 +380,10 @@ namespace RE.Debug.Overlay.Editor.Panels
         {
             string[] data = [
                 $"Viewport size: {ViewportSize.X}x{ViewportSize.Y}",
-                $"Fov: {Camera.Instance.Fov}°",
+                $"Fov: {Camera.Editor.Fov}°",
                 $"Scene: {SceneManager.CurrentScene.Name}",
                 $"FPS: {1/Time.DeltaTime:F0}",
-                $"Camera pos: {Camera.Instance.Position.X:F2} | {Camera.Instance.Position.Y:F2} | {Camera.Instance.Position.Z:F2}",
+                $"Camera pos: {Camera.Editor.Position.X:F2} | {Camera.Editor.Position.Y:F2} | {Camera.Editor.Position.Z:F2}",
                 $"Selected Obj: {(SceneEditor.SelectedObject == null ? "<None>" : $"{SceneEditor.SelectedObject.Name??"<unnamed>"} ({SceneEditor.SelectedObject.Id})")}"
             ];
             foreach (var line in data.Index())
@@ -532,41 +539,41 @@ namespace RE.Debug.Overlay.Editor.Panels
         }
         private void MoveCamera()
         {
-            var p = Camera.Instance.Position;
+            var p = Camera.Editor.Position;
 
             var speed = 7f * Time.DeltaTime;
             var input = Game.Instance.KeyboardState;
             var mInput = Game.Instance.MouseState;
             if (mInput.ScrollDelta.Y < 0 && IsWindowHovered())
-                p += -(Camera.Instance.Front).Normalized();
+                p += -(Camera.Editor.Front).Normalized();
             if (mInput.ScrollDelta.Y > 0 && IsWindowHovered())
-                p += (Camera.Instance.Front).Normalized();
+                p += (Camera.Editor.Front).Normalized();
 
             if (input.IsKeyDown(Keys.W))
-                p += (Camera.Instance.Front with { Y = 0 }).Normalized() * speed;
+                p += (Camera.Editor.Front with { Y = 0 }).Normalized() * speed;
             if (input.IsKeyDown(Keys.S))
-                p -= (Camera.Instance.Front with { Y = 0 }).Normalized() * speed;
+                p -= (Camera.Editor.Front with { Y = 0 }).Normalized() * speed;
             if (input.IsKeyDown(Keys.A))
-                p -= TkVector3.Normalize(TkVector3.Cross(Camera.Instance.Front, Camera.Instance.Up)) * speed;
+                p -= TkVector3.Normalize(TkVector3.Cross(Camera.Editor.Front, Camera.Editor.Up)) * speed;
             if (input.IsKeyDown(Keys.D))
-                p += TkVector3.Normalize(TkVector3.Cross(Camera.Instance.Front, Camera.Instance.Up)) * speed;
+                p += TkVector3.Normalize(TkVector3.Cross(Camera.Editor.Front, Camera.Editor.Up)) * speed;
             if (input.IsKeyDown(Keys.Space))
                 p += TkVector3.UnitY * speed;
             if (input.IsKeyDown(Keys.LeftShift))
                 p -= TkVector3.UnitY * speed;
 
             if (!GetIO().WantTextInput)
-                Camera.Instance.Position = (p);
+                Camera.Editor.Position = (p);
         }
         private TkVector3 GetRightVector()
         {
-            var right = TkVector3.Cross(WorldUp, Camera.Instance.Front);
+            var right = TkVector3.Cross(WorldUp, Camera.Editor.Front);
             return TkVector3.Normalize(right);
         }
         private TkVector3 GetUpVector()
         {
             var right = GetRightVector();
-            var up = TkVector3.Cross(Camera.Instance.Front, right);
+            var up = TkVector3.Cross(Camera.Editor.Front, right);
             return TkVector3.Normalize(up);
         }
     }

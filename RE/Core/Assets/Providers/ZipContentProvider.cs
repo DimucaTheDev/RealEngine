@@ -9,8 +9,11 @@ namespace RE.Core.Assets.Providers
         private readonly Dictionary<string, string> _fileMap = new(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, ZipArchive> _zips = new(StringComparer.OrdinalIgnoreCase);
 
+        public string Prefix => "pak:";
+
         public void Register()
         {
+            Directory.CreateDirectory("paks");
             foreach (var pakPath in Directory.EnumerateFiles("paks"))
             {
                 var fs = File.OpenRead(pakPath);
@@ -21,8 +24,11 @@ namespace RE.Core.Assets.Providers
                 {
                     var normalized = entry.FullName.Replace('\\', '/');
 
-                    if (entry.FullName.EndsWith("/"))
-                        continue; // is a directory, skip
+                    // add dir
+                    _fileMap.TryAdd(Path.GetDirectoryName(normalized)!, pakPath);
+
+                    //if (entry.FullName.EndsWith("/"))
+                    //    continue; // is a directory, skip
 
                     if (!_fileMap.TryAdd(normalized, pakPath))
                     {
@@ -36,7 +42,7 @@ namespace RE.Core.Assets.Providers
 
         public byte[] GetBytes(string path)
         {
-            var entry = GetEntry(path);
+            var entry = GetFileEntry(path);
             if (entry == null)
                 throw new FileNotFoundException($"File not found in any pak: {path}");
 
@@ -48,7 +54,7 @@ namespace RE.Core.Assets.Providers
 
         public byte[] GetBytes(string path, int offset, int count)
         {
-            var entry = GetEntry(path);
+            var entry = GetFileEntry(path);
             if (entry == null)
                 throw new FileNotFoundException($"File not found in any pak: {path}");
 
@@ -66,21 +72,35 @@ namespace RE.Core.Assets.Providers
 
         public bool Exists(string path)
         {
-            return GetEntry(path) != null;
+            return GetFileEntry(path) != null;
+        }
+
+        public bool DirectoryExists(string path)
+        {
+            return GetDirectoryEntry(path) != null;
         }
 
         public Stream Open(string path)
         {
-            var entry = GetEntry(path);
+            var entry = GetFileEntry(path);
             if (entry == null)
                 throw new FileNotFoundException($"File not found in any pak: {path}");
 
             return entry.Open().AsMemoryStream();
         }
+        public string[] GetFiles(string path, bool recursive = false)
+        {
+            var entries = _zips.Values.SelectMany(zip => zip.Entries);
 
-        public string Prefix => "pak:";
+            return entries.Select(s => "Assets/" + s.FullName).ToArray();
+        }
+        public string[] GetDirectories(string path, bool recursive = false)
+        {
+            throw new NotImplementedException();
+        }
 
-        private ZipArchiveEntry? GetEntry(string path)
+
+        private ZipArchiveEntry? GetFileEntry(string path)
         {
             var normalized = Path.GetRelativePath("Assets", path).Replace('\\', '/');
             if (!_fileMap.TryGetValue(normalized, out var pakPath))
@@ -89,6 +109,16 @@ namespace RE.Core.Assets.Providers
             var zip = _zips[pakPath];
             return zip.Entries.FirstOrDefault(e =>
                 string.Equals(e.FullName.Replace('\\', '/'), normalized, StringComparison.OrdinalIgnoreCase));
+        }
+        private ZipArchiveEntry? GetDirectoryEntry(string path)
+        {
+            var normalized = Path.GetRelativePath("Assets", path).Replace('\\', '/');
+            if (!_fileMap.TryGetValue(normalized, out var pakPath))
+                return null;
+
+            var zip = _zips[pakPath];
+            return zip.Entries.FirstOrDefault(e =>
+                string.Equals(Path.GetDirectoryName(e.FullName)!.Replace('\\', '/'), normalized, StringComparison.OrdinalIgnoreCase));
         }
     }
 }
