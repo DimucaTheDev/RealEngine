@@ -6,7 +6,7 @@
         {
           "src": "..",
           "files": [
-            "RE/bin/Debug/net10.0-windows/RE.dll"
+            "RE/bin/Debug/RE.dll"
           ]
         }
       ],

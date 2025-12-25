@@ -33,10 +33,20 @@ namespace RE.Core.World.Physics
         private static CollisionDispatcherMultiThreaded _dispatcher;
         private static CollisionConfiguration _collisionConfiguration;
 
+        /// <summary>
+        /// Provides access to the multi-threaded discrete dynamics world instance used for physics simulation.
+        /// </summary>
+        /// <remarks>This field should be initialized before use. It enables multi-threaded processing of
+        /// physics simulations, which can improve performance in scenarios with complex interactions or large numbers
+        /// of objects.</remarks>
         public static DiscreteDynamicsWorldMultiThreaded DynamicsWorld = null!;
+        /// <summary>
+        /// Indicates whether simulation mode is enabled.
+        /// </summary>
+        /// <remarks>If set to <see langword="false"/>, <see cref="Update"/> method will do nothing.</remarks>
         public static bool EnableSimulation = true;
 
-        public static void Init() => new PhysicsManager().OnLoad();
+        internal static void Init() => new PhysicsManager().OnLoad();
 
         public override void OnLoad()
         {
@@ -144,6 +154,14 @@ namespace RE.Core.World.Physics
             }
         }
 
+        /// <summary>
+        /// Advances the physics simulation by the specified time step if the simulation is initialized and no jobs are
+        /// pending.
+        /// </summary>
+        /// <remarks>This method has no effect if the simulation is not initialized or if there are
+        /// pending initialization jobs. The simulation step is only performed when the scene editor is
+        /// disabled.</remarks>
+        /// <param name="deltaTime">The amount of time, in seconds, to advance the simulation. Must be a non-negative value.</param>
         public static void Update(float deltaTime)
         {
             if (!_init || Initializer.HasJob)
@@ -203,7 +221,6 @@ namespace RE.Core.World.Physics
                 Log.Information("Using TBB Task Scheduler");
                 AddScheduler(Threads.GetTbbTaskScheduler());
             }
-
             if (Game.CommandParseResult.GetValue<bool>("--phys-ppl"))
             {
                 Log.Information("Using PPL Task Scheduler");

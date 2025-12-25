@@ -4,13 +4,28 @@ using Serilog;
 
 namespace RE.Core.Assets.Providers
 {
-    internal class ZipContentProvider : IContentProvider
+    /// <summary>
+    /// Provides access to files and directories stored within ZIP archives located in the "paks" directory, using a
+    /// virtual file system interface.
+    /// </summary>
+    /// <remarks>The <see cref="ZipContentProvider"/> enables applications to retrieve, enumerate, and check the existence
+    /// of files and directories within ZIP archives as if they were part of a unified content source. All ZIP files in
+    /// the "paks" directory are loaded and indexed when <see cref="Register"/> is called. Paths are resolved relative to the "Assets"
+    /// directory and are case-insensitive. This provider is typically used to support modding or asset packaging
+    /// scenarios where content is distributed in ZIP (PAK) files.</remarks>
+    public class ZipContentProvider : IContentProvider
     {
         private readonly Dictionary<string, string> _fileMap = new(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, ZipArchive> _zips = new(StringComparer.OrdinalIgnoreCase);
 
         public string Prefix => "pak:";
 
+        /// <summary>
+        /// Scans the "paks" directory for archive files and registers their contents for later access.
+        /// </summary>
+        /// <remarks>This method loads all files in the "paks" directory as ZIP archives and indexes their
+        /// entries for lookup. If duplicate file names are found across different archives, a warning is logged. This
+        /// method should be called before attempting to access files managed by the archive system.</remarks>
         public void Register()
         {
             Directory.CreateDirectory("paks");
@@ -98,8 +113,7 @@ namespace RE.Core.Assets.Providers
         {
             throw new NotImplementedException();
         }
-
-
+         
         private ZipArchiveEntry? GetFileEntry(string path)
         {
             var normalized = Path.GetRelativePath("Assets", path).Replace('\\', '/');

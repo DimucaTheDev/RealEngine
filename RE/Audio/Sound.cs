@@ -33,9 +33,21 @@ namespace RE.Audio
         private float _maxDistance, _refDistance;
         private Vector3 _position;
 
+        /// <summary>
+        /// Fires when sound starts playing.
+        /// </summary>
         public event Action? Playing;
+        /// <summary>
+        /// Fires when sound pauses.
+        /// </summary>
         public event Action? Paused;
+        /// <summary>
+        /// Fires when sound stops playing.
+        /// </summary>
         public event Action? Stopped;
+        /// <summary>
+        /// Fires when sound resumes.
+        /// </summary>
         public event Action? Resumed;
         /// <summary>
         /// Occurs when the volume level changes.   
@@ -159,7 +171,7 @@ namespace RE.Audio
                 }
                 if (value)
                     _task.TerminateIfScheduled();
-                else if (IsPlaying)
+                else if (State == SoundState.Playing)
                 {
                     _task?.TerminateIfScheduled();
                     _task = Time.Schedule((int)((Length - Offset) * 1000), () => Stopped?.Invoke());
@@ -454,6 +466,9 @@ namespace RE.Audio
             }
         }
 
+        /// <summary>
+        /// Returns <see cref="SoundState"/> of current instance.
+        /// </summary>
         public SoundState State
         {
             get
@@ -477,10 +492,7 @@ namespace RE.Audio
         /// <para>If <see cref="Loop"/> is set to <see langword="true"/>, the sound instance will not be disposed.</para>
         /// </remarks>
         /// </summary>
-        public bool DisposeOnStop { get; set; }
-        public bool IsPlaying => State == SoundState.Playing;
-        public bool IsPaused => State == SoundState.Paused;
-        public bool IsStopped => State == SoundState.Stopped;
+        public bool DisposeOnStop { get; set; } 
 
 #pragma warning disable 8073
         /// <summary>
@@ -574,7 +586,7 @@ namespace RE.Audio
                 Log.Error("Performing action on disposed/non init-ed sound instance");
                 return;
             }
-            if (!IsPlaying)
+            if (State != SoundState.Playing)
             {
                 _task?.TerminateIfScheduled();
                 FmodChannel.Paused = false;

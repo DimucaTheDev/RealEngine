@@ -35,6 +35,12 @@ namespace RE.Audio
         private static readonly List<string> MissingSounds = [];
         private static readonly List<string> AudioFileExtensions = [".wav", ".mp3", ".ogg", ".flac", ".aiff"];
 
+        /// <summary>
+        /// Initialises FMOD sound subsystem.
+        /// </summary>
+        /// <remarks>
+        /// This method calls <see cref="Fmod.SetLibraryLocation"/> with path to <b>fmod.dll</b>, which is located in DLL/WIN32 by default.
+        /// </remarks>
         public static void Init()
         {
             Game.Instance.UpdateFrame += Update;
@@ -52,6 +58,10 @@ namespace RE.Audio
 
             Log.Information("Mapped {Count} sounds.", _soundMap.Count);
         }
+        /// <summary>
+        /// Updates listener position
+        /// </summary>
+        /// <param name="args">Time passed from previous <see cref="Game.OnUpdateFrame"/> call.</param>
         public static void Update(FrameEventArgs args)
         {
             var cam = Camera.GetActiveCamera();

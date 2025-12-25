@@ -4,7 +4,7 @@ using OpenTK.Graphics.OpenGL;
 using PixelFormat = OpenTK.Graphics.OpenGL.PixelFormat;
 
 namespace RE.Utils
-{
+{ 
     internal static class WindowsShell
     {
         private static readonly Dictionary<string, IntPtr> _iconCache = new();

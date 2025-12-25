@@ -1,5 +1,8 @@
 namespace RE.Core.Assets.Providers
 {
+    /// <summary>
+    /// <see cref="IContentProvider"/> implementation that uses <see cref="File"/> class for retrieving data.
+    /// </summary>
     public class FileContentProvider : IContentProvider
     {
         public string Prefix => "file:";

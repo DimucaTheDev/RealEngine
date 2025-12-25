@@ -58,6 +58,14 @@ namespace RE.Core.Scripting
                 _recursionDepth--;
             }
         }
+        /// <summary>
+        /// Parses and executes the specified command string, invoking the associated command handler if applicable.
+        /// </summary>
+        /// <remarks>The command string is split into arguments, supporting quoted substrings as single
+        /// arguments. If a command handler is registered, it is invoked with the parsed command and arguments. Lines
+        /// starting with '#' are treated as comments and ignored.</remarks>
+        /// <param name="command">The command line to execute. Leading whitespace is ignored. If the command is null, empty, consists only of
+        /// whitespace, or starts with a '#', the method does nothing.</param>
         public static void ExecuteCommand(string command)
         {
             if (string.IsNullOrWhiteSpace(command) || command.TrimStart(' ').StartsWith("#"))
@@ -81,6 +89,17 @@ namespace RE.Core.Scripting
                 Log.Error(ex, "Error executing command \"{Command} {Args}\"", command, string.Join(' ', result[1..].ToList()));
             }
         }
+        /// <summary>
+        /// Registers a command handler that is invoked when a command with the specified name is executed.
+        /// </summary>
+        /// <remarks>If a handler is already registered for the specified command name, this method does
+        /// not overwrite the existing handler and logs a warning instead. Each command name can only have one
+        /// associated handler.</remarks>
+        /// <param name="name">The name of the command to associate with the handler. Command names are compared using case-insensitive
+        /// ordinal comparison. Cannot be null or empty.</param>
+        /// <param name="handler">The action to execute when the command is triggered. Receives the list of command arguments as its
+        /// parameter. Cannot be null.</param>
+        /// <param name="description">An optional description of the command. If not specified, the description is set to an empty string.</param>
         public static void RegisterHandler(string name, Action<List<string>> handler, string description = "")
         {
             if (!CommandDescriptions.TryAdd(name, description))
@@ -97,7 +116,17 @@ namespace RE.Core.Scripting
                 }
             };
         }
-
+        /// <summary>
+        /// Registers a command handler that is invoked when a command with a single string argument is executed.
+        /// </summary>
+        /// <remarks>If a command with the specified name is already registered, this method does not
+        /// overwrite the existing handler and logs a warning instead. Only one handler can be registered per command
+        /// name.</remarks>
+        /// <param name="name">The name of the command to register. Command names are compared using case-insensitive ordinal comparison.</param>
+        /// <param name="handler">The action to execute when the command is invoked. The handler receives the full argument string passed to
+        /// the command.</param>
+        /// <param name="description">An optional description of the command. The description can be used for help text or documentation purposes.
+        /// The default is an empty string.</param>
         public static void RegisterSingleArgHandler(string name, Action<string> handler, string description = "")
         {
             if (!CommandDescriptions.TryAdd(name, description))
@@ -114,7 +143,7 @@ namespace RE.Core.Scripting
             };
         }
 
-        public static void RegisterAllCommands()
+        internal static void RegisterAllCommands()
         {
             RegisterHandler("help", _ =>
             {

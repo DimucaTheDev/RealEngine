@@ -20,7 +20,6 @@ namespace RE.Core.Assets
     {
         public const int NoProgram = 0;
 
-
         /// <summary>
         /// OpenGL handle for the shader program.
         /// </summary>
@@ -158,6 +157,20 @@ namespace RE.Core.Assets
             }
         }
 
+        /// <summary>
+        /// Sets an array of struct values for the specified variable name, mapping each property of the struct to a
+        /// corresponding uniform variable.
+        /// </summary>
+        /// <remarks>Each property of the struct type is mapped to a uniform variable named using the
+        /// pattern "<c>varName</c>[i].<c>PropertyValue</c>", where <c>i</c> is the index in the array. If a property is decorated with
+        /// the GlPropertyNameAttribute, its PropertyName value is used instead of the property name. Properties with
+        /// null values are skipped.</remarks>
+        /// <typeparam name="T">The type of the struct whose properties will be set as uniform variables. Must be a reference type with
+        /// public properties.</typeparam>
+        /// <param name="varName">The base name of the variable to which the struct array will be assigned. Each struct property will be
+        /// mapped to a uniform variable using this base name.</param>
+        /// <param name="values">An enumerable collection of struct values to set. Each element in the collection represents a struct whose
+        /// properties will be assigned to corresponding uniform variables.</param>
         public void SetStructArray<T>(string varName, IEnumerable<T> values)
         {
             var valArray = values as T[] ?? values.ToArray();
@@ -193,6 +206,17 @@ namespace RE.Core.Assets
             var structName = structNameAttr?.StructureName ?? typeof(T).Name;
             SetStructArray(structName, values);
         }
+        /// <summary>
+        /// Sets the values of all public properties of a struct as individual uniforms, using the specified variable
+        /// name as the struct prefix.
+        /// </summary>
+        /// <remarks>Each public property of the struct is set as a separate uniform variable, with the
+        /// uniform name composed of the provided struct name and the property name (e.g., "MyStruct.Property").
+        /// Properties with null values are ignored. Custom property and struct names may be used if the appropriate
+        /// attributes are present.</remarks>
+        /// <typeparam name="T">The type of the struct whose properties will be set as uniforms. Must be a value type.</typeparam>
+        /// <param name="varName">The name to use as the prefix for the struct's uniform variables.</param>
+        /// <param name="value">The struct instance whose public property values will be set as uniforms.</param>
         public void SetStruct<T>(string varName, T value) where T : struct
         {
             //var structNameAttr = typeof(T).GetCustomAttribute<GlStructNameAttribute>();
@@ -218,7 +242,7 @@ namespace RE.Core.Assets
         }
 
         /// <summary>
-        /// Deleted shader program and sets <see cref="Handle"/> to 0.
+        /// Deletes shader program and sets <see cref="Handle"/> to 0.
         /// </summary>
         public override void OnUnload()
         {

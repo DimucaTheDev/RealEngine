@@ -5,19 +5,42 @@ using Serilog;
 
 namespace RE.Core.Assets
 {
+    /// <summary>
+    /// Provides centralized access to registered content providers and helpers to load assets
+    /// (strings, bytes and streams) by path. Providers are identified by a prefix and can be
+    /// registered at runtime. If an asset path does not include a provider prefix the manager
+    /// can either try all registered providers or resolve against the default provider.
+    /// </summary>
     public static class ContentManager
     {
         private static readonly List<IContentProvider> _providers = new();
 
+        /// <summary>
+        /// The default content provider used when a path does not contain a provider prefix
+        /// and no other provider can be resolved.
+        /// </summary>
         public static IContentProvider Default { get; set; } = null!;
 
         /// <summary>
-        /// Should manager search for assets in all providers if prefix is not specified.
+        /// Should the manager search for assets in all registered content providers when
+        /// the requested path does not include a provider prefix. When <c>true</c> the
+        /// manager will probe each provider for existence of the asset or directory.
+        /// When <c>false</c> the manager will only resolve providers by explicit prefix
+        /// or use the <see cref="Default"/> provider.
         /// </summary>
         public static bool ResolveAssetsInAllContentProviders { get; set; } = true;
 
         private static readonly Lock _lock = new();
 
+        /// <summary>
+        /// Registers a content provider so it can be used by the manager. The provider
+        /// must specify a non-empty <see cref="IContentProvider.Prefix"/> and will be
+        /// initialized via its <see cref="IContentProvider.Register"/> method.
+        /// </summary>
+        /// <param name="provider">The content provider to register.</param>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="provider"/> is null.</exception>
+        /// <exception cref="ArgumentException">Thrown when the provider prefix is null/empty or a provider
+        /// with the same prefix is already registered.</exception>
         public static void Register(IContentProvider provider)
         {
             ArgumentNullException.ThrowIfNull(provider);
@@ -57,12 +80,27 @@ namespace RE.Core.Assets
             return Default;
         }
 
+        /// <summary>
+        /// Checks whether an asset exists for the given path. The path may include a
+        /// provider prefix or, if no prefix is present, the manager's resolution policy
+        /// determines which provider(s) are queried.
+        /// </summary>
+        /// <param name="path">The asset path to check.</param>
+        /// <returns><c>true</c> if the asset exists; otherwise <c>false</c>.</returns>
         public static bool Exists(string path)
         {
             var provider = FindProvider(path);
             return provider != null && provider.Exists(path);
         }
 
+        /// <summary>
+        /// Loads the asset at the specified path and returns its contents decoded as UTF-8 text.
+        /// </summary>
+        /// <param name="path">The asset path to load.</param>
+        /// <returns>The UTF-8 decoded string content of the asset.</returns>
+        /// <exception cref="InvalidOperationException">Thrown when no matching provider can be resolved
+        /// and <see cref="Default"/> is not set.</exception>
+        /// <exception cref="FileNotFoundException">Thrown when the asset does not exist.</exception>
         public static string GetString(string path)
         {
             var provider = FindProvider(path)
@@ -74,6 +112,14 @@ namespace RE.Core.Assets
             return Encoding.UTF8.GetString(provider.GetBytes(path));
         }
 
+        /// <summary>
+        /// Loads the asset at the specified path and returns its contents as a byte array.
+        /// </summary>
+        /// <param name="path">The asset path to load.</param>
+        /// <returns>The raw bytes of the asset.</returns>
+        /// <exception cref="InvalidOperationException">Thrown when no matching provider can be resolved
+        /// and <see cref="Default"/> is not set.</exception>
+        /// <exception cref="FileNotFoundException">Thrown when the asset does not exist.</exception>
         public static byte[] GetBytes(string path)
         {
             var provider = FindProvider(path)
@@ -85,6 +131,16 @@ namespace RE.Core.Assets
             return provider.GetBytes(path);
         }
 
+        /// <summary>
+        /// Loads a portion of the asset at the specified path and returns the requested bytes.
+        /// </summary>
+        /// <param name="path">The asset path to load.</param>
+        /// <param name="offset">The zero-based byte offset in the asset at which to begin reading.</param>
+        /// <param name="count">The number of bytes to read.</param>
+        /// <returns>The requested bytes from the asset.</returns>
+        /// <exception cref="InvalidOperationException">Thrown when no matching provider can be resolved
+        /// and <see cref="Default"/> is not set.</exception>
+        /// <exception cref="FileNotFoundException">Thrown when the asset does not exist.</exception>
         public static byte[] GetBytes(string path, int offset, int count)
         {
             var provider = FindProvider(path)
@@ -96,6 +152,14 @@ namespace RE.Core.Assets
             return provider.GetBytes(path, offset, count);
         }
 
+        /// <summary>
+        /// Opens a read-only stream to the asset at the specified path.
+        /// </summary>
+        /// <param name="path">The asset path to open.</param>
+        /// <returns>A <see cref="Stream"/> to read the asset data.</returns>
+        /// <exception cref="InvalidOperationException">Thrown when no matching provider can be resolved
+        /// and <see cref="Default"/> is not set.</exception>
+        /// <exception cref="FileNotFoundException">Thrown when the asset does not exist.</exception>
         public static Stream Open(string path)
         {
             var provider = FindProvider(path)
@@ -107,6 +171,14 @@ namespace RE.Core.Assets
             return provider.Open(path);
         }
 
+        /// <summary>
+        /// Returns the file entries under the specified path from the resolved provider.
+        /// </summary>
+        /// <param name="path">The directory path to enumerate.</param>
+        /// <param name="recursive">Whether to include files from subdirectories.</param>
+        /// <returns>An array of file paths available under the specified path.</returns>
+        /// <exception cref="InvalidOperationException">Thrown when no matching provider can be resolved
+        /// and <see cref="Default"/> is not set.</exception>
         public static string[] GetFiles(string path, bool recursive = false)
         {
             var provider = FindProvider(path)
@@ -114,6 +186,14 @@ namespace RE.Core.Assets
             return provider.GetFiles(path, recursive);
         }
 
+        /// <summary>
+        /// Returns the directory entries under the specified path from the resolved provider.
+        /// </summary>
+        /// <param name="path">The directory path to enumerate.</param>
+        /// <param name="recursive">Whether to include directories from subdirectories.</param>
+        /// <returns>An array of directory paths available under the specified path.</returns>
+        /// <exception cref="InvalidOperationException">Thrown when no matching provider can be resolved
+        /// and <see cref="Default"/> is not set.</exception>
         public static string[] GetDirectories(string path, bool recursive = false)
         {
             var provider = FindProvider(path)

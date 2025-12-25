@@ -13,6 +13,9 @@ namespace RE.Core.PluginSystem
     /// synchronization if accessing from multiple threads.</remarks>
     public static class PluginManager
     {
+        /// <summary>
+        /// Gets the list of plugins that are currently loaded by the application.
+        /// </summary>
         public static IReadOnlyList<Plugin> LoadedPlugins { get; private set; } = [];
 
         /// <summary>

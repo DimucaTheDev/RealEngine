@@ -30,7 +30,6 @@ namespace RE.Core.Assets
         }
 
         public virtual void OnLoad() { }
-
         public virtual void OnUnload()
         {
             if (string.IsNullOrWhiteSpace(AssetPath))

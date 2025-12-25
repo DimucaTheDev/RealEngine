@@ -82,13 +82,7 @@ public static class Time
             Log.Warning("Tried to remove a task that was not scheduled: {MethodName}", task.Action.Method.Name);
     }
 
-    [Obsolete("Doesnt work!!!!", true)]
-    public static void ScheduleFrames(int frames, Action action)
-    {
-        _scheduledFrames.Add(new ScheduledTask(ElapsedFrames + frames, action));
-    }
-
-    public static void Init()
+    internal static void Init()
     {
         if (_initialized)
         {
@@ -119,7 +113,7 @@ public static class Time
                 }
                 catch (Exception ex)
                 {
-                    Log.Error(ex, "[Timer] Exception: {Exception}", ex);
+                    Log.Error(ex, "Exception: {Exception}", ex);
                 }
                 finally
                 {
