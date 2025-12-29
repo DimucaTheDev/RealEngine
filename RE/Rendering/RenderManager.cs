@@ -39,8 +39,7 @@ public class RenderManager
 
     public static void Init()
     {
-        Renderables.Clear();
-        FrustumRenderer.Init();
+        Renderables.Clear(); 
         FrustumRenderer.Clear();
         Initializer.InitializationCompleted += () => FrustumRenderer.StartRender();
         foreach (RenderLayer layer in Enum.GetValues(typeof(RenderLayer)))

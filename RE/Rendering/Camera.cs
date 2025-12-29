@@ -8,7 +8,7 @@ using RE.Core.Scripting;
 using RE.Core.World;
 using RE.Core.World.Components;
 using RE.Core.World.Components.Physics;
-using RE.Debug.Overlay.Editor.Panels;
+using RE.Debug.Overlay.Editor.Panels.Viewport;
 using SceneEditor = RE.Debug.Overlay.Editor.SceneEditor;
 
 namespace RE.Rendering;
@@ -143,18 +143,7 @@ public class Camera(Vector3 position, Vector3 up, int width, int height)
     public Matrix4 GetProjectionMatrix() => GetProjectionMatrix(Fov);
     public Matrix4 GetProjectionMatrix(float fov) => Matrix4.CreatePerspectiveFieldOfView(MathHelper.DegreesToRadians(fov), AspectRatio, 0.1f, 10000f);
     public Matrix4 GetBillboard(Vector3 objectPosition, bool lockX = false, bool lockY = false)
-    {
-        Func<int, int> d = _ =>
-        {
-            Console.WriteLine();
-            return 1;
-        };
-
-        Dictionary<string, Func<int, int>> a = new();
-        a.Add("fuckme", d);
-
-        a["fuckme"](2);
-
+    {  
         Matrix4 view = GetViewMatrix();
 
         view.Row3.Xyz = Vector3.Zero;

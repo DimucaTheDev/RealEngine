@@ -1,4 +1,5 @@
 ﻿using System.Text.Json.Nodes;
+using BulletSharp;
 using OpenTK.Graphics.OpenGL4;
 using OpenTK.Windowing.Common;
 using RE.Core.Assets;
@@ -203,6 +204,8 @@ namespace RE.Core.World.Components
             root.Add("args", args);
             return root;
         }
+
+        public override CollisionShape GetObjectSelectionShape() => new BoxShape(0.3f);
 
         public void DebugRender(FrameEventArgs args)
         {

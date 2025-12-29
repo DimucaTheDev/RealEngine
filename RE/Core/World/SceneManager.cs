@@ -5,6 +5,7 @@ using OpenTK.Mathematics;
 using RE.Core.Assets;
 using RE.Core.PluginSystem;
 using RE.Debug;
+using RE.Debug.Overlay.Editor.Panels.Viewport;
 using Serilog;
 using Quaternion = OpenTK.Mathematics.Quaternion;
 

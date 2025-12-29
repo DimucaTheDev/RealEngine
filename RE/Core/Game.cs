@@ -15,7 +15,7 @@ using RE.Core.World.Physics;
 using RE.Debug;
 using RE.Debug.Overlay;
 using RE.Debug.Overlay.Editor;
-using RE.Debug.Overlay.Editor.Panels;
+using RE.Debug.Overlay.Editor.Panels.Viewport;
 using RE.Libs.Grille.ImGuiTK;
 using RE.Rendering;
 using RE.Rendering.Renderables;

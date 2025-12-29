@@ -1,6 +1,7 @@
 ﻿using BulletSharp;
 using Hexa.NET.ImGui;
 using Hexa.NET.ImGuizmo;
+using Microsoft.VisualBasic.Devices;
 using OpenTK.Graphics.OpenGL;
 using OpenTK.Mathematics;
 using RE.Core;
@@ -10,14 +11,14 @@ using RE.Core.World.Physics;
 using RE.Rendering;
 using RE.Rendering.Renderables;
 using RE.Utils;
-using Keys = OpenTK.Windowing.GraphicsLibraryFramework.Keys;
-using TkVector3 = OpenTK.Mathematics.Vector3;
 using static Hexa.NET.ImGui.ImGui;
+using Keys = OpenTK.Windowing.GraphicsLibraryFramework.Keys;
 using Quaternion = BulletSharp.Math.Quaternion;
+using TkVector3 = OpenTK.Mathematics.Vector3;
 using Vector2 = System.Numerics.Vector2;
 using Vector4 = System.Numerics.Vector4;
 
-namespace RE.Debug.Overlay.Editor.Panels
+namespace RE.Debug.Overlay.Editor.Panels.Viewport
 {
     public class ViewportPanel
     {
@@ -56,6 +57,7 @@ namespace RE.Debug.Overlay.Editor.Panels
         private CollisionDispatcher _dispatcher;
         private DbvtBroadphase _broadphase;
         private SpriteRenderer _cameraSprite;
+        private Vector4 _viewportRect;
 
         ~ViewportPanel() => CollisionWorld.Dispose();
 
@@ -87,7 +89,7 @@ namespace RE.Debug.Overlay.Editor.Panels
 
             //CollisionWorld = new CollisionWorld(PhysicsManager.DynamicsWorld.Dispatcher, PhysicsManager.DynamicsWorld.Broadphase, defaultCollisionConfiguration);
             CollisionWorld = new CollisionWorld(_dispatcher, _broadphase, defaultCollisionConfiguration);
-            CollisionWorld.DebugDrawer = new BulletDebugDrawer(); 
+            CollisionWorld.DebugDrawer = new BulletDebugDrawer();
         }
 
         public void Draw()
@@ -113,10 +115,6 @@ namespace RE.Debug.Overlay.Editor.Panels
                     MoveCamera();
                 }
 
-                PanoramicCameraMove();
-                LeftMouseButtonHandler();
-
-
                 var contentSize = GetContentRegionAvail();
 
                 if (contentSize is { X: > 0, Y: > 0 } && (ViewportSize.X != contentSize.X || ViewportSize.Y != contentSize.Y))
@@ -127,7 +125,7 @@ namespace RE.Debug.Overlay.Editor.Panels
                     Camera.Editor.RenderHeight = (int)ViewportSize.Y;
                 }
 
-                SetImGuizmoRect();
+                var size = _viewportRect = SetImGuizmoRect();
 
                 Image(new ImTextureRef() { TexID = Game.Instance.SceneTextureId }, ViewportSize,
                     new Vector2(0, 1),
@@ -137,10 +135,26 @@ namespace RE.Debug.Overlay.Editor.Panels
 
                 DrawGrid();
                 DrawGizmos();
+
+                foreach (var go in SceneManager.CurrentScene.GameObjects)
+                {
+                    foreach (var comp in go.Components)
+                    {
+                        if (comp is IViewportRenderer vr)
+                        {
+                            vr.ViewportRender(new OpenTK.Mathematics.Vector2(size.X, size.Y), new OpenTK.Mathematics.Vector2(size.Z, size.W));
+                        }
+                    }
+                }
+
+                PanoramicCameraMove();
+                LeftMouseButtonHandler();
             }
             End();
+
+            //CollisionWorld.DebugDrawWorld();
         }
-        public void SetImGuizmoRect()
+        private static Vector4 SetImGuizmoRect()
         {
             var contentRegionSize = GetContentRegionAvail();
             var viewportStart = GetCursorScreenPos();
@@ -148,8 +162,9 @@ namespace RE.Debug.Overlay.Editor.Panels
             var y = viewportStart.Y;
             var w = contentRegionSize.X;
             var h = contentRegionSize.Y;
-
             ImGuizmo.SetRect(x, y, w, h);
+
+            return new(x, y, w, h);
         }
         private void DrawGizmos()
         {
@@ -167,7 +182,7 @@ namespace RE.Debug.Overlay.Editor.Panels
                 var openTkWorldMatrix = (scaleMatrix * rotationMatrix * translationMatrix).ToBulletMatrix();
 
                 ImGuizmo.SetDrawlist();
-
+                ImGuizmo.SetID(0);
                 if (ImGuizmo.Manipulate(ref v.M11, ref p.M11, Operation, Mode, ref openTkWorldMatrix.M11))
                 {
                     openTkWorldMatrix.Decompose(out var scale, out var rotation, out var translation);
@@ -186,17 +201,19 @@ namespace RE.Debug.Overlay.Editor.Panels
                 if (ImGuizmo.IsUsingAny() || ImGuizmo.IsOver())
                     return;
 
-                var viewportScreenPos = GetCursorScreenPos();
                 var mousePosGlobal = GetMousePos();
-                var viewportAvailableSize = GetContentRegionAvail();
+                var viewportSize = new Vector2(_viewportRect.Z, _viewportRect.W);
 
-                var viewportX = mousePosGlobal.X - viewportScreenPos.X;
-                var viewportY = mousePosGlobal.Y - viewportScreenPos.Y;
+                float vx = mousePosGlobal.X - _viewportRect.X;
+                float vy = mousePosGlobal.Y - _viewportRect.Y;
 
-                if (viewportX < 0 || viewportY < 0 || viewportX > viewportAvailableSize.X || viewportY > viewportAvailableSize.Y)
+                vy = _viewportRect.W - vy;
+
+                if (vx < 0 || vy < 0 || vx > viewportSize.X || vy > viewportSize.Y)
                     return;
 
-                var yOpentk = viewportAvailableSize.Y - viewportY;
+                var screenNear = new TkVector3(vx, vy, 0.0f);
+                var screenFar = new TkVector3(vx, vy, 1.0f);
 
                 var currentCamera = Camera.Editor;
 
@@ -206,13 +223,11 @@ namespace RE.Debug.Overlay.Editor.Panels
 
                 float vpX = 0;
                 float vpY = 0;
-                var vpW = viewportAvailableSize.X;
-                var vpH = viewportAvailableSize.Y;
+                var vpW = viewportSize.X;
+                var vpH = viewportSize.Y;
                 var minZ = 0.0f;
                 var maxZ = 1.0f;
 
-                var screenNear = new TkVector3(viewportX, yOpentk, minZ);
-                var screenFar = new TkVector3(viewportX, yOpentk, maxZ);
 
                 var rayOriginWs = TkVector3.Unproject(
                     screenNear,
@@ -232,6 +247,7 @@ namespace RE.Debug.Overlay.Editor.Panels
                 var callback = new AllHitsRayResultCallback(pStart, pEnd);
 
                 CollisionWorld.RayTest(pStart, pEnd, callback);
+                //LineRenderer.Main.AddLine(pStart.ToOpenTkVector3(), pEnd.ToOpenTkVector3(), (1, 0, 0, 1), (1, 0, 0, 1));
 
                 if (callback.HasHit)
                 {
@@ -403,19 +419,6 @@ namespace RE.Debug.Overlay.Editor.Panels
                     EndTooltip();
                 }
             }
-
-            var imTextureId1 = _translateIcon;
-            var imTextureId2 = _rotateIcon;
-            var imTextureId3 = _scaleIcon;
-            var imTextureId4 = _lightOffIcon;
-            var imTextureId5 = _lightOnIcon;
-            var imTextureId6 = _skyboxOffIcon;
-            var imTextureId7 = _skyboxOnIcon;
-            var imTextureId8 = _axisOffIcon;
-            var imTextureId9 = _axisOnIcon;
-            var imTextureId10 = _gridOffIcon;
-            var imTextureId11 = _gridOnIcon;
-            var imTextureId12 = _physOptionsIcon;
 
             const int size = 20;
 

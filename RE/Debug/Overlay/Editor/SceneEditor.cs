@@ -13,6 +13,7 @@ using RE.Core.PluginSystem;
 using RE.Core.Scripting;
 using RE.Core.World;
 using RE.Debug.Overlay.Editor.Panels;
+using RE.Debug.Overlay.Editor.Panels.Viewport;
 using RE.Rendering;
 using RE.Rendering.Renderables;
 using RE.Utils;

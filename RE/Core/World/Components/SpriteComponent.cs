@@ -1,4 +1,5 @@
 ﻿using System.Text.Json.Nodes;
+using BulletSharp;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using RE.Core.Scripting;
@@ -30,6 +31,7 @@ namespace RE.Core.World.Components
         {
             Sprite.Dispose();
         }
+
         public override JsonNode GetSaveData()
         {
             JsonObject root = new();
@@ -37,5 +39,7 @@ namespace RE.Core.World.Components
             root.Add("args", args);
             return root;
         }
+         
+        public override CollisionShape GetObjectSelectionShape() => new BoxShape(0.3f);
     }
 }

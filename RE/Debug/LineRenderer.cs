@@ -9,6 +9,7 @@ using RE.Rendering;
 
 namespace RE.Debug;
 
+//please refactor me
 public class LineRenderer : Renderable
 {
     //REMOVE AND REMAKE!!!

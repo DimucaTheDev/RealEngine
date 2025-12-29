@@ -1,6 +1,7 @@
 ﻿using System.Reflection;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
+using BulletSharp;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using RE.Core.World;
@@ -82,5 +83,7 @@ namespace RE.Core
         /// <remarks>This method is intended to be overridden in derived classes to implement custom
         /// destruction logic. The base implementation does not perform any actions.</remarks>
         public virtual void OnDestroy() { }
+
+        public virtual CollisionShape GetObjectSelectionShape() => new EmptyShape();
     }
 }

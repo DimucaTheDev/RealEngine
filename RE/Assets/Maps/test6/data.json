@@ -1,14 +1,19 @@
 {
   "objects": [
     {
-      "name": "test",
+      "name": "cube",
       "components": {
         "MeshComponent": {
           "args": [
             "assets/models/cub.smdl"
           ]
         },
-        "CameraLerpTestComponent": {}
+      }
+    },
+    {
+      "name": "bezier",
+      "components": {
+        "BezierTest": {}
       }
     },
     {

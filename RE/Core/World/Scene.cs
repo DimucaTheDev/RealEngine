@@ -1,4 +1,5 @@
-﻿using RE.Rendering;
+﻿using RE.Debug.Overlay.Editor.Panels.Viewport;
+using RE.Rendering;
 using RE.Rendering.Lightning;
 
 namespace RE.Core.World
@@ -22,6 +23,7 @@ namespace RE.Core.World
         {
             foreach (var obj in GameObjects)
             {
+                ViewportPanel.CollisionWorld.RemoveCollisionObject(obj.ViewportObject);
                 foreach (var component in obj.Components)
                 {
                     component.OnDestroy();

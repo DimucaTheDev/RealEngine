@@ -2,7 +2,7 @@
 using BulletSharp;
 using OpenTK.Mathematics;
 using RE.Core.World.Components;
-using RE.Debug.Overlay.Editor.Panels;
+using RE.Debug.Overlay.Editor.Panels.Viewport;
 using Serilog;
 
 namespace RE.Core.World
@@ -24,7 +24,7 @@ namespace RE.Core.World
 
             _objects.Add(g);
             g.Scene = scene;
-            
+
             if (!doNotCallStart)
             {
                 //todo: set g.Scene 
@@ -55,9 +55,8 @@ namespace RE.Core.World
                 shape = new BvhTriangleMeshShape(meshInterface, true);
             }
             else
-            {
-                shape = new BoxShape(0.3f);
-            }
+                shape = g.Components.FirstOrDefault(s => s.GetObjectSelectionShape() is not EmptyShape)
+                    ?.GetObjectSelectionShape() ?? new EmptyShape();
 
             g.ViewportObject.CollisionShape = shape;
             g.ViewportObject.UserObject = g;
