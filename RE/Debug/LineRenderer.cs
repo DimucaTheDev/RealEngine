@@ -9,103 +9,70 @@ using RE.Rendering;
 
 namespace RE.Debug;
 
-//please refactor me
 public class LineRenderer : Renderable
 {
-    //REMOVE AND REMAKE!!!
-    public LineRenderer() => Init();
+    private const int MaxVertices = 10000;
 
-    public static LineRenderer? Main
-    {
-        get => field ??= new LineRenderer();
-        private set;
-    } = null!;
+    private static LineRenderer? _instance;
+    public static LineRenderer Main => _instance ??= new LineRenderer();
 
-    public static void DrawLine(Vector3 start, Vector3 end, Vector4 colorStart, Vector4 colorEnd) => Main?.RenderLine(start, end, colorStart, colorEnd);
-
-
-    private readonly List<LineEntry> _lines = new();
-    private int _nextId;
+    private readonly List<LineEntry> _lines = new(256);
     private readonly HashSet<int> _toRemove = new();
+    private int _nextId;
+
     private int _vao, _vbo;
     private ShaderProgram _shaderProgram;
-
-    public override void Dispose()
-    {
-        if (_vao != 0)
-        {
-            GL.DeleteVertexArray(_vao);
-            _vao = 0;
-        }
-
-        if (_vbo != 0)
-        {
-            GL.DeleteBuffer(_vbo);
-            _vbo = 0;
-        }
-
-        if (_shaderProgram != 0)
-        {
-            _shaderProgram.Delete();
-            _shaderProgram = null!;
-        }
-    }
-
+    private Vertex[] _vertexBatch = new Vertex[MaxVertices];
 
     public override RenderLayer RenderLayer => RenderLayer.World;
-
     public override bool IsVisible { get; set; } = true;
 
-    //FIXME: https://chatgpt.com/c/685c2b7b-58ec-800b-8dfb-a5da27ba6717
+    public LineRenderer()
+    {
+        Init();
+        _instance = this;
+    }
+
+    public static void DrawLine(Vector3 start, Vector3 end, Vector4 colorStart, Vector4 colorEnd)
+        => Main.RenderLine(start, end, colorStart, colorEnd);
+
     public override void Render(FrameEventArgs args)
     {
-        if (_lines.Count == 0)
+        if (_lines.Count == 0 || !IsVisible)
             return;
 
-        _shaderProgram.Use();
-        var view = Camera.GetActiveCamera().GetViewMatrix();
-        var proj = Camera.GetActiveCamera().GetProjectionMatrix();
-
-        _shaderProgram.SetValue("uView", view);
-        _shaderProgram.SetValue("uProjection", proj);
-
-        var vertexData = new Vertex[_lines.Count * 2];
-        for (var i = 0; i < _lines.Count; i++)
-        {
-            vertexData[i * 2 + 0] = new Vertex { Position = _lines[i].Start, Color = _lines[i].ColorStart };
-            vertexData[i * 2 + 1] = new Vertex { Position = _lines[i].End, Color = _lines[i].ColorEnd };
-        }
-
-        GL.BindVertexArray(_vao);
-        GL.BindBuffer(BufferTarget.ArrayBuffer, _vbo);
-        GL.BufferData(BufferTarget.ArrayBuffer, vertexData.Length * Marshal.SizeOf<Vertex>(), vertexData,
-            BufferUsageHint.DynamicDraw);
-
-        GL.DrawArrays(PrimitiveType.Lines, 0, vertexData.Length);
-        GL.BindVertexArray(0);
+        RenderInternal();
     }
 
     public void RenderLine(Vector3 start, Vector3 end, Vector4 colorStart, Vector4 colorEnd)
     {
+        AddLine(start, end, colorStart, colorEnd, 0);
+    }
+
+    private void RenderInternal()
+    {
         _shaderProgram.Use();
-        var view = Camera.GetActiveCamera().GetViewMatrix();
-        var proj = Camera.GetActiveCamera().GetProjectionMatrix();
+        var camera = Camera.GetActiveCamera();
+        _shaderProgram.SetValue("uView", camera.GetViewMatrix());
+        _shaderProgram.SetValue("uProjection", camera.GetProjectionMatrix());
 
-        _shaderProgram.SetValue("uView", view);
-        _shaderProgram.SetValue("uProjection", proj);
+        int vertexCount = Math.Min(_lines.Count * 2, MaxVertices);
 
-        var vertexData = new Vertex[2];
-        vertexData[0] = new Vertex { Position = start, Color = colorStart };
-        vertexData[1] = new Vertex { Position = end, Color = colorEnd };
-
+        for (int i = 0; i < _lines.Count && (i * 2 + 1) < MaxVertices; i++)
+        {
+            ref var line = ref CollectionsMarshal.AsSpan(_lines)[i];
+            _vertexBatch[i * 2] = new Vertex { Position = line.Start, Color = line.ColorStart };
+            _vertexBatch[i * 2 + 1] = new Vertex { Position = line.End, Color = line.ColorEnd };
+        }
 
         GL.BindVertexArray(_vao);
         GL.BindBuffer(BufferTarget.ArrayBuffer, _vbo);
-        GL.BufferData(BufferTarget.ArrayBuffer, vertexData.Length * Marshal.SizeOf<Vertex>(), vertexData,
-            BufferUsageHint.DynamicDraw);
 
-        GL.DrawArrays(PrimitiveType.Lines, 0, vertexData.Length);
-        GL.BindVertexArray(0);
+        GL.BufferSubData(BufferTarget.ArrayBuffer, nint.Zero, vertexCount * Marshal.SizeOf<Vertex>(), _vertexBatch);
+
+        GL.DrawArrays(PrimitiveType.Lines, 0, vertexCount);
+
+        _lines.RemoveAll(l => l.DurationMs == 0);
     }
 
     public void Init()
@@ -119,26 +86,20 @@ public class LineRenderer : Renderable
 
         GL.BindVertexArray(_vao);
         GL.BindBuffer(BufferTarget.ArrayBuffer, _vbo);
-        GL.BufferData(BufferTarget.ArrayBuffer, 0, nint.Zero, BufferUsageHint.DynamicDraw);
 
-        var stride = Vector3.SizeInBytes + Vector4.SizeInBytes;
+        GL.BufferData(BufferTarget.ArrayBuffer, MaxVertices * Marshal.SizeOf<Vertex>(), nint.Zero, BufferUsageHint.DynamicDraw);
 
-        GL.EnableVertexAttribArray(0); // position
+        var stride = Marshal.SizeOf<Vertex>();
+        GL.EnableVertexAttribArray(0);
         GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, stride, 0);
-
-        GL.EnableVertexAttribArray(1); // color
-        GL.VertexAttribPointer(1, 4, VertexAttribPointerType.Float, false, stride, Vector3.SizeInBytes);
+        GL.EnableVertexAttribArray(1);
+        GL.VertexAttribPointer(1, 4, VertexAttribPointerType.Float, false, stride, Marshal.OffsetOf<Vertex>(nameof(Vertex.Color)));
 
         GL.BindVertexArray(0);
     }
 
-
     public int AddLine(Vector3 start, Vector3 end, Vector4 colorStart, Vector4 colorEnd, int msRemove = 10000)
     {
-        //    if (!_inited)
-        //        throw new InvalidOperationException("LineRenderer is not initialized. Call Init() first.");
-
-
         var id = _nextId++;
         _lines.Add(new LineEntry
         {
@@ -146,51 +107,63 @@ public class LineRenderer : Renderable
             End = end,
             ColorStart = colorStart,
             ColorEnd = colorEnd,
-            Id = id
+            Id = id,
+            DurationMs = msRemove
         });
-        if (msRemove != 0)
-            Time.Schedule(msRemove, () => { ScheduleRemove(id); });
+
+        if (msRemove > 0)
+        {
+            Time.Schedule(msRemove, () => ScheduleRemove(id));
+        }
+
         return id;
     }
 
     public void ScheduleRemove(int id)
     {
-        if (!_toRemove.Any())
-            Time.Schedule(500, ProcessRemovals);
         _toRemove.Add(id);
+        if (_toRemove.Count == 1)
+            Time.Schedule(100, ProcessRemovals);
     }
 
     public void ProcessRemovals()
     {
         if (_toRemove.Count == 0)
             return;
+
         _lines.RemoveAll(l => _toRemove.Contains(l.Id));
-        _lines.TrimExcess();
         _toRemove.Clear();
-        if (!_lines.Any())
+
+        if (_lines.Count == 0)
             _nextId = 0;
     }
 
-    public void RemoveLine(int id)
+    public void RemoveLine(int id) => _lines.RemoveAll(l => l.Id == id);
+
+    public void Clear() => _lines.Clear();
+
+    public override void Dispose()
     {
-        _lines.RemoveAll(l => l.Id == id);
+        GL.DeleteVertexArray(_vao);
+        GL.DeleteBuffer(_vbo);
+        _shaderProgram?.Delete();
+        GC.SuppressFinalize(this);
     }
 
-    public void Clear()
-    {
-        _lines.Clear();
-    }
-
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     private struct Vertex
     {
-        [UsedImplicitly] public Vector3 Position;
-        [UsedImplicitly] public Vector4 Color;
+        public Vector3 Position;
+        public Vector4 Color;
     }
 
-    private class LineEntry
+    private struct LineEntry
     {
-        public Vector4 ColorStart, ColorEnd;
+        public Vector3 Start;
+        public Vector3 End;
+        public Vector4 ColorStart;
+        public Vector4 ColorEnd;
         public int Id;
-        public Vector3 Start, End;
+        public int DurationMs;
     }
 }
