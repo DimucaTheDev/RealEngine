@@ -103,7 +103,7 @@ namespace RE.Editor.Panels
                 Text("Rotation:");
                 TableSetColumnIndex(1);
                 {
-                    Text($"{SceneEditor.SelectedObject.Transform.Rotation}");
+                    Text($"{SceneEditor.SelectedObject.Transform.RotationXyz}");
                 }
                 TableNextRow();
                 TableSetColumnIndex(0);

@@ -602,7 +602,7 @@
       "components": {
         "SkyboxComponent": {
           "args": [
-            "assets/skybox/space"
+            "assets/skybox/space2"
           ]
         }
       }

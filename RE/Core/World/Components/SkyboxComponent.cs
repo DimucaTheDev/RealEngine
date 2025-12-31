@@ -147,11 +147,11 @@ namespace RE.Core.World.Components
 
             var view = Camera.GetActiveCamera().GetViewMatrix();
             var proj = Camera.GetActiveCamera().GetProjectionMatrix();
-            
+
             view.Row3.X = 0;
             view.Row3.Y = 0;
             view.Row3.Z = 0;
-            
+
 
             float t = Time.ElapsedTime * 0.01f;
             var rotation = Quaternion.FromEulerAngles(t, t * 0.5f, t * 0.3f);
