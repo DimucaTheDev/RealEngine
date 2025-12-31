@@ -2,8 +2,8 @@
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using RE.Core.Assets;
+using RE.Rendering.Texturing;
 using RE.Utils;
-using StbImageSharp;
 using Log = Serilog.Log;
 
 namespace RE.Rendering.Renderables
@@ -18,7 +18,7 @@ namespace RE.Rendering.Renderables
         private readonly ShaderProgram _shaderProgram;
 
         private static readonly Dictionary<string, (Texture texture, int width, int height)> TextureCache = new();
-         
+
         public Vector3 Position { get; set; }
         public override RenderLayer RenderLayer => RenderLayer.World;
         public override bool IsVisible { get; set; } = true;
@@ -36,18 +36,20 @@ namespace RE.Rendering.Renderables
             Scale = scale;
             _constantSize = constantSize;
 
-            float[] vertices = {
-            // pos      // uv
-            0f, 0f,     0f, 0f,
-            1f, 0f,     1f, 0f,
-            1f, 1f,     1f, 1f,
-            0f, 1f,     0f, 1f
-        };
+            float[] vertices =
+            [
+                // pos      // uv
+                0f, 0f,     0f, 0f,
+                1f, 0f,     1f, 0f,
+                1f, 1f,     1f, 1f,
+                0f, 1f,     0f, 1f
+            ];
 
-            uint[] indices = {
-            0, 1, 2,
-            2, 3, 0
-        };
+            uint[] indices =
+            [
+                0, 1, 2,
+                2, 3, 0
+            ];
 
             _vao = GL.GenVertexArray();
             _vbo = GL.GenBuffer();
@@ -161,15 +163,15 @@ namespace RE.Rendering.Renderables
             if (!ContentManager.Exists(path))
             {
                 Log.Error("Texture at path {Path} does not exist!", path);
-                var missingTexture = Texture.CreateMissingTexture(4);
+                var missingTexture = StaticTexture.CreateMissingTexture(4);
 
                 return missingTexture;
             }
 
-            var texture = new Texture(path);
+            var texture = new StaticTexture(path);
 
             (_texWidth, _texHeight) = (texture.Width, texture.Height);
-            
+
             TextureCache.Add(path, (texture, texture.Width, texture.Height));
             return texture;
         }

@@ -14,7 +14,7 @@ using RE.Utils;
 using Serilog;
 using Camera = RE.Rendering.Camera;
 using Keys = OpenTK.Windowing.GraphicsLibraryFramework.Keys;
-using SceneEditor = RE.Debug.Overlay.Editor.SceneEditor;
+using SceneEditor = RE.Editor.SceneEditor;
 
 namespace RE.Core.World.Components
 {

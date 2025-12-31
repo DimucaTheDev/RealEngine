@@ -3,6 +3,7 @@ using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using RE.Core.Assets;
 using RE.Rendering.Text;
+using RE.Rendering.Texturing;
 using RE.Utils;
 
 namespace RE.Rendering.Renderables;
@@ -13,7 +14,7 @@ public class FloatingText : Renderable
     private readonly int _vao;
     private readonly int _vbo;
     private readonly ShaderProgram _shaderProgram;
-    private readonly Texture _whiteTexture;
+    private readonly StaticTexture _whiteStaticTexture;
     private readonly bool _bottomToTop;
     private float _scale => Scale * 0.005f;
 
@@ -67,7 +68,7 @@ public class FloatingText : Renderable
 
         GL.BindVertexArray(0);
 
-        _whiteTexture = Texture.CreateMonoColorTexture(Vector3.One);
+        _whiteStaticTexture = StaticTexture.CreateMonoColorTexture(Vector3.One);
 
         // GL.Enable(EnableCap.DepthTest);
         // GL.DepthFunc(DepthFunction.Less);
@@ -133,7 +134,7 @@ public class FloatingText : Renderable
 
 
         GL.BindVertexArray(_vao);
-        GL.BindTexture(TextureTarget.Texture2D, _whiteTexture.AsOpenGl());
+        GL.BindTexture(TextureTarget.Texture2D, _whiteStaticTexture.AsOpenGl());
         GL.DrawArrays(PrimitiveType.Triangles, 0, 6);
 
         _shaderProgram.SetValue("uColor", ForegroundColor);

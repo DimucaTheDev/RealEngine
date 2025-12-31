@@ -5,7 +5,6 @@ using OpenTK.Mathematics;
 using RE.Core.Assets;
 using RE.Core.PluginSystem;
 using RE.Debug;
-using RE.Debug.Overlay.Editor.Panels.Viewport;
 using Serilog;
 using Quaternion = OpenTK.Mathematics.Quaternion;
 
@@ -207,13 +206,8 @@ namespace RE.Core.World
 
                         if (transformElement.TryGetProperty("rotation", out var rotationElement))
                         {
-                            var array = rotationElement.EnumerateArray().Select(s => s.GetSingle())
-                                .Select(MathHelper.DegreesToRadians).ToList();
-                            gameObject.Transform.Rotation = new Quaternion(
-
-                                MathHelper.DegreesToRadians(array[0]),
-                                MathHelper.DegreesToRadians(array[1]),
-                                MathHelper.DegreesToRadians(array[2]));
+                            var array = rotationElement.EnumerateArray().Select(s => s.GetSingle()).ToArray();
+                            gameObject.Transform.RotationXyz = new(array[0], array[1], array[2]);
                         }
 
                         if (transformElement.TryGetProperty("scale", out var scaleElement))

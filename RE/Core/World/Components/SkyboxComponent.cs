@@ -1,6 +1,7 @@
 ﻿using System.Text.Json.Nodes;
 using BulletSharp;
 using OpenTK.Graphics.OpenGL4;
+using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using RE.Core.Assets;
 using RE.Core.Scripting;
@@ -9,7 +10,7 @@ using RE.Rendering;
 using RE.Rendering.Renderables;
 using Serilog;
 using SixLabors.ImageSharp.Processing;
-using SceneEditor = RE.Debug.Overlay.Editor.SceneEditor;
+using SceneEditor = RE.Editor.SceneEditor;
 using Vector3 = OpenTK.Mathematics.Vector3;
 
 namespace RE.Core.World.Components
@@ -62,7 +63,7 @@ namespace RE.Core.World.Components
 
         private void LoadSkybox()
         {
-            // I aint porting this to Texture class 🙏
+            // I aint porting this to StaticTexture class 🙏
 
             GL.DeleteTexture(_cubemap);
             _cubemap = GL.GenTexture();
@@ -146,10 +147,16 @@ namespace RE.Core.World.Components
 
             var view = Camera.GetActiveCamera().GetViewMatrix();
             var proj = Camera.GetActiveCamera().GetProjectionMatrix();
-
+            
             view.Row3.X = 0;
             view.Row3.Y = 0;
             view.Row3.Z = 0;
+            
+
+            float t = Time.ElapsedTime * 0.01f;
+            var rotation = Quaternion.FromEulerAngles(t, t * 0.5f, t * 0.3f);
+            var rotationMatrix = Matrix4.CreateFromQuaternion(rotation);
+            view = rotationMatrix * view;
 
             _program.SetValue("view", view);
             _program.SetValue("projection", proj);

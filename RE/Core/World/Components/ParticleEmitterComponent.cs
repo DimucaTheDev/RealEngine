@@ -4,7 +4,7 @@ using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using RE.Core.Scripting;
 using RE.Rendering.Renderables;
-using SceneEditor = RE.Debug.Overlay.Editor.SceneEditor;
+using SceneEditor = RE.Editor.SceneEditor;
 
 namespace RE.Core.World.Components
 {

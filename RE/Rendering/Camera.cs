@@ -7,9 +7,9 @@ using RE.Core;
 using RE.Core.Scripting;
 using RE.Core.World;
 using RE.Core.World.Components;
-using RE.Core.World.Components.Physics;
-using RE.Debug.Overlay.Editor.Panels.Viewport;
-using SceneEditor = RE.Debug.Overlay.Editor.SceneEditor;
+using RE.Core.World.Components.Physics; 
+using RE.Editor.Panels.Viewport;
+using SceneEditor = RE.Editor.SceneEditor;
 
 namespace RE.Rendering;
 

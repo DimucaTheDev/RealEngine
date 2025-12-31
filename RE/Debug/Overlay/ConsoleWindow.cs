@@ -4,6 +4,7 @@ using Hexa.NET.ImGui;
 using OpenTK.Windowing.Common;
 using RE.Core;
 using RE.Core.Scripting;
+using RE.Editor;
 using RE.Rendering;
 using Serilog;
 
@@ -38,6 +39,8 @@ namespace RE.Debug.Overlay
             ImGui.SetNextWindowPos(_consolePos, ImGuiCond.FirstUseEver);
             ImGui.SetNextWindowBgAlpha(.80f);
 
+            var size = SceneEditor.Enabled ? ImGui.GetContentRegionAvail() : new Vector2(800, 400);
+            ImGui.SetNextWindowSize(size, ImGuiCond.Appearing);
             if (ImGui.Begin("Console ##" + Id))
             {
                 ImGui.Checkbox($"Info ({Regex.Matches(GameLogger.Log, "INF]", RegexOptions.Compiled).Count})", ref _showInfo);
@@ -48,45 +51,41 @@ namespace RE.Debug.Overlay
 
                 ImGui.Separator();
 
-                var w = (bool)Variables.GetVariable("wrapConsole")!;
+                float footerHeightToReserve = ImGui.GetFrameHeightWithSpacing();
 
+                var w = (bool)Variables.GetVariable("wrapConsole")!;
                 string[] logLines = GameLogger.Log.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries);
 
-                ImGui.BeginChild("ScrollRegion",
-                    new Vector2(0, -ImGui.GetFrameHeightWithSpacing()),
-                    ImGuiChildFlags.Borders | ImGuiChildFlags.ResizeY,
-                    w ? ImGuiWindowFlags.None : ImGuiWindowFlags.HorizontalScrollbar);
-
-                float scrollMaxY = ImGui.GetScrollMaxY();
-                float scrollY = ImGui.GetScrollY();
-
-                if (scrollY < scrollMaxY)
+                if (ImGui.BeginChild("ScrollRegion",
+                        new Vector2(0, -footerHeightToReserve),
+                        ImGuiChildFlags.Borders,
+                        w ? ImGuiWindowFlags.None : ImGuiWindowFlags.HorizontalScrollbar))
                 {
-                    _shouldScrollToBottom = false;
-                } 
-                if (scrollY >= scrollMaxY)
-                {
-                    _shouldScrollToBottom = true;
-                }
+                    float scrollMaxY = ImGui.GetScrollMaxY();
+                    float scrollY = ImGui.GetScrollY();
 
+                    if (scrollY < scrollMaxY)
+                        _shouldScrollToBottom = false;
+                    if (scrollY >= scrollMaxY)
+                        _shouldScrollToBottom = true;
 
-                ImGui.PushStyleVar(ImGuiStyleVar.ItemSpacing, new Vector2(4, 1));
-                foreach (string line in logLines)
-                {
-                    //todo: logger should add info about logging level, in case log pattern will be different
-                    if (line.Contains("INF] ") && !_showInfo)
-                        continue;
-                    if (line.Contains("WRN] ") && !_showWarn)
-                        continue;
-                    if (line.Contains("ERR] ") && !_showError)
-                        continue;
-                    DrawLogLine(line, w);
-                }
-                ImGui.PopStyleVar();
+                    ImGui.PushStyleVar(ImGuiStyleVar.ItemSpacing, new Vector2(4, 1));
+                    foreach (string line in logLines)
+                    {
+                        if (line.Contains("INF] ") && !_showInfo)
+                            continue;
+                        if (line.Contains("WRN] ") && !_showWarn)
+                            continue;
+                        if (line.Contains("ERR] ") && !_showError)
+                            continue;
+                        DrawLogLine(line, w);
+                    }
+                    ImGui.PopStyleVar();
 
-                if (_shouldScrollToBottom)
-                { 
-                    ImGui.SetScrollHereY(1.0f);
+                    if (_shouldScrollToBottom)
+                    {
+                        ImGui.SetScrollHereY(1.0f);
+                    }
                 }
                 ImGui.EndChild();
 
@@ -97,8 +96,6 @@ namespace RE.Debug.Overlay
                     _focusNextFrame = false;
                 }
 
-                //ImGui.SetKeyboardFocusHere();//fixme: fix focus
-
                 if (ImGui.InputText("##ConsoleInput", ref _inputBuffer, 512, ImGuiInputTextFlags.EnterReturnsTrue))
                 {
                     if (!string.IsNullOrWhiteSpace(_inputBuffer))
@@ -107,15 +104,12 @@ namespace RE.Debug.Overlay
                         CommandHandler.ExecuteCommand(_inputBuffer);
                         _inputBuffer = string.Empty;
                         _shouldScrollToBottom = true;
-
-                        _focusNextFrame = true; // отложим фокус
+                        _focusNextFrame = true;
                     }
                 }
                 ImGui.PopItemWidth();
             }
-
-            ImGui.End();
-            //ImGui.PopStyleColor();
+            ImGui.End(); 
         }
         private void DrawLogLine(string logLine, bool wrap)
         {

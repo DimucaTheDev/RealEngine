@@ -10,6 +10,7 @@ using RE.Core.World;
 using RE.Rendering.Lightning;
 using RE.Rendering.Renderables.ModelFormat;
 using RE.Rendering.Text;
+using RE.Rendering.Texturing;
 using RE.Utils;
 using Serilog;
 using StbImageSharp;
@@ -17,7 +18,7 @@ using Material = RE.Rendering.Lightning.Material;
 using PrimitiveType = OpenTK.Graphics.OpenGL4.PrimitiveType;
 using Quaternion = OpenTK.Mathematics.Quaternion;
 using Scene = Assimp.Scene;
-using SceneEditor = RE.Debug.Overlay.Editor.SceneEditor;
+using SceneEditor = RE.Editor.SceneEditor;
 
 namespace RE.Rendering.Renderables
 {
@@ -411,8 +412,7 @@ namespace RE.Rendering.Renderables
 
                 var center = (min + max) * 0.5f;
 
-                Quaternion correctionRotation =
-                    Quaternion.FromAxisAngle(Vector3.UnitX, MathHelper.DegreesToRadians(-90.0f));
+                Quaternion correctionRotation = Quaternion.FromAxisAngle(Vector3.UnitX, MathHelper.DegreesToRadians(-90.0f));
 
                 for (int i = 0; i < mesh.VertexCount; i++)
                 {
@@ -428,9 +428,7 @@ namespace RE.Rendering.Renderables
                     var normal = mesh.HasNormals ? mesh.Normals[i].ToOpenTkVector3() : new(0, 0, 1);
 
                     normal = Vector3.Transform(normal, Quaternion.FromAxisAngle(Vector3.UnitX, MathHelper.DegreesToRadians(-90.0f)));
-
                     renderVertices.AddRange([opentkPos.X, opentkPos.Y, opentkPos.Z, uv.X, uv.Y, normal.X, normal.Y, normal.Z]);
-
                     physicsVerticesTemp.AddRange([opentkPos.X, opentkPos.Y, opentkPos.Z]);
                 }
 
@@ -495,11 +493,11 @@ namespace RE.Rendering.Renderables
             if (path.EndsWith(".smdl", true, CultureInfo.InvariantCulture))
             {
                 if (!ContentManager.Exists(path + ".png"))
-                    return Texture.CreateMissingTexture();
+                    return StaticTexture.CreateMissingTexture();
 
                 var readAllBytes = ContentManager.GetBytes(path + ".png");
                 var t = ImageResult.FromMemory(readAllBytes, ColorComponents.RedGreenBlueAlpha);
-                var lt = new Texture(t.Data, t.Width, t.Height);
+                var lt = new StaticTexture(t.Data, t.Width, t.Height);
                 TextureCache[path] = lt;
 
                 return lt;
@@ -520,17 +518,17 @@ namespace RE.Rendering.Renderables
 
             if (texPath != null && ContentManager.Exists(texPath))
             {
-                texId = new Texture(texPath);
+                texId = new StaticTexture(texPath);
             }
             else if (mat?.HasTextureDiffuse ?? false)
             {
                 var t = ImageResult.FromMemory(importFile.Textures.First().CompressedData, ColorComponents.RedGreenBlueAlpha);
-                texId = new Texture(t.Data, t.Width, t.Height);
+                texId = new StaticTexture(t.Data, t.Width, t.Height);
             }
             else
             {
-                Log.Warning("No texture for {Path}", path);
-                texId = Texture.CreateMissingTexture();
+                Log.Warning("No staticTexture for {Path}", path);
+                texId = StaticTexture.CreateMissingTexture();
             }
 
             importFile.Clear();

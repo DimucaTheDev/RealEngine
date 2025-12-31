@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Text;
-using System.Text.Json.Nodes;
+﻿using System.Text.Json.Nodes;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using RE.Debug;

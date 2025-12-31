@@ -10,7 +10,7 @@ using RE.Rendering;
 using RE.Utils;
 using Serilog;
 using SixLabors.ImageSharp;
-using SceneEditor = RE.Debug.Overlay.Editor.SceneEditor;
+using SceneEditor = RE.Editor.SceneEditor;
 
 namespace RE.Core.Scripting
 {

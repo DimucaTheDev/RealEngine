@@ -1,5 +1,4 @@
 ﻿using System.Runtime.InteropServices;
-using JetBrains.Annotations;
 using OpenTK.Graphics.OpenGL4;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;

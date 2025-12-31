@@ -5,7 +5,6 @@ using System.Diagnostics;
 using System.Drawing.Imaging;
 using System.Reflection;
 using System.Runtime.InteropServices;
-using System.Security.Permissions;
 using OpenTK.Graphics.OpenGL;
 using OpenTK.Windowing.Common;
 using OpenTK.Windowing.Common.Input;

@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using OpenTK.Windowing.Common;
+﻿using OpenTK.Windowing.Common;
 using RE.Core.World.Physics;
 
 namespace RE.Rendering.Renderables

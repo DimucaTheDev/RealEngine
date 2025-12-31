@@ -1,15 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Text.Json.Nodes;
+﻿using System.Text.Json.Nodes;
 using Hexa.NET.ImGuizmo;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
+using RE.Core.World.Components;
 using RE.Debug;
-using RE.Debug.Overlay.Editor;
-using RE.Debug.Overlay.Editor.Panels.Viewport;
+using RE.Editor.Panels.Viewport;
 using RE.Rendering;
+using RE.Rendering.Texturing;
 using RE.Utils;
+using SceneEditor = RE.Editor.SceneEditor;
 
 namespace RE.Core.World.Testing
 {
@@ -21,88 +20,85 @@ namespace RE.Core.World.Testing
         float speed = 0.25f; // скорость по параметру
         bool loop = true;
         Vector3[] path =
-{
-    new (  8.0f,  4.0f, -12.0f), // Anchor 0
-    new (  6.0f,  6.0f,  -6.0f),
-    new (  4.0f,  5.0f,   0.0f),
+            {
+                new (  8.0f,  4.0f, -12.0f), // Anchor 0
+                new (  6.0f,  6.0f,  -6.0f),
+                new (  4.0f,  5.0f,   0.0f),
 
-    new (  2.0f,  4.0f,   5.0f), // Anchor 1
-    new (  0.0f,  2.0f,  10.0f),
-    new ( -4.0f,  2.0f,  12.0f),
+                new (  2.0f,  4.0f,   5.0f), // Anchor 1
+                new (  0.0f,  2.0f,  10.0f),
+                new ( -4.0f,  2.0f,  12.0f),
 
-    new ( -8.0f,  3.0f,  14.0f), // Anchor 2
-    new (-12.0f,  6.0f,  15.0f),
-    new (-16.0f,  9.0f,  14.0f),
+                new ( -8.0f,  3.0f,  14.0f), // Anchor 2
+                new (-12.0f,  6.0f,  15.0f),
+                new (-16.0f,  9.0f,  14.0f),
 
-    new (-18.0f, 12.0f,  10.0f), // Anchor 3
-    new (-19.0f, 15.0f,   4.0f),
-    new (-16.0f, 18.0f,  -2.0f),
+                new (-18.0f, 12.0f,  10.0f), // Anchor 3
+                new (-19.0f, 15.0f,   4.0f),
+                new (-16.0f, 18.0f,  -2.0f),
 
-    new (-13.0f, 20.0f,  -7.0f), // Anchor 4
-    new (-10.0f, 18.0f, -12.0f),
-    new ( -6.0f, 15.0f, -16.0f),
+                new (-13.0f, 20.0f,  -7.0f), // Anchor 4
+                new (-10.0f, 18.0f, -12.0f),
+                new ( -6.0f, 15.0f, -16.0f),
 
-    new ( -2.0f, 12.0f, -18.0f), // Anchor 5
-    new (  2.0f,  9.0f, -19.0f),
-    new (  6.0f,  6.0f, -17.0f),
+                new ( -2.0f, 12.0f, -18.0f), // Anchor 5
+                new (  2.0f,  9.0f, -19.0f),
+                new (  6.0f,  6.0f, -17.0f),
 
-    new (  9.0f,  3.0f, -13.0f), // Anchor 6
-    new ( 11.0f,  1.0f,  -8.0f),
-    new ( 12.0f,  0.0f,  -2.0f),
+                new (  9.0f,  3.0f, -13.0f), // Anchor 6
+                new ( 11.0f,  1.0f,  -8.0f),
+                new ( 12.0f,  0.0f,  -2.0f),
 
-    new ( 13.0f, -1.0f,   4.0f), // Anchor 7
-    new ( 14.0f, -1.0f,  10.0f),
-    new ( 12.0f,  0.0f,  15.0f),
+                new ( 13.0f, -1.0f,   4.0f), // Anchor 7
+                new ( 14.0f, -1.0f,  10.0f),
+                new ( 12.0f,  0.0f,  15.0f),
 
-    new (  9.0f,  2.0f,  18.0f), // Anchor 8
-    new (  6.0f,  3.0f,  19.0f),
-    new (  3.0f,  4.0f,  17.0f),
+                new (  9.0f,  2.0f,  18.0f), // Anchor 8
+                new (  6.0f,  3.0f,  19.0f),
+                new (  3.0f,  4.0f,  17.0f),
 
-    new (  1.0f,  5.0f,  13.0f), // Anchor 9
-    new (  0.0f,  6.0f,   8.0f),
-    new ( -1.0f,  7.0f,   2.0f),
+                new (  1.0f,  5.0f,  13.0f), // Anchor 9
+                new (  0.0f,  6.0f,   8.0f),
+                new ( -1.0f,  7.0f,   2.0f),
 
-    new ( -2.0f,  8.0f,  -2.0f), // Anchor 10
-    new ( -3.0f,  9.0f,  -6.0f),
-    new ( -4.0f,  9.0f, -10.0f),
+                new ( -2.0f,  8.0f,  -2.0f), // Anchor 10
+                new ( -3.0f,  9.0f,  -6.0f),
+                new ( -4.0f,  9.0f, -10.0f),
 
-    new ( -5.0f,  8.0f, -14.0f), // Anchor 11
-    new ( -6.0f,  6.0f, -17.0f),
-    new ( -6.0f,  4.0f, -19.0f),
+                new ( -5.0f,  8.0f, -14.0f), // Anchor 11
+                new ( -6.0f,  6.0f, -17.0f),
+                new ( -6.0f,  4.0f, -19.0f),
 
-    new ( -4.0f,  2.0f, -18.0f), // Anchor 12
-    new ( -2.0f,  0.0f, -15.0f),
-    new (  0.0f, -1.0f, -10.0f),
+                new ( -4.0f,  2.0f, -18.0f), // Anchor 12
+                new ( -2.0f,  0.0f, -15.0f),
+                new (  0.0f, -1.0f, -10.0f),
 
-    new (  2.0f, -2.0f,  -6.0f), // Anchor 13
-    new (  4.0f, -2.5f,  -2.0f),
-    new (  6.0f, -2.0f,   2.0f),
+                new (  2.0f, -2.0f,  -6.0f), // Anchor 13
+                new (  4.0f, -2.5f,  -2.0f),
+                new (  6.0f, -2.0f,   2.0f),
 
-    new (  7.5f, -1.5f,   6.0f), // Anchor 14
-    new (  9.0f, -1.0f,  10.0f),
-    new (  9.5f,  0.0f,  14.0f),
+                new (  7.5f, -1.5f,   6.0f), // Anchor 14
+                new (  9.0f, -1.0f,  10.0f),
+                new (  9.5f,  0.0f,  14.0f),
 
-    new (  9.0f,  2.0f,  16.0f), // Anchor 15
-    new (  8.0f,  4.0f,  17.0f),
-    new (  6.0f,  6.0f,  17.0f),
+                new (  9.0f,  2.0f,  16.0f), // Anchor 15
+                new (  8.0f,  4.0f,  17.0f),
+                new (  6.0f,  6.0f,  17.0f),
 
-    new (  4.0f,  8.0f,  16.0f), // Anchor 16
-    new (  2.0f,  9.0f,  14.0f),
-    new (  0.0f, 10.0f,  10.0f),
+                new (  4.0f,  8.0f,  16.0f), // Anchor 16
+                new (  2.0f,  9.0f,  14.0f),
+                new (  0.0f, 10.0f,  10.0f),
 
-    new ( -2.0f, 11.0f,   6.0f), // Anchor 17
-    new ( -4.0f, 11.5f,   2.0f),
-    new ( -6.0f, 11.0f,  -2.0f),
+                new ( -2.0f, 11.0f,   6.0f), // Anchor 17
+                new ( -4.0f, 11.5f,   2.0f),
+                new ( -6.0f, 11.0f,  -2.0f),
 
-    new ( -8.0f, 10.0f,  -6.0f), // Anchor 18
-    new (-10.0f,  9.0f,  -9.0f),
-    new (-12.0f,  8.0f, -12.0f),
+                new ( -8.0f, 10.0f,  -6.0f), // Anchor 18
+                new (-10.0f,  9.0f,  -9.0f),
+                new (-12.0f,  8.0f, -12.0f),
 
-    new (-14.0f,  7.0f, -14.0f), // Anchor 19
-};
-
-
-
+                new (-14.0f,  7.0f, -14.0f), // Anchor 19
+            };
 
         public override void Update(FrameEventArgs args)
         {

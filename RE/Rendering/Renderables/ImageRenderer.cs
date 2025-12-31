@@ -3,7 +3,7 @@ using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using RE.Core;
 using RE.Core.Assets;
-using StbImageSharp;
+using RE.Rendering.Texturing;
 
 namespace RE.Rendering.Renderables;
 
@@ -29,14 +29,14 @@ public class ImageRenderer : Renderable
         Scale = size ?? new Vector2(100, 100);
 
         _shaderProgram = CompileShaders();
-        _texture = new Texture(_pathToImg);
+        _texture = new StaticTexture(_pathToImg);
         SetupQuad();
     }
 
     public void ReplaceImage(string path)
     {
         _texture.Delete();
-        _texture = new Texture(path);
+        _texture = new StaticTexture(path);
     }
     public override void Render(FrameEventArgs args)
     {

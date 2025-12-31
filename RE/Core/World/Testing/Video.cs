@@ -1,18 +1,15 @@
-﻿using System;
-using System.Runtime.InteropServices;
-using System.Text.Json.Nodes;
+﻿using System.Text.Json.Nodes;
 using OpenCvSharp;
-using OpenTK.Graphics.OpenGL;
 using OpenTK.Windowing.Common;
 using RE.Core.World.Components;
-using RE.Rendering;
+using RE.Rendering.Texturing;
 
 namespace RE.Core.World.Testing
 {
 #pragma warning disable
     internal class Video : Component
     {
-        List<Texture> textures = [];
+        List<StaticTexture> textures = [];
         private float fps;
         public Video()
         {
@@ -25,7 +22,7 @@ namespace RE.Core.World.Testing
                 throw new NotImplementedException("legacy");
                 //byte[] managedArray = new byte[m.];
                 //Marshal.Copy(m.Data, managedArray, 0, length);
-                //var t = new Texture(managedArray, m.Width, m.Height);
+                //var t = new StaticTexture(managedArray, m.Width, m.Height);
                 //textures.Add(t);
             }
         }

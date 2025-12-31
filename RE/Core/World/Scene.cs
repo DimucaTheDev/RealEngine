@@ -1,4 +1,4 @@
-﻿using RE.Debug.Overlay.Editor.Panels.Viewport;
+﻿using RE.Editor.Panels.Viewport;
 using RE.Rendering;
 using RE.Rendering.Lightning;
 

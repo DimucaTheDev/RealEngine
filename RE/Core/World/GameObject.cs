@@ -107,7 +107,7 @@ namespace RE.Core.World
         public void SetRotation(Quaternion q)
         {
             Transform.Rotation = q; 
-
+            // удали метод пж
             var rigidBodyComponent = GetComponent<RigidBodyComponent>();
             if (rigidBodyComponent != null!)
             {

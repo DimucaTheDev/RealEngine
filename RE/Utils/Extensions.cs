@@ -2,8 +2,6 @@
 using System.Text.Json.Nodes;
 using BulletSharp;
 using RE.Core;
-using RE.Core.World;
-using RE.Core.World.Components;
 using RE.Core.World.Physics;
 using RE.Rendering;
 

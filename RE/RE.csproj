@@ -20,7 +20,7 @@
 		<GenerateDocumentationFile>True</GenerateDocumentationFile>
 		<Platforms>AnyCPU;x64</Platforms>
 		<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
-		<NoWarn>NU1701;1702;NU1510</NoWarn>
+		<NoWarn>NU1701;NU1702;NU1510;CS1591</NoWarn>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)'=='Production'">

@@ -2,7 +2,7 @@
 using BulletSharp;
 using OpenTK.Mathematics;
 using RE.Core.World.Components;
-using RE.Debug.Overlay.Editor.Panels.Viewport;
+using RE.Editor.Panels.Viewport;
 using Serilog;
 
 namespace RE.Core.World

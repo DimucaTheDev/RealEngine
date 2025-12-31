@@ -1,4 +1,5 @@
-﻿using OpenTK.Mathematics;
+﻿using System.Text.Json.Serialization;
+using OpenTK.Mathematics;
 
 namespace RE.Core.World
 {
@@ -11,14 +12,30 @@ namespace RE.Core.World
         /// Object position in world space.
         /// </summary>
         public Vector3 Position { get; set; }
+
         /// <summary>
         /// Object scale. Default is <see cref="Vector3.One"/>.
         /// </summary>
         public Vector3 Scale { get; set; }
+
         /// <summary>
         /// Object rotation as quaternion.
         /// </summary>
         public Quaternion Rotation { get; set; }
+
+        [JsonIgnore]
+        public Vector3 RotationXyz
+        {
+            get => new(
+                MathHelper.RadiansToDegrees(Rotation.ToEulerAngles().X),
+                MathHelper.RadiansToDegrees(Rotation.ToEulerAngles().Y),
+                MathHelper.RadiansToDegrees(Rotation.ToEulerAngles().Z));
+            set => Rotation = Quaternion.FromEulerAngles(
+                MathHelper.DegreesToRadians(value.X),
+                MathHelper.DegreesToRadians(value.Y),
+                MathHelper.DegreesToRadians(value.Z)
+            );
+        }
 
         public object Clone()
         {

@@ -1,30 +1,16 @@
 ﻿using System.Diagnostics;
 using System.Runtime.InteropServices;
-using BulletSharp;
-using Hexa.NET.ImGui;
 using Hexa.NET.ImPlot;
-using OpenTK.Graphics.OpenGL;
-using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using RE.Core;
-using RE.Core.World.Components.Physics;
-using RE.Core.World.Physics;
-using RE.Debug.Overlay.Editor.Panels;
 using RE.Rendering;
-using RE.Rendering.Renderables;
 using RE.Utils;
-using Serilog;
 using static Hexa.NET.ImGui.ImGui;
-using Vector2 = System.Numerics.Vector2;
 
 namespace RE.Debug.Overlay;
 
 internal class DebugOverlay : Renderable
 {
-
-    private static readonly RingBuffer<int> Fps = new(1000);
-    private static readonly RingBuffer<double> ManagedHeap = new(1000);
-    private static readonly RingBuffer<double> PrivateBytes = new(1000);
     private DebugOverlay()
     {
         RenderManager.AddRenderable(this);
@@ -34,11 +20,15 @@ internal class DebugOverlay : Renderable
     public override RenderLayer RenderLayer => RenderLayer.ImGui;
     public override bool IsVisible { get; set; } = true;
 
+    private static readonly RingBuffer<int> Fps = new(1000);
+    private static readonly RingBuffer<double> ManagedHeap = new(1000);
+    private static readonly RingBuffer<double> PrivateBytes = new(1000);
+
+
     public override void Render(FrameEventArgs args)
     {
-        RenderProfilersWindow(args); 
+        RenderProfilersWindow(args);
     }
-     
 
     public static void Init()
     {
