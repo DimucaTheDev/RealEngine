@@ -31,6 +31,7 @@ namespace RE.Core.PluginSystem
         /// Called when plugin is loaded. Override to implement custom initialization logic.
         /// </summary>
         public virtual void OnLoad() { }
+
         /// <summary>
         /// Called when plugin is unloaded. Override to implement custom cleanup logic.
         /// </summary>

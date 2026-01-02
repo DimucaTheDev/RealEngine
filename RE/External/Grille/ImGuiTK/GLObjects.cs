@@ -6,7 +6,7 @@ using Serilog;
 
 namespace RE.External.Grille.ImGuiTK;
 
-public class GLObjects : IDisposable
+internal class GLObjects : IDisposable
 {
     public int _fontTexture;
     public int _indexBuffer;

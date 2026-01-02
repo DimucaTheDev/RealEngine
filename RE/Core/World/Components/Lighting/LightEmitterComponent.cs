@@ -2,7 +2,9 @@
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using RE.Core.Scripting;
+using RE.Core.Scripting.Attributes;
 using RE.Debug;
+using RE.Editor;
 using RE.Rendering.Lightning;
 using RE.Rendering.Renderables;
 
@@ -21,7 +23,7 @@ namespace RE.Core.World.Components.Lighting
     /// <summary>
     /// wip
     /// </summary>
-    public class LightEmitterComponent : Component, IDebugRenderer
+    public class LightEmitterComponent : Component, IEditorRender
     {
         [EditorProperty] public LightType LightType { get; set; }
 
@@ -185,7 +187,7 @@ namespace RE.Core.World.Components.Lighting
         {
             return GetDataForProperties();
         }
-        public void DebugRender(FrameEventArgs args)
+        public void EditorRender(FrameEventArgs args)
         {
             UpdateLight();
             _bulbSprite.Position = Owner.Transform.Position;

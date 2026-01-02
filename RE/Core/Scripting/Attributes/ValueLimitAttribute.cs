@@ -1,4 +1,4 @@
-﻿namespace RE.Core.Scripting
+﻿namespace RE.Core.Scripting.Attributes
 {
     /// <summary>
     /// Specifies minimum and maximum allowed values for a property in editor.

@@ -13,7 +13,7 @@ using Vector2 = System.Numerics.Vector2;
 
 namespace RE.External.Grille.ImGuiTK;
 
-public class ImGuiController : IDisposable
+internal class ImGuiController : IDisposable
 {
     private readonly List<char> PressedChars = new();
     private readonly Vector2 _scaleFactor = Vector2.One;

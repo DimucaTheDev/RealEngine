@@ -1,4 +1,4 @@
-﻿namespace RE.Core.Scripting
+﻿namespace RE.Core.Scripting.Attributes
 {
     /// <summary>
     /// Adds buttons to the editor for invoking methods.

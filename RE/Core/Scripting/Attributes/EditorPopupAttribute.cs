@@ -1,4 +1,4 @@
-﻿namespace RE.Core.Scripting
+﻿namespace RE.Core.Scripting.Attributes
 {
     /// <summary>
     /// Specifies that a method should be exposed as a popup dialog in the editor.

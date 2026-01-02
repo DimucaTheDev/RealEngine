@@ -1,4 +1,4 @@
-﻿namespace RE.Core.Scripting
+﻿namespace RE.Core.Scripting.Attributes
 {
     /// <summary>
     /// Specifies that a class requires the presence of a component of the specified type.

@@ -29,7 +29,7 @@
 
 	<Import Project="..\BuildTargets\RE.Common.targets" />
 	<Import Project="..\BuildTargets\RE.Publish.targets" />
- 
+
 	<ItemGroup>
 		<Compile Remove="Assets\GenerateStaticModel.cs" />
 

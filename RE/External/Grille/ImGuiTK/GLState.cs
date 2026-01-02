@@ -2,7 +2,7 @@
 
 namespace RE.External.Grille.ImGuiTK;
 
-public unsafe class GLState
+internal unsafe class GLState
 {
     private readonly bool CompatibilityProfile;
 

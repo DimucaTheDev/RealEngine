@@ -2,6 +2,7 @@
 using BulletSharp;
 using OpenTK.Mathematics;
 using RE.Core.Scripting;
+using RE.Core.Scripting.Attributes;
 
 namespace RE.Core.World.Components.Physics
 {

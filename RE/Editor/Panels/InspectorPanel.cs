@@ -5,7 +5,7 @@ using OpenTK.Graphics.OpenGL;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using RE.Core;
-using RE.Core.Scripting;
+using RE.Core.Scripting.Attributes;
 using RE.Core.World.Components;
 using RE.Editor.Panels.MaterialPreview;
 using RE.Editor.PropertyDrawers;
@@ -87,7 +87,7 @@ namespace RE.Editor.Panels
                 Text("Name:");
                 TableSetColumnIndex(1);
                 {
-                    Text(SceneEditor.SelectedObject.Name);
+                    Text(SceneEditor.SelectedObject.Name ?? "null");
                 }
                 TableNextRow();
                 TableSetColumnIndex(0);

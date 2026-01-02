@@ -5,7 +5,8 @@ using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using RE.Core.Assets;
 using RE.Core.Scripting;
-using RE.Debug;
+using RE.Core.Scripting.Attributes;
+using RE.Editor;
 using RE.Rendering;
 using RE.Rendering.Renderables;
 using Serilog;
@@ -16,7 +17,7 @@ using Vector3 = OpenTK.Mathematics.Vector3;
 namespace RE.Core.World.Components
 {
     [ComponentInfo("World", Description = $"Renders Skybox with 6 images located in '{nameof(Path)}':\r\n/right.png\r\n/left.png\r\n/top.png\r\n/bottom.png\r\n/front.png\r\n/back.png\r\n")]
-    internal class SkyboxComponent(string path) : Component, IDebugRenderer
+    internal class SkyboxComponent(string path) : Component, IEditorRender
     {
         private ShaderProgram _program = null!;
         private SpriteRenderer _sprite = new(Vector3.Zero, "assets/sprites/editor/skybox.png", scale: 0.5f);
@@ -214,7 +215,7 @@ namespace RE.Core.World.Components
 
         public override CollisionShape GetObjectSelectionShape() => new BoxShape(0.3f);
 
-        public void DebugRender(FrameEventArgs args)
+        public void EditorRender(FrameEventArgs args)
         {
             _sprite.Position = Owner.Transform.Position;
             _sprite.Render(args);

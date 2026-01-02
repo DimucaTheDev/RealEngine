@@ -6,7 +6,7 @@ using ErrorCode = OpenTK.Graphics.OpenGL4.ErrorCode;
 
 namespace RE.External.Grille.ImGuiTK;
 
-public class GLRenderer : IDisposable
+internal class GLRenderer : IDisposable
 {
     public GLRenderer()
     {

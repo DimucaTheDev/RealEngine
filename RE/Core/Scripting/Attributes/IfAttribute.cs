@@ -1,4 +1,4 @@
-﻿namespace RE.Core.Scripting
+﻿namespace RE.Core.Scripting.Attributes
 {
     /// <summary>
     /// Specifies a conditional requirement for a property based on the value of another property. Apply this attribute

@@ -6,9 +6,10 @@ using OpenTK.Windowing.Common;
 using OpenTK.Windowing.GraphicsLibraryFramework;
 using RE.Audio;
 using RE.Core.Scripting;
+using RE.Core.Scripting.Attributes;
 using RE.Core.World.Components.Physics;
 using RE.Core.World.Physics;
-using RE.Debug;
+using RE.Editor;
 using RE.Rendering.Renderables;
 using RE.Utils;
 using Serilog;
@@ -19,7 +20,7 @@ using SceneEditor = RE.Editor.SceneEditor;
 namespace RE.Core.World.Components
 {
     [ComponentInfo("World/Player", Description = "Handles player logic")]
-    internal class PlayerComponent : Component, IDebugRenderer
+    internal class PlayerComponent : Component, IEditorRender
     {
         private Camera _camera = Camera.Main;
         protected GameObject PlayerGameObject = null!;
@@ -487,7 +488,7 @@ namespace RE.Core.World.Components
             );
         }
 
-        public void DebugRender(FrameEventArgs args)
+        public void EditorRender(FrameEventArgs args)
         {
             _spriteSpawnpoint.Position = Owner.Transform.Position;
 

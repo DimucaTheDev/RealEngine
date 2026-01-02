@@ -1,6 +1,7 @@
 ﻿using OpenTK.Graphics.OpenGL4;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
+using RE.Core;
 using RE.Core.Assets;
 using RE.Rendering.Text;
 using RE.Rendering.Texturing;
@@ -17,6 +18,8 @@ public class FloatingText : Renderable
     private readonly StaticTexture _whiteStaticTexture;
     private readonly bool _bottomToTop;
     private float _scale => Scale * 0.005f;
+
+    private static FloatingText _instance;
 
     public Color4 BackgroundColor { get; set; }
     public Color4 ForegroundColor { get; set; }
@@ -74,6 +77,17 @@ public class FloatingText : Renderable
         // GL.DepthFunc(DepthFunction.Less);
         // GL.Enable(EnableCap.Blend);
         // GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
+    }
+
+    public static void Render(string text, Vector3 pos)
+    {
+        if (_instance == null!)
+        {
+            _instance = new FloatingText("", Vector3.Zero, (FreeTypeFont)Fonts.Default);
+        }
+        _instance.Text = text;
+        _instance.Position = pos;
+        _instance.Render(new FrameEventArgs(Time.DeltaTime));
     }
 
     public override void Render(FrameEventArgs args)

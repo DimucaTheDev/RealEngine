@@ -3,6 +3,7 @@ using BulletSharp;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using RE.Core.Scripting;
+using RE.Core.Scripting.Attributes;
 using RE.Rendering.Renderables;
 
 namespace RE.Core.World.Components

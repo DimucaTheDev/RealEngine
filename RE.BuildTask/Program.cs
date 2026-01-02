@@ -10,9 +10,9 @@ namespace RE.BuildTask
         {
             try
             {
-                if (args == null || args.Length < 3)
+                if (args == null || args.Length < 4)
                 {
-                    Console.Error.WriteLine("Usage: RE.BuildTask <assetsFolder> <outputFolder> <compressAssets>");
+                    Console.Error.WriteLine("Usage: RE.BuildTask <assetsFolder> <outputFolder> <compressAssets> <genZip> <version>");
                     return 1;
                 }
 
@@ -85,6 +85,19 @@ namespace RE.BuildTask
                     {
                         Console.Error.WriteLine($"Failed to move '{dll}': {ex.Message}");
                     }
+                }
+
+
+                if (args[3].ToLower() == "true")
+                {
+                    var tempFileName = File.OpenWrite(Path.GetTempFileName());
+                    ZipFile.CreateFromDirectory(parentDir!, tempFileName, CompressionLevel.SmallestSize, false);
+
+                    var np = parentDir + $"/RealEngine_{args[4]}_{DateTime.Now:ddMMyy}.zip";
+                    tempFileName.Dispose();
+                    File.Delete(np);
+                    File.Move(tempFileName.Name, np);
+                    Console.WriteLine("Zip Build done.");
                 }
 
                 Console.WriteLine("Done.");

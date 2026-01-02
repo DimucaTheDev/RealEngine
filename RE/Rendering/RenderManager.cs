@@ -3,6 +3,7 @@ using OpenTK.Windowing.Common;
 using RE.Core;
 using RE.Core.Scripting;
 using RE.Debug;
+using RE.Editor;
 using RE.Utils;
 using Plane = System.Numerics.Plane;
 using Quaternion = OpenTK.Mathematics.Quaternion;
@@ -111,7 +112,7 @@ public class RenderManager
         }
     }
     #endregion
-    public static void RenderType<T>(T renderable, FrameEventArgs args) where T : IRenderable
+    public static void RenderType<T>(T renderable, FrameEventArgs args) where T : Renderable
     {
         //todo: GenerateFrustum() should be called before this method
         if (Renderables.TryGetValue(renderable.RenderLayer, out var types) && types.TryGetValue(typeof(T), out var list))
@@ -199,8 +200,8 @@ public class RenderManager
         RenderingComponents.ToList().ForEach(s =>
         {
             s.Render(args);
-            if (s is IDebugRenderer d && Variables.GetVariable("showDebugInfo") is true)
-                d.DebugRender(args);
+            if (s is IEditorRender d && Variables.GetVariable("showDebugInfo") is true)
+                d.EditorRender(args);
         });
 
         foreach (var kvp in Renderables)

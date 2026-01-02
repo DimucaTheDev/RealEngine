@@ -9,7 +9,7 @@
 
 	<Target Name="RunPostBuildTasks" AfterTargets="Publish" Condition="'$(Configuration)'=='Production'">
 		<Message Importance="high" Text="$(PublishDir)"/>
-		<Exec Command="dotnet run --project $(SolutionDir)/RE.BuildTask $(PublishDir)\assets $(PublishDir)\paks $(PackAllResourcesToPakFile) " ContinueOnError="false" ConsoleToMSBuild="true" />
+		<Exec Command="dotnet run --project $(SolutionDir)/RE.BuildTask $(PublishDir)\assets $(PublishDir)\paks $(PackAllResourcesToPakFile) $(GenerateZipBuild) $(Version)" ContinueOnError="false" ConsoleToMSBuild="true" />
 	</Target>
 
 </Project>

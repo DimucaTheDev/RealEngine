@@ -11,8 +11,8 @@ using RE.Core;
 using RE.Core.Assets;
 using RE.Core.PluginSystem;
 using RE.Core.Scripting;
+using RE.Core.Scripting.Attributes;
 using RE.Core.World;
-using RE.Debug;
 using RE.Debug.Overlay;
 using RE.Editor.Panels;
 using RE.Editor.Panels.Viewport;
@@ -206,9 +206,9 @@ namespace RE.Editor
             {
                 foreach (var com in obj.Components)
                 {
-                    if (com is IDebugRenderer s)
+                    if (com is IEditorRender s)
                     {
-                        s.DebugRender(args);
+                        s.EditorRender(args);
                     }
                 }
             }

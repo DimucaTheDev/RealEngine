@@ -2,7 +2,7 @@
 
 namespace RE.External.Grille.ImGuiTK;
 
-public static class ShaderCode
+internal static class ShaderCode
 {
     public static string FragmentSource => GetText("Assets/shaders/debug_imgui.frag");
     public static string VertexSource => GetText("Assets/shaders/debug_imgui.vert");

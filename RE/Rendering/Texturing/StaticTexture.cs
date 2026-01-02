@@ -1,11 +1,19 @@
 ﻿using System.Diagnostics;
+using System.Reflection;
 using System.Runtime.CompilerServices;
+using Assimp;
 using Hexa.NET.ImGui;
 using OpenTK.Graphics.OpenGL4;
 using OpenTK.Mathematics;
 using RE.Core.Assets;
 using Serilog;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.PixelFormats;
+using SixLabors.ImageSharp.Processing;
+using SixLabors.ImageSharp.Processing.Processors.Transforms;
 using StbImageSharp;
+using Image = SixLabors.ImageSharp.Image;
+using Size = SixLabors.ImageSharp.Size;
 
 namespace RE.Rendering.Texturing
 {
@@ -66,6 +74,19 @@ namespace RE.Rendering.Texturing
             var image = ImageResult.FromStream(stream, type == ImageColorType.Rgba ? ColorComponents.RedGreenBlueAlpha : ColorComponents.RedGreenBlue);
 
             ImageData = image.Data;
+
+            if (false) // #FunSettings: pixelate textures for retro look
+            {
+                int p = 128;
+                var load = Image.Load(ContentManager.GetBytes(resourceLocation));
+                load.Mutate(s => s.Resize(new Size(p, p), new NearestNeighborResampler(), true));
+                load.Mutate(s => s.Resize(new Size(image.Width, image.Height), new NearestNeighborResampler(), true));
+                Image<Rgba32> converted = load.CloneAs<Rgba32>();
+                Span<byte> d = new Span<byte>(new byte[converted.Width * converted.Height * 4]);
+                converted.CopyPixelDataTo(d);
+                ImageData = d.ToArray();
+            }
+
             Width = image.Width;
             Height = image.Height;
             ColorType = type;
@@ -87,6 +108,18 @@ namespace RE.Rendering.Texturing
                 throw new InvalidOperationException("Specified image data is not in RGB format.");
 
             ImageData = data;
+
+            if (false) // #FunSettings: pixelate textures for retro look
+            {
+                int p = 128;
+                var converted = Image.LoadPixelData<Rgba32>(data, width, height);
+                converted.Mutate(s => s.Resize(new Size(p, p), new NearestNeighborResampler(), true));
+                converted.Mutate(s => s.Resize(new Size(width, height), new NearestNeighborResampler(), true));
+                var d = new Span<byte>(new byte[converted.Width * converted.Height * 4]);
+                converted.CopyPixelDataTo(d);
+                ImageData = d.ToArray();
+            }
+
             Width = width;
             Height = height;
             ColorType = type;

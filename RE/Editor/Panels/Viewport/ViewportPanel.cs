@@ -181,16 +181,15 @@ namespace RE.Editor.Panels.Viewport
                 var scaleMatrix = Matrix4.CreateScale(sc);
                 var rotationMatrix = Matrix4.CreateFromQuaternion(rot);
                 var translationMatrix = Matrix4.CreateTranslation(pos);
-                var openTkWorldMatrix = (scaleMatrix * rotationMatrix * translationMatrix).ToBulletMatrix();
-
+                var openTkWorldMatrix = (scaleMatrix * rotationMatrix * translationMatrix).ToBulletMatrix(); 
                 ImGuizmo.SetDrawlist();
                 ImGuizmo.SetID(0);
                 if (ImGuizmo.Manipulate(ref v.M11, ref p.M11, Operation, Mode, ref openTkWorldMatrix.M11))
                 {
                     openTkWorldMatrix.Decompose(out var scale, out var rotation, out var translation);
-                    transform.Position = translation.ToOpenTkVector3();
-                    transform.Rotation = rotation.ToOpenTkQuaternion();
-                    transform.Scale = scale.ToOpenTkVector3();
+                    SceneEditor.SelectedObject.Transform.Position = translation.ToOpenTkVector3(); 
+                    SceneEditor.SelectedObject.Transform.Rotation = rotation.ToOpenTkQuaternion();
+                    SceneEditor.SelectedObject.Transform.Scale = scale.ToOpenTkVector3();
                 }
             }
         }

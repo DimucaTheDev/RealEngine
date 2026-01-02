@@ -3,7 +3,9 @@ using BulletSharp;
 using BulletSharp.Math;
 using OpenTK.Windowing.Common;
 using RE.Core.Scripting;
+using RE.Core.Scripting.Attributes;
 using RE.Core.World.Physics;
+using RE.Editor;
 using RE.Utils;
 
 namespace RE.Core.World.Components.Physics
@@ -89,7 +91,7 @@ namespace RE.Core.World.Components.Physics
 
         public override void Update(FrameEventArgs args)
         {
-            if (RigidBody == null || RigidBody.MotionState == null || Mass == 0f)
+            if (RigidBody == null! || RigidBody.MotionState == null || Mass == 0f || SceneEditor.Enabled)
                 return;
 
             RigidBody.GetWorldTransform(out var bulletTransform);

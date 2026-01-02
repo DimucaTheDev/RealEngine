@@ -13,7 +13,9 @@ internal class DebugOverlay : Renderable
 {
     private DebugOverlay()
     {
+#if DEBUG
         RenderManager.AddRenderable(this);
+#endif
     }
 
     public static DebugOverlay? Instance { get; private set; }
@@ -23,7 +25,6 @@ internal class DebugOverlay : Renderable
     private static readonly RingBuffer<int> Fps = new(1000);
     private static readonly RingBuffer<double> ManagedHeap = new(1000);
     private static readonly RingBuffer<double> PrivateBytes = new(1000);
-
 
     public override void Render(FrameEventArgs args)
     {

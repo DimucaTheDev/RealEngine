@@ -2,6 +2,7 @@
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using RE.Core.Scripting;
+using RE.Core.Scripting.Attributes;
 using RE.Core.World.Physics;
 using RE.Debug;
 using RE.Utils;

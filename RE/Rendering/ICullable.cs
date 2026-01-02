@@ -1,7 +1,7 @@
 ﻿using OpenTK.Mathematics;
 
 namespace RE.Rendering;
-
+//todo
 public interface ICullable
 {
     public Vector3 Position { get; set; }

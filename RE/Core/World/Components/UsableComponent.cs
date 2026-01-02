@@ -1,5 +1,6 @@
 ﻿using System.Text.Json.Nodes;
 using RE.Core.Scripting;
+using RE.Core.Scripting.Attributes;
 
 namespace RE.Core.World.Components
 {
