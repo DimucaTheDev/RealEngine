@@ -139,9 +139,6 @@ namespace RE.Core.World.Components
 
         public override void Render(FrameEventArgs args)
         {
-            if (SceneEditor.Enabled && !SceneEditor.PreviewSkybox)
-                return;
-
             GL.DepthMask(false);
 
             _program.Use();
@@ -219,6 +216,8 @@ namespace RE.Core.World.Components
         {
             _sprite.Position = Owner.Transform.Position;
             _sprite.Render(args);
+            if (SceneEditor.PreviewSkybox)
+                Render(args);
         }
     }
 }

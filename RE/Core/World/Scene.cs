@@ -26,8 +26,7 @@ namespace RE.Core.World
                 ViewportPanel.CollisionWorld.RemoveCollisionObject(obj.ViewportObject);
                 foreach (var component in obj.Components)
                 {
-                    component.OnDestroy();
-                    Game.Instance.UpdateFrame -= component.Update;
+                    component.OnDestroy(); 
                     RenderManager.RenderingComponents.Remove(component);
                 }
             }

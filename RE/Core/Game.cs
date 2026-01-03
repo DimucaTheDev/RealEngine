@@ -10,9 +10,10 @@ using RE.Core.Assets;
 using RE.Core.Assets.Providers;
 using RE.Core.PluginSystem;
 using RE.Core.Scripting;
+using RE.Core.World;
 using RE.Core.World.Physics;
 using RE.Debug;
-using RE.Debug.Overlay; 
+using RE.Debug.Overlay;
 using RE.Editor.Panels.Viewport;
 using RE.External.Grille.ImGuiTK;
 using RE.Rendering;
@@ -23,7 +24,6 @@ using Camera = RE.Rendering.Camera;
 using Color = System.Drawing.Color;
 using Keys = OpenTK.Windowing.GraphicsLibraryFramework.Keys;
 using SceneEditor = RE.Editor.SceneEditor;
-using TextRenderer = RE.Rendering.Text.TextRenderer;
 
 namespace RE.Core;
 
@@ -32,9 +32,9 @@ internal partial class Game : GameWindow
 {
     public static ParseResult CommandParseResult = null!;
     public const int FpsLock = 165; // fixme: fpsLock above 200 may (and will) cause physics issues
-     
+
     public static void Start(string[] args)
-    {  
+    {
         Thread.CurrentThread.Name = "Render Thread";
         Environment.CurrentDirectory = AppContext.BaseDirectory;
 
@@ -116,7 +116,6 @@ internal partial class Game : GameWindow
         Time.Init();
         ImGuiController.Get();
         Camera.Init();
-        TextRenderer.Init();
         Initializer.Init();
 
         Initializer.AddStep(("Bootstrapping...", () =>
@@ -140,8 +139,10 @@ internal partial class Game : GameWindow
 
     protected override void OnUpdateFrame(FrameEventArgs args)
     {
+        Time.Update(args);
         PhysicsManager.Update((float)args.Time);
-
+        SoundManager.Update(args);
+        
         if (SceneEditor.Enabled)
             ConsoleWindow.Instance!.IsVisible = false;
 
@@ -160,7 +161,16 @@ internal partial class Game : GameWindow
             }
         }
 
-        base.OnUpdateFrame(args);
+        if (!SceneEditor.Enabled && SceneManager.CurrentScene != null!)
+        {
+            foreach (var scene in SceneManager.CurrentScene.GameObjects)
+            {
+                foreach (var c in scene.Components)
+                {
+                    c.Update(args);
+                }
+            }
+        }
     }
     protected override void OnResize(ResizeEventArgs e)
     {

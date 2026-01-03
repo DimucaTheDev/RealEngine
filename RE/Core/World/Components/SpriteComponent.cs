@@ -4,12 +4,13 @@ using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using RE.Core.Scripting;
 using RE.Core.Scripting.Attributes;
+using RE.Editor;
 using RE.Rendering.Renderables;
 
 namespace RE.Core.World.Components
 {
     [ComponentInfo("World", Description = "Renders 2D sprite in world that")]
-    internal class SpriteComponent(string path, float size = 0.25f) : Component
+    internal class SpriteComponent(string path, float size = 0.25f) : Component, IEditorUpdate, IEditorRender
     {
         public SpriteComponent() : this("Assets/sprites/editor/blank.png") { }
         public SpriteComponent(string path) : this(path, 0.25f) { }
@@ -40,7 +41,13 @@ namespace RE.Core.World.Components
             root.Add("args", args);
             return root;
         }
-         
+
         public override CollisionShape GetObjectSelectionShape() => new BoxShape(0.3f);
+
+        /// <inheritdoc />
+        public void EditorUpdate(FrameEventArgs args) => Update(args);
+
+        /// <inheritdoc />
+        public void EditorRender(FrameEventArgs args) => Render(args);
     }
 }

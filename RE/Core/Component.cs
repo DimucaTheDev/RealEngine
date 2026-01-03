@@ -84,6 +84,6 @@ namespace RE.Core
         /// destruction logic. The base implementation does not perform any actions.</remarks>
         public virtual void OnDestroy() { }
 
-        public virtual CollisionShape GetObjectSelectionShape() => new EmptyShape();
+        public virtual CollisionShape GetObjectSelectionShape() => new BoxShape(0.3f);
     }
 }

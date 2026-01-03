@@ -6,10 +6,10 @@ using OpenTK.Windowing.Common;
 namespace RE.Editor
 {
     /// <summary>
-    /// Components can use this interface to update its state in the scene editor.
+    /// Components can use this interface to initialize its state in the scene editor.
     /// </summary>
-    public interface IEditorUpdate
+    public interface IEditorStart
     {
-        void EditorUpdate(FrameEventArgs args);
+        void EditorStart();
     }
 }

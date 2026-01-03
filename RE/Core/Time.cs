@@ -89,8 +89,7 @@ public static class Time
             Log.Warning("Tried to init {Name} again!", nameof(Time));
             return;
         }
-
-        Game.Instance.UpdateFrame += Update;
+         
         StartTime = DateTime.Now;
         LastUpdate = StartTime;
         _initialized = true;

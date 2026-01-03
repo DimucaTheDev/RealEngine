@@ -29,6 +29,7 @@ namespace RE.Audio
 
         public const int MaxChannels = 256;
 
+        private static bool _initialized;
         private static Dictionary<string, List<string>> _soundMap = new();
         private static readonly Dictionary<string, FmodAudio.Sound> _buffers = new();
         private static readonly List<Sound> _activeSounds = new();
@@ -43,8 +44,6 @@ namespace RE.Audio
         /// </remarks>
         public static void Init()
         {
-            Game.Instance.UpdateFrame += Update;
-
             Fmod.SetLibraryLocation("Dll/Win32");
             FmodSystem = Fmod.CreateSystem();
             FmodSystem.Init(MaxChannels);
@@ -53,10 +52,11 @@ namespace RE.Audio
 
             var files = ContentManager.GetFiles("Assets/Audio", true)
                 .Where(s => AudioFileExtensions.Contains(Path.GetExtension(s))).ToArray();
-            
+
             _soundMap = ProcessFiles(files, "Assets/Audio");
 
             Log.Information("Mapped {Count} sounds.", _soundMap.Count);
+            _initialized = true;
         }
         /// <summary>
         /// Updates listener position
@@ -64,6 +64,9 @@ namespace RE.Audio
         /// <param name="args">Time passed from previous <see cref="Game.OnUpdateFrame"/> call.</param>
         public static void Update(FrameEventArgs args)
         {
+            if (!_initialized)
+                return;
+
             var cam = Camera.GetActiveCamera();
             var pos = cam.Position.ToSystemVector3();
             var forward = System.Numerics.Vector3.Normalize(cam.Front.ToSystemVector3());

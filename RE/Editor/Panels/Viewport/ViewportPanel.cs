@@ -42,6 +42,8 @@ namespace RE.Editor.Panels.Viewport
         private readonly Texture _gridOffIcon;
         private readonly Texture _gridOnIcon;
         private readonly Texture _physOptionsIcon;
+        private readonly Texture _particlesOn;
+        private readonly Texture _particlesOff;
 
         private readonly string[] _options = ["World", "Local"];
 
@@ -78,6 +80,8 @@ namespace RE.Editor.Panels.Viewport
             _gridOffIcon = new StaticTexture("assets/sprites/editor/gridOff.png");
             _gridOnIcon = new StaticTexture("assets/sprites/editor/gridOn.png");
             _physOptionsIcon = new AnimatedTexture([StaticTexture.CreateMissingTexture(4), StaticTexture.CreateMissingTexture(4, [0, 255, 0, 255])], 2);
+            _particlesOn = new StaticTexture("assets/sprites/editor/previewParticlesOn.png");
+            _particlesOff = new StaticTexture("assets/sprites/editor/previewParticlesOff.png");
         }
 
         private void SetupBullet()
@@ -181,13 +185,13 @@ namespace RE.Editor.Panels.Viewport
                 var scaleMatrix = Matrix4.CreateScale(sc);
                 var rotationMatrix = Matrix4.CreateFromQuaternion(rot);
                 var translationMatrix = Matrix4.CreateTranslation(pos);
-                var openTkWorldMatrix = (scaleMatrix * rotationMatrix * translationMatrix).ToBulletMatrix(); 
+                var openTkWorldMatrix = (scaleMatrix * rotationMatrix * translationMatrix).ToBulletMatrix();
                 ImGuizmo.SetDrawlist();
                 ImGuizmo.SetID(0);
                 if (ImGuizmo.Manipulate(ref v.M11, ref p.M11, Operation, Mode, ref openTkWorldMatrix.M11))
                 {
                     openTkWorldMatrix.Decompose(out var scale, out var rotation, out var translation);
-                    SceneEditor.SelectedObject.Transform.Position = translation.ToOpenTkVector3(); 
+                    SceneEditor.SelectedObject.Transform.Position = translation.ToOpenTkVector3();
                     SceneEditor.SelectedObject.Transform.Rotation = rotation.ToOpenTkQuaternion();
                     SceneEditor.SelectedObject.Transform.Scale = scale.ToOpenTkVector3();
                 }
@@ -480,7 +484,7 @@ namespace RE.Editor.Panels.Viewport
             SameLine();
             if (ImageButton("##grid", SceneEditor.ShowGrid ? _gridOnIcon : _gridOffIcon, new Vector2(size, size)))
                 SceneEditor.ShowGrid = !SceneEditor.ShowGrid;
-            TextTooltip("Show gray grid on XZ axis. Can be laggy!");
+            TextTooltip("Show gray grid on XZ axis.");
 
             SameLine();
             if (ImageButton("##phys", _physOptionsIcon, new Vector2(size, size)))
@@ -488,6 +492,11 @@ namespace RE.Editor.Panels.Viewport
             TextTooltip("Show Bullet Physics engine overlay settings.");
             if (_showPhysOptions)
                 ShowPhysTooltip();
+
+            SameLine();
+            if (ImageButton("##particles", SceneEditor.PreviewParticles ? _particlesOn : _particlesOff, new Vector2(size, size)))
+                SceneEditor.PreviewParticles = !SceneEditor.PreviewParticles;
+            TextTooltip("Update and render particles in editor.");
         }
 
         private void ShowPhysTooltip()

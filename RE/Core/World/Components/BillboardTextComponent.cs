@@ -3,13 +3,14 @@ using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using RE.Core.Scripting;
 using RE.Core.Scripting.Attributes;
+using RE.Editor;
 using RE.Rendering.Renderables;
 using RE.Rendering.Text;
 
 namespace RE.Core.World.Components
 {
     [ComponentInfo("Text", Description = "Shows a text that always faces camera")]
-    public class BillboardTextComponent(string text) : Component
+    public class BillboardTextComponent(string text) : Component, IEditorUpdate, IEditorRender
     {
         private readonly FloatingText _text = new(text, Vector3.Zero, new FreeTypeFont(64, Fonts.Consolas));
 
@@ -42,5 +43,11 @@ namespace RE.Core.World.Components
             root.Add(nameof(PositionOffset), posOffset);
             return root;
         }
+
+        /// <inheritdoc />
+        public void EditorUpdate(FrameEventArgs args) => Update(args);
+
+        /// <inheritdoc />
+        public void EditorRender(FrameEventArgs args) => Render(args);
     }
 }

@@ -43,12 +43,11 @@ namespace RE.Editor
 
         public static SceneEditor Instance;
         public static bool Enabled = false;
-        public static bool PreviewLight, PreviewSkybox, ShowAxis = true, ShowGrid = true;
+        public static bool PreviewLight, PreviewSkybox, ShowAxis = true, ShowGrid = true, PreviewParticles;
         public static GameObject? SelectedObject;
         public static bool ShowExitConfirmationModal = false;
 
-        private static readonly ImFontPtr _bigFont;
-        private static readonly ModelRenderer SelectedObjectOutline = new() { Outline = true };
+        private static readonly ImFontPtr _bigFont; 
         private static readonly Texture LogoImage;
 
         private static bool _isDockspaceOpen;
@@ -65,28 +64,7 @@ namespace RE.Editor
         private readonly ConsoleWindow _consoleWindow = new() { Id = "Editor" };
 
         static SceneEditor()
-        {
-            Variables.VariableChanged += (s, e) =>
-            {
-                if (s == "selectColor")
-                {
-                    var propertyInfo = typeof(Color4)
-                        .GetProperty(e?.ToString() ?? "red",
-                            BindingFlags.IgnoreCase | BindingFlags.Static | BindingFlags.Public)!;
-                    if (propertyInfo == null!)
-                    {
-                        var props = typeof(Color4).GetProperties(BindingFlags.Static | BindingFlags.Public)
-                            .Where(prop => prop.PropertyType == typeof(Color4));
-                        Log.Error("incorrect color '{Color}'. Possible values: {PossibleValues}", e, string.Join("; ", props.Select(s => s.Name)));
-                        return;
-                    }
-
-                    var color = (Color4)propertyInfo.GetValue(null)!;
-                    OpenTK.Mathematics.Vector4 outlineColor = new(color.R, color.G, color.B, color.A);
-                    SelectedObjectOutline.OutlineColor = outlineColor;
-                }
-            };
-
+        { 
             var iconPath = ($"Assets/RealEngine{(Random.Shared.Next(100) > 50 ? "2" : "")}.ico");
 
             if (ContentManager.Exists(iconPath))
@@ -192,8 +170,7 @@ namespace RE.Editor
                 return;
 
             Enabled = false;
-            IsVisible = false;
-            SelectedObjectOutline?.StopRender();
+            IsVisible = false; 
 
             var reloaded = SceneManager.Reload(_scene);
             _scene.Dispose();
@@ -206,9 +183,14 @@ namespace RE.Editor
             {
                 foreach (var com in obj.Components)
                 {
-                    if (com is IEditorRender s)
+                    // ReSharper disable once SuspiciousTypeConversion.Global
+                    if (com is IEditorUpdate u)
                     {
-                        s.EditorRender(args);
+                        u.EditorUpdate(args);
+                    }
+                    if (com is IEditorRender r)
+                    {
+                        r.EditorRender(args);
                     }
                 }
             }

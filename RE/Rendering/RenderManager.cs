@@ -29,8 +29,6 @@ public enum RenderLayer
 public class RenderManager
 {
     public static SortedDictionary<RenderLayer, Dictionary<Type, List<Renderable>>> Renderables = new();
-    public static Dictionary<Type, Action> RenderablesInitActions = new();
-    public static Dictionary<Type, Action> RenderablesPostActions = new();
     public static Plane[] FrustumPlanes = new Plane[6];
     public static LineRenderer FrustumRenderer = new();
     public static List<Component> RenderingComponents = [];
@@ -40,13 +38,12 @@ public class RenderManager
 
     public static void Init()
     {
-        Renderables.Clear(); 
+        Renderables.Clear();
         FrustumRenderer.Clear();
         Initializer.InitializationCompleted += () => FrustumRenderer.StartRender();
         foreach (RenderLayer layer in Enum.GetValues(typeof(RenderLayer)))
             Renderables[layer] = new Dictionary<Type, List<Renderable>>();
     }
-    #region Bleh
     public static void AddRenderable<T>(T renderable) where T : Renderable
     {
         var types = Renderables[renderable.RenderLayer];
@@ -70,55 +67,11 @@ public class RenderManager
             }
         }
     }
-    public static void RemoveRenderables<T>() where T : Renderable
-    {
-        foreach (var layer in Renderables.Values)
-            if (layer.ContainsKey(typeof(T)))
-            {
-                layer[typeof(T)].ForEach(r => r.RemovedFromRenderList());
-                layer[typeof(T)].Clear();
-            }
-    }
-    public static void SetRenderableInitAction<T>(Action action)
-    {
-        if (!RenderablesInitActions.TryAdd(typeof(T), action))
-            RenderablesInitActions[typeof(T)] += action;
-    }
-    public static void SetRenderablePostAction<T>(Action action)
-    {
-        if (!RenderablesPostActions.TryAdd(typeof(T), action))
-            RenderablesPostActions[typeof(T)] += action;
-    }
-    public static void RemoveRenderableInitAction(Type type, Action action)
-    {
-        if (RenderablesInitActions.TryGetValue(type, out var existingAction))
-        {
-            existingAction -= action;
-            if (existingAction == null)
-                RenderablesInitActions.Remove(type);
-            else
-                RenderablesInitActions[type] = existingAction;
-        }
-    }
-    public static void RemoveRenderablePostAction(Type type, Action action)
-    {
-        if (RenderablesPostActions.TryGetValue(type, out var existingAction))
-        {
-            existingAction -= action;
-            if (existingAction == null)
-                RenderablesPostActions.Remove(type);
-            else
-                RenderablesPostActions[type] = existingAction;
-        }
-    }
-    #endregion
     public static void RenderType<T>(T renderable, FrameEventArgs args) where T : Renderable
     {
         //todo: GenerateFrustum() should be called before this method
         if (Renderables.TryGetValue(renderable.RenderLayer, out var types) && types.TryGetValue(typeof(T), out var list))
         {
-            if (RenderablesInitActions.TryGetValue(typeof(T), out var init))
-                init.Invoke();
             foreach (var r in list)
             {
                 if (r.IsVisible)
@@ -133,8 +86,6 @@ public class RenderManager
                     r.Render(args);
                 }
             }
-            if (RenderablesPostActions.TryGetValue(typeof(T), out var post))
-                post.Invoke();
         }
     }
 
@@ -197,24 +148,19 @@ public class RenderManager
             return db.CompareTo(da);
         });
 
-        RenderingComponents.ToList().ForEach(s =>
-        {
-            s.Render(args);
-            if (s is IEditorRender d && Variables.GetVariable("showDebugInfo") is true)
-                d.EditorRender(args);
-        });
+        if (!SceneEditor.Enabled)
+            foreach (var s in RenderingComponents.ToList())
+            {
+                s.Render(args);
+            }
 
         foreach (var kvp in Renderables)
         {
-            var layer = kvp.Key;
-            OnLayerBegin(layer);
             foreach (var pair in kvp.Value)
             {
                 //todo: move to RenderType()
 
                 List<Renderable> list = pair.Value;
-                if (RenderablesInitActions.TryGetValue(pair.Key, out var init))
-                    init.Invoke();
 
                 foreach (var renderable in list)
                     if (renderable.IsVisible)
@@ -230,11 +176,7 @@ public class RenderManager
                         renderable.Render(args);
                     }
 
-                if (RenderablesPostActions.TryGetValue(pair.Key, out var post))
-                    post.Invoke();
             }
-
-            OnLayerEnd(layer);
         }
     }
 
@@ -282,8 +224,6 @@ public class RenderManager
             FrustumPlanes[i].D /= length;
         }
     }
-    private static void OnLayerBegin(RenderLayer layer) { }
-    private static void OnLayerEnd(RenderLayer layer) { }
 
     //todo: move somewhere...
     //Debug

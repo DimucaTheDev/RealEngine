@@ -4,24 +4,16 @@ using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using RE.Core.Scripting;
 using RE.Core.Scripting.Attributes;
+using RE.Editor;
+using RE.Editor.Panels.Viewport;
 using RE.Rendering.Renderables;
 using SceneEditor = RE.Editor.SceneEditor;
 
 namespace RE.Core.World.Components
 {
     [ComponentInfo("World", Description = "This component emits particles. Open 'Particle Editor' to change particle's style and behaviour")]
-    internal class ParticleEmitterComponent : Component, IEditorPopup
+    internal class ParticleEmitterComponent : Component, IEditorPopup, IEditorUpdate, IEditorRender
     {
-        public bool ShowPreview
-        {
-            get => _showPreview;
-            set
-            {
-                _showPreview = value;
-                if (!value)
-                    OnDestroy();
-            }
-        }
         private bool _showPreview = false;
 
         public float SpawnRate { get; set; } = 50f;
@@ -31,7 +23,7 @@ namespace RE.Core.World.Components
         private float _spawnAccumulator = 0f;
         private const int TotalPhases = 11;
         private static readonly Dictionary<int, string> PhaseTextures = Enumerable.Range(0, TotalPhases)
-            .ToDictionary(i => i, i => $"assets/big_smoke_{i}.png");
+            .ToDictionary(i => i, i => $"assets/testing/big_smoke_{i}.png");
         private SpriteRenderer _emitterSpriteRenderer;
         private Vector3 _emitterPosition => Owner.Transform.Position;
 
@@ -43,13 +35,13 @@ namespace RE.Core.World.Components
 
         public override void Start()
         {
-            if (_emitterSpriteRenderer == null)
+            if (_emitterSpriteRenderer == null!)
                 _emitterSpriteRenderer = new SpriteRenderer(Vector3.Zero, "assets/sprites/editor/emitter.png", scale: 0.75f);
         }
 
         public override void Render(FrameEventArgs args)
         {
-            if (SceneEditor.Enabled && !ShowPreview)
+            if (SceneEditor.Enabled && !SceneEditor.PreviewParticles)
             {
                 _emitterSpriteRenderer.Position = _emitterPosition;
                 _emitterSpriteRenderer.Render(args);
@@ -67,9 +59,6 @@ namespace RE.Core.World.Components
 
         public override void Update(FrameEventArgs args)
         {
-            if (SceneEditor.Enabled && !ShowPreview)
-                return;
-
             float dt = (float)args.Time;
             _spawnAccumulator += _settings.Emission * dt;
 
@@ -183,7 +172,6 @@ namespace RE.Core.World.Components
         public override JsonNode GetSaveData()
         {
             var json = new JsonObject();
-            json[nameof(ShowPreview)] = ShowPreview;
             json[nameof(_settings)] = _settings.ToJson();
             return json;
         }
@@ -200,14 +188,6 @@ namespace RE.Core.World.Components
         {
             if (ImGui.Begin("Particle Editor", ref _openPopup, ImGuiWindowFlags.NoCollapse))
             {
-                ImGui.Checkbox("Show Preview in Scene Editor", ref _preview_temp);
-                if (_preview_temp != ShowPreview)
-                {
-                    ShowPreview = _preview_temp;
-                }
-
-                ImGui.Separator();
-
                 if (ImGui.BeginTable("##particleSettingsTable", 2, ImGuiTableFlags.BordersInnerV | ImGuiTableFlags.Resizable))
                 {
                     ImGui.TableSetupColumn("Property");
@@ -270,8 +250,6 @@ namespace RE.Core.World.Components
                     ImGui.TableSetColumnIndex(0);
                     ImGui.Text("Color (End):");
                     ImGui.TableSetColumnIndex(1);
-
-
 
 
                     ImGui.EndTable();
@@ -441,7 +419,7 @@ namespace RE.Core.World.Components
                 SyncTemps();
             }
 
-            public void SyncTemps()
+            private void SyncTemps()
             {
                 MaxParticles_temp = MaxParticles;
                 Lifetime_temp = Lifetime;
@@ -484,5 +462,15 @@ namespace RE.Core.World.Components
             public float InitialSize;
             public Color4 Color;
         }
+
+        /// <inheritdoc />
+        public void EditorUpdate(FrameEventArgs args)
+        {
+            if (SceneEditor.PreviewParticles)
+                Update(args);
+        }
+
+        /// <inheritdoc />
+        public void EditorRender(FrameEventArgs args) => Render(args);
     }
 }

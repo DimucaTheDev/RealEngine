@@ -2,12 +2,13 @@
 using OpenTK.Windowing.Common;
 using RE.Core.Scripting;
 using RE.Core.Scripting.Attributes;
+using RE.Editor;
 using RE.Rendering.Renderables;
 
 namespace RE.Core.World.Components
 {
     [ComponentInfo("World", Description = $"MeshComponent renders object's model, specified by the '{nameof(Path)}' property")]
-    public class MeshComponent : Component
+    public class MeshComponent : Component, IEditorUpdate, IEditorRender
     {
         public readonly ModelRenderer ModelRenderer;
 
@@ -55,5 +56,11 @@ namespace RE.Core.World.Components
             root.Add("args", args);
             return root;
         }
+
+        /// <inheritdoc />
+        public void EditorUpdate(FrameEventArgs args) => Update(args);
+
+        /// <inheritdoc />
+        public void EditorRender(FrameEventArgs args) => Render(args);
     }
 }

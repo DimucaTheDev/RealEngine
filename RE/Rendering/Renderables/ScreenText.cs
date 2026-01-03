@@ -2,6 +2,8 @@
 using OpenTK.Graphics.OpenGL;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
+using RE.Core;
+using RE.Core.Assets;
 using RE.Rendering.Text;
 
 namespace RE.Rendering.Renderables;
@@ -50,10 +52,26 @@ internal class ScreenText : Renderable
     public override bool IsVisible { get; set; } = true;
     public override RenderLayer RenderLayer => RenderLayer.UI;
 
+    private static ShaderProgram _shaderProgram = null!;
+
     public override void Render(FrameEventArgs args)
     {
         if (!IsVisible)
             return;
+
+        if (_shaderProgram == null!)
+        {
+            _shaderProgram = new();
+            _shaderProgram.AttachShader("assets/shaders/text.frag");
+            _shaderProgram.AttachShader("assets/shaders/text.vert");
+        }
+
+        var projectionM = Matrix4.CreateOrthographicOffCenter(0.0f, Game.Instance.ClientSize.X,
+            Game.Instance.ClientSize.Y, 0.0f, -1.0f, 1.0f);
+        GL.Enable(EnableCap.Blend);
+        GL.BlendFunc(0, BlendingFactorSrc.SrcAlpha, BlendingFactorDest.OneMinusSrcAlpha);
+        _shaderProgram.Use();
+        GL.UniformMatrix4(1, false, ref projectionM);
         GL.Uniform4(3, Color);
         Font.RenderText(Text, Position.X, Position.Y, Scale, Direction);
     }

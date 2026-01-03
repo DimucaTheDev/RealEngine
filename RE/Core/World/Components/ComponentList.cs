@@ -1,4 +1,5 @@
 ﻿using System.Collections;
+using RE.Editor;
 using RE.Rendering;
 
 #pragma warning disable 108
@@ -53,11 +54,15 @@ namespace RE.Core.World.Components
 
             c.Owner = _owner;
 
-            Game.Instance.UpdateFrame += c.Update;
             RenderManager.RenderingComponents.Add(c);
             _components.Add(c);
             if (!doNotCallStart)
-                c.Start(); 
+            {
+                if (!SceneEditor.Enabled)
+                    c.Start();
+                else if (c is IEditorStart s)
+                    s.EditorStart();
+            }
         }
 
         /// <summary>
@@ -75,13 +80,12 @@ namespace RE.Core.World.Components
             if (!_components.Contains(c))
                 return;
 
-            Game.Instance.UpdateFrame -= c.Update;
             RenderManager.RenderingComponents.Remove(c);
             c.OnDestroy();
 
             _components.Remove(c);
 
-            c.Owner = null!; 
+            c.Owner = null!;
         }
         public void Clear()
         {

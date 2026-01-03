@@ -51,9 +51,7 @@ namespace RE.Rendering.Renderables
                 InitShader();
                 field = value;
             }
-        }
-        public Vector4 OutlineColor { get; set; }
-        public bool Outline { get; set; }
+        } 
         public override RenderLayer RenderLayer => RenderLayer.World;
         public override bool IsVisible { get; set; } = true;
         public Vector3 MinBounds { get; set; }
@@ -147,25 +145,13 @@ namespace RE.Rendering.Renderables
             GL.ActiveTexture(TextureUnit.Texture0);
             GL.BindTexture(TextureTarget.Texture2D, _texture.AsOpenGl());
             //todo: same for Texture1 and specular map
-
-            if (Outline)
-            {
-                GL.Enable(EnableCap.CullFace);
-                GL.CullFace(TriangleFace.Front);
-                //GL.PolygonMode(TriangleFace.Back, PolygonMode.Fill); //todo: render only back side monocolor. somewhy it doesnt work
-            }
+ 
 
             _program.Use();
             _program.SetValue("model", model);
             _program.SetValue("view", view);
             _program.SetValue("projection", proj);
-            if (Outline)
-            {
-                _program.SetValue("outline", 1);
-                _program.SetValue("outlineColor", OutlineColor with { W = (MathF.Sin(Time.ElapsedTime * 4) / 2 + 0.5f) });
-            }
-
-
+  
             // lighting.glsl
             _program.SetStruct("material", Material);
             if (IgnoreLight || (SceneEditor.Enabled && !SceneEditor.PreviewLight))
@@ -201,18 +187,9 @@ namespace RE.Rendering.Renderables
 
             GL.DrawElements(PrimitiveType.Triangles, _indexCount, DrawElementsType.UnsignedInt, 0);
             GL.BindVertexArray(0);
-
-            if (Outline)
-                _program.SetValue("outline", 0);
-
+  
             GL.UseProgram(ShaderProgram.NoProgram);
-
-            if (Outline)
-            {
-                // GL_INVALID_ENUM error generated. Polygon modes for <face> are disabled in the current profile.
-                GL.Disable(EnableCap.CullFace);
-                //GL.PolygonMode(TriangleFace.FrontAndBack, PolygonMode.Fill);
-            }
+ 
             // LineRenderer.DrawLine(Position + (0, 2, 0) + dirLightDirection, Position + (0, 2, 0), new(1, 0, 0, 1), new(0, 0, 1, 1));
         }
          
