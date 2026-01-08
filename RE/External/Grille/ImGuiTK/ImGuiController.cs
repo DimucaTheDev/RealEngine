@@ -1,291 +1,120 @@
 ﻿using Hexa.NET.ImGui;
+using Hexa.NET.ImGui.Backends.GLFW;
 using Hexa.NET.ImGui.Backends.OpenGL3;
+using Hexa.NET.ImGui.Backends.Win32;
 using Hexa.NET.ImGuizmo;
 using Hexa.NET.ImPlot;
-using OpenTK.Mathematics;
-using OpenTK.Windowing.Common;
-using OpenTK.Windowing.Desktop;
-using OpenTK.Windowing.GraphicsLibraryFramework;
+using OpenTK.Graphics.OpenGL;
 using RE.Core;
+using RE.Core.Assets;
 using RE.Utils;
-using Keys = OpenTK.Windowing.GraphicsLibraryFramework.Keys;
-using Vector2 = System.Numerics.Vector2;
 
 namespace RE.External.Grille.ImGuiTK;
 
-internal class ImGuiController : IDisposable
+internal static class ImGuiController
 {
-    private readonly List<char> PressedChars = new();
-    private readonly Vector2 _scaleFactor = Vector2.One;
-    private bool _frameBegun;
-    private int _windowHeight;
-    private int _windowWidth;
-
-    public static ImGuiController? Instance { get; private set; }
-
-
-    public static ImGuiController Get() => Instance ??= new ImGuiController();
+    private static ImGuiContextPtr _context;
+    private static ImPlotContextPtr _imPlotContext;
 
     /// <summary>
-    ///     Constructs a new ImGuiController.
+    ///     Initializes ImGui.
     /// </summary>
-    private ImGuiController()
+    public static unsafe void Init()
     {
-        unsafe
+        _context = ImGui.CreateContext();
+        _imPlotContext = ImPlot.CreateContext();
+        ImGui.SetCurrentContext(_context);
+
+        // Setup ImGui config.
+        var io = ImGui.GetIO();
+        io.ConfigFlags |= ImGuiConfigFlags.NavEnableKeyboard;
+        io.ConfigFlags |= ImGuiConfigFlags.NavEnableGamepad;
+        io.ConfigFlags |= ImGuiConfigFlags.DockingEnable;
+        io.ConfigFlags |= ImGuiConfigFlags.ViewportsEnable;
+
+
+        if ((io.ConfigFlags & ImGuiConfigFlags.ViewportsEnable) != 0)
         {
-            Renderer = new GLRenderer();
-
-
-            Game.Instance.Resize += args => WindowResized(args.Width, args.Height);
-            Game.Instance.MouseWheel += args => MouseScroll(args.Offset);
-            Game.Instance.TextInput += args => PressChar((char)args.Unicode);
-            Game.Instance.MouseDown += _ => UpdateImGuiInput(Game.Instance);
-
-            var context = ImGui.CreateContext();
-            var imPlotContextPtr = ImPlot.CreateContext();
-
-            ImGui.SetCurrentContext(context);
-            ImPlot.SetCurrentContext(imPlotContextPtr);
-            ImGuiImplOpenGL3.SetCurrentContext(context);
-            ImGuiImplOpenGL3.Init("#version 150");
-
-            var io = ImGui.GetIO();
-            io.BackendFlags |= ImGuiBackendFlags.RendererHasVtxOffset | ImGuiBackendFlags.RendererHasTextures;
-            io.ConfigFlags |= ImGuiConfigFlags.DockingEnable;
-
-            ImGuiTheme.ApplyDarkTheme();
+            var style = ImGui.GetStyle();
+            style.WindowRounding = 0.0f;
+            style.Colors[(int)ImGuiCol.WindowBg].W = 1f;
         }
+
+        ImGuiImplGLFW.SetCurrentContext(_context);
+        if (!ImGuiImplGLFW.InitForOpenGL((GLFWwindow*)Game.Instance.WindowPtr, true))
+            throw new Exception("Failed to init ImGui Impl GLFW");
+
+        ImGuiImplOpenGL3.SetCurrentContext(_context);
+        if (!ImGuiImplOpenGL3.Init("#version 150"))
+            throw new Exception("Failed to init ImGui Impl OpenGL3");
+
+
+        AddFont(ContentManager.GetBytes("assets/fonts/consola.ttf"),
+            ImGui.ImFontConfig() with
+            {
+                FontDataOwnedByAtlas = false
+            });
+        AddFont(ContentManager.GetBytes("assets/fonts/icons.ttf"),
+            ImGui.ImFontConfig() with
+            {
+                FontDataOwnedByAtlas = false,
+                MergeMode = true,
+                PixelSnapH = true
+            }, [0xf000, 0xf950, 0]);
+
+        ImGuiTheme.ApplyDarkTheme();
     }
 
-    public GLRenderer Renderer { get; }
-
-
-    /// <summary>
-    ///     Frees all graphics resources used by the renderer.
-    /// </summary>
-    public void Dispose()
+    public static unsafe void AddFont(byte[] data, ImFontConfigPtr config, uint[]? ranges = null)
     {
-        Renderer.Dispose();
-    }
-
-    public void WindowResized(int width, int height)
-    {
-        _windowWidth = width;
-        _windowHeight = height;
+        if (ranges != null)
+        {
+            fixed (void* fontData = data)
+            fixed (uint* iconsRangesPtr = ranges)
+                ImGui.GetIO().Fonts.AddFontFromMemoryTTF(fontData, data.Length, 13, config, iconsRangesPtr);
+        }
+        else
+        {
+            fixed (void* fontData = data)
+                ImGui.GetIO().Fonts.AddFontFromMemoryTTF(fontData, data.Length, 13, config);
+        }
     }
 
     /// <summary>
     ///     Renders the ImGui draw list data.
     /// </summary>
-    public void Render()
+    public static void Render()
     {
-        if (_frameBegun)
+        var io = ImGui.GetIO();
+
+        ImGui.Render();
+
+        Game.Instance.MakeCurrent();
+        ImGuiImplOpenGL3.RenderDrawData(ImGui.GetDrawData());
+
+        if ((io.ConfigFlags & ImGuiConfigFlags.ViewportsEnable) != 0)
         {
-            _frameBegun = false;
-            ImGui.Render();
-            ImGui.EndFrame();
-            ImGuiImplOpenGL3.RenderDrawData(ImGui.GetDrawData());
+            ImGui.UpdatePlatformWindows();
+            ImGui.RenderPlatformWindowsDefault();
         }
+
+        Game.Instance.MakeCurrent();
     }
 
-    /// <summary>
-    ///     Updates ImGui input and IO configuration state.
-    /// </summary>
-    public void Update(GameWindow wnd, float deltaSeconds)
+    public static void Update()
     {
-        if (_frameBegun)
-        {
-            ImGui.Render();
-            ImGuiImplOpenGL3.RenderDrawData(ImGui.GetDrawData());
-        }
-
-        SetPerFrameImGuiData(deltaSeconds);
-        if (Game.Instance.CursorState != CursorState.Grabbed)
-            UpdateImGuiInput(wnd);
-
-        _frameBegun = true;
-        ImGuizmo.SetImGuiContext(ImGui.GetCurrentContext());
-        ImPlot.SetImGuiContext(ImGui.GetCurrentContext());
+        ImGui.SetCurrentContext(_context);
+        ImGuizmo.SetImGuiContext(_context);
+        ImPlot.SetImGuiContext(_context);
+        ImPlot.SetCurrentContext(_imPlotContext);
+        ImGuiImplGLFW.SetCurrentContext(_context);
+        ImGuiImplOpenGL3.SetCurrentContext(_context);
 
         ImGuiImplOpenGL3.NewFrame();
+        ImGuiImplGLFW.NewFrame();
         ImGui.NewFrame();
         ImGuizmo.BeginFrame();
+
         ImGuizmo.SetRect(0, 0, Game.Instance.ClientSize.X, Game.Instance.ClientSize.Y);
-    }
-
-    /// <summary>
-    ///     Sets per-frame data based on the associated window.
-    ///     This is called by Update(float).
-    /// </summary>
-    public void SetPerFrameImGuiData(float deltaSeconds)
-    {
-        var io = ImGui.GetIO();
-        io.DisplaySize = new Vector2(
-            _windowWidth / _scaleFactor.X,
-            _windowHeight / _scaleFactor.Y);
-        io.DisplayFramebufferScale = _scaleFactor;
-        io.DeltaTime = deltaSeconds; // DeltaTime is in seconds.
-    }
-
-    public void UpdateImGuiInput(GameWindow wnd)
-    {
-        var io = ImGui.GetIO();
-
-        var MouseState = wnd.MouseState;
-        var KeyboardState = wnd.KeyboardState;
-
-        io.MouseDown[0] = MouseState[MouseButton.Left];
-        io.MouseDown[1] = MouseState[MouseButton.Right];
-        io.MouseDown[2] = MouseState[MouseButton.Middle];
-        io.MouseDown[3] = MouseState[MouseButton.Button4];
-        io.MouseDown[4] = MouseState[MouseButton.Button5];
-
-        var screenPoint = new Vector2i((int)MouseState.X, (int)MouseState.Y);
-        var point = screenPoint; //wnd.PointToClient(screenPoint);
-        io.MousePos = new Vector2(point.X, point.Y);
-
-        foreach (Keys key in Enum.GetValues(typeof(Keys)))
-        {
-            if (key == Keys.Unknown)
-                continue;
-            io.AddKeyEvent(TranslateKey(key), KeyboardState.IsKeyDown(key));
-        }
-
-        foreach (var c in PressedChars)
-            io.AddInputCharacter(c);
-        PressedChars.Clear();
-
-        io.KeyCtrl = KeyboardState.IsKeyDown(Keys.LeftControl) || KeyboardState.IsKeyDown(Keys.RightControl);
-        io.KeyAlt = KeyboardState.IsKeyDown(Keys.LeftAlt) || KeyboardState.IsKeyDown(Keys.RightAlt);
-        io.KeyShift = KeyboardState.IsKeyDown(Keys.LeftShift) || KeyboardState.IsKeyDown(Keys.RightShift);
-        io.KeySuper = KeyboardState.IsKeyDown(Keys.LeftSuper) || KeyboardState.IsKeyDown(Keys.RightSuper);
-    }
-
-    internal void PressChar(char keyChar)
-    {
-        PressedChars.Add(keyChar);
-    }
-
-    internal void MouseScroll(OpenTK.Mathematics.Vector2 offset)
-    {
-        var io = ImGui.GetIO();
-
-        io.MouseWheel = offset.Y;
-        io.MouseWheelH = offset.X;
-    }
-
-    public static ImGuiKey TranslateKey(Keys key)
-    {
-        if (key >= Keys.D0 && key <= Keys.D9)
-            return key - Keys.D0 + ImGuiKey.Key0;
-
-        if (key >= Keys.A && key <= Keys.Z)
-            return key - Keys.A + ImGuiKey.A;
-
-        if (key >= Keys.KeyPad0 && key <= Keys.KeyPad9)
-            return key - Keys.KeyPad0 + ImGuiKey.Keypad0;
-
-        if (key >= Keys.F1 && key <= Keys.F24)
-            return key - Keys.F1 + ImGuiKey.F24;
-
-        switch (key)
-        {
-            case Keys.Tab:
-                return ImGuiKey.Tab;
-            case Keys.Left:
-                return ImGuiKey.LeftArrow;
-            case Keys.Right:
-                return ImGuiKey.RightArrow;
-            case Keys.Up:
-                return ImGuiKey.UpArrow;
-            case Keys.Down:
-                return ImGuiKey.DownArrow;
-            case Keys.PageUp:
-                return ImGuiKey.PageUp;
-            case Keys.PageDown:
-                return ImGuiKey.PageDown;
-            case Keys.Home:
-                return ImGuiKey.Home;
-            case Keys.End:
-                return ImGuiKey.End;
-            case Keys.Insert:
-                return ImGuiKey.Insert;
-            case Keys.Delete:
-                return ImGuiKey.Delete;
-            case Keys.Backspace:
-                return ImGuiKey.Backspace;
-            case Keys.Space:
-                return ImGuiKey.Space;
-            case Keys.Enter:
-                return ImGuiKey.Enter;
-            case Keys.Escape:
-                return ImGuiKey.Escape;
-            case Keys.Apostrophe:
-                return ImGuiKey.Apostrophe;
-            case Keys.Comma:
-                return ImGuiKey.Comma;
-            case Keys.Minus:
-                return ImGuiKey.Minus;
-            case Keys.Period:
-                return ImGuiKey.Period;
-            case Keys.Slash:
-                return ImGuiKey.Slash;
-            case Keys.Semicolon:
-                return ImGuiKey.Semicolon;
-            case Keys.Equal:
-                return ImGuiKey.Equal;
-            case Keys.LeftBracket:
-                return ImGuiKey.LeftBracket;
-            case Keys.Backslash:
-                return ImGuiKey.Backslash;
-            case Keys.RightBracket:
-                return ImGuiKey.RightBracket;
-            case Keys.GraveAccent:
-                return ImGuiKey.GraveAccent;
-            case Keys.CapsLock:
-                return ImGuiKey.CapsLock;
-            case Keys.ScrollLock:
-                return ImGuiKey.ScrollLock;
-            case Keys.NumLock:
-                return ImGuiKey.NumLock;
-            case Keys.PrintScreen:
-                return ImGuiKey.PrintScreen;
-            case Keys.Pause:
-                return ImGuiKey.Pause;
-            case Keys.KeyPadDecimal:
-                return ImGuiKey.KeypadDecimal;
-            case Keys.KeyPadDivide:
-                return ImGuiKey.KeypadDivide;
-            case Keys.KeyPadMultiply:
-                return ImGuiKey.KeypadMultiply;
-            case Keys.KeyPadSubtract:
-                return ImGuiKey.KeypadSubtract;
-            case Keys.KeyPadAdd:
-                return ImGuiKey.KeypadAdd;
-            case Keys.KeyPadEnter:
-                return ImGuiKey.KeypadEnter;
-            case Keys.KeyPadEqual:
-                return ImGuiKey.KeypadEqual;
-            case Keys.LeftShift:
-                return ImGuiKey.LeftShift;
-            case Keys.LeftControl:
-                return ImGuiKey.LeftCtrl;
-            case Keys.LeftAlt:
-                return ImGuiKey.LeftAlt;
-            case Keys.LeftSuper:
-                return ImGuiKey.LeftSuper;
-            case Keys.RightShift:
-                return ImGuiKey.RightShift;
-            case Keys.RightControl:
-                return ImGuiKey.RightCtrl;
-            case Keys.RightAlt:
-                return ImGuiKey.RightAlt;
-            case Keys.RightSuper:
-                return ImGuiKey.RightSuper;
-            case Keys.Menu:
-                return ImGuiKey.Menu;
-            default:
-                return ImGuiKey.None;
-        }
     }
 }

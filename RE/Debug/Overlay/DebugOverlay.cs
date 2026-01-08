@@ -1,6 +1,9 @@
 ﻿using System.Diagnostics;
+using System.Numerics;
 using System.Runtime.InteropServices;
+using Hexa.NET.ImGui;
 using Hexa.NET.ImPlot;
+using Microsoft.VisualBasic.Devices;
 using OpenTK.Windowing.Common;
 using RE.Core;
 using RE.Rendering;
@@ -22,9 +25,9 @@ internal class DebugOverlay : Renderable
     public override RenderLayer RenderLayer => RenderLayer.ImGui;
     public override bool IsVisible { get; set; } = true;
 
-    private static readonly RingBuffer<int> Fps = new(1000);
-    private static readonly RingBuffer<double> ManagedHeap = new(1000);
-    private static readonly RingBuffer<double> PrivateBytes = new(1000);
+    private static readonly RingBuffer<int> Fps = new(2000);
+    private static readonly RingBuffer<double> ManagedHeap = new(2000);
+    private static readonly RingBuffer<double> PrivateBytes = new(2000);
 
     public override void Render(FrameEventArgs args)
     {
@@ -45,6 +48,15 @@ internal class DebugOverlay : Renderable
         Begin("Stats");
 
         var yMaxLimit = Game.FpsLock + Game.FpsLock * 0.1;
+        var s = 150;
+        var fps = Fps.ToArrayOrdered().Skip(Fps.Length - s).Select(s => (float)s).ToArray();
+        ImGui.PlotLines("FPS", ref fps[0], s, $"FPS: {fps.Last()}", new Vector2(s, 100));
+        
+
+        ImGui.PlotLines("RAM",
+            ref PrivateBytes.ToArrayOrdered().Skip(Fps.Length - s).Select(s => (float)s).ToArray()[0],
+            s, $"RAM: {PrivateBytes.Last():F1}Mb", 
+            new Vector2(s, 100));
 
         ImPlot.SetNextAxesLimits(0, Fps.Length + 1, 0, yMaxLimit);
         if (ImPlot.BeginPlot("#fps", ImPlotFlags.NoTitle | ImPlotFlags.NoLegend))

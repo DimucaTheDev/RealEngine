@@ -3,6 +3,7 @@ using System.CommandLine.Help;
 using System.CommandLine.Invocation;
 using System.Diagnostics;
 using System.Drawing.Imaging;
+using System.IO.Compression;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using OpenTK.Graphics.OpenGL;
@@ -11,10 +12,12 @@ using OpenTK.Windowing.Common.Input;
 using OpenTK.Windowing.Desktop;
 using RE.Core.Assets;
 using RE.Core.Scripting;
+using RE.Editor.Notification;
 using RE.Rendering;
 using RE.Utils;
 using Serilog;
 using Serilog.Events;
+using Serilog.Sinks.File.GzArchive;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
@@ -43,7 +46,7 @@ namespace RE.Core
             Assembly.GetExecutingAssembly().GetCustomAttribute<BuildDateAttribute>()?.DateTime.ToLocalTime() ??
             DateTime.MinValue;
         public static readonly string CommitHash = Assembly.GetExecutingAssembly().GetCustomAttribute<GitCommitAttribute>()?.CommitHash ?? "unknown";
-
+        public static readonly string Version = Assembly.GetExecutingAssembly().GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion ?? "unknown";
 
         public const string ProductName = "Real Engine";
 
@@ -79,17 +82,31 @@ namespace RE.Core
         /// <returns>Absolute path to saved screenshot</returns>
         public static unsafe string TakeScreenshot(string fileName)
         {
-            var a = new byte[Instance.ClientSize.X * Instance.ClientSize.Y * 3];
-            fixed (byte* ptr = a)
-                GL.ReadPixels(0, 0, Instance.ClientSize.X, Instance.ClientSize.Y, OpenTK.Graphics.OpenGL.PixelFormat.Rgb, PixelType.UnsignedByte, (IntPtr)ptr);
-            Image<Rgb24> image = SixLabors.ImageSharp.Image.LoadPixelData<Rgb24>(a, Instance.ClientSize.X, Instance.ClientSize.Y);
-            image.Mutate(s => s.Flip(FlipMode.Vertical));
+            try
+            {
+                var a = new byte[Instance.ClientSize.X * Instance.ClientSize.Y * 3];
+                fixed (byte* ptr = a)
+                    GL.ReadPixels(0, 0, Instance.ClientSize.X, Instance.ClientSize.Y,
+                        OpenTK.Graphics.OpenGL.PixelFormat.Rgb, PixelType.UnsignedByte, (IntPtr)ptr);
+                Image<Rgb24> image =
+                    SixLabors.ImageSharp.Image.LoadPixelData<Rgb24>(a, Instance.ClientSize.X, Instance.ClientSize.Y);
+                image.Mutate(s => s.Flip(FlipMode.Vertical));
 
-            Directory.CreateDirectory(Path.GetDirectoryName(fileName)!);
+                Directory.CreateDirectory(Path.GetDirectoryName(fileName)!);
 
-            image.SaveAsPng(fileName);
-            image.Dispose();
-            return Path.GetFullPath(fileName);
+                image.SaveAsPng(fileName);
+                image.Dispose();
+                var full = Path.GetFullPath(fileName);
+                ToastManager.InsertNotification(new Toast(ToastType.Success, "Screenshot saved.", 2));
+                return full;
+            }
+            catch (Exception e)
+            {
+                Log.Error(e, "Unable to save screenshot to {FileName}", fileName);
+                ToastManager.InsertNotification(new Toast(ToastType.Error, $"Unable to save screenshot:\n.{e}"));
+            }
+
+            return null!;
         }
 
         private static void SetupLogger()
@@ -101,12 +118,18 @@ namespace RE.Core
                 "[{Timestamp:HH:mm:ss.fff} {Level:u3}] [{ThreadName}] [{SourceContext:Name}] {Message:lj}{NewLine}{Exception}";
 
             var minLevel = CommandParseResult.GetValue<LogEventLevel>("--log-level");
+            Directory.CreateDirectory("Logs");
+            File.Delete("Logs/Latest.log");
 
             Log.Logger = new LoggerConfiguration()
                 .MinimumLevel.Is(minLevel)
                 .Enrich.WithThreadName()
                 .Enrich.With(new EngineLoggerEnricher())
                 .WriteTo.Sink(new GameLogger("[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}"))
+                .WriteTo.FileEx(
+                    path: "Logs/Latest.log",
+                    restrictedToMinimumLevel: minLevel,
+                    outputTemplate: consoleTemplate)
                 .WriteTo.Console(outputTemplate: consoleTemplate)
                 .CreateLogger();
             // .ForContext("SourceContext", "Engine");
@@ -120,7 +143,7 @@ namespace RE.Core
         {
             if (type == DebugType.DebugTypeOther)
                 return;
-            
+
             string msg = Marshal.PtrToStringAnsi(message, length);
             Log.Write(severity switch
             {
@@ -329,7 +352,7 @@ namespace RE.Core
                     WinApi.AllocConsole();
                     return true;
                 }
-            }; 
+            };
 
             RootCommand rootCommand = new($"{ProductName} command line options")
             {
@@ -368,7 +391,7 @@ namespace RE.Core
                     Console.WriteLine("Debugger is not connected.");
                     Environment.Exit(-1);
                     return -1;
-                } 
+                }
                 return 0;
             }
         }

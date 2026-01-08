@@ -63,6 +63,8 @@ namespace RE.Rendering.Texturing
 
         public ImageColorType ColorType { get; set; }
 
+        private StaticTexture() { }
+
         /// <summary>
         /// Create new StaticTexture object and load image from <paramref name="resourceLocation"/>.
         /// </summary>
@@ -176,7 +178,7 @@ namespace RE.Rendering.Texturing
             if (_glHandle == 0)
             {
                 Log.Warning("Redundant texture {Id} deletion.", _glHandle);
-                Debugger.Break();
+                //Debugger.Break();
                 return;
             }
             GL.DeleteTexture(_glHandle);
@@ -231,5 +233,14 @@ namespace RE.Rendering.Texturing
 
         //public static implicit operator uint(StaticTexture texture) => texture.AsOpenGl();
         public static implicit operator ImTextureRef(StaticTexture staticTexture) => staticTexture.AsImGui();
+
+        public static StaticTexture FromGlHandle(uint handle)
+        {
+            return new StaticTexture()
+            {
+                _glHandle = handle
+                //todo
+            };
+        }
     }
 }

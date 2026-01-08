@@ -4,6 +4,9 @@ namespace RE.Utils
 {
     internal class WinApi
     {
+        [DllImport("user32.dll")]
+        public static extern bool SetCursorPos(int x, int y);
+
         [DllImport("kernel32.dll", SetLastError = true)]
         public static extern int AllocConsole();
 

@@ -93,7 +93,7 @@ namespace RE.BuildTask
                     var tempFileName = File.OpenWrite(Path.GetTempFileName());
                     ZipFile.CreateFromDirectory(parentDir!, tempFileName, CompressionLevel.SmallestSize, false);
 
-                    var np = parentDir + $"/RealEngine_{args[4]}_{DateTime.Now:ddMMyy}.zip";
+                    var np = parentDir + $"/../RealEngine_{args[4]}_{DateTime.Now:ddMMyy}.zip";
                     tempFileName.Dispose();
                     File.Delete(np);
                     File.Move(tempFileName.Name, np);

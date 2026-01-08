@@ -10,13 +10,15 @@ namespace RE.Debug
         private static readonly ConcurrentDictionary<string, double> _latestValues = new();
         private readonly Stopwatch _sw = Stopwatch.StartNew();
 
+        public string Name { get; private set; }
+
         private RenderProfiler() { }
 
         public static readonly List<(long timestamp, string e)> Events = [];
 
         public static RenderProfiler StartNew(string name)
         {
-            if (!_running.TryAdd(name, new RenderProfiler()))
+            if (!_running.TryAdd(name, new RenderProfiler() { Name = name }))
                 throw new InvalidOperationException($"Profiler '{name}' is already started.");
 
             return _running[name];
@@ -60,6 +62,11 @@ namespace RE.Debug
             }
 
             return result;
+        }
+
+        public void Stop()
+        {
+            Stop(Name);
         }
     }
 }

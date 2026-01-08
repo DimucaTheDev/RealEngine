@@ -1,10 +1,14 @@
 ﻿using System.Text.Json.Nodes;
+using OpenTK.Windowing.Common;
+using OpenTK.Windowing.GraphicsLibraryFramework;
 using RE.Core;
+using RE.Core.Input;
 using RE.Core.World.Components;
+using RE.Editor;
 
 namespace TestPlugin
 {
-    public class TestComponent : Component
+    public class TestComponent : Component, IEditorUpdate
     {
         public override void Start()
         {
@@ -15,9 +19,21 @@ namespace TestPlugin
             });
         }
 
+        /// <inheritdoc />
+        public override void Update(FrameEventArgs args)
+        {
+            if(Keyboard.IsKeyPressed(Keys.LeftControl, true)) Console.WriteLine("Control!");
+        }
+
         public override JsonNode GetSaveData()
         {
             return new JsonObject();
+        }
+
+        /// <inheritdoc />
+        public void EditorUpdate(FrameEventArgs args)
+        {
+            Update(args);
         }
     }
 }

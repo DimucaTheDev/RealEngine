@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using System.Reflection;
+using RE.Editor.Notification;
 using Serilog.Core;
 using Serilog.Events;
 using Serilog.Formatting.Display;
@@ -25,7 +26,7 @@ namespace RE.Core
             _formatter.Format(logEvent, writer);
             Log += writer.ToString();
             if (logEvent.Level >= LogEventLevel.Error)
-            {
+            { 
                 /*var e = logEvent.Exception ?? throw new Exception(logEvent.RenderMessage());
                 var s = new StackTrace(e, true).ToString();
                 Console.WriteLine(s);

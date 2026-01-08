@@ -1,20 +1,27 @@
 ﻿using System.Text.Json.Nodes;
 using BulletSharp;
 using Hexa.NET.ImGui;
+using Hexa.NET.ImGuizmo;
+using Microsoft.VisualBasic.Devices;
+using OpenCvSharp.Internal.Vectors;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using OpenTK.Windowing.GraphicsLibraryFramework;
 using RE.Audio;
+using RE.Core.Input;
 using RE.Core.Scripting;
 using RE.Core.Scripting.Attributes;
 using RE.Core.World.Components.Physics;
 using RE.Core.World.Physics;
 using RE.Editor;
 using RE.Rendering.Renderables;
+using RE.Rendering.Texturing;
 using RE.Utils;
 using Serilog;
 using Camera = RE.Rendering.Camera;
+using Keyboard = RE.Core.Input.Keyboard;
 using Keys = OpenTK.Windowing.GraphicsLibraryFramework.Keys;
+using Mouse = RE.Core.Input.Mouse;
 using SceneEditor = RE.Editor.SceneEditor;
 
 namespace RE.Core.World.Components
@@ -22,6 +29,7 @@ namespace RE.Core.World.Components
     [ComponentInfo("World/Player", Description = "Handles player logic")]
     internal class PlayerComponent : Component, IEditorRender
     {
+        private const float MouseSensitivity = 0.2f;
         private Camera _camera = Camera.Main;
         protected GameObject PlayerGameObject = null!;
         private bool _isCrouching = false;
@@ -72,229 +80,294 @@ namespace RE.Core.World.Components
             rigidBodyComponent.RigidBody.ActivationState = ActivationState.DisableDeactivation;
             rigidBodyComponent.RigidBody.Gravity = new BulletSharp.Math.Vector3(0, -25f, 0);
 
+            Mouse.CursorState = CursorState.Grabbed;
+            FirstMove = true;
+
+            path.AddRange(
+                new(0, 5, 0.0f),
+                new(0, 5, 0.0f),
+                new(0, 5, 0.0f));
+
+            im = new ImageRenderer(StaticTexture.CreateMonoColorTexture((.1f, 0.1f, 0.1f, 1)), new Vector2(0, 0), (3000, 3000));
+            im.StartRender();
+        }
+ 
+
+        private ImageRenderer im;
+        private float d = 0;
+        private void CameraControl()
+        {
+            float Remap(float value, float fromMin, float fromMax, float toMin, float toMax)
+            {
+                float t = (value - fromMin) / (fromMax - fromMin);
+                return toMin + t * (toMax - toMin);
+            }
+
+            if (d <= 0.1)
+            {
+                d += Time.DeltaTime / 3;
+            }
+            else if (d <= 1)
+            {
+                d += Time.DeltaTime / 3;
+                im.ReplaceImage(
+                    StaticTexture.CreateMonoColorTexture(Vector4.Lerp(new Vector4(.1f, 0.1f, 0.1f, 1), new Vector4(1, 1, 1, 0),
+                        Remap(d, 0.1f, 1, 0, 1))),
+                    true);
+            }
+            else
+            { im.StopRender(); }
+
+            Camera cam = _camera;
+
+            if (Mouse.IsButtonPressed(MouseButton.Left))
+                Mouse.CursorState = CursorState.Grabbed;
+            if (Keyboard.IsKeyPressed(Keys.Escape))
+            {
+                Mouse.CursorState = CursorState.Normal;
+                FirstMove = true;
+                return;
+            }
+
+            if (Mouse.CursorState != CursorState.Grabbed)
+                return;
+
+            var deltaX = Mouse.Delta.X;
+            var deltaY = -Mouse.Delta.Y;
+
+            _lastMousePos = new Vector2(mouseX, mouseY);
+
+            if (FirstMove)
+            {
+                FirstMove = false;
+                return;
+            }
+
+            if (Mouse.IsButtonPressed(MouseButton.Right))
+                AddDummyCube();
+
+            cam.Yaw += deltaX * MouseSensitivity;
+            cam.Pitch += deltaY * MouseSensitivity;
+
+            cam.Pitch = MathHelper.Clamp(cam.Pitch, -89f, 89f);
+
+            Vector3 front;
+            front.X = MathF.Cos(MathHelper.DegreesToRadians(cam.Yaw)) * MathF.Cos(MathHelper.DegreesToRadians(cam.Pitch));
+            front.Y = MathF.Sin(MathHelper.DegreesToRadians(cam.Pitch));
+            front.Z = MathF.Sin(MathHelper.DegreesToRadians(cam.Yaw)) * MathF.Cos(MathHelper.DegreesToRadians(cam.Pitch));
+            cam.Front = Vector3.Normalize(front);
+        }
+
+        private List<Vector3> path =
+        [
+            new(-30, 0.0f, 63),
+            new(-20, 8.0f, 50),
+            new(0, 9.0f, 0),
+        ];
+
+        private bool BadassTransition()
+        {
+            int maxCurve = (path.Count - 1) / 3;
+            if (curveIndex < maxCurve)
+            {
+                UpdateCamera(Time.DeltaTime);
+                Camera.Main.LookAt((0, 5.75f, -4));
+                return true;
+            }
+            return false;
         }
 
         public override void Update(FrameEventArgs args)
         {
-            var input = Game.Instance.KeyboardState;
+            CameraControl();
 
+            if (BadassTransition())
+            { }
 
-            if (!((Game.Instance.CursorState != CursorState.Grabbed || ImGui.GetIO().WantCaptureMouse)))
+            #region HL2-like Movement
+
+            var rb = PlayerGameObject.GetComponent<RigidBodyComponent>()?.RigidBody;
+            if (rb == null)
+                return;
+
+            Vector3 moveDir = Vector3.Zero;
+            var camForward = (_camera.Front with { Y = 0 }).Normalized();
+            var camRight = Vector3.Normalize(Vector3.Cross(camForward, _camera.Up));
+
+            if (Keyboard.IsKeyDown(Keys.W))
+                moveDir += camForward;
+            if (Keyboard.IsKeyDown(Keys.S))
+                moveDir -= camForward;
+            if (Keyboard.IsKeyDown(Keys.D))
+                moveDir += camRight;
+            if (Keyboard.IsKeyDown(Keys.A))
+                moveDir -= camRight;
+
+            _soundCooldown += (float)args.Time;
+
+            if ((Keyboard.IsKeyDown(Keys.W) || Keyboard.IsKeyDown(Keys.S) || Keyboard.IsKeyDown(Keys.D) ||
+                 Keyboard.IsKeyDown(Keys.A)) && !_isCrouching && _wasGrounded && moveDir.Length > 0.75f)
             {
-                if (SceneEditor.Enabled)
+                if (_soundCooldown >= 0.45f)
                 {
+                    SoundManager.Play("hardboot_generic", new SoundPlaybackSettings()
+                    {
+                        Position = PlayerGameObject.Transform.Position,
+                        ShowDebugInfo = false,
+                        Volume = .15f
+                    });
+                    _soundCooldown = 0f;
+                }
+            }
 
-                    return;
+
+            if (moveDir.LengthSquared > 1e-5f)
+                moveDir = moveDir.Normalized();
+
+            bool crouching = _isCrouching;
+            bool sprinting = Keyboard.IsKeyDown(Keys.LeftShift);
+            float maxSpeed = crouching ? 5f : (sprinting ? 13.5f : 10f);
+
+            float accel = 120f;
+            float friction = 8f;
+
+            Vector3 currentVel = new((float)rb.LinearVelocity.X, 0, (float)rb.LinearVelocity.Z);
+            Vector3 targetVel = moveDir * maxSpeed;
+
+            if (moveDir.LengthSquared > 0.001f)
+            {
+                Vector3 velDelta = targetVel - currentVel;
+
+                if (velDelta.LengthSquared > 1e-6f)
+                {
+                    Vector3 accelStep = velDelta.Normalized() * accel * Time.DeltaTime;
+
+                    if (accelStep.LengthSquared > velDelta.LengthSquared)
+                        accelStep = velDelta;
+
+                    currentVel += accelStep;
+                }
+            }
+            else
+            {
+                float speed = currentVel.Length;
+                if (speed > 0)
+                {
+                    float drop = speed * friction * Time.DeltaTime;
+                    float newSpeed = MathF.Max(0, speed - drop);
+
+                    if (newSpeed > 0)
+                        currentVel = currentVel.Normalized() * newSpeed;
+                    else
+                        currentVel = Vector3.Zero;
+                }
+            }
+
+
+            bool grounded = IsGrounded();
+            bool justLanded = grounded && !_wasGrounded;
+
+            if (grounded && !_wasGrounded)
+            {
+                var lv = rb.LinearVelocity;
+                rb.LinearVelocity = new BulletSharp.Math.Vector3(currentVel.X, 0, currentVel.Z);
+            }
+            else
+            {
+                rb.LinearVelocity = new BulletSharp.Math.Vector3(currentVel.X, rb.LinearVelocity.Y, currentVel.Z);
+            }
+
+            _wasGrounded = grounded;
+
+            if (Keyboard.IsKeyDown(Keys.Space) && grounded && _jumpCd <= 0)
+            {
+                rb.ApplyCentralImpulse(9f * BulletSharp.Math.Vector3.UnitY);
+                _jumpCd = 0.3f;
+            }
+
+            if (_jumpCd > 0f)
+                _jumpCd -= Time.DeltaTime;
+
+            var crouchKeyDown = Keyboard.IsKeyDown(Keys.LeftControl);
+            if (crouchKeyDown != _isCrouching)
+            {
+                float newHeight = crouchKeyDown ? CrouchHeight : StandHeight;
+
+                if (!_isCrouching || (_isCrouching && CanStandUp()))
+                {
+                    PlayerGameObject.Transform.Scale = new Vector3(0.75f, newHeight, 0.75f);
+                    _isCrouching = crouchKeyDown;
+
+                    var capsuleCollider = PlayerGameObject.GetComponent<CapsuleColliderComponent>();
+                    if (capsuleCollider != null)
+                    {
+                        var transform = rb.WorldTransform;
+
+                        rb.CollisionShape = capsuleCollider.CreateCollisionShape();
+                        rb.WorldTransform = transform;
+                        rb.MotionState?.SetWorldTransform(ref transform);
+
+                        var rbGravity = rb.Gravity;
+                        rb.Disable();
+                        rb.Enable();
+                        rb.Gravity = rbGravity;
+                    }
+                }
+            }
+
+            #endregion
+
+            if (Keyboard.IsKeyPressed(Keys.E))
+            {
+                float rayLength = 5.5f;
+                BulletSharp.Math.Vector3 rayFrom = _camera.Position.ToBulletVector3();
+                BulletSharp.Math.Vector3 rayTo = (_camera.Position + _camera.Front * rayLength).ToBulletVector3();
+
+                var callback = new ClosestRayResultCallback(ref rayFrom, ref rayTo);
+
+                PhysicsManager.DynamicsWorld.RayTest(rayFrom, rayTo, callback);
+
+                bool wasHolding = _holdingObject != null;
+
+                if (_holdingObject != null!)
+                {
+                    var rigidBody = _holdingObject.GetComponent<RigidBodyComponent>()?.RigidBody
+                                    ?? _holdingObject.GetComponent<ColliderComponent>()?.RigidBody;
+                    if (_holdingObject.GetComponent<RigidBodyComponent>() != null)
+                        _holdingObject.GetComponent<RigidBodyComponent>()!.Mass = _objMass;
+                    if (rigidBody != null)
+                        rigidBody.Activate(true);
+                    _holdingObject = null;
                 }
 
-                var rbN = PlayerGameObject.GetComponent<RigidBodyComponent>()?.RigidBody;
-                if (rbN == null)
-                    return;
-
-                #region HL2-like Movement
-
-                var rb = PlayerGameObject.GetComponent<RigidBodyComponent>()?.RigidBody;
-                if (rb == null)
-                    return;
-
-                // Направления
-                Vector3 moveDir = Vector3.Zero;
-                var camForward = (_camera.Front with { Y = 0 }).Normalized();
-                var camRight = Vector3.Normalize(Vector3.Cross(camForward, _camera.Up));
-
-                if (input.IsKeyDown(Keys.W))
-                    moveDir += camForward;
-                if (input.IsKeyDown(Keys.S))
-                    moveDir -= camForward;
-                if (input.IsKeyDown(Keys.D))
-                    moveDir += camRight;
-                if (input.IsKeyDown(Keys.A))
-                    moveDir -= camRight;
-
-                _soundCooldown += (float)args.Time;
-
-                if ((input.IsKeyDown(Keys.W) || input.IsKeyDown(Keys.S) || input.IsKeyDown(Keys.D) ||
-                     input.IsKeyDown(Keys.A)) && !_isCrouching && _wasGrounded && moveDir.Length > 0.75f)
+                if (callback.HasHit)
                 {
-                    if (_soundCooldown >= 0.45f)
+                    if (!wasHolding && callback.CollisionObject.UserObject is Component controller)
                     {
-                        SoundManager.Play("hardboot_generic", new SoundPlaybackSettings()
+                        if (controller.GetComponent<UsableComponent>() != null!)
                         {
-                            //  InWorld = true,
-                            Position = PlayerGameObject.Transform.Position,
-                            ShowDebugInfo = false,
-                            Volume = .15f
-                        });
-                        _soundCooldown = 0f;
-                    }
-                }
-
-
-                if (moveDir.LengthSquared > 1e-5f)
-                    moveDir = moveDir.Normalized();
-
-                // Параметры
-                bool crouching = _isCrouching;
-                bool sprinting = input.IsKeyDown(Keys.LeftShift);
-                float maxSpeed = crouching ? 5f : (sprinting ? 13.5f : 10f);
-
-                float accel = 120f;
-                float friction = 8f;
-
-                Vector3 currentVel = new((float)rb.LinearVelocity.X, 0, (float)rb.LinearVelocity.Z);
-                Vector3 targetVel = moveDir * maxSpeed;
-
-                // Ускорение
-                if (moveDir.LengthSquared > 0.001f)
-                {
-                    Vector3 velDelta = targetVel - currentVel;
-
-                    if (velDelta.LengthSquared > 1e-6f) // <--- фикс: проверка на 0
-                    {
-                        Vector3 accelStep = velDelta.Normalized() * accel * Time.DeltaTime;
-
-                        if (accelStep.LengthSquared > velDelta.LengthSquared)
-                            accelStep = velDelta;
-
-                        currentVel += accelStep;
-                    }
-                }
-                else
-                {
-                    float speed = currentVel.Length;
-                    if (speed > 0)
-                    {
-                        float drop = speed * friction * Time.DeltaTime;
-                        float newSpeed = MathF.Max(0, speed - drop);
-
-                        if (newSpeed > 0)
-                            currentVel = currentVel.Normalized() * newSpeed;
-                        else
-                            currentVel = Vector3.Zero;
-                    }
-                }
-
-
-                // Прыжок и вертикальная скорость
-                bool grounded = IsGrounded();
-                bool justLanded = grounded && !_wasGrounded;
-
-                if (grounded && !_wasGrounded)
-                {
-                    // обнуляем вертикальную скорость при касании земли
-                    var lv = rb.LinearVelocity;
-                    rb.LinearVelocity = new BulletSharp.Math.Vector3(currentVel.X, 0, currentVel.Z);
-                }
-                else
-                {
-                    rb.LinearVelocity = new BulletSharp.Math.Vector3(currentVel.X, rb.LinearVelocity.Y, currentVel.Z);
-                }
-
-                _wasGrounded = grounded;
-
-                if (input.IsKeyDown(Keys.Space) && grounded && _jumpCd <= 0)
-                {
-                    rb.ApplyCentralImpulse(9f * BulletSharp.Math.Vector3.UnitY);
-                    _jumpCd = 0.3f; // можно сразу уменьшить до 0.1 для быстрого bunnyhop
-                }
-
-                if (_jumpCd > 0f)
-                    _jumpCd -= Time.DeltaTime;
-
-                var crouchKeyDown = input.IsKeyDown(Keys.LeftControl);
-                if (crouchKeyDown != _isCrouching)
-                {
-                    float newHeight = crouchKeyDown ? CrouchHeight : StandHeight;
-
-                    if (!_isCrouching || (_isCrouching && CanStandUp()))
-                    {
-                        PlayerGameObject.Transform.Scale = new Vector3(0.75f, newHeight, 0.75f);
-                        _isCrouching = crouchKeyDown;
-
-                        var capsuleCollider = PlayerGameObject.GetComponent<CapsuleColliderComponent>();
-                        if (capsuleCollider != null)
-                        {
-                            var transform = rb.WorldTransform;
-
-                            rb.CollisionShape = capsuleCollider.CreateCollisionShape();
-                            rb.WorldTransform = transform;
-                            rb.MotionState?.SetWorldTransform(ref transform);
-
-                            var rbGravity = rb.Gravity;
-                            rb.Disable();
-                            rb.Enable();
-                            rb.Gravity = rbGravity;
+                            controller.GetComponent<UsableComponent>()!.OnUsed?.Invoke();
+                            SoundManager.Play("buttons/blip", new SoundPlaybackSettings()
+                            {
+                                InWorld = false,
+                                Pitch = 1,
+                                Volume = .25f
+                            });
                         }
-                    }
-                }
-
-                #endregion
-
-                if (input.IsKeyPressed(Keys.E))
-                {
-                    float rayLength = 5.5f;
-                    BulletSharp.Math.Vector3 rayFrom = _camera.Position.ToBulletVector3();
-                    BulletSharp.Math.Vector3 rayTo = (_camera.Position + _camera.Front * rayLength).ToBulletVector3();
-
-                    var callback = new ClosestRayResultCallback(ref rayFrom, ref rayTo);
-
-                    PhysicsManager.DynamicsWorld.RayTest(rayFrom, rayTo, callback);
-
-                    bool wasHolding = _holdingObject != null;
-
-                    if (_holdingObject != null!)
-                    {
-                        var rigidBody = _holdingObject.GetComponent<RigidBodyComponent>()?.RigidBody
-                                        ?? _holdingObject.GetComponent<ColliderComponent>()?.RigidBody;
-                        if (_holdingObject.GetComponent<RigidBodyComponent>() != null)
-                            _holdingObject.GetComponent<RigidBodyComponent>()!.Mass = _objMass;
-                        if (rigidBody != null)
-                            rigidBody.Activate(true);
-                        _holdingObject = null;
-                    }
-
-                    if (callback.HasHit)
-                    {
-                        // Log.Debug($"Ray hit object at distance: {callback.ClosestHitFraction * rayLength}");
-                        // Log.Debug($"Hit object's UserObject type: {callback.CollisionObject.UserObject?.GetType().Name ?? "null"}");
-
-                        if (!wasHolding && callback.CollisionObject.UserObject is Component controller)
+                        else if (controller.GetComponent<RigidBodyComponent>() != null)
                         {
-                            if (controller.GetComponent<UsableComponent>() != null!)
+                            _holdingObject = controller.Owner;
+                            if (_holdingObject.GetComponent<RigidBodyComponent>() != null)
                             {
-                                controller.GetComponent<UsableComponent>()!.OnUsed?.Invoke();
-                                SoundManager.Play("buttons/blip", new SoundPlaybackSettings()
-                                {
-                                    InWorld = false,
-                                    Pitch = 1,
-                                    Volume = .25f
-                                });
+                                var rigidBodyComponent = _holdingObject.GetComponent<RigidBodyComponent>();
+                                _objMass = rigidBodyComponent!.Mass;
+                                rigidBodyComponent.Mass = 1;
                             }
-                            else if (controller.GetComponent<RigidBodyComponent>() != null)
-                            {
-                                _holdingObject = controller.Owner;
-                                if (_holdingObject.GetComponent<RigidBodyComponent>() != null)
-                                {
-                                    var rigidBodyComponent = _holdingObject.GetComponent<RigidBodyComponent>();
-                                    _objMass = rigidBodyComponent!.Mass;
-                                    rigidBodyComponent.Mass = 1;
-                                }
 
-                                var rigidBody = _holdingObject!.GetComponent<RigidBodyComponent>()?.RigidBody
-                                                ?? _holdingObject.GetComponent<ColliderComponent>()?.RigidBody;
-                                if (rigidBody != null)
-                                    rigidBody.ActivationState = ActivationState.DisableDeactivation;
-                            }
-                            else
-                            {
-                                if (!string.IsNullOrWhiteSpace(InteractDenySound))
-                                    SoundManager.Play(InteractDenySound, new SoundPlaybackSettings()
-                                    {
-                                        InWorld = false,
-                                        Pitch = 1,
-                                        Volume = .25f
-                                    });
-                            }
+                            var rigidBody = _holdingObject!.GetComponent<RigidBodyComponent>()?.RigidBody
+                                            ?? _holdingObject.GetComponent<ColliderComponent>()?.RigidBody;
+                            if (rigidBody != null)
+                                rigidBody.ActivationState = ActivationState.DisableDeactivation;
                         }
                         else
                         {
@@ -305,7 +378,6 @@ namespace RE.Core.World.Components
                                     Pitch = 1,
                                     Volume = .25f
                                 });
-                            Log.Debug("Ray hit an object, but its UserObject is not a Controller.");
                         }
                     }
                     else
@@ -317,21 +389,21 @@ namespace RE.Core.World.Components
                                 Pitch = 1,
                                 Volume = .25f
                             });
+                        Log.Debug("Ray hit an object, but its UserObject is not a Controller.");
                     }
                 }
-
-
-
-
-                if (input.IsKeyDown(Keys.Escape))
+                else
                 {
-                    Game.Instance.CursorState = CursorState.Normal;
-                    _camera.FirstMove = true;
+                    if (!string.IsNullOrWhiteSpace(InteractDenySound))
+                        SoundManager.Play(InteractDenySound, new SoundPlaybackSettings()
+                        {
+                            InWorld = false,
+                            Pitch = 1,
+                            Volume = .25f
+                        });
                 }
-
-                // UpdateCameraPosition((float)args.Time, currentHorizontalVelocity.LengthSquared > 1e-6, sprintKeyDown, _isCrouching);
-
             }
+
             _targetCameraYOffset = _isCrouching ? CrouchCameraOffset : StandCameraOffset;
             _currentCameraYOffset = MathHelper.Lerp(_currentCameraYOffset, _targetCameraYOffset,
                 (float)(Time.DeltaTime * CameraLerpSpeed));
@@ -345,9 +417,9 @@ namespace RE.Core.World.Components
                 if (rigidBody != null)
                 {
                     var mass = rigidBodyComponent.Mass;
-                    Vector3 currentPos = _holdingObject.Transform.Position; // Gets the current position of the object being held.
-                    Vector3 rawTargetPos = _camera.Position + _camera.Front * 4; // Calculates a raw target position 4 units in front of the camera.
-                    _smoothedTargetPos = Vector3.Lerp(_smoothedTargetPos, rawTargetPos, 0.2f); // Smoothly interpolates the _smoothedTargetPos towards the rawTargetPos.
+                    Vector3 currentPos = _holdingObject.Transform.Position;
+                    Vector3 rawTargetPos = _camera.Position + _camera.Front * 4;
+                    _smoothedTargetPos = Vector3.Lerp(_smoothedTargetPos, rawTargetPos, 0.2f);
 
                     Vector3 direction = _smoothedTargetPos - currentPos;
                     Vector3 currentVelocity = rigidBody.LinearVelocity.ToOpenTkVector3();
@@ -362,9 +434,6 @@ namespace RE.Core.World.Components
                         force = Vector3.Normalize(force) * maxForce;
 
                     rigidBody.ApplyCentralForce(force.ToBulletVector3());
-
-
-
 
                     var currentOrientation = rigidBody.Orientation;
                     var targetOrientation = BulletSharp.Math.Quaternion.Identity;
@@ -396,7 +465,91 @@ namespace RE.Core.World.Components
                 _camera.Position = new Vector3(basePosition.X, basePosition.Y + _currentCameraYOffset, basePosition.Z);
             }
         }
+        int curveIndex = 0;   // индекс кривой (каждая = 4 точки)
+        float t = 0.0f;
+        float speed = 0.25f; // скорость по параметру
+        bool loop = false;
+        private bool ended = false;
+        Vector3 Bezier(Vector3 p0, Vector3 p1, Vector3 p2, Vector3 p3, float t)
+        {
+            float u = 1f - t;
+            float tt = t * t;
+            float uu = u * u;
+
+            return
+                uu * u * p0 +
+                3f * uu * t * p1 +
+                3f * u * tt * p2 +
+                tt * t * p3;
+        }
+        void UpdateCamera(float deltaTime)
+        {
+            if (path == null || path.Count < 4)
+                return;
+
+            int maxCurve = (path.Count - 1) / 3;
+
+            if (curveIndex >= maxCurve)
+            {
+                if (loop)
+                {
+                    curveIndex = 0;
+                    t = 0f;
+                }
+                else
+                {
+                    PlayerGameObject.SetPosition(path[^1], true);
+                    return;
+                }
+            }
+
+            int i = curveIndex * 3;
+
+            Vector3 p0 = path[i];
+            Vector3 p1 = path[i + 1];
+            Vector3 p2 = path[i + 2];
+            Vector3 p3 = path[i + 3];
+
+            t += speed * deltaTime;
+
+            if (t >= 1f)
+            {
+                t = 0f;
+                curveIndex++;
+                return;
+            }
+
+            PlayerGameObject.SetPosition(Bezier(p0, p1, p2, p3, t), true);
+        }
+
+        private static void AddDummyCube()
+        {
+            GameObject obj = new GameObject();
+            obj.Components.Add(new MeshComponent("assets/models/crate.fbx"));
+            Vector3 front = Camera.Main.Front;
+
+            obj.Components.Add(new BoxColliderComponent());
+            var rb = new RigidBodyComponent(20);
+            obj.Components.Add(rb);
+
+            SceneManager.CurrentScene.GameObjects.Add(obj);
+
+            BulletSharp.Math.Vector3 cameraFrontBullet = new BulletSharp.Math.Vector3(front.X, front.Y, front.Z);
+            rb.RigidBody.Restitution = 0.2f;
+            rb.RigidBody.Friction = 1;
+            float impulseStrength = 5.0f;
+            BulletSharp.Math.Vector3 impulseVector = cameraFrontBullet * impulseStrength;
+            rb.RigidBody.ApplyImpulse(impulseVector, BulletSharp.Math.Vector3.Zero);
+
+            obj.SetPosition(2 * front + Camera.Main.Position);
+        }
+
         private Vector3 _smoothedTargetPos = Vector3.Zero;
+        private bool FirstMove = true;
+        private Vector2 _lastMousePos;
+        private float mouseX;
+        private float mouseY;
+
         bool IsGrounded(Vector3 rel)
         {
             float currentHeight = _isCrouching ? CrouchHeight : StandHeight;

@@ -1,12 +1,16 @@
 ﻿using System.Numerics;
+using System.Text;
 using System.Text.RegularExpressions;
 using Hexa.NET.ImGui;
 using OpenTK.Windowing.Common;
 using RE.Core;
+using RE.Core.Input;
 using RE.Core.Scripting;
 using RE.Editor;
 using RE.Rendering;
+using RE.Utils;
 using Serilog;
+using Keys = OpenTK.Windowing.GraphicsLibraryFramework.Keys;
 
 namespace RE.Debug.Overlay
 {
@@ -26,10 +30,14 @@ namespace RE.Debug.Overlay
         private static readonly Vector4 _colorWarning = new(1.0f, 1.0f, 0.0f, 1.0f);
         private static readonly Vector4 _colorError = new(1.0f, 0.4f, 0.4f, 1.0f);
 
+        private static List<string> _commandHistory = new();
+
         private bool _focusNextFrame = false;
         private bool _showInfo = true;
         private bool _showWarn = true;
         private bool _showError = true;
+        private int _historyIndex = -1;
+        private string _savedInput = string.Empty;
 
         public required string Id;
 
@@ -43,73 +51,178 @@ namespace RE.Debug.Overlay
             ImGui.SetNextWindowSize(size, ImGuiCond.Appearing);
             if (ImGui.Begin("Console ##" + Id))
             {
-                ImGui.Checkbox($"Info ({Regex.Matches(GameLogger.Log, "INF]", RegexOptions.Compiled).Count})", ref _showInfo);
-                ImGui.SameLine();
-                ImGui.Checkbox($"Warning ({Regex.Matches(GameLogger.Log, "WRN]", RegexOptions.Compiled).Count})", ref _showWarn);
-                ImGui.SameLine();
-                ImGui.Checkbox($"Error ({Regex.Matches(GameLogger.Log, "ERR]", RegexOptions.Compiled).Count})", ref _showError);
-
-                ImGui.Separator();
-
-                float footerHeightToReserve = ImGui.GetFrameHeightWithSpacing();
-
-                var w = (bool)Variables.GetVariable("wrapConsole")!;
-                string[] logLines = GameLogger.Log.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries);
-
-                if (ImGui.BeginChild("ScrollRegion",
-                        new Vector2(0, -footerHeightToReserve),
-                        ImGuiChildFlags.Borders,
-                        w ? ImGuiWindowFlags.None : ImGuiWindowFlags.HorizontalScrollbar))
+                unsafe
                 {
-                    float scrollMaxY = ImGui.GetScrollMaxY();
-                    float scrollY = ImGui.GetScrollY();
-
-                    if (scrollY < scrollMaxY)
-                        _shouldScrollToBottom = false;
-                    if (scrollY >= scrollMaxY)
-                        _shouldScrollToBottom = true;
-
-                    ImGui.PushStyleVar(ImGuiStyleVar.ItemSpacing, new Vector2(4, 1));
-                    foreach (string line in logLines)
+                    if (ImGui.Button("X"))
                     {
-                        if (line.Contains("INF] ") && !_showInfo)
-                            continue;
-                        if (line.Contains("WRN] ") && !_showWarn)
-                            continue;
-                        if (line.Contains("ERR] ") && !_showError)
-                            continue;
-                        DrawLogLine(line, w);
+                        if (this != Instance)
+                            this.StopRender();
+                        else IsVisible = false;
                     }
-                    ImGui.PopStyleVar();
 
-                    if (_shouldScrollToBottom)
+                    ImGui.Checkbox($"Info ({Regex.Matches(GameLogger.Log, "INF]", RegexOptions.Compiled).Count})", ref _showInfo);
+                    ImGui.SameLine();
+                    ImGui.Checkbox($"Warning ({Regex.Matches(GameLogger.Log, "WRN]", RegexOptions.Compiled).Count})", ref _showWarn);
+                    ImGui.SameLine();
+                    ImGui.Checkbox($"Error ({Regex.Matches(GameLogger.Log, "ERR]", RegexOptions.Compiled).Count})", ref _showError);
+
+                    ImGui.Separator();
+
+                    float footerHeightToReserve = ImGui.GetFrameHeightWithSpacing();
+
+                    var w = (bool)Variables.GetVariable("wrapConsole")!;
+                    string[] logLines = GameLogger.Log.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries);
+
+                    if (ImGui.BeginChild("ScrollRegion",
+                            new Vector2(0, -footerHeightToReserve),
+                            ImGuiChildFlags.Borders,
+                            w ? ImGuiWindowFlags.None : ImGuiWindowFlags.HorizontalScrollbar))
                     {
-                        ImGui.SetScrollHereY(1.0f);
+                        float scrollMaxY = ImGui.GetScrollMaxY();
+                        float scrollY = ImGui.GetScrollY();
+
+                        if (scrollY < scrollMaxY)
+                            _shouldScrollToBottom = false;
+                        if (scrollY >= scrollMaxY)
+                            _shouldScrollToBottom = true;
+
+                        ImGui.PushStyleVar(ImGuiStyleVar.ItemSpacing, new Vector2(4, 1));
+                        foreach (string line in logLines)
+                        {
+                            if (line.Contains("INF] ") && !_showInfo)
+                                continue;
+                            if (line.Contains("WRN] ") && !_showWarn)
+                                continue;
+                            if (line.Contains("ERR] ") && !_showError)
+                                continue;
+                            DrawLogLine(line, w);
+                        }
+                        ImGui.PopStyleVar();
+
+                        if (_shouldScrollToBottom)
+                        {
+                            ImGui.SetScrollHereY(1.0f);
+                        }
                     }
-                }
-                ImGui.EndChild();
+                    ImGui.EndChild();
 
-                ImGui.PushItemWidth(-1);
-                if (_focusNextFrame)
-                {
-                    ImGui.SetKeyboardFocusHere();
-                    _focusNextFrame = false;
-                }
-
-                if (ImGui.InputText("##ConsoleInput", ref _inputBuffer, 512, ImGuiInputTextFlags.EnterReturnsTrue))
-                {
-                    if (!string.IsNullOrWhiteSpace(_inputBuffer))
+                    ImGui.PushItemWidth(-1);
+                    if (_focusNextFrame)
                     {
-                        Log.Information(">>> {Input}", _inputBuffer);
-                        CommandHandler.ExecuteCommand(_inputBuffer);
-                        _inputBuffer = string.Empty;
-                        _shouldScrollToBottom = true;
-                        _focusNextFrame = true;
+                        ImGui.SetKeyboardFocusHere();
+                        _focusNextFrame = false;
                     }
+
+                    if (ImGui.InputText("##ConsoleInput", ref _inputBuffer, 512,
+                            ImGuiInputTextFlags.EnterReturnsTrue
+                            | ImGuiInputTextFlags.CallbackCompletion
+                            | ImGuiInputTextFlags.CallbackHistory, ConsoleCallback))
+                    {
+                        if (!string.IsNullOrWhiteSpace(_inputBuffer))
+                        {
+                            Log.Information(">>> {Input}", _inputBuffer);
+                            CommandHandler.ExecuteCommand(_inputBuffer);
+                            if (_commandHistory.LastOrDefault() != _inputBuffer)
+                                _commandHistory.Add(_inputBuffer);
+
+                            _historyIndex = -1;
+                            _savedInput = string.Empty;
+                            _inputBuffer = string.Empty;
+
+                            _focusNextFrame = true;
+                        }
+                    }
+                    ImGui.PopItemWidth();
                 }
-                ImGui.PopItemWidth();
             }
-            ImGui.End(); 
+            ImGui.End();
+        }
+        private unsafe int ConsoleCallback(ImGuiInputTextCallbackData* data)
+        {
+            switch (data->EventFlag)
+            {
+                case ImGuiInputTextFlags.CallbackCompletion:
+                    HandleAutocomplete(data);
+                    break;
+
+                case ImGuiInputTextFlags.CallbackHistory:
+                    if (data->EventKey == ImGuiKey.UpArrow)
+                        MoveHistory(1, data);
+                    else if (data->EventKey == ImGuiKey.DownArrow)
+                        MoveHistory(-1, data);
+                    break;
+            }
+            return 0;
+        }
+
+        private unsafe void HandleAutocomplete(ImGuiInputTextCallbackData* data)
+        {
+            string input = Encoding.UTF8.GetString(data->Buf, data->BufTextLen);
+
+            var matches = CommandHandler.RegisteredCommands
+                .Where(c => c.StartsWith(input, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+
+            if (matches.Count == 0)
+            {
+                Log.Information("No matches for input: {Input}", input);
+
+            }
+            else if (matches.Count == 1)
+            {
+                string match = matches[0];
+                data->DeleteChars(0, data->BufTextLen);
+                data->InsertChars(0, match);
+            }
+            else
+            {
+                Log.Information("Matches({Input}): {Matches}", input, string.Join(", ", matches));
+
+                string commonPrefix = FindCommonPrefix(matches);
+                if (commonPrefix.Length > input.Length)
+                {
+                    data->DeleteChars(0, data->BufTextLen);
+                    data->InsertChars(0, commonPrefix);
+                }
+            }
+        }
+
+        private string FindCommonPrefix(List<string> strings)
+        {
+            if (strings.Count == 0)
+                return string.Empty;
+            string prefix = strings[0];
+            for (int i = 1; i < strings.Count; i++)
+            {
+                while (!strings[i].StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+                {
+                    prefix = prefix.Substring(0, prefix.Length - 1);
+                    if (string.IsNullOrEmpty(prefix))
+                        return string.Empty;
+                }
+            }
+            return prefix;
+        }
+        private unsafe void MoveHistory(int direction, ImGuiInputTextCallbackData* data)
+        {
+            if (_commandHistory.Count == 0)
+                return;
+
+            if (_historyIndex == -1)
+                _savedInput = _inputBuffer;
+
+            int newIndex = _historyIndex + direction;
+
+            if (newIndex >= -1 && newIndex < _commandHistory.Count)
+            {
+                _historyIndex = newIndex;
+                string newText = (_historyIndex == -1)
+                    ? _savedInput
+                    : _commandHistory[_commandHistory.Count - 1 - _historyIndex];
+
+                data->DeleteChars(0, data->BufTextLen);
+                data->InsertChars(0, newText);
+            }
         }
         private void DrawLogLine(string logLine, bool wrap)
         {
@@ -144,7 +257,7 @@ namespace RE.Debug.Overlay
         public static void Init()
         {
             Instance ??= new ConsoleWindow() { Id = "Main" };
-            RenderManager.AddRenderable(Instance);
+            Instance.StartRender();
         }
     }
 }

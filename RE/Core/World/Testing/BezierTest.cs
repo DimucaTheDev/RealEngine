@@ -121,7 +121,7 @@ namespace RE.Core.World.Testing
         {
             const int segments = 40;
 
-            if (points == null || points.Length < 4)
+            if (points == null! || points.Length < 4)
                 return;
 
             if (SceneEditor.SelectedObject == Owner)

@@ -18,7 +18,7 @@ namespace RE.Core.World.Testing
         {
             Camera.Main.Position = new Vector3(0, 5, 0);
             Camera.Main.Pitch = Camera.Main.Yaw = 0;
-            Camera.Main.FirstMove = false;
+            //Camera.Main.FirstMove = false;
 
             textState = Owner.Scene.GameObjects.FindByName("state").GetComponent<BillboardTextComponent>()!;
 

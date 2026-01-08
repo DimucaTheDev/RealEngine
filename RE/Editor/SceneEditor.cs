@@ -7,13 +7,16 @@ using Hexa.NET.ImGui;
 using OpenTK.Graphics.OpenGL;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
+using RE.Audio;
 using RE.Core;
 using RE.Core.Assets;
+using RE.Core.Input;
 using RE.Core.PluginSystem;
 using RE.Core.Scripting;
 using RE.Core.Scripting.Attributes;
 using RE.Core.World;
 using RE.Debug.Overlay;
+using RE.Editor.Notification;
 using RE.Editor.Panels;
 using RE.Editor.Panels.Viewport;
 using RE.Rendering;
@@ -24,6 +27,7 @@ using Serilog;
 using static Hexa.NET.ImGui.ImGui;
 using Image = System.Drawing.Image;
 using Vector2 = System.Numerics.Vector2;
+using Vector4 = System.Numerics.Vector4;
 
 namespace RE.Editor
 {
@@ -47,7 +51,7 @@ namespace RE.Editor
         public static GameObject? SelectedObject;
         public static bool ShowExitConfirmationModal = false;
 
-        private static readonly ImFontPtr _bigFont; 
+        private static readonly ImFontPtr _bigFont;
         private static readonly Texture LogoImage;
 
         private static bool _isDockspaceOpen;
@@ -56,6 +60,8 @@ namespace RE.Editor
         private GameObject? _selectedObject;
         private Dictionary<string, List<Type>> _componentDict = new();
         private Node _rootNode = new();
+        private string _oldTitle;
+
         private readonly List<Type> _customPopups = new();
         private readonly HierarchyPanel _hierarchyPanel = new();
         private readonly InspectorPanel _inspectorPanel = new();
@@ -64,7 +70,7 @@ namespace RE.Editor
         private readonly ConsoleWindow _consoleWindow = new() { Id = "Editor" };
 
         static SceneEditor()
-        { 
+        {
             var iconPath = ($"Assets/RealEngine{(Random.Shared.Next(100) > 50 ? "2" : "")}.ico");
 
             if (ContentManager.Exists(iconPath))
@@ -121,8 +127,12 @@ namespace RE.Editor
                 return;
             }
             Enabled = true;
+            SoundManager.StopAll();
+            ToastManager.RemoveAllNotifications();
+            Mouse.CursorState = CursorState.Normal;
 
-            Game.Instance.CursorState = CursorState.Normal;
+            _oldTitle = Game.Instance.Title;
+            //Game.Instance.Title = $"{Game.ProductName} Scene Editor {Game.Version} [{Game.CommitHash[..7]}, {Game.BuildDate:g}] | Scene \"{SceneManager.CurrentScene.Name ?? "<Unnamed>"}\"";
 
             Log.Information("Starting Scene Editor for \"{SceneName}\"...", SceneManager.CurrentScene.Name);
 
@@ -170,7 +180,9 @@ namespace RE.Editor
                 return;
 
             Enabled = false;
-            IsVisible = false; 
+            IsVisible = false;
+
+            Game.Instance.Title = _oldTitle;
 
             var reloaded = SceneManager.Reload(_scene);
             _scene.Dispose();
@@ -249,14 +261,20 @@ namespace RE.Editor
         private bool _isFirstTime = true;
         private unsafe void SetupDockSpace()
         {
-            ImGuiIOPtr io = GetIO();
+            var io = GetIO();
+            var mainViewport = GetMainViewport();
 
-            SetNextWindowPos(new Vector2(0, 0));
-            SetNextWindowSize(io.DisplaySize);
+            SetNextWindowViewport(mainViewport.ID);
+            SetNextWindowPos(mainViewport.Pos);
+            SetNextWindowSize(mainViewport.Size);
 
-            ImGuiWindowFlags windowFlags = ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoResize |
-                                           ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoBringToFrontOnFocus |
-                                           ImGuiWindowFlags.NoBackground | ImGuiWindowFlags.MenuBar;
+            ImGuiWindowFlags windowFlags =
+                ImGuiWindowFlags.NoTitleBar |
+                ImGuiWindowFlags.NoResize |
+                ImGuiWindowFlags.NoMove |
+                ImGuiWindowFlags.NoBringToFrontOnFocus |
+                ImGuiWindowFlags.NoBackground |
+                ImGuiWindowFlags.MenuBar;
 
             PushStyleVar(ImGuiStyleVar.WindowRounding, 0.0f);
             PushStyleVar(ImGuiStyleVar.WindowBorderSize, 0.0f);
@@ -277,8 +295,8 @@ namespace RE.Editor
                     { }
                     if (BeginMenu("Preferences"))
                     {
-                        Selectable("Render Skybox", ref SceneEditor.PreviewSkybox);
-                        Selectable("Preview Light", ref SceneEditor.PreviewLight);
+                        Selectable("Render Skybox", ref PreviewSkybox);
+                        Selectable("Preview Light", ref PreviewLight);
                         EndMenu();
                     }
                     if (MenuItem("Settings"))
@@ -286,6 +304,7 @@ namespace RE.Editor
                     Separator();
                     if (MenuItem("Exit"))
                     {
+                        ShowExitConfirmationModal = true;
                     }
                     EndMenu();
                 }
@@ -312,6 +331,12 @@ namespace RE.Editor
 
                 if (BeginMenu("Tools"))
                 {
+                    if (MenuItem("Console"))
+                    {
+                        var consoleWindow = new ConsoleWindow() { Id = $"NewConsoleInstance{Random.Shared.Next(10000)}" };
+                        consoleWindow.StartRender();
+                        consoleWindow.IsVisible = true;
+                    }
                     if (MenuItem("Skybox Editor"))
                     { }
                     if (MenuItem("Particle Editor"))
@@ -329,7 +354,11 @@ namespace RE.Editor
                 {
                     if (MenuItem("Open Docs"))
                     {
-                        Process.Start("explorer", "https://dimucathedev.github.io/RealEngine/docs/editor/about.html");
+                        Process.Start(new ProcessStartInfo()
+                        {
+                            FileName = "https://dimucathedev.github.io/RealEngine/docs/editor/about.html",
+                            UseShellExecute = true
+                        });
                     }
 
                     Separator();

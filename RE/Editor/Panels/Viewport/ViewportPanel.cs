@@ -2,7 +2,10 @@
 using Hexa.NET.ImGui;
 using Hexa.NET.ImGuizmo;
 using OpenTK.Mathematics;
+using OpenTK.Windowing.Common;
+using OpenTK.Windowing.GraphicsLibraryFramework;
 using RE.Core;
+using RE.Core.Input;
 using RE.Core.World;
 using RE.Core.World.Components.Physics;
 using RE.Core.World.Physics;
@@ -48,17 +51,27 @@ namespace RE.Editor.Panels.Viewport
         private readonly string[] _options = ["World", "Local"];
 
         private int _selectedIndex;
-        private Vector2 _lastClickPosition;
         private int _lastSelectedIndex = -1;
         private List<GameObject> _lastHitObjects = new();
         private bool _showPhysOptions;
         private bool _physHasHovered;
         private bool _showOverlay;
         private bool _showAabb, _showWireframe, _xray;
+        private bool _isOverViewport;
+        private bool _rotating;
         private CollisionDispatcher _dispatcher;
         private DbvtBroadphase _broadphase;
         private SpriteRenderer _cameraSprite;
+        private float mouseX;
+        private float mouseY;
+        private Vector2 _lastMousePos;
+        private Vector2 _lastClickPosition;
+        private Vector2 _lockedMousePos;
+        private Vector2 _lockedGlobalPos;
+        private Vector3 _cameraVelocity = Vector3.Zero;
         private Vector4 _viewportRect;
+
+        public static bool CameraRotate;
 
         ~ViewportPanel() => CollisionWorld.Dispose();
 
@@ -107,19 +120,32 @@ namespace RE.Editor.Panels.Viewport
             SetNextWindowPos(new Vector2(318, 27), ImGuiCond.FirstUseEver);
             SetNextWindowSize(new Vector2(1194, 665), ImGuiCond.FirstUseEver);
 
-            if (Begin("Viewport", ImGuiWindowFlags.NoScrollbar))
+            var windowFlags = ImGuiWindowFlags.NoScrollbar;
+            if (_isOverViewport)
+                windowFlags |= ImGuiWindowFlags.NoMove;
+
+            if (Begin("Viewport", windowFlags))
             {
                 DrawToolbar();
                 Separator();
 
-                if (IsWindowHovered() && !GetIO().WantCaptureKeyboard && !IsAnyMouseDown())
-                    SetWindowFocus();
+                if (IsWindowHovered() && (IsMouseDown(ImGuiMouseButton.Left) || IsMouseDown(ImGuiMouseButton.Right)))
+                    SetWindowFocus("Viewport");
+
 
                 MouseDown = (IsWindowFocused() && IsWindowHovered());
-                if (IsWindowFocused())
+                bool hovered = IsWindowHovered(ImGuiHoveredFlags.RootWindow | ImGuiHoveredFlags.AllowWhenBlockedByPopup);
+                bool gizmoActive = ImGuizmo.IsUsingAny() || ImGuizmo.IsOver();
+                var io = GetIO();
+                bool guiWantsMouse = io.WantCaptureMouse || IsAnyItemActive();
+
+                if (hovered && !gizmoActive && !guiWantsMouse)
                 {
-                    MoveCamera();
+                    CameraRotate = hovered && IsMouseDown(ImGuiMouseButton.Right);
                 }
+                bool guiWantsKeyboard = io.WantCaptureKeyboard || IsAnyItemActive();
+                if (IsWindowFocused())
+                    MoveCamera();
 
                 var contentSize = GetContentRegionAvail();
 
@@ -136,6 +162,12 @@ namespace RE.Editor.Panels.Viewport
                 Image(new ImTextureRef() { TexID = Game.Instance.SceneTextureId }, ViewportSize,
                     new Vector2(0, 1),
                     new Vector2(1, 0));
+                _isOverViewport = IsItemHovered();
+
+                if (_isOverViewport)
+                {
+                    CameraControl();
+                }
 
                 DrawDebugText();
 
@@ -152,13 +184,56 @@ namespace RE.Editor.Panels.Viewport
                         }
                     }
                 }
-
-                PanoramicCameraMove();
+                if (IsMouseDown(ImGuiMouseButton.Middle) && hovered && !gizmoActive)
+                    PanoramicCameraMove();
                 LeftMouseButtonHandler();
             }
             End();
 
             //CollisionWorld.DebugDrawWorld();
+        }
+
+        private void CameraControl()
+        {
+            Camera cam = Camera.Editor;
+
+            bool rmbDown = IsMouseDown(ImGuiMouseButton.Right);
+            bool rmbClicked = IsMouseClicked(ImGuiMouseButton.Right);
+
+            if (rmbClicked && IsWindowHovered())
+            {
+                _rotating = true;
+                _lockedGlobalPos = Mouse.ScreenPosition.ToSystemVector2();
+            }
+
+            SetMouseCursor(rmbDown ? ImGuiMouseCursor.None : ImGuiMouseCursor.Arrow);
+
+            if (!rmbDown)
+            {
+                if (_rotating)
+                {
+                    _rotating = false;
+                    WinApi.SetCursorPos((int)_lockedGlobalPos.X, (int)_lockedGlobalPos.Y);
+                }
+                return;
+            }
+
+            if (_rotating)
+            {
+                Vector2 currentGlobalPos = Mouse.ScreenPosition.ToSystemVector2();
+
+                Vector2 delta = currentGlobalPos - _lockedGlobalPos;
+
+                if (delta.LengthSquared() > 0)
+                {
+                    float mouseSensitivity = 0.2f;
+                    cam.Yaw += delta.X * mouseSensitivity;
+                    cam.Pitch -= delta.Y * mouseSensitivity;
+                    cam.Pitch = MathHelper.Clamp(cam.Pitch, -89f, 89f);
+
+                    WinApi.SetCursorPos((int)_lockedGlobalPos.X, (int)_lockedGlobalPos.Y);
+                }
+            }
         }
         private static Vector4 SetImGuizmoRect()
         {
@@ -339,13 +414,6 @@ namespace RE.Editor.Panels.Viewport
         }
         private void PanoramicCameraMove()
         {
-            var isMiddleMouseDown = IsMouseDown(ImGuiMouseButton.Middle);
-            var shouldPan = isMiddleMouseDown && IsWindowFocused();
-
-            if (!shouldPan)
-            {
-                return;
-            }
             var mouseDelta = GetIO().MouseDelta;
 
             if (mouseDelta.LengthSquared() == 0)
@@ -548,34 +616,42 @@ namespace RE.Editor.Panels.Viewport
             End();
 
             PopStyleColor();
-        }
+        } 
+
         private void MoveCamera()
         {
-            var p = Camera.Editor.Position;
+            const float targetSpeed = 14f;
+            const float lerpFactor = 10f;
 
-            var speed = 7f * Time.DeltaTime;
-            var input = Game.Instance.KeyboardState;
-            var mInput = Game.Instance.MouseState;
-            if (mInput.ScrollDelta.Y < 0 && IsWindowHovered())
-                p += -(Camera.Editor.Front).Normalized();
-            if (mInput.ScrollDelta.Y > 0 && IsWindowHovered())
-                p += (Camera.Editor.Front).Normalized();
+            var cam = Camera.Editor;
+            Vector3 inputDir = Vector3.Zero;
 
-            if (input.IsKeyDown(Keys.W))
-                p += (Camera.Editor.Front with { Y = 0 }).Normalized() * speed;
-            if (input.IsKeyDown(Keys.S))
-                p -= (Camera.Editor.Front with { Y = 0 }).Normalized() * speed;
-            if (input.IsKeyDown(Keys.A))
-                p -= TkVector3.Normalize(TkVector3.Cross(Camera.Editor.Front, Camera.Editor.Up)) * speed;
-            if (input.IsKeyDown(Keys.D))
-                p += TkVector3.Normalize(TkVector3.Cross(Camera.Editor.Front, Camera.Editor.Up)) * speed;
-            if (input.IsKeyDown(Keys.Space))
-                p += TkVector3.UnitY * speed;
-            if (input.IsKeyDown(Keys.LeftShift))
-                p -= TkVector3.UnitY * speed;
+            if (Keyboard.IsKeyDown(Keys.W))
+                inputDir += (cam.Front with { Y = 0 }).Normalized();
+            if (Keyboard.IsKeyDown(Keys.S))
+                inputDir -= (cam.Front with { Y = 0 }).Normalized();
+            if (Keyboard.IsKeyDown(Keys.A))
+                inputDir -= Vector3.Normalize(Vector3.Cross(cam.Front, cam.Up));
+            if (Keyboard.IsKeyDown(Keys.D))
+                inputDir += Vector3.Normalize(Vector3.Cross(cam.Front, cam.Up));
 
-            if (!GetIO().WantTextInput)
-                Camera.Editor.Position = (p);
+            if (Keyboard.IsKeyDown(Keys.Space))
+                inputDir += Vector3.UnitY;
+            if (Keyboard.IsKeyDown(Keys.LeftShift))
+                inputDir -= Vector3.UnitY;
+
+            if (inputDir.LengthSquared > 0)
+                inputDir = inputDir.Normalized();
+
+            float currentSpeedLimit = targetSpeed;
+            Vector3 targetVelocity = inputDir * currentSpeedLimit;
+            _cameraVelocity = Vector3.Lerp(_cameraVelocity, targetVelocity, lerpFactor * Time.DeltaTime);
+            cam.Position += _cameraVelocity * Time.DeltaTime;
+
+            if (Mouse.ScrollDelta != 0 && IsWindowHovered())
+            {
+                cam.Position += cam.Front.Normalized() * Mouse.ScrollDelta * 2.0f;
+            }
         }
         private TkVector3 GetRightVector()
         {

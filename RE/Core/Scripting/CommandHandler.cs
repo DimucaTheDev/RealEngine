@@ -1,4 +1,5 @@
 ﻿using System.Collections;
+using System.Collections.Immutable;
 using System.Globalization;
 using System.Text.RegularExpressions;
 using OpenTK.Graphics.OpenGL;
@@ -28,6 +29,8 @@ namespace RE.Core.Scripting
         //mb i should make a Command class with description, args, etc
 
         public static event Action<string, List<string>, string?>? CommandExecuted;
+        public static IReadOnlyList<string> RegisteredCommands => CommandDescriptions.Keys.ToList().AsReadOnly();
+
 
         private static int _recursionDepth = 0;
         private static readonly Dictionary<string, string> CommandDescriptions = [];
@@ -148,7 +151,7 @@ namespace RE.Core.Scripting
             RegisterHandler("help", _ =>
             {
                 Log.Information("Available commands:");
-                foreach (var command in CommandDescriptions)
+                foreach (var command in CommandDescriptions.ToImmutableSortedDictionary())
                 {
                     Log.Information(" - {Command}: {Description}", command.Key, command.Value);
                 }
@@ -313,32 +316,6 @@ namespace RE.Core.Scripting
             {
                 WinApi.MessageBox(0, "Made with ❤️ by DimucaTheDev", "About", 0x40);
             });
-            RegisterHandler("dt", _ =>
-            {
-                Directory.CreateDirectory("dump");
-                Directory.EnumerateFiles("dump").ToList().ForEach(File.Delete);
-                Log.Information("Dumping textures...");
-                int index = 0;
-                foreach (var tex in Enumerable.Range(0, 32000)) // https://www.youtube.com/shorts/gib8WGoR604 
-                {
-                    if (!GL.IsTexture(tex))
-                        continue;
-                    GL.BindTexture(TextureTarget.Texture2D, tex);
-
-                    GL.GetTexLevelParameter(TextureTarget.Texture2D, 0, GetTextureParameter.TextureWidth, out int width);
-                    GL.GetTexLevelParameter(TextureTarget.Texture2D, 0, GetTextureParameter.TextureHeight, out int height);
-                    if (width == 0 || height == 0)
-                        continue;
-                    byte[] pixels = new byte[width * height * 4];
-                    GL.GetTexImage(TextureTarget.Texture2D, 0, PixelFormat.Rgba, PixelType.UnsignedByte, pixels);
-
-
-                    using var img = SixLabors.ImageSharp.Image.LoadPixelData<SixLabors.ImageSharp.PixelFormats.Rgba32>(pixels, width, height);
-                    img.SaveAsPng($"dump/{tex}.png");
-                    index++;
-                }
-                Log.Information("Dumped {Count} textures.", index);
-            }, "Dumps all GL textures to dump/ folder");
             RegisterSingleArgHandler("debug", s =>
             {
                 DebugOverlay.Instance.IsVisible = !DebugOverlay.Instance.IsVisible;

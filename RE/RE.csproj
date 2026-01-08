@@ -8,14 +8,17 @@
 		<Nullable>enable</Nullable>
 		<LangVersion>preview</LangVersion>
 		<AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+
 		<ApplicationIcon>RealEngine.ico</ApplicationIcon>
 		<Title>Real Engine</Title>
-		<Version>1.2.3.4</Version>
+		<Version>0.1+dev</Version>
+		<IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
 		<Authors>DimucaTheDev</Authors>
 		<Company>LEFT2.DEV</Company>
 		<Product>Real Engine</Product>
 		<PackageProjectUrl>https://github.com/DimucaTheDev/RealEngine</PackageProjectUrl>
 		<Description>REAL Engine!!!!!! A replacement for Unreal Engine 7</Description>
+		
 		<Configurations>Debug;Release;Production</Configurations>
 		<GenerateDocumentationFile>True</GenerateDocumentationFile>
 		<Platforms>AnyCPU;x64</Platforms>
@@ -40,10 +43,10 @@
 		<PackageReference Include="BulletSharp" Version="0.11.1" />
 		<PackageReference Include="FmodAudio" Version="2.2.5" />
 		<PackageReference Include="freetype" Version="2.8.0.1" />
-		<PackageReference Include="Hexa.NET.GLFW" Version="1.0.4" />
+		<PackageReference Include="Hexa.NET.GLFW" Version="1.0.5" />
 		<PackageReference Include="Hexa.NET.ImGui" Version="2.2.9" />
-		<PackageReference Include="Hexa.NET.ImGui.Backends" Version="1.0.17.4" />
-		<PackageReference Include="Hexa.NET.ImGui.Backends.GLFW" Version="1.0.17.4" />
+		<PackageReference Include="Hexa.NET.ImGui.Backends" Version="1.0.18" />
+		<PackageReference Include="Hexa.NET.ImGui.Backends.GLFW" Version="1.0.18" />
 		<PackageReference Include="Hexa.NET.ImGuizmo" Version="2.2.9" />
 		<PackageReference Include="Hexa.NET.ImPlot" Version="2.2.9" />
 		<PackageReference Include="Hexa.NET.OpenGL4" Version="1.1.0" />
@@ -55,6 +58,7 @@
 		<PackageReference Include="Serilog" Version="4.3.0" />
 		<PackageReference Include="Serilog.Enrichers.Thread" Version="4.0.0" />
 		<PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
+		<PackageReference Include="Serilog.Sinks.File.GzArchive" Version="1.1.10" />
 		<PackageReference Include="SixLabors.ImageSharp" Version="3.1.11" />
 		<PackageReference Include="SpaceWizards.SharpFont" Version="1.0.2" />
 		<PackageReference Include="StbImageSharp" Version="2.30.15" />

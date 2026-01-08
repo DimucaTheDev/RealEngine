@@ -1,6 +1,7 @@
 ﻿using System.CommandLine;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
+using Hexa.NET.ImGui;
 using OpenTK.Graphics.OpenGL;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
@@ -8,12 +9,14 @@ using OpenTK.Windowing.Desktop;
 using RE.Audio;
 using RE.Core.Assets;
 using RE.Core.Assets.Providers;
+using RE.Core.Input;
 using RE.Core.PluginSystem;
 using RE.Core.Scripting;
 using RE.Core.World;
 using RE.Core.World.Physics;
 using RE.Debug;
 using RE.Debug.Overlay;
+using RE.Editor.Notification;
 using RE.Editor.Panels.Viewport;
 using RE.External.Grille.ImGuiTK;
 using RE.Rendering;
@@ -22,8 +25,10 @@ using RenderdocSharp;
 using Serilog;
 using Camera = RE.Rendering.Camera;
 using Color = System.Drawing.Color;
+using GL = OpenTK.Graphics.OpenGL.GL;
 using Keys = OpenTK.Windowing.GraphicsLibraryFramework.Keys;
 using SceneEditor = RE.Editor.SceneEditor;
+using Vector4 = System.Numerics.Vector4;
 
 namespace RE.Core;
 
@@ -41,7 +46,7 @@ internal partial class Game : GameWindow
         ParseArguments(args);
         SetupLogger();
 
-        Log.Information("{ProductName}; build {BuildDate:dd.MM.yyyy HH:mm:ss}; commit {CommitHash}", ProductName, BuildDate, CommitHash[..7]);
+        Log.Information("{ProductName}; version {Version}; build {BuildDate:dd.MM.yyyy HH:mm:ss}; commit {CommitHash}", ProductName, Version, BuildDate, CommitHash[..7]);
         Log.Information("Startup args: {@Args}", args);
 
         if (Directory.Exists("Debug"))
@@ -71,7 +76,7 @@ internal partial class Game : GameWindow
             new GameWindowSettings { UpdateFrequency = FpsLock },
             new NativeWindowSettings
             {
-                Title = $"{ProductName} - {BuildDate:g} - {CommitHash}",
+                Title = $"{ProductName} {Version}",
                 ClientSize = new Vector2i(width, height),
                 Location = new Vector2i(Screen.PrimaryScreen!.Bounds.Width / 2 - width / 2, Screen.PrimaryScreen.Bounds.Height / 2 - height / 2),
                 WindowState = WindowState.Normal
@@ -101,7 +106,7 @@ internal partial class Game : GameWindow
         Log.Information("End");
     }
 
-    protected override void OnLoad()
+    protected override unsafe void OnLoad()
     {
         GL.Enable(EnableCap.DebugOutput);
         GL.Enable(EnableCap.DebugOutputSynchronous);
@@ -114,10 +119,9 @@ internal partial class Game : GameWindow
 
         RenderManager.Init();
         Time.Init();
-        ImGuiController.Get();
         Camera.Init();
+        ImGuiController.Init();
         Initializer.Init();
-
         Initializer.AddStep(("Bootstrapping...", () =>
                 {
                     DebugOverlay.Init();
@@ -139,38 +143,24 @@ internal partial class Game : GameWindow
 
     protected override void OnUpdateFrame(FrameEventArgs args)
     {
+        RenderProfiler.StopAll();
+
         Time.Update(args);
         PhysicsManager.Update((float)args.Time);
         SoundManager.Update(args);
-        
-        if (SceneEditor.Enabled)
-            ConsoleWindow.Instance!.IsVisible = false;
 
-        if (KeyboardState.IsKeyPressed(Keys.GraveAccent) && !SceneEditor.Enabled)
-        {
-            if (ConsoleWindow.Instance!.IsVisible)
-            {
-                ConsoleWindow.Instance!.IsVisible = false;
-                Game.Instance.CursorState = CursorState.Grabbed;
-            }
-            else
-            {
-                ConsoleWindow.Instance!.IsVisible = true;
-                Game.Instance.CursorState = CursorState.Normal;
-                Camera.GetActiveCamera().FirstMove = true;
-            }
-        }
-
+        var rp = RenderProfiler.StartNew("update");
         if (!SceneEditor.Enabled && SceneManager.CurrentScene != null!)
         {
-            foreach (var scene in SceneManager.CurrentScene.GameObjects)
+            foreach (var scene in SceneManager.CurrentScene.GameObjects.ToList())
             {
-                foreach (var c in scene.Components)
+                foreach (var c in scene.Components.ToList())
                 {
                     c.Update(args);
                 }
             }
         }
+        rp.Stop();
     }
     protected override void OnResize(ResizeEventArgs e)
     {
@@ -186,8 +176,9 @@ internal partial class Game : GameWindow
 
     protected override void OnRenderFrame(FrameEventArgs args)
     {
-        RenderProfiler.StopAll();
         RenderProfiler.StartNew("render");
+
+        Context.MakeCurrent();
 
         if (Initializer.Render(args))
         {
@@ -204,7 +195,10 @@ internal partial class Game : GameWindow
         GL.PolygonMode(TriangleFace.FrontAndBack, Wireframe ? PolygonMode.Line : PolygonMode.Fill);
         #endregion
 
-        ImGuiController.Get().Update(this, Time.DeltaTime);
+        ImGuiController.Update();
+        if (ToastManager.MainWindowViewport == (ImGuiViewportPtr)null)
+            ToastManager.MainWindowViewport = ImGui.GetWindowViewport();
+
 
         if (SceneEditor.Enabled)
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, SceneFboId);
@@ -213,7 +207,7 @@ internal partial class Game : GameWindow
         var h = Camera.GetActiveCamera().RenderHeight;
         GL.Viewport(0, 0, w, h);
 
-        GL.ClearColor(Color.Black);//CadetBlue
+        GL.ClearColor(Color.Black);
         GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
         GL.DepthFunc(DepthFunction.Lequal);
@@ -231,37 +225,63 @@ internal partial class Game : GameWindow
             GL.Viewport(0, 0, ClientSize.X, ClientSize.Y);
         }
 
-        ImGuiController.Get().Render();
-
+        ToastManager.RenderNotifications();
+        ImGuiController.Render();
         SwapBuffers();
 
         #region Keybinds
-        if (KeyboardState.IsKeyPressed(Keys.F3))
+
+        if (Keyboard.IsKeyPressed(Keys.F7, true))
+        {
+            var imGuiToast1 = new Toast(ToastType.None, "Hello World!");
+            var imGuiToast125 = new Toast(ToastType.None);
+            var imGuiToast15 = new Toast(ToastType.None, "Hello World!", "title");
+            var imGuiToast2 = new Toast(ToastType.Info, "Hello World!");
+            var imGuiToast25 = new Toast(ToastType.Info, "Hello World!", "title");
+            var imGuiToast3 = new Toast(ToastType.Success, "Hello World!");
+            var imGuiToast35 = new Toast(ToastType.Success);
+            var imGuiToast4 = new Toast(ToastType.Warning, "Hello Woooooooooorld!");
+            var imGuiToast45 = new Toast(ToastType.Warning, "World!", "Helloooooooooo");
+            var imGuiToast5 = new Toast(ToastType.Error, "Hello World!");
+            Time.Schedule(250 * 0, () => { ToastManager.InsertNotification(imGuiToast1); });
+            Time.Schedule(250 * 0, () => { ToastManager.InsertNotification(imGuiToast125); });
+            Time.Schedule(250 * 0, () => { ToastManager.InsertNotification(imGuiToast15); });
+            Time.Schedule(250 * 1, () => { ToastManager.InsertNotification(imGuiToast2); });
+            Time.Schedule(250 * 1, () => { ToastManager.InsertNotification(imGuiToast25); });
+            Time.Schedule(250 * 2, () => { ToastManager.InsertNotification(imGuiToast3); });
+            Time.Schedule(250 * 2, () => { ToastManager.InsertNotification(imGuiToast35); });
+            Time.Schedule(250 * 3, () => { ToastManager.InsertNotification(imGuiToast4); });
+            Time.Schedule(250 * 3, () => { ToastManager.InsertNotification(imGuiToast45); });
+            Time.Schedule(250 * 4, () => { ToastManager.InsertNotification(imGuiToast5); });
+        }
+
+        if (Keyboard.IsKeyPressed(Keys.GraveAccent))
+            ConsoleWindow.Instance!.IsVisible = !ConsoleWindow.Instance.IsVisible;
+        if (Keyboard.IsKeyPressed(Keys.F3, true))
             Wireframe = !Wireframe;
-        if (KeyboardState.IsKeyPressed(Keys.F11))
+        if (Keyboard.IsKeyPressed(Keys.F11, true))
             Game.Instance.ToggleFullscreen();
-        if (KeyboardState.IsKeyPressed(Keys.F4))
+        if (Keyboard.IsKeyPressed(Keys.F4, true))
             CommandHandler.ExecuteCommand("editor");
-        if (KeyboardState.IsKeyPressed(Keys.F5))
+        if (Keyboard.IsKeyPressed(Keys.F5, true))
             CommandHandler.ExecuteCommand("debug");
-        if (KeyboardState.IsKeyPressed(Keys.F1))
+        if (Keyboard.IsKeyPressed(Keys.F1, true))
         {
             RenderManager.RemoveCameraFrustum();
-            if (KeyboardState.IsKeyDown(Keys.LeftControl))
+            if (Keyboard.IsKeyDown(Keys.LeftControl))
             {
                 return;
             }
-
             RenderManager.CreateCameraFrustum();
         }
-        if (KeyboardState.IsKeyPressed(Keys.F2))
+        if (Keyboard.IsKeyPressed(Keys.F2, true))
         {
             var p = Game.TakeScreenshot();
-            Log.Information("Screenshot saved to {Path}", p);
+            if (p != null!)
+                Log.Information("Screenshot saved to {Path}", p);
         }
         #endregion
     }
-
     protected override void OnClosing(CancelEventArgs e)
     {
         if (SceneEditor.Enabled)

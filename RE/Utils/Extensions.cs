@@ -18,33 +18,41 @@ namespace RE.Utils
         }
 
         // Time
-        public static void InvokeNow(this Time.ScheduledTask task)
+        extension(Time.ScheduledTask task)
         {
-            task.Action.Invoke();
-            Time.RemoveTask(task);
+            public void InvokeNow()
+            {
+                task.Action.Invoke();
+                Time.RemoveTask(task);
+            }
+            public void TerminateIfScheduled()
+            {
+                if (task?.IsScheduled() ?? false)
+                    Terminate(task);
+            }
+            public void Terminate() => Time.RemoveTask(task);
         }
-        public static void TerminateIfScheduled(this Time.ScheduledTask? task)
-        {
-            if (task?.IsScheduled() ?? false)
-                Terminate(task);
-        }
-        public static void Terminate(this Time.ScheduledTask task) => Time.RemoveTask(task);
+
         // Renderable
         extension<T>(T r) where T : Renderable
         {
             public void StartRender() => RenderManager.AddRenderable(r);
-
             public bool IsRendering()
             {
                 return RenderManager.Renderables.TryGetValue(r.RenderLayer, out var types) &&
                        types.TryGetValue(typeof(T), out var list) &&
                        list.Contains(r);
             }
-
             public void StopRender()
             {
                 RenderManager.RemoveRenderable(r);
             }
+        }
+
+        extension(RigidBody r)
+        {
+            public void Disable() => PhysicsManager.DynamicsWorld.RemoveRigidBody(r);
+            public void Enable() => PhysicsManager.DynamicsWorld.AddRigidBody(r);
         }
 
         // Conversions
@@ -61,16 +69,11 @@ namespace RE.Utils
         public static BulletSharp.Math.Matrix ToBulletMatrix(this OpenTK.Mathematics.Matrix4 v) =>
             new(v.M11, v.M12, v.M13, v.M14, v.M21, v.M22, v.M23, v.M24, v.M31, v.M32, v.M33, v.M34, v.M41, v.M42, v.M43, v.M44);
         public static OpenTK.Mathematics.Vector3 ToOpenTkVector3(this Vector3 v) => new(v.X, v.Y, v.Z);
+        public static OpenTK.Mathematics.Vector2 ToOpenTkVector2(this Vector2 v) => new(v.X, v.Y);
         public static OpenTK.Mathematics.Quaternion ToOpenTkQuaternion(this Quaternion q) => new(q.X, q.Y, q.Z, q.W);
         public static Vector3 ToSystemVector3(this OpenTK.Mathematics.Vector3 v) => new(v.X, v.Y, v.Z);
+        public static Vector2 ToSystemVector2(this OpenTK.Mathematics.Vector2 v) => new(v.X, v.Y);
         public static Quaternion ToSystemQuaternion(this OpenTK.Mathematics.Quaternion q) => new(q.X, q.Y, q.Z, q.W);
         public static JsonArray ToJsonArray(this OpenTK.Mathematics.Vector3 v) => new(v.X, v.Y, v.Z);
-
-
-        extension(RigidBody r)
-        {
-            public void Disable() => PhysicsManager.DynamicsWorld.RemoveRigidBody(r);
-            public void Enable() => PhysicsManager.DynamicsWorld.AddRigidBody(r);
-        }
     }
 }

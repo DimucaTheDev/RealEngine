@@ -1,5 +1,8 @@
-﻿using Hexa.NET.ImGui;
+﻿using System.Runtime.CompilerServices;
+using Hexa.NET.ImGui;
 using Hexa.NET.ImGuizmo;
+using OpenTK.Audio.OpenAL;
+using OpenTK.Graphics.OpenGL;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using OpenTK.Windowing.GraphicsLibraryFramework;
@@ -7,7 +10,7 @@ using RE.Core;
 using RE.Core.Scripting;
 using RE.Core.World;
 using RE.Core.World.Components;
-using RE.Core.World.Components.Physics; 
+using RE.Core.World.Components.Physics;
 using RE.Editor.Panels.Viewport;
 using SceneEditor = RE.Editor.SceneEditor;
 
@@ -15,18 +18,29 @@ namespace RE.Rendering;
 
 public class Camera(Vector3 position, Vector3 up, int width, int height)
 {
-    private const float MouseSensitivity = 0.2f;
-    private Vector2 _lastMousePos;
-    private Vector2 _lastMouseDownPos;
-
-    public bool FirstMove = true;
     public float AspectRatio => (float)RenderWidth / RenderHeight;
     public Vector3 Front = -Vector3.UnitZ;
     public float Pitch;
-    public float Fov = 60;
+    public float Yaw
+    {
+        get => field;
+        set
+        {
+            field = value;
+            UpdateVectors();
+        }
+    } = -90f;
+    public float Fov
+    {
+        get => field;
+        set
+        {
+            field = value;
+            UpdateVectors();
+        }
+    } = 75;
     public Vector3 Position = position;
     public Vector3 Up = up;
-    public float Yaw = -90f;
     public int RenderWidth = width, RenderHeight = height;
 
     public static Camera Main { get; private set; }
@@ -35,7 +49,8 @@ public class Camera(Vector3 position, Vector3 up, int width, int height)
     public static void Init()
     {
         Main = new Camera(new(15, 3, 8), Vector3.UnitY, Game.Instance.ClientSize.X, Game.Instance.ClientSize.Y);
-        Editor = new Camera(new(), Vector3.UnitY, Game.Instance.ClientSize.X, Game.Instance.ClientSize.Y);
+        Editor = new Camera(new(10,10,10), Vector3.UnitY, Game.Instance.ClientSize.X, Game.Instance.ClientSize.Y);
+        Editor.LookAt((0,0,0));
         Variables.VariableChanged += (s, e) =>
         {
             if (s == "fov")
@@ -43,107 +58,24 @@ public class Camera(Vector3 position, Vector3 up, int width, int height)
                 Main.Fov = (float)e!;
             }
         };
-        Game.Instance.CursorState = CursorState.Grabbed;
-        Game.Instance.MouseMove += s => GetActiveCamera().HandleMouseMove(s.X, s.Y);
-        //Game.Main.UpdateFrame += _ => Main.HandleInput(Game.Main.KeyboardState);
-        Game.Instance.MouseUp += args =>
-        {
-            if (SceneEditor.Enabled && args.Button == MouseButton.Button2)
-            {
-                if ((ImGui.GetIO().WantCaptureMouse || ImGui.GetIO().WantCaptureKeyboard) && !ViewportPanel.MouseDown)
-                    return;
-
-                Game.Instance.CursorState = CursorState.Normal;
-                Game.Instance.MousePosition = GetActiveCamera()._lastMouseDownPos;
-            }
-        };
-        Game.Instance.MouseDown += args =>
-        {
-            GetActiveCamera()._lastMousePos = Game.Instance.MousePosition;
-
-
-            if (ImGui.GetIO().WantCaptureMouse && !ViewportPanel.MouseDown)
-                return;
-
-            if (SceneEditor.Enabled)
-            {
-                ImGui.GetIO().AddMouseButtonEvent(0, true);
-                if (args.Button == MouseButton.Button2)
-                {
-                    GetActiveCamera()._lastMouseDownPos = Game.Instance.MousePosition;
-                    Game.Instance.CursorState = CursorState.Grabbed;
-                    GetActiveCamera().FirstMove = true;
-                }
-
-                return;
-            }
-
-            Game.Instance.CursorState = CursorState.Grabbed;
-
-
-            if (!SceneEditor.Enabled && args.Button == MouseButton.Button2)
-                AddDummyCube();
-        };
     }
 
     public static Camera GetActiveCamera() => SceneEditor.Enabled ? Editor : Main;
 
-    public void HandleMouseMove(float mouseX, float mouseY, bool force = false)
+    public void LookAt(Vector3 target)
     {
-        if (!force)
-            if ((Game.Instance.CursorState != CursorState.Grabbed || (ImGui.GetIO().WantCaptureMouse && ImGuizmo.IsUsing())))
-                return;
-        if (FirstMove)
-        {
-            _lastMousePos = new Vector2(mouseX, mouseY);
-            FirstMove = false;
-            return;
-        }
+        Vector3 dir = Vector3.Normalize(target - Position);
 
-        var deltaX = mouseX - _lastMousePos.X;
-        var deltaY = _lastMousePos.Y - mouseY;
-
-        _lastMousePos = new Vector2(mouseX, mouseY);
-
-        Yaw += deltaX * MouseSensitivity;
-        Pitch += deltaY * MouseSensitivity;
-
-        Pitch = MathHelper.Clamp(Pitch, -89f, 89f);
-
-        Vector3 front;
-        front.X = MathF.Cos(MathHelper.DegreesToRadians(Yaw)) * MathF.Cos(MathHelper.DegreesToRadians(Pitch));
-        front.Y = MathF.Sin(MathHelper.DegreesToRadians(Pitch));
-        front.Z = MathF.Sin(MathHelper.DegreesToRadians(Yaw)) * MathF.Cos(MathHelper.DegreesToRadians(Pitch));
-        Front = Vector3.Normalize(front);
+        Pitch = MathHelper.RadiansToDegrees(MathF.Asin(dir.Y));
+        Yaw = MathHelper.RadiansToDegrees(MathF.Atan2(dir.Z, dir.X));
     }
 
-    private static void AddDummyCube()
-    {
-        GameObject obj = new GameObject();
-        obj.Components.Add(new MeshComponent("assets/models/crate.fbx"));
-        Vector3 front = Main.Front;
-
-        obj.Components.Add(new BoxColliderComponent());
-        var rb = new RigidBodyComponent(20);
-        obj.Components.Add(rb);
-
-        SceneManager.CurrentScene.GameObjects.Add(obj);
-
-        BulletSharp.Math.Vector3 cameraFrontBullet = new BulletSharp.Math.Vector3(front.X, front.Y, front.Z);
-        rb.RigidBody.Restitution = 0.2f;
-        rb.RigidBody.Friction = 1;
-        float impulseStrength = 5.0f;
-        BulletSharp.Math.Vector3 impulseVector = cameraFrontBullet * impulseStrength;
-        rb.RigidBody.ApplyImpulse(impulseVector, BulletSharp.Math.Vector3.Zero);
-
-        obj.SetPosition(2 * front + Main.Position);
-    }
 
     public Matrix4 GetViewMatrix() => Matrix4.LookAt(Position, Position + Front, Up);
     public Matrix4 GetProjectionMatrix() => GetProjectionMatrix(Fov);
     public Matrix4 GetProjectionMatrix(float fov) => Matrix4.CreatePerspectiveFieldOfView(MathHelper.DegreesToRadians(fov), AspectRatio, 0.1f, 10000f);
     public Matrix4 GetBillboard(Vector3 objectPosition, bool lockX = false, bool lockY = false)
-    {  
+    {
         Matrix4 view = GetViewMatrix();
 
         view.Row3.Xyz = Vector3.Zero;
@@ -168,5 +100,17 @@ public class Camera(Vector3 position, Vector3 up, int width, int height)
         billboard.Column2 = new Vector4(forward, billboard.Column2.W);
 
         return billboard;
+    }
+
+    private void UpdateVectors()
+    {
+        Vector3 front;
+        front.X = MathF.Cos(MathHelper.DegreesToRadians(Yaw)) *
+                  MathF.Cos(MathHelper.DegreesToRadians(Pitch));
+        front.Y = MathF.Sin(MathHelper.DegreesToRadians(Pitch));
+        front.Z = MathF.Sin(MathHelper.DegreesToRadians(Yaw)) *
+                  MathF.Cos(MathHelper.DegreesToRadians(Pitch));
+
+        Front = Vector3.Normalize(front);
     }
 }

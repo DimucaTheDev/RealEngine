@@ -5,7 +5,9 @@ using System.Text.Json.Nodes;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using RE.Core.World.Components;
+using RE.Editor.Notification;
 using RE.Rendering.Texturing;
+using Serilog;
 
 namespace RE.Core.World.Testing
 {
@@ -27,6 +29,24 @@ namespace RE.Core.World.Testing
             ], 1);
             //var a = new StaticTexture("assets/testing/1.png");
             GetComponent<MeshComponent>()!.ModelRenderer.SetTexture(a);
+            string content = """
+                             ~   - Open Console (type 'help')
+                             E   - Interact
+                             F2  - Make screenshot
+                             F3  - Wireframe
+                             F4  - Open Editor
+                             F7  - Toast test
+                             F11 - Fullscreen
+                             """;
+            ToastManager.InsertNotification(new Toast(ToastType.Info, content, "Welcome! Welcome to City 17.", 10));
+            try
+            {
+                throw new Exception("Damn Exception Message");
+            }
+            catch (Exception e)
+            {
+                ToastManager.InsertNotification(new Toast(ToastType.Error, e.ToString(), "Damn..."));
+            }
         }
 
         /// <inheritdoc />

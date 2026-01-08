@@ -21,7 +21,17 @@
             "assets/models/button.smdl"
           ]
         },
-        "AnimatedTextureTestComponent": {}
+        "AnimatedTextureTestComponent": {},
+        "BillboardTextComponent": {
+          "args": [
+            "Animated texture"
+          ],
+          "PositionOffset": [
+            0,
+            1,
+            0
+          ]
+        }
       }
     },
     {
@@ -45,7 +55,7 @@
         ]
       },
       "components": {
-        "BezierTest": {}
+        //"BezierTest": {}
       }
     },
     {

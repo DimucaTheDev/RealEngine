@@ -141,12 +141,12 @@ public class RenderManager
         GenerateFrustum();
 
         var camPos = Camera.GetActiveCamera().Position;
-        RenderingComponents.Sort((a, b) =>
-        {
-            float da = (a.Owner.Transform.Position - camPos).LengthSquared;
-            float db = (b.Owner.Transform.Position - camPos).LengthSquared;
-            return db.CompareTo(da);
-        });
+        //RenderingComponents.Sort((a, b) =>
+        //{
+        //    float da = (a.Owner.Transform.Position - camPos).LengthSquared;
+        //    float db = (b.Owner.Transform.Position - camPos).LengthSquared;
+        //    return db.CompareTo(da);
+        //});
 
         if (!SceneEditor.Enabled)
             foreach (var s in RenderingComponents.ToList())
@@ -162,7 +162,7 @@ public class RenderManager
 
                 List<Renderable> list = pair.Value;
 
-                foreach (var renderable in list)
+                foreach (var renderable in list.ToList())
                     if (renderable.IsVisible)
                     {
                         if (renderable is ICullable { ShouldCull: true } cull)

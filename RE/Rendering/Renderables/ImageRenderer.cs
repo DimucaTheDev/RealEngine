@@ -3,104 +3,119 @@ using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using RE.Core;
 using RE.Core.Assets;
+using RE.Editor;
 using RE.Rendering.Texturing;
+using RE.Utils;
 
-namespace RE.Rendering.Renderables;
-
-/// <summary>
-/// This class is used to render images in UI
-/// </summary>
-public class ImageRenderer : Renderable
+namespace RE.Rendering.Renderables
 {
-    private Texture _texture;
-    private int _vao, _vbo, _ebo;
-    private ShaderProgram _shaderProgram;
-    private string _pathToImg;
-
-    public override RenderLayer RenderLayer => RenderLayer.UI;
-    public override bool IsVisible { get; set; } = true;
-    public Vector2 Position { get; set; }
-    public Vector2 Scale { get; set; }
-
-    public ImageRenderer(string pathToImg, Vector2 pos, Vector2? size = null)
+    /// <summary>
+    /// This class is used to render images in UI
+    /// </summary>
+    public class ImageRenderer : Renderable
     {
-        _pathToImg = pathToImg;
-        Position = pos;
-        Scale = size ?? new Vector2(100, 100);
+        private Texture _texture;
+        private int _vao, _vbo, _ebo;
+        private ShaderProgram _shaderProgram;
 
-        _shaderProgram = CompileShaders();
-        _texture = new StaticTexture(_pathToImg);
-        SetupQuad();
-    }
+        public override RenderLayer RenderLayer => RenderLayer.UI;
+        public override bool IsVisible { get; set; } = true;
+        public Vector2 Position { get; set; }
+        public Vector2 Scale { get; set; }
 
-    public void ReplaceImage(string path)
-    {
-        _texture.Delete();
-        _texture = new StaticTexture(path);
-    }
-    public override void Render(FrameEventArgs args)
-    {
-        _shaderProgram.Use();
+        public ImageRenderer(string pathToImg, Vector2 pos, Vector2? size = null)
+        {
+            Position = pos;
+            Scale = size ?? new Vector2(100, 100);
 
-        Matrix4 model = Matrix4.CreateScale(Scale.X, Scale.Y, 1f) * Matrix4.CreateTranslation(Position.X, Position.Y, 1);
-        Matrix4 projection = Matrix4.CreateOrthographicOffCenter(0, Game.Instance.ClientSize.X, Game.Instance.ClientSize.Y, 0, -1, 1);
+            _shaderProgram = CompileShaders();
+            _texture = new StaticTexture(pathToImg);
+            SetupQuad();
+        }
+        public ImageRenderer(Texture texture, Vector2 pos, Vector2? size = null)
+        {
+            Position = pos;
+            Scale = size ?? new Vector2(100, 100);
 
-        _shaderProgram.SetValue("uModel", model);
-        _shaderProgram.SetValue("uProjection", projection);
+            _shaderProgram = CompileShaders();
+            _texture = texture;
+            SetupQuad();
+        }
 
-        GL.BindTexture(TextureTarget.Texture2D, _texture.AsOpenGl());
-        GL.BindVertexArray(_vao);
-        GL.DrawElements(PrimitiveType.Triangles, 6, DrawElementsType.UnsignedInt, 0);
-    }
+        public void ReplaceImage(Texture tex, bool deleteCurrent)
+        {
+            if (deleteCurrent)
+                _texture.Delete();
+            _texture = tex;
+        }
+        public override void Render(FrameEventArgs args)
+        {
+            if (SceneEditor.Enabled)
+                this.StopRender();
+             
+            _shaderProgram.Use();
 
-    private void SetupQuad()
-    {
-        float[] vertices = {
-            // pos       // uv
-             0f,  0f,     0f, 0f,
-             1f,  0f,     1f, 0f,
-             1f,  1f,     1f, 1f,
-             0f,  1f,     0f, 1f,
-        };
+            Matrix4 model = Matrix4.CreateScale(Scale.X, Scale.Y, 1f) * Matrix4.CreateTranslation(Position.X, Position.Y, 1);
+            Matrix4 projection = Matrix4.CreateOrthographicOffCenter(0, Game.Instance.ClientSize.X, Game.Instance.ClientSize.Y, 0, -1, 1);
 
-        uint[] indices = { 0, 1, 2, 2, 3, 0 };
+            _shaderProgram.SetValue("uModel", model);
+            _shaderProgram.SetValue("uProjection", projection);
 
-        _vao = GL.GenVertexArray();
-        _vbo = GL.GenBuffer();
-        _ebo = GL.GenBuffer();
+            GL.BindTexture(TextureTarget.Texture2D, _texture.AsOpenGl());
+            GL.BindVertexArray(_vao);
+            GL.DrawElements(PrimitiveType.Triangles, 6, DrawElementsType.UnsignedInt, 0);
+            GL.BindTexture(TextureTarget.Texture2D, 0);
+            GL.BindVertexArray(0);
+        }
 
-        GL.BindVertexArray(_vao);
+        private void SetupQuad()
+        {
+            float[] vertices = {
+                // pos       // uv
+                0f,  0f,     0f, 0f,
+                1f,  0f,     1f, 0f,
+                1f,  1f,     1f, 1f,
+                0f,  1f,     0f, 1f,
+            };
 
-        GL.BindBuffer(BufferTarget.ArrayBuffer, _vbo);
-        GL.BufferData(BufferTarget.ArrayBuffer, vertices.Length * sizeof(float), vertices, BufferUsageHint.StaticDraw);
+            uint[] indices = { 0, 1, 2, 2, 3, 0 };
 
-        GL.BindBuffer(BufferTarget.ElementArrayBuffer, _ebo);
-        GL.BufferData(BufferTarget.ElementArrayBuffer, indices.Length * sizeof(uint), indices, BufferUsageHint.StaticDraw);
+            _vao = GL.GenVertexArray();
+            _vbo = GL.GenBuffer();
+            _ebo = GL.GenBuffer();
 
-        GL.VertexAttribPointer(0, 2, VertexAttribPointerType.Float, false, 4 * sizeof(float), 0);
-        GL.EnableVertexAttribArray(0);
+            GL.BindVertexArray(_vao);
 
-        GL.VertexAttribPointer(1, 2, VertexAttribPointerType.Float, false, 4 * sizeof(float), 2 * sizeof(float));
-        GL.EnableVertexAttribArray(1);
+            GL.BindBuffer(BufferTarget.ArrayBuffer, _vbo);
+            GL.BufferData(BufferTarget.ArrayBuffer, vertices.Length * sizeof(float), vertices, BufferUsageHint.StaticDraw);
 
-        GL.BindVertexArray(0);
-    }
+            GL.BindBuffer(BufferTarget.ElementArrayBuffer, _ebo);
+            GL.BufferData(BufferTarget.ElementArrayBuffer, indices.Length * sizeof(uint), indices, BufferUsageHint.StaticDraw);
 
-    private ShaderProgram CompileShaders()
-    {
-        ShaderProgram program = new();
-        program.AttachShader("assets/shaders/ui_image.vert");
-        program.AttachShader("assets/shaders/ui_image.frag");
+            GL.VertexAttribPointer(0, 2, VertexAttribPointerType.Float, false, 4 * sizeof(float), 0);
+            GL.EnableVertexAttribArray(0);
 
-        return program;
-    }
-     
-    public override void Dispose()
-    {
-        _texture.Delete();
-        GL.DeleteBuffer(_vbo);
-        GL.DeleteBuffer(_ebo);
-        GL.DeleteVertexArray(_vao);
-        _shaderProgram.Delete();
+            GL.VertexAttribPointer(1, 2, VertexAttribPointerType.Float, false, 4 * sizeof(float), 2 * sizeof(float));
+            GL.EnableVertexAttribArray(1);
+
+            GL.BindVertexArray(0);
+        }
+
+        private ShaderProgram CompileShaders()
+        {
+            ShaderProgram program = new();
+            program.AttachShader("assets/shaders/ui_image.vert");
+            program.AttachShader("assets/shaders/ui_image.frag");
+
+            return program;
+        }
+        public override void Dispose()
+        {
+            _texture.Delete();
+            GL.DeleteBuffer(_vbo);
+            GL.DeleteBuffer(_ebo);
+            GL.DeleteVertexArray(_vao);
+            _shaderProgram.Delete();
+        }
     }
 }

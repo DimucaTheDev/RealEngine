@@ -83,7 +83,7 @@ namespace RE.Core.World
         /// Sets the position of the game object and updates the associated physics rigid body if present.
         /// </summary>
         /// <param name="position">The new position to set.</param>
-        public void SetPosition(Vector3 position)
+        public void SetPosition(Vector3 position, bool zeroVelocity = false)
         {
             //todo: move all children [ childPos + (newPos - oldPos) ]
             Transform.Position = position; 
@@ -98,6 +98,11 @@ namespace RE.Core.World
             transform.Origin = position.ToBulletVector3();
             rigidBody.WorldTransform = transform;
             rigidBody.MotionState?.SetWorldTransform(ref transform);
+            if (zeroVelocity)
+            {
+                rigidBody.LinearVelocity = BulletSharp.Math.Vector3.Zero;
+                rigidBody.AngularVelocity = BulletSharp.Math.Vector3.Zero;
+            }
         }
 
         /// <summary>
