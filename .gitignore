@@ -369,3 +369,4 @@ FodyWeavers.xsd
 /DocFX/_site
 /DocFX/api
 /Doxygen
+/ProductionBuild
