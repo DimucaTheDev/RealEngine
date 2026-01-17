@@ -5,15 +5,15 @@
 		</AssemblyAttribute>
 	</ItemGroup> 
 
-	<Target Name="AddGitCommitHash" BeforeTargets="CoreGenerateAssemblyInfo">
-		<Exec Command="git rev-parse HEAD" ConsoleToMSBuild="true" ContinueOnError="true">
-			<Output TaskParameter="ConsoleOutput" PropertyName="GitCommitHash" />
-		</Exec>
-
-		<ItemGroup>
-			<AssemblyAttribute Include="RE.Utils.GitCommitAttribute">
-				<_Parameter1>$(GitCommitHash)</_Parameter1>
-			</AssemblyAttribute>
-		</ItemGroup>
-	</Target>
+	<PropertyGroup>
+		<Version>0.1+dev</Version>
+		<ApplicationIcon>../RealEngine.ico</ApplicationIcon>
+		<Title>Real Engine</Title>
+		<IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+		<Authors>DimucaTheDev</Authors>
+		<Company>LEFT2.DEV</Company>
+		<Product>Real Engine</Product>
+		<PackageProjectUrl>https://github.com/DimucaTheDev/RealEngine</PackageProjectUrl>
+		<Description>REAL Engine!!!!!! A replacement for Unreal Engine 7</Description>
+	</PropertyGroup>
 </Project>

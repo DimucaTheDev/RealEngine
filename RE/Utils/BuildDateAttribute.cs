@@ -3,7 +3,7 @@
 namespace RE.Utils
 {
     [AttributeUsage(AttributeTargets.Assembly)]
-    internal class BuildDateAttribute(string value) : Attribute
+    public class BuildDateAttribute(string value) : Attribute
     {
         public DateTime DateTime { get; } = DateTime.ParseExact(
             value,

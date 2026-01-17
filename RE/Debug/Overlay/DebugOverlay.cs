@@ -2,6 +2,7 @@
 using System.Numerics;
 using System.Runtime.InteropServices;
 using Hexa.NET.ImGui;
+using Hexa.NET.ImNodes;
 using Hexa.NET.ImPlot;
 using Microsoft.VisualBasic.Devices;
 using OpenTK.Windowing.Common;
@@ -25,9 +26,9 @@ internal class DebugOverlay : Renderable
     public override RenderLayer RenderLayer => RenderLayer.ImGui;
     public override bool IsVisible { get; set; } = true;
 
-    private static readonly RingBuffer<int> Fps = new(2000);
-    private static readonly RingBuffer<double> ManagedHeap = new(2000);
-    private static readonly RingBuffer<double> PrivateBytes = new(2000);
+    private static readonly RingBuffer<int> Fps = new(1000);
+    private static readonly RingBuffer<double> ManagedHeap = new(1000);
+    private static readonly RingBuffer<double> PrivateBytes = new(1000);
 
     public override void Render(FrameEventArgs args)
     {
@@ -39,6 +40,7 @@ internal class DebugOverlay : Renderable
         Instance ??= new DebugOverlay();
     }
 
+    private static List<(int id, int start, int end)> myLinks = [];
     private static unsafe void RenderProfilersWindow(FrameEventArgs args)
     {
         UpdateUsageData();
@@ -47,15 +49,96 @@ internal class DebugOverlay : Renderable
 
         Begin("Stats");
 
+        ImNodes.BeginNodeEditor();
+        ImNodes.BeginNode(1); // ID ноды
+
+        // Заголовок
+        ImNodes.BeginNodeTitleBar();
+        ImGui.TextUnformatted("Моя Нода");
+        ImNodes.EndNodeTitleBar();
+
+        // Входной пин (Input Pin)
+        ImNodes.BeginInputAttribute(2); // ID пина
+        ImGui.Text("Вход");
+        ImNodes.EndInputAttribute();
+
+        // Выходной пин (Output Pin)
+        ImNodes.BeginOutputAttribute(3); // ID пина
+        ImGui.Text("Выход");
+        ImNodes.EndOutputAttribute();
+
+        ImNodes.EndNode();
+
+        ImNodes.BeginNode(4); // ID ноды
+
+        // Заголовок
+        ImNodes.BeginNodeTitleBar();
+        ImGui.TextUnformatted("Моя Нода");
+        ImNodes.EndNodeTitleBar();
+
+        // Входной пин (Input Pin)
+        ImNodes.BeginInputAttribute(5); // ID пина
+        ImGui.Text("Вход");
+        ImNodes.EndInputAttribute();
+        bool ba = false;
+        ImGui.TextColored(new Vector4(1, 1, 0, 1), IconFont.ExclamationTriangle);
+        ImGui.SameLine();
+        Checkbox("123", ref ba);
+        Text("321");
+        // Выходной пин (Output Pin)
+        ImNodes.BeginOutputAttribute(6); // ID пина
+        ImGui.Text("Выход");
+        SameLine();
+        Checkbox("321", ref ba);
+        ImNodes.EndOutputAttribute();
+
+        ImNodes.EndNode();
+        foreach (var link in myLinks)
+        {
+            ImNodes.Link(link.id, link.start, link.end);
+        }
+        ImNodes.EndNodeEditor();
+        int n = 0;
+        if (ImNodes.IsNodeHovered(ref n))
+        {
+            var анрилСосать = IconFont.CheckCircle + "Анрил сосать";
+            SetTooltip(анрилСосать);
+        }
+
+        if (ImGui.IsKeyPressed(ImGuiKey.Delete))
+        {
+            int numSelected = ImNodes.NumSelectedLinks();
+            if (numSelected > 0)
+            {
+                int[] selectedLinkIds = new int[numSelected];
+                ImNodes.GetSelectedLinks(ref selectedLinkIds[0]);
+
+                foreach (int id in selectedLinkIds)
+                {
+                    myLinks.RemoveAll(l => l.id == id);
+                }
+            }
+        }
+        int startPin = 0, endPin = 0, dp = 0;
+        if (ImNodes.IsLinkCreated(ref startPin, ref endPin))
+        {
+            myLinks.Add((myLinks.Count, startPin, endPin));
+        }
+        if (ImNodes.IsLinkDestroyed(ref dp))
+        {
+            myLinks.RemoveAll(s => s.id == dp);
+        }
+
+
         var yMaxLimit = Game.FpsLock + Game.FpsLock * 0.1;
         var s = 150;
         var fps = Fps.ToArrayOrdered().Skip(Fps.Length - s).Select(s => (float)s).ToArray();
         ImGui.PlotLines("FPS", ref fps[0], s, $"FPS: {fps.Last()}", new Vector2(s, 100));
-        
+
 
         ImGui.PlotLines("RAM",
             ref PrivateBytes.ToArrayOrdered().Skip(Fps.Length - s).Select(s => (float)s).ToArray()[0],
-            s, $"RAM: {PrivateBytes.Last():F1}Mb", 
+            s, $"RAM: {PrivateBytes.Last():F1}Mb",
             new Vector2(s, 100));
 
         ImPlot.SetNextAxesLimits(0, Fps.Length + 1, 0, yMaxLimit);

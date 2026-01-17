@@ -53,7 +53,7 @@ namespace RE.Editor.Notification
                 var defaultTitle = currentToast.GetDefaultTitle();
                 float elapsed = currentToast.LifeTime;
                 float opacity = 1.0f;
-                var fadeTime = NotifyConfig.FadeInOutTime;
+                var fadeTime = ToastManagerConfig.FadeInOutTime;
                 if (elapsed < fadeTime)
                 {
                     opacity = elapsed / fadeTime;
@@ -62,33 +62,33 @@ namespace RE.Editor.Notification
                 {
                     opacity = 1.0f - (elapsed - (fadeTime + currentToast.DismissTime)) / fadeTime;
                 }
-                float waitTime = NotifyConfig.FadeInOutTime;
+                float waitTime = ToastManagerConfig.FadeInOutTime;
 
-                float targetX = vpSize.X - NotifyConfig.PaddingX;
+                float targetX = vpSize.X - ToastManagerConfig.PaddingX;
                 float offscreenX = vpSize.X + 10f;
                 float currentX = targetX;
 
                 var phase = currentToast.GetPhase();
                 if (phase == ToastPhase.FadeIn)
                 {
-                    float progress = (float)elapsed / NotifyConfig.FadeInOutTime;
+                    float progress = (float)elapsed / ToastManagerConfig.FadeInOutTime;
                     float easeOut = 1f - MathF.Pow(1f - progress, 3);
                     currentX = offscreenX - (offscreenX - targetX) * easeOut;
                 }
                 else if (phase == ToastPhase.FadeOut)
                 {
-                    float progress = (float)(elapsed - NotifyConfig.FadeInOutTime - currentToast.DismissTime) / NotifyConfig.FadeInOutTime;
+                    float progress = (float)(elapsed - ToastManagerConfig.FadeInOutTime - currentToast.DismissTime) / ToastManagerConfig.FadeInOutTime;
                     float easeIn = MathF.Pow(progress, 3);
                     currentX = targetX + (offscreenX - targetX) * easeIn;
                 }
 
-                Vector2 windowPos = new Vector2(MainWindowViewport.Pos.X + currentX, MainWindowViewport.Pos.Y + vpSize.Y - NotifyConfig.PaddingY - height);
+                Vector2 windowPos = new Vector2(MainWindowViewport.Pos.X + currentX, MainWindowViewport.Pos.Y + vpSize.Y - ToastManagerConfig.PaddingY - height);
                 ImGui.SetNextWindowBgAlpha(opacity);
                 ImGui.SetNextWindowViewport(MainWindowViewport.ID);
                 ImGui.SetNextWindowPos(windowPos, ImGuiCond.Always, new Vector2(1.0f, 1.0f));
                 ImGui.SetNextWindowSizeConstraints(new Vector2(150, 0), new Vector2(2000, 1000));
                 
-                ImGui.Begin($"##TOAST{i}", NotifyConfig.ToastFlags);
+                ImGui.Begin($"##TOAST{i}", ToastManagerConfig.ToastFlags);
                 {
                     ImGui.PushTextWrapPos(vpSize.X / 3.0f);
 
@@ -128,7 +128,7 @@ namespace RE.Editor.Notification
                     {
                         ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 5.0f);
 
-                        if (NotifyConfig.UseSeparator)
+                        if (ToastManagerConfig.UseSeparator)
                         {
                             //ImGui.PushStyleVar(ImGuiStyleVar.SeparatorTextPadding, new Vector2(0));
                             ImGui.Separator();
@@ -144,7 +144,7 @@ namespace RE.Editor.Notification
                     ImGui.PopTextWrapPos();
                 }
 
-                height += ImGui.GetWindowHeight() + NotifyConfig.PaddingMessageY;
+                height += ImGui.GetWindowHeight() + ToastManagerConfig.PaddingMessageY;
 
                 ImGui.End();
             }

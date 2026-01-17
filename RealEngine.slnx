@@ -17,6 +17,15 @@
   <Project Path="RE.BuildTask/RE.BuildTask.csproj" Id="bab6b8f1-e6e8-4193-bcb5-1e431fcecc16">
     <BuildType Solution="Production|*" Project="Release" />
   </Project>
+  <Project Path="RE.Launcher.Editor/RE.Launcher.Editor.csproj" Id="9414d766-9acd-49e6-97f3-d4e7982b9d36">
+    <BuildType Solution="Production|*" Project="Release" />
+  </Project>
+  <Project Path="RE.Launcher.Game/RE.Launcher.Game.csproj" Id="ef7ee03a-9d91-45ad-83c6-fb9af8a3f5d9">
+    <BuildType Solution="Production|*" Project="Release" />
+  </Project>
+  <Project Path="RE.Publish/RE.Publish.csproj" Id="0e0a84af-67df-4030-beb3-0e0b45d5f1f1">
+    <BuildType Solution="Production|*" Project="Release" />
+  </Project>
   <Project Path="RE/RE.csproj">
     <BuildType Solution="Production|Any CPU" Project="Debug" />
     <Platform Solution="*|x64" Project="x64" />

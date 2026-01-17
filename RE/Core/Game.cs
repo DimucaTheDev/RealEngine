@@ -18,7 +18,7 @@ using RE.Debug;
 using RE.Debug.Overlay;
 using RE.Editor.Notification;
 using RE.Editor.Panels.Viewport;
-using RE.External.Grille.ImGuiTK;
+using RE.Launchers;
 using RE.Rendering;
 using RE.Utils;
 using RenderdocSharp;
@@ -108,6 +108,9 @@ internal partial class Game : GameWindow
 
     protected override unsafe void OnLoad()
     {
+        if (EditorLauncher.Invoked)
+            return;
+
         GL.Enable(EnableCap.DebugOutput);
         GL.Enable(EnableCap.DebugOutputSynchronous);
         GL.DebugMessageCallback(GlLogCallback, 0);
@@ -137,7 +140,13 @@ internal partial class Game : GameWindow
                 }
         ));
         Initializer.AddStep(("Registering Commands", CommandHandler.RegisterAllCommands));
-        Initializer.AddStep(("Running default.cfg", () => CommandHandler.ExecuteCommand("source assets/cfg/default.cfg")));
+        Initializer.AddStep(("Running default.cfg", () =>
+        {
+            CommandHandler.ExecuteCommand("source assets/cfg/default.cfg");
+            CommandHandler.ExecuteCommand("level lobby");
+        }
+        ));
+
         base.OnLoad();
     }
 

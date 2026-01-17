@@ -2,7 +2,7 @@
 
 namespace RE.Editor.Notification
 {
-    public struct NotifyConfig()
+    public class ToastManagerConfig
     {
         public const float PaddingX = 20.0f;
         public const float PaddingY = 20.0f;

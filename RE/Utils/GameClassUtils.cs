@@ -39,9 +39,9 @@ namespace RE.Core
 {
     internal partial class Game
     {
-        private Game(GameWindowSettings gws, NativeWindowSettings nws) : base(gws, nws) { }
+        internal Game(GameWindowSettings gws, NativeWindowSettings nws) : base(gws, nws) { }
 
-        public static Game Instance { get; private set; } = null!;
+        public static Game Instance { get; internal set; } = null!;
         public static readonly DateTime BuildDate =
             Assembly.GetExecutingAssembly().GetCustomAttribute<BuildDateAttribute>()?.DateTime.ToLocalTime() ??
             DateTime.MinValue;
@@ -50,8 +50,8 @@ namespace RE.Core
 
         public const string ProductName = "Real Engine";
 
-        private static readonly Dictionary<nint, string> LoadedLibs = new();
-        private static readonly Dictionary<int, string> JoystickNames = [];
+        internal static readonly Dictionary<nint, string> LoadedLibs = new();
+        internal static readonly Dictionary<int, string> JoystickNames = [];
 
         private static bool Wireframe
         {
@@ -109,7 +109,7 @@ namespace RE.Core
             return null!;
         }
 
-        private static void SetupLogger()
+        internal static void SetupLogger()
         {
             var fileInfo = CommandParseResult.GetValue<FileInfo?>("--log-template");
 
@@ -139,7 +139,7 @@ namespace RE.Core
                 Log.Information("Using log template from: {LogTemplatePath}", Path.GetRelativePath(".", fileInfo!.FullName));
         }
 
-        private static void GlLogCallback(DebugSource source, DebugType type, int id, DebugSeverity severity, int length, IntPtr message, IntPtr userParam)
+        internal static void GlLogCallback(DebugSource source, DebugType type, int id, DebugSeverity severity, int length, IntPtr message, IntPtr userParam)
         {
             if (type == DebugType.DebugTypeOther)
                 return;
@@ -157,7 +157,8 @@ namespace RE.Core
             if (severity == DebugSeverity.DebugSeverityHigh)
                 throw new GlException(msg);
         }
-        private static WindowIcon? LoadIcon()
+
+        internal static WindowIcon? LoadIcon()
         {
             var path = "Assets/RealEngine2.ico";
             if (!ContentManager.Exists(path))
@@ -252,7 +253,8 @@ namespace RE.Core
 
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
         }
-        private static void ParseArguments(string[] args)
+
+        internal static void ParseArguments(string[] args)
         {
             Option<int> widthOption = new("--width", "-w")
             {
@@ -353,6 +355,11 @@ namespace RE.Core
                     return true;
                 }
             };
+            Option<string?> editorOption = new Option<string?>("--editor", "-e")
+            {
+                Description = "[Editor Launcher] Load scene in Scene Editor.",
+                DefaultValueFactory = _ => null
+            };
 
             RootCommand rootCommand = new($"{ProductName} command line options")
             {
@@ -366,7 +373,8 @@ namespace RE.Core
                 nativesPathOption,
                 logLevelOption,
                 attachDebugger,
-                consoleOption
+                consoleOption,
+                editorOption
             };
             rootCommand.TreatUnmatchedTokensAsErrors = true;
 

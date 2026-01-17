@@ -1,6 +1,10 @@
-﻿namespace RE.Editor.Notification
+﻿using System.Numerics;
+using Hexa.NET.ImGui;
+
+namespace RE.Utils
 {
-    internal static class NotifyIcons
+    //todo: refactor os smth.
+    internal static class IconFont
     {
         public const string CheckCircle = "\uf058";
         public const string ExclamationTriangle = "\uf071";

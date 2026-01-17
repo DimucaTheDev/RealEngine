@@ -1,4 +1,5 @@
 ﻿using System.Numerics;
+using RE.Utils;
 
 namespace RE.Editor.Notification
 {
@@ -64,10 +65,10 @@ namespace RE.Editor.Notification
         {
             return Type switch
             {
-                ToastType.Success => NotifyIcons.CheckCircle,
-                ToastType.Warning => NotifyIcons.ExclamationTriangle,
-                ToastType.Error => NotifyIcons.TimesCircle,
-                ToastType.Info => NotifyIcons.InfoCircle,
+                ToastType.Success => IconFont.CheckCircle,
+                ToastType.Warning => IconFont.ExclamationTriangle,
+                ToastType.Error => IconFont.TimesCircle,
+                ToastType.Info => IconFont.InfoCircle,
                 _ => null
             };
         }
@@ -76,17 +77,17 @@ namespace RE.Editor.Notification
         {
             float elapsed = LifeTime;
 
-            if (elapsed > NotifyConfig.FadeInOutTime + DismissTime + NotifyConfig.FadeInOutTime)
+            if (elapsed > ToastManagerConfig.FadeInOutTime + DismissTime + ToastManagerConfig.FadeInOutTime)
             {
                 return ToastPhase.Expired;
             }
 
-            if (elapsed > NotifyConfig.FadeInOutTime + DismissTime)
+            if (elapsed > ToastManagerConfig.FadeInOutTime + DismissTime)
             {
                 return ToastPhase.FadeOut;
             }
 
-            if (elapsed > NotifyConfig.FadeInOutTime)
+            if (elapsed > ToastManagerConfig.FadeInOutTime)
             {
                 return ToastPhase.Wait;
             }
@@ -100,14 +101,14 @@ namespace RE.Editor.Notification
 
             if (phase == ToastPhase.FadeIn)
             {
-                return ((float)LifeTime / NotifyConfig.FadeInOutTime) * NotifyConfig.Opacity;
+                return ((float)LifeTime / ToastManagerConfig.FadeInOutTime) * ToastManagerConfig.Opacity;
             }
             else if (phase == ToastPhase.FadeOut)
             {
-                return (1.0f - ((float)LifeTime - NotifyConfig.FadeInOutTime - DismissTime) / NotifyConfig.FadeInOutTime) * NotifyConfig.Opacity;
+                return (1.0f - ((float)LifeTime - ToastManagerConfig.FadeInOutTime - DismissTime) / ToastManagerConfig.FadeInOutTime) * ToastManagerConfig.Opacity;
             }
 
-            return NotifyConfig.Opacity;
+            return ToastManagerConfig.Opacity;
         }
     }
 }

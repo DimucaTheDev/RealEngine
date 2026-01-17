@@ -1,23 +1,13 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<OutputType>Exe</OutputType>
+		<OutputType>Library</OutputType>
 		<TargetFramework>net10.0-windows</TargetFramework>
 		<UseWindowsForms>True</UseWindowsForms>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 		<LangVersion>preview</LangVersion>
 		<AllowUnsafeBlocks>True</AllowUnsafeBlocks>
-
-		<ApplicationIcon>RealEngine.ico</ApplicationIcon>
-		<Title>Real Engine</Title>
-		<Version>0.1+dev</Version>
-		<IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
-		<Authors>DimucaTheDev</Authors>
-		<Company>LEFT2.DEV</Company>
-		<Product>Real Engine</Product>
-		<PackageProjectUrl>https://github.com/DimucaTheDev/RealEngine</PackageProjectUrl>
-		<Description>REAL Engine!!!!!! A replacement for Unreal Engine 7</Description>
 		
 		<Configurations>Debug;Release;Production</Configurations>
 		<GenerateDocumentationFile>True</GenerateDocumentationFile>
@@ -26,9 +16,17 @@
 		<NoWarn>NU1701;NU1702;NU1510;CS1591</NoWarn>
 	</PropertyGroup>
 
-	<PropertyGroup Condition="'$(Configuration)'=='Production'">
-		<OutputType>WinExe</OutputType>
-	</PropertyGroup>
+	<Target Name="AddGitCommitHash" BeforeTargets="CoreGenerateAssemblyInfo">
+		<Exec Command="git rev-parse HEAD" ConsoleToMSBuild="true" ContinueOnError="true">
+			<Output TaskParameter="ConsoleOutput" PropertyName="GitCommitHash" />
+		</Exec>
+
+		<ItemGroup>
+			<AssemblyAttribute Include="RE.Utils.GitCommitAttribute">
+				<_Parameter1>$(GitCommitHash)</_Parameter1>
+			</AssemblyAttribute>
+		</ItemGroup>
+	</Target>
 
 	<Import Project="..\BuildTargets\RE.Common.targets" />
 	<Import Project="..\BuildTargets\RE.Publish.targets" />
@@ -37,7 +35,6 @@
 		<Compile Remove="Assets\GenerateStaticModel.cs" />
 
 		<Resource Include="Assets\RealEngine.ico" />
-		<Resource Include="RealEngine.ico" />
 
 		<PackageReference Include="AssimpNet" Version="4.1.0" />
 		<PackageReference Include="BulletSharp" Version="0.11.1" />
@@ -48,6 +45,7 @@
 		<PackageReference Include="Hexa.NET.ImGui.Backends" Version="1.0.18" />
 		<PackageReference Include="Hexa.NET.ImGui.Backends.GLFW" Version="1.0.18" />
 		<PackageReference Include="Hexa.NET.ImGuizmo" Version="2.2.9" />
+		<PackageReference Include="Hexa.NET.ImNodes" Version="2.2.9" />
 		<PackageReference Include="Hexa.NET.ImPlot" Version="2.2.9" />
 		<PackageReference Include="Hexa.NET.OpenGL4" Version="1.1.0" />
 		<PackageReference Include="JetBrains.Annotations" Version="2025.2.2" />

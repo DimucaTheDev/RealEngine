@@ -3,18 +3,20 @@ using Hexa.NET.ImGui.Backends.GLFW;
 using Hexa.NET.ImGui.Backends.OpenGL3;
 using Hexa.NET.ImGui.Backends.Win32;
 using Hexa.NET.ImGuizmo;
+using Hexa.NET.ImNodes;
 using Hexa.NET.ImPlot;
 using OpenTK.Graphics.OpenGL;
 using RE.Core;
 using RE.Core.Assets;
 using RE.Utils;
 
-namespace RE.External.Grille.ImGuiTK;
+namespace RE.Debug;
 
 internal static class ImGuiController
 {
     private static ImGuiContextPtr _context;
     private static ImPlotContextPtr _imPlotContext;
+    private static ImNodesContextPtr _imNodesContext;
 
     /// <summary>
     ///     Initializes ImGui.
@@ -23,8 +25,9 @@ internal static class ImGuiController
     {
         _context = ImGui.CreateContext();
         _imPlotContext = ImPlot.CreateContext();
+        _imNodesContext = ImNodes.CreateContext();
         ImGui.SetCurrentContext(_context);
-
+        
         // Setup ImGui config.
         var io = ImGui.GetIO();
         io.ConfigFlags |= ImGuiConfigFlags.NavEnableKeyboard;
@@ -106,7 +109,9 @@ internal static class ImGuiController
         ImGui.SetCurrentContext(_context);
         ImGuizmo.SetImGuiContext(_context);
         ImPlot.SetImGuiContext(_context);
+        ImNodes.SetImGuiContext(_context);
         ImPlot.SetCurrentContext(_imPlotContext);
+        ImNodes.SetCurrentContext(_imNodesContext);
         ImGuiImplGLFW.SetCurrentContext(_context);
         ImGuiImplOpenGL3.SetCurrentContext(_context);
 

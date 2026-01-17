@@ -206,7 +206,7 @@ namespace RE.Editor
                     }
                 }
             }
-
+            
             if (SceneManager.CurrentScene == null!)
                 return;
 
