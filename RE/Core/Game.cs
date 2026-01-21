@@ -307,7 +307,6 @@ internal partial class Game : GameWindow
         base.OnUnload();
 
         PluginManager.UnloadPlugins();
-
         foreach (var lib in LoadedLibs)
         {
             Log.Debug("Unloading library {Library}", lib.Value);

@@ -210,12 +210,17 @@ namespace RE.Core.World.Components
             {
                 if (_soundCooldown >= 0.45f)
                 {
-                    SoundManager.Play("hardboot_generic", new SoundPlaybackSettings()
-                    {
-                        Position = PlayerGameObject.Transform.Position,
-                        ShowDebugInfo = false,
-                        Volume = .15f
-                    });
+                    SoundManager.StudioSystem.getEvent("event:/Step", out var eventDescription);
+                    eventDescription.createInstance(out var instance);
+                    instance.start();
+                    instance.release();
+
+                    //SoundManager.Play("event:/Step", new SoundPlaybackSettings()
+                    //{
+                    //    Position = PlayerGameObject.Transform.Position,
+                    //    ShowDebugInfo = false,
+                    //    Volume = .15f
+                    //});
                     _soundCooldown = 0f;
                 }
             }

@@ -38,7 +38,7 @@
 
 		<PackageReference Include="AssimpNet" Version="4.1.0" />
 		<PackageReference Include="BulletSharp" Version="0.11.1" />
-		<PackageReference Include="FmodAudio" Version="2.2.5" />
+		<PackageReference Include="FmodAudio" Version="2.2.5" Condition="False" />
 		<PackageReference Include="freetype" Version="2.8.0.1" />
 		<PackageReference Include="Hexa.NET.GLFW" Version="1.0.5" />
 		<PackageReference Include="Hexa.NET.ImGui" Version="2.2.9" />
@@ -65,10 +65,10 @@
 
 		<None Include="Assets\**; Dll\**;">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-		</None>
+		</None> 
 
 		<Folder Include="Assets\Audio\" />
 		<Folder Include="Assets\Cfg\" />
-	</ItemGroup>
+	</ItemGroup> 
 
 </Project>

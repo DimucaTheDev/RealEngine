@@ -1,12 +1,18 @@
 ﻿using System.Collections.ObjectModel;
-using FmodAudio;
+using System.Runtime.InteropServices;
+using FMOD;
+using FMOD.Studio;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using RE.Core;
 using RE.Core.Assets;
+using RE.Core.Scripting;
 using RE.Rendering;
 using RE.Utils;
 using Serilog;
+using static BulletSharp.DiscreteCollisionDetectorInterface;
+using INITFLAGS = FMOD.Studio.INITFLAGS;
+using Result = FMOD.RESULT;
 
 namespace RE.Audio
 {
@@ -25,16 +31,35 @@ namespace RE.Audio
         /// Represents the global instance of the FMOD audio system.
         /// </summary>
         /// <remarks>Use this field to access FMOD system-level functionality throughout the application.</remarks>
-        public static FmodSystem FmodSystem;
+        public static FMOD.System FmodSystem;
+        public static FMOD.Studio.System StudioSystem;
 
         public const int MaxChannels = 256;
 
         private static bool _initialized;
         private static Dictionary<string, List<string>> _soundMap = new();
-        private static readonly Dictionary<string, FmodAudio.Sound> _buffers = new();
+        private static readonly Dictionary<string, FMOD.Sound> _buffers = new();
         private static readonly List<Sound> _activeSounds = new();
         private static readonly List<string> MissingSounds = [];
         private static readonly List<string> AudioFileExtensions = [".wav", ".mp3", ".ogg", ".flac", ".aiff"];
+
+        private static DEBUG_CALLBACK _fmodDebugCallback = (flags, file, line, func, message) =>
+        {
+            var ptrToStringAnsi = Marshal.PtrToStringAnsi(message).TrimEnd('\n');
+
+            if (string.IsNullOrWhiteSpace(ptrToStringAnsi))
+                return RESULT.OK;
+
+            if (flags.HasFlag(DEBUG_FLAGS.ERROR))
+                Log.Error("[FMOD] {Message} ({Func} at {File}:{Line})", ptrToStringAnsi, func, file, line);
+            else if (flags.HasFlag(DEBUG_FLAGS.WARNING))
+                Log.Warning("[FMOD] {Message}", ptrToStringAnsi);
+            else
+                Log.Information("[FMOD] {Message}", ptrToStringAnsi);
+
+
+            return RESULT.OK;
+        };
 
         /// <summary>
         /// Initialises FMOD sound subsystem.
@@ -44,11 +69,37 @@ namespace RE.Audio
         /// </remarks>
         public static void Init()
         {
-            Fmod.SetLibraryLocation("Dll/Win32");
-            FmodSystem = Fmod.CreateSystem();
-            FmodSystem.Init(MaxChannels);
+            FMOD.Debug.Initialize(
+                 DEBUG_FLAGS.ERROR | DEBUG_FLAGS.WARNING,
+                DEBUG_MODE.CALLBACK,
+                _fmodDebugCallback
+            );
 
-            Log.Information("FMOD Version: {FmodVersion}", FmodSystem.Version);
+            FMOD.Studio.System.create(out StudioSystem);
+
+            StudioSystem.initialize(256, FMOD.Studio.INITFLAGS.LIVEUPDATE, FMOD.INITFLAGS.NORMAL, IntPtr.Zero);
+            StudioSystem.getCoreSystem(out FmodSystem);
+
+            FmodSystem.getVersion(out uint version);
+
+            var resMaster = StudioSystem.loadBankMemory(ContentManager.GetBytes("assets/testing/bank/Master.bank"), LOAD_BANK_FLAGS.NORMAL, out var m);
+            Log.Information("Master Bank: {Res}", resMaster);
+
+            var resStrings = StudioSystem.loadBankMemory(ContentManager.GetBytes("assets/testing/bank/Master.strings.bank"), LOAD_BANK_FLAGS.NORMAL, out _);
+            Log.Information("Strings Bank: {Res}", resStrings);
+
+            m.getEventList(out var array);
+            foreach (var description in array)
+            {
+                description.getPath(out var path);
+                Console.WriteLine($"Event Found: {path}");
+            }
+
+            uint major = version >> 16;
+            uint minor = (version >> 8) & 0xFF;
+            uint patch = version & 0xFF;
+
+            Log.Information("FMOD Version: {Mj}.{Mn}.{Dv}", major, minor, patch);
 
             var files = ContentManager.GetFiles("Assets/Audio", true)
                 .Where(s => AudioFileExtensions.Contains(Path.GetExtension(s))).ToArray();
@@ -68,19 +119,20 @@ namespace RE.Audio
                 return;
 
             var cam = Camera.GetActiveCamera();
-            var pos = cam.Position.ToSystemVector3();
-            var forward = System.Numerics.Vector3.Normalize(cam.Front.ToSystemVector3());
-            var right = -System.Numerics.Vector3.Normalize(Vector3.Cross(forward.ToOpenTkVector3(), cam.Up).ToSystemVector3());
-            var up = System.Numerics.Vector3.Cross(right, forward);
-            var vel = System.Numerics.Vector3.Zero;
+            var pos = cam.Position.ToFmodVector3();
+            var forward = cam.Front.Normalized().ToFmodVector3();
+            var right = (-(Vector3.Cross(forward.ToOpenTkVector3(), cam.Up).Normalized())).ToFmodVector3();
+            var up = System.Numerics.Vector3.Cross(right.ToSystemVector3(), forward.ToSystemVector3()).ToOpenTkVector3().ToFmodVector3();
+            var vel = Vector3.Zero.ToFmodVector3();
 
             foreach (var sound in _activeSounds.Where(s => s.ShowDebugInfo))
             {
                 sound.UpdateDebugInfo();
             }
 
-            FmodSystem.Update();
-            FmodSystem.Set3DListenerAttributes(0, in pos, in vel, in forward, in up);
+            StudioSystem.update();
+            FmodSystem.update();
+            FmodSystem.set3DListenerAttributes(0, ref pos, ref vel, ref forward, ref up);
         }
 
         /// <summary>
@@ -107,10 +159,28 @@ namespace RE.Audio
 
             var file = files[variation ?? Random.Shared.Next(files.Count)];
 
-            if (!_buffers.TryGetValue(file, out FmodAudio.Sound fmodSound))
+            if (!_buffers.TryGetValue(file, out FMOD.Sound fmodSound))
             {
-                ReadOnlySpan<byte> raw = ContentManager.GetBytes(file);
-                fmodSound = FmodSystem.CreateSound(raw, Mode.OpenMemory, new CreateSoundInfo() { Length = (uint)raw.Length });
+                byte[] audioData = ContentManager.GetBytes(file).ToArray();
+
+                var createsoundexinfo = new CREATESOUNDEXINFO();
+
+                createsoundexinfo.cbsize = Marshal.SizeOf(typeof(CREATESOUNDEXINFO));
+                createsoundexinfo.length = (uint)audioData.Length;
+
+                var result = FmodSystem.createSound(
+                    audioData,
+                    MODE.OPENMEMORY | MODE.CREATESAMPLE,
+                    ref createsoundexinfo,
+                    out fmodSound
+                );
+
+                if (result != Result.OK)
+                {
+                    Log.Error("Failed to create sound '{File}'. Error: {Result}", file, Error.String(result));
+                    return null;
+                }
+
                 _buffers[file] = fmodSound;
             }
 

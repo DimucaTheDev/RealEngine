@@ -153,7 +153,7 @@ namespace RE.Core
                 DebugSeverity.DebugSeverityLow => LogEventLevel.Information,
                 DebugSeverity.DebugSeverityNotification => LogEventLevel.Verbose,
                 _ => LogEventLevel.Information
-            }, "[{OpenGL}:{Type}] {Message}", "OpenGL", type, msg);
+            }, "[{OpenGL}:{Action}] {Message}", "OpenGL", type, msg);
             if (severity == DebugSeverity.DebugSeverityHigh)
                 throw new GlException(msg);
         }

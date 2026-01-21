@@ -1,4 +1,5 @@
-﻿using RE.Launchers;
+﻿using System;
+using RE.Launchers;
 
 namespace RE.Launcher.Game
 {
@@ -6,7 +7,7 @@ namespace RE.Launcher.Game
     {
         static void Main(string[] args)
         {
-            GameLauncher.Run(args);
+            GameLauncher.Run(args); 
         }
     }
 }

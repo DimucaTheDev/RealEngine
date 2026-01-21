@@ -1,12 +1,15 @@
 ﻿using System.Diagnostics;
 using System.Numerics;
-using System.Runtime.InteropServices;
+using System.Reflection;
+using System.Runtime.InteropServices; 
 using Hexa.NET.ImGui;
 using Hexa.NET.ImNodes;
 using Hexa.NET.ImPlot;
 using Microsoft.VisualBasic.Devices;
 using OpenTK.Windowing.Common;
+using RE.Audio;
 using RE.Core;
+using RE.Editor.NodeEditor;
 using RE.Rendering;
 using RE.Utils;
 using static Hexa.NET.ImGui.ImGui;
@@ -38,103 +41,60 @@ internal class DebugOverlay : Renderable
     public static void Init()
     {
         Instance ??= new DebugOverlay();
+        Types = Assembly.GetExecutingAssembly().DefinedTypes
+            .Where(s => s.IsAssignableTo(typeof(Node)) && !s.IsAbstract).Select(s => s.AsType()).ToList();
     }
 
-    private static List<(int id, int start, int end)> myLinks = [];
+    private static List<Type> Types = [];
+    private static string _searchText = "";
     private static unsafe void RenderProfilersWindow(FrameEventArgs args)
     {
+        Begin("Stats");
+
+        InputText("Поиск ноды", ref _searchText, 100);
+
+        var categories = Types
+            .Where(t => string.IsNullOrEmpty(_searchText) ||
+                        t.Name.Contains(_searchText, StringComparison.OrdinalIgnoreCase))
+            .GroupBy(t => "Other");
+
+        foreach (var category in categories)
+        {
+            if (CollapsingHeader(category.Key))
+            {
+                foreach (var type in category)
+                {
+                    string displayName = type.Name.Replace("Node", "");
+
+                    if (Button(displayName))
+                    {
+                        var instance = Activator.CreateInstance(type);
+                    }
+
+                    if (GetItemRectMax().X < GetWindowPos().X + GetContentRegionAvail().X - 100)
+                        SameLine();
+                }
+                NewLine();
+            }
+        }
+
+        ImNodes.BeginNodeEditor();
+        NodeManager.RenderNodes();
+        NodeManager.RenderNodeLinks();
+        ImNodes.EndNodeEditor();
+        NodeManager.ResolveInput();
+        End();
+        return;
         UpdateUsageData();
 
         Fps.Add((int)(1 / args.Time));
 
         Begin("Stats");
 
-        ImNodes.BeginNodeEditor();
-        ImNodes.BeginNode(1); // ID ноды
-
-        // Заголовок
-        ImNodes.BeginNodeTitleBar();
-        ImGui.TextUnformatted("Моя Нода");
-        ImNodes.EndNodeTitleBar();
-
-        // Входной пин (Input Pin)
-        ImNodes.BeginInputAttribute(2); // ID пина
-        ImGui.Text("Вход");
-        ImNodes.EndInputAttribute();
-
-        // Выходной пин (Output Pin)
-        ImNodes.BeginOutputAttribute(3); // ID пина
-        ImGui.Text("Выход");
-        ImNodes.EndOutputAttribute();
-
-        ImNodes.EndNode();
-
-        ImNodes.BeginNode(4); // ID ноды
-
-        // Заголовок
-        ImNodes.BeginNodeTitleBar();
-        ImGui.TextUnformatted("Моя Нода");
-        ImNodes.EndNodeTitleBar();
-
-        // Входной пин (Input Pin)
-        ImNodes.BeginInputAttribute(5); // ID пина
-        ImGui.Text("Вход");
-        ImNodes.EndInputAttribute();
-        bool ba = false;
-        ImGui.TextColored(new Vector4(1, 1, 0, 1), IconFont.ExclamationTriangle);
-        ImGui.SameLine();
-        Checkbox("123", ref ba);
-        Text("321");
-        // Выходной пин (Output Pin)
-        ImNodes.BeginOutputAttribute(6); // ID пина
-        ImGui.Text("Выход");
-        SameLine();
-        Checkbox("321", ref ba);
-        ImNodes.EndOutputAttribute();
-
-        ImNodes.EndNode();
-        foreach (var link in myLinks)
-        {
-            ImNodes.Link(link.id, link.start, link.end);
-        }
-        ImNodes.EndNodeEditor();
-        int n = 0;
-        if (ImNodes.IsNodeHovered(ref n))
-        {
-            var анрилСосать = IconFont.CheckCircle + "Анрил сосать";
-            SetTooltip(анрилСосать);
-        }
-
-        if (ImGui.IsKeyPressed(ImGuiKey.Delete))
-        {
-            int numSelected = ImNodes.NumSelectedLinks();
-            if (numSelected > 0)
-            {
-                int[] selectedLinkIds = new int[numSelected];
-                ImNodes.GetSelectedLinks(ref selectedLinkIds[0]);
-
-                foreach (int id in selectedLinkIds)
-                {
-                    myLinks.RemoveAll(l => l.id == id);
-                }
-            }
-        }
-        int startPin = 0, endPin = 0, dp = 0;
-        if (ImNodes.IsLinkCreated(ref startPin, ref endPin))
-        {
-            myLinks.Add((myLinks.Count, startPin, endPin));
-        }
-        if (ImNodes.IsLinkDestroyed(ref dp))
-        {
-            myLinks.RemoveAll(s => s.id == dp);
-        }
-
-
         var yMaxLimit = Game.FpsLock + Game.FpsLock * 0.1;
         var s = 150;
         var fps = Fps.ToArrayOrdered().Skip(Fps.Length - s).Select(s => (float)s).ToArray();
         ImGui.PlotLines("FPS", ref fps[0], s, $"FPS: {fps.Last()}", new Vector2(s, 100));
-
 
         ImGui.PlotLines("RAM",
             ref PrivateBytes.ToArrayOrdered().Skip(Fps.Length - s).Select(s => (float)s).ToArray()[0],
@@ -162,7 +122,6 @@ internal class DebugOverlay : Renderable
         Text($"Mem: " + PrivateBytes.Last());
         yMaxLimit = (PrivateBytes.Last()) * 1.1;
         ImPlot.SetNextAxesLimits(0, ManagedHeap.Length + 1, 0, (PrivateBytes.Last()) * 1.1);
-        //todo: fix plot doesnt scale on Y axis
         if (ImPlot.BeginPlot("#mem", ImPlotFlags.NoTitle))
         {
             var xFlags = ImPlotAxisFlags.Invert | ImPlotAxisFlags.LockMin | ImPlotAxisFlags.LockMax;
