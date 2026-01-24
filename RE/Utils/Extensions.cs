@@ -84,27 +84,11 @@ namespace RE.Utils
         }
 
         // Conversions
+         
+        
 
-        public static OpenTK.Mathematics.Vector3 ToOpenTkVector3(this BulletSharp.Math.Vector3 v) => new(v.X, v.Y, v.Z);
-        public static OpenTK.Mathematics.Vector3 ToOpenTkVector3(this Assimp.Vector3D v) => new(v.X, v.Y, v.Z);
-        public static OpenTK.Mathematics.Vector4 ToOpenTkVector4(this BulletSharp.Math.Vector4 v) => new(v.X, v.Y, v.Z, v.W);
-        public static OpenTK.Mathematics.Quaternion ToOpenTkQuaternion(this BulletSharp.Math.Quaternion q) => new(q.X, q.Y, q.Z, q.W);
-        public static BulletSharp.Math.Vector3 ToBulletVector3(this OpenTK.Mathematics.Vector3 v) => new(v.X, v.Y, v.Z);
-        public static BulletSharp.Math.Vector4 ToBulletVector4(this OpenTK.Mathematics.Vector4 v) => new(v.X, v.Y, v.Z, v.W);
-        public static BulletSharp.Math.Quaternion ToBulletQuaternion(this OpenTK.Mathematics.Quaternion q) => new(q.X, q.Y, q.Z, q.W);
-        public static OpenTK.Mathematics.Matrix4 ToOpenTkMatrix(this BulletSharp.Math.Matrix v) =>
-            new(v.M11, v.M12, v.M13, v.M14, v.M21, v.M22, v.M23, v.M24, v.M31, v.M32, v.M33, v.M34, v.M41, v.M42, v.M43, v.M44);
-        public static BulletSharp.Math.Matrix ToBulletMatrix(this OpenTK.Mathematics.Matrix4 v) =>
-            new(v.M11, v.M12, v.M13, v.M14, v.M21, v.M22, v.M23, v.M24, v.M31, v.M32, v.M33, v.M34, v.M41, v.M42, v.M43, v.M44);
-        public static OpenTK.Mathematics.Vector3 ToOpenTkVector3(this Vector3 v) => new(v.X, v.Y, v.Z);
-        public static OpenTK.Mathematics.Vector3 ToOpenTkVector3(this FMOD.VECTOR v) => new(v.x, v.y, v.z);
-        public static OpenTK.Mathematics.Vector2 ToOpenTkVector2(this Vector2 v) => new(v.X, v.Y);
-        public static OpenTK.Mathematics.Quaternion ToOpenTkQuaternion(this Quaternion q) => new(q.X, q.Y, q.Z, q.W);
-        public static Vector3 ToSystemVector3(this OpenTK.Mathematics.Vector3 v) => new(v.X, v.Y, v.Z);
-        public static Vector3 ToSystemVector3(this FMOD.VECTOR v) => new(v.x, v.y, v.z);
-        public static Vector2 ToSystemVector2(this OpenTK.Mathematics.Vector2 v) => new(v.X, v.Y);
-        public static FMOD.VECTOR ToFmodVector3(this OpenTK.Mathematics.Vector3 v) => new() { x = v.X, y = v.Y, z = v.Z };
-        public static Quaternion ToSystemQuaternion(this OpenTK.Mathematics.Quaternion q) => new(q.X, q.Y, q.Z, q.W);
         public static JsonArray ToJsonArray(this OpenTK.Mathematics.Vector3 v) => new(v.X, v.Y, v.Z);
+        public static bool IsNullOrEmpty(this string str) => string.IsNullOrEmpty(str);
+
     }
 }

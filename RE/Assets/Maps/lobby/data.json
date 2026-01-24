@@ -612,7 +612,7 @@
       "components": {
         "SkyboxComponent": {
           "args": [
-            "assets/skybox/space2"
+            "assets/skybox/white"
           ]
         }
       }

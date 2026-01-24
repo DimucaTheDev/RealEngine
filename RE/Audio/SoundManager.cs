@@ -1,4 +1,5 @@
 ﻿using System.Collections.ObjectModel;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using FMOD;
 using FMOD.Studio;
@@ -6,12 +7,9 @@ using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using RE.Core;
 using RE.Core.Assets;
-using RE.Core.Scripting;
 using RE.Rendering;
 using RE.Utils;
 using Serilog;
-using static BulletSharp.DiscreteCollisionDetectorInterface;
-using INITFLAGS = FMOD.Studio.INITFLAGS;
 using Result = FMOD.RESULT;
 
 namespace RE.Audio
@@ -43,19 +41,20 @@ namespace RE.Audio
         private static readonly List<string> MissingSounds = [];
         private static readonly List<string> AudioFileExtensions = [".wav", ".mp3", ".ogg", ".flac", ".aiff"];
 
-        private static DEBUG_CALLBACK _fmodDebugCallback = (flags, file, line, func, message) =>
+        private static readonly DEBUG_CALLBACK _fmodDebugCallback = (flags, filePtr, line, funcPtr, msgPtr) =>
         {
-            var ptrToStringAnsi = Marshal.PtrToStringAnsi(message).TrimEnd('\n');
+            var message = Marshal.PtrToStringAnsi(msgPtr)?.TrimEnd('\n');
+            var file = Marshal.PtrToStringAnsi(filePtr);
 
-            if (string.IsNullOrWhiteSpace(ptrToStringAnsi))
+            if (string.IsNullOrWhiteSpace(message))
                 return RESULT.OK;
 
             if (flags.HasFlag(DEBUG_FLAGS.ERROR))
-                Log.Error("[FMOD] {Message} ({Func} at {File}:{Line})", ptrToStringAnsi, func, file, line);
+                Log.Error("[FMOD] {Message} (0x{Func:x} at {File}:{Line})", message, funcPtr, file, line);
             else if (flags.HasFlag(DEBUG_FLAGS.WARNING))
-                Log.Warning("[FMOD] {Message}", ptrToStringAnsi);
+                Log.Warning("[FMOD] {Message}", message);
             else
-                Log.Information("[FMOD] {Message}", ptrToStringAnsi);
+                Log.Information("[FMOD] {Message}", message);
 
 
             return RESULT.OK;
@@ -64,23 +63,20 @@ namespace RE.Audio
         /// <summary>
         /// Initialises FMOD sound subsystem.
         /// </summary>
-        /// <remarks>
-        /// This method calls <see cref="Fmod.SetLibraryLocation"/> with path to <b>fmod.dll</b>, which is located in DLL/WIN32 by default.
-        /// </remarks>
         public static void Init()
         {
-            FMOD.Debug.Initialize(
+            Check(FMOD.Debug.Initialize(
                  DEBUG_FLAGS.ERROR | DEBUG_FLAGS.WARNING,
                 DEBUG_MODE.CALLBACK,
                 _fmodDebugCallback
-            );
+            ));
 
-            FMOD.Studio.System.create(out StudioSystem);
+            Check(FMOD.Studio.System.create(out StudioSystem));
 
-            StudioSystem.initialize(256, FMOD.Studio.INITFLAGS.LIVEUPDATE, FMOD.INITFLAGS.NORMAL, IntPtr.Zero);
-            StudioSystem.getCoreSystem(out FmodSystem);
+            Check(StudioSystem.initialize(256, FMOD.Studio.INITFLAGS.LIVEUPDATE, FMOD.INITFLAGS.NORMAL, IntPtr.Zero));
+            Check(StudioSystem.getCoreSystem(out FmodSystem));
 
-            FmodSystem.getVersion(out uint version);
+            Check(FmodSystem.getVersion(out uint version));
 
             var resMaster = StudioSystem.loadBankMemory(ContentManager.GetBytes("assets/testing/bank/Master.bank"), LOAD_BANK_FLAGS.NORMAL, out var m);
             Log.Information("Master Bank: {Res}", resMaster);
@@ -88,10 +84,10 @@ namespace RE.Audio
             var resStrings = StudioSystem.loadBankMemory(ContentManager.GetBytes("assets/testing/bank/Master.strings.bank"), LOAD_BANK_FLAGS.NORMAL, out _);
             Log.Information("Strings Bank: {Res}", resStrings);
 
-            m.getEventList(out var array);
+            Check(m.getEventList(out var array));
             foreach (var description in array)
             {
-                description.getPath(out var path);
+                Check(description.getPath(out var path));
                 Console.WriteLine($"Event Found: {path}");
             }
 
@@ -130,9 +126,9 @@ namespace RE.Audio
                 sound.UpdateDebugInfo();
             }
 
-            StudioSystem.update();
-            FmodSystem.update();
-            FmodSystem.set3DListenerAttributes(0, ref pos, ref vel, ref forward, ref up);
+            Check(StudioSystem.update());
+            Check(FmodSystem.update());
+            Check(FmodSystem.set3DListenerAttributes(0, ref pos, ref vel, ref forward, ref up));
         }
 
         /// <summary>
@@ -163,10 +159,11 @@ namespace RE.Audio
             {
                 byte[] audioData = ContentManager.GetBytes(file).ToArray();
 
-                var createsoundexinfo = new CREATESOUNDEXINFO();
-
-                createsoundexinfo.cbsize = Marshal.SizeOf(typeof(CREATESOUNDEXINFO));
-                createsoundexinfo.length = (uint)audioData.Length;
+                var createsoundexinfo = new CREATESOUNDEXINFO
+                {
+                    cbsize = Marshal.SizeOf(typeof(CREATESOUNDEXINFO)),
+                    length = (uint)audioData.Length
+                };
 
                 var result = FmodSystem.createSound(
                     audioData,
@@ -255,6 +252,13 @@ namespace RE.Audio
                 sound.Dispose();
             }
             _activeSounds.Clear();
+        }
+
+        private static void Check(Result result, [CallerArgumentExpression(nameof(result))] string exp = "")
+        {
+            if (result != RESULT.OK)
+                Log.Error("{Expression}: {Result}", exp, Error.String(result));
+            System.Diagnostics.Debug.Assert(result == RESULT.OK, $"'{exp}' != {nameof(RESULT.OK)}");
         }
 
         private static Dictionary<string, List<string>> ProcessFiles(IEnumerable<string> files, string basePath)

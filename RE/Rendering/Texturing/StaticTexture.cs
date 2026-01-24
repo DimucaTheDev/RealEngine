@@ -6,6 +6,7 @@ using Hexa.NET.ImGui;
 using OpenTK.Graphics.OpenGL4;
 using OpenTK.Mathematics;
 using RE.Core.Assets;
+using RE.Utils;
 using Serilog;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
@@ -77,7 +78,7 @@ namespace RE.Rendering.Texturing
 
             ImageData = image.Data;
 
-            if (false) // #FunSettings: pixelate textures for retro look
+            if (Fun.PixelateAllTextures) // #FunSettings: pixelate textures for retro look
             {
                 int p = 128;
                 var load = Image.Load(ContentManager.GetBytes(resourceLocation));
@@ -111,7 +112,7 @@ namespace RE.Rendering.Texturing
 
             ImageData = data;
 
-            if (false) // #FunSettings: pixelate textures for retro look
+            if (Fun.PixelateAllTextures) // #FunSettings: pixelate textures for retro look
             {
                 int p = 128;
                 var converted = Image.LoadPixelData<Rgba32>(data, width, height);

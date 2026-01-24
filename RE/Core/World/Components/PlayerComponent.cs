@@ -530,7 +530,7 @@ namespace RE.Core.World.Components
         private static void AddDummyCube()
         {
             GameObject obj = new GameObject();
-            obj.Components.Add(new MeshComponent("assets/models/crate.fbx"));
+            obj.Components.Add(new MeshComponent("assets/models/radio.fbx"));
             Vector3 front = Camera.Main.Front;
 
             obj.Components.Add(new BoxColliderComponent());
