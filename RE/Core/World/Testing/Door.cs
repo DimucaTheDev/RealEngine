@@ -35,6 +35,7 @@ namespace RE.Core.World.Testing
             {
                 OnUsed = () =>
                 {
+                    /*
                     if (sound?.IsReady ?? false)
                         sound.Stop();
                     sound = SoundManager.Play("doors/doormove", new SoundPlaybackSettings
@@ -44,7 +45,7 @@ namespace RE.Core.World.Testing
                         InWorld = true,
                         Position = _door.Transform.Position,
                         Volume = 0.5f
-                    });
+                    });*/
                     used = true;
                     shouldOpen = !shouldOpen;
                 }
@@ -89,7 +90,7 @@ namespace RE.Core.World.Testing
 
         void OnOpened()
         {
-            sound?.Stop();
+            /*sound?.Stop();
             sound = SoundManager.Play("doors/doorstop", new SoundPlaybackSettings()
             {
                 VariantIndex = 0,
@@ -97,8 +98,7 @@ namespace RE.Core.World.Testing
                 InWorld = true,
                 Position = _door.Transform.Position,
                 Volume = 0.5f
-            });
-
+            });*/
         }
         void OnClosed() { OnOpened(); }
 

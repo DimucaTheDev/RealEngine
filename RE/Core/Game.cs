@@ -113,7 +113,11 @@ internal partial class Game : GameWindow
 
         GL.Enable(EnableCap.DebugOutput);
         GL.Enable(EnableCap.DebugOutputSynchronous);
+
         GL.DebugMessageCallback(GlLogCallback, 0);
+        GL.DebugMessageControl(DebugSourceControl.DontCare, DebugTypeControl.DontCare, DebugSeverityControl.DontCare, 0, (int[]?)null, false);
+        GL.DebugMessageControl(DebugSourceControl.DontCare, DebugTypeControl.DebugTypeError, DebugSeverityControl.DebugSeverityHigh, 0, (int[]?)null, true);
+        //GL.DebugMessageControl(DebugSourceControl.DontCare, DebugTypeControl.DontCare, DebugSeverityControl.DebugSeverityMedium, 0, (int[]?)null, true);
 
         ContentManager.Register(new FileContentProvider());
         ContentManager.Register(new ZipContentProvider());
@@ -307,10 +311,9 @@ internal partial class Game : GameWindow
         base.OnUnload();
 
         PluginManager.UnloadPlugins();
-        foreach (var lib in LoadedLibs)
-        {
-            Log.Debug("Unloading library {Library}", lib.Value);
-            WinApi.FreeLibrary(lib.Key);
-        }
+        SoundManager.Destroy();
+        PhysicsManager.Destroy();
+        ImGuiController.Destroy();
+        Log.CloseAndFlush();
     }
 }

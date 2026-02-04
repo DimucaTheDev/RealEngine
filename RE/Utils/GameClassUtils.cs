@@ -131,14 +131,14 @@ namespace RE.Core
                     restrictedToMinimumLevel: minLevel,
                     outputTemplate: consoleTemplate)
                 .WriteTo.Console(outputTemplate: consoleTemplate)
-                .CreateLogger();
-            // .ForContext("SourceContext", "Engine");
+                .CreateLogger(); 
 
             Log.Information("Hello, World!");
             if (hasTemplate)
                 Log.Information("Using log template from: {LogTemplatePath}", Path.GetRelativePath(".", fileInfo!.FullName));
         }
 
+        [StackTraceHidden]
         internal static void GlLogCallback(DebugSource source, DebugType type, int id, DebugSeverity severity, int length, IntPtr message, IntPtr userParam)
         {
             if (type == DebugType.DebugTypeOther)

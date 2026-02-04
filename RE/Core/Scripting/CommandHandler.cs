@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Immutable;
 using System.Globalization;
+using System.Text;
 using System.Text.RegularExpressions;
 using OpenTK.Graphics.OpenGL;
 using RE.Audio;
@@ -204,7 +205,7 @@ namespace RE.Core.Scripting
             }, "Get all variables in formatted table");
             RegisterHandler("clear", _ =>
             {
-                GameLogger.Log = "";
+                GameLogger.Log = new StringBuilder();
             }, "Clear the log");
             RegisterHandler("sound", list =>
             {
@@ -219,6 +220,7 @@ namespace RE.Core.Scripting
                     SoundManager.StopAll();
                 if (list[0] == "play") // sound play <name> [volume] [inWorld] [maxDistance] [referenceDistance]
                 {
+                    throw new NotImplementedException();
                     if (list.Count < 2)
                     {
                         Log.Error("Usage: {Usage}", "sound play <name> [volume] [inWorld] [maxDistance] [referenceDistance]");
@@ -229,13 +231,13 @@ namespace RE.Core.Scripting
                     bool inWorld = list.Count > 3 && bool.Parse(list[3]);
                     float maxDistance = list.Count > 4 ? float.Parse(list[4]) : 10f;
                     float referenceDistance = list.Count > 5 ? float.Parse(list[5]) : 1f;
-                    SoundManager.Play(name, new()
+                    /*SoundManager.Play(name, new()
                     {
                         Volume = volume,
                         InWorld = inWorld,
                         MaxDistance = maxDistance,
                         ReferenceDistance = referenceDistance
-                    });
+                    });*/
                 }
             }, "Play or stop sound. Enter command with no arguments to see more info");
             RegisterHandler("exit", _ => Game.Instance.Close(), "Close the game");
@@ -299,10 +301,10 @@ namespace RE.Core.Scripting
                     Log.Information("Loading {Level}... ", name);
                     SceneManager.LoadScene(SceneManager.ParseScene(name), true, () =>
                     {
-                        SoundManager.Play("end_flash", new SoundPlaybackSettings() { DisposeOnStop = true, InWorld = false });
+                        SoundManager.PlayOneShotEvent("event:/Flash");
                     });
                 }
-            }, "Print level name or loads new one");
+            }, "Print level name or load a new one");
             RegisterHandler("editor", args =>
             {
                 var ov = SceneEditor.Instance;

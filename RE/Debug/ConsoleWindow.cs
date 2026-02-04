@@ -60,18 +60,19 @@ namespace RE.Debug.Overlay
                         else IsVisible = false;
                     }
 
-                    ImGui.Checkbox($"Info ({Regex.Matches(GameLogger.Log, "INF]", RegexOptions.Compiled).Count})", ref _showInfo);
+                    var log = GameLogger.Log.ToString();
+                    ImGui.Checkbox($"Info ({Regex.Matches(log, "INF]", RegexOptions.Compiled).Count})", ref _showInfo);
                     ImGui.SameLine();
-                    ImGui.Checkbox($"Warning ({Regex.Matches(GameLogger.Log, "WRN]", RegexOptions.Compiled).Count})", ref _showWarn);
+                    ImGui.Checkbox($"Warning ({Regex.Matches(log, "WRN]", RegexOptions.Compiled).Count})", ref _showWarn);
                     ImGui.SameLine();
-                    ImGui.Checkbox($"Error ({Regex.Matches(GameLogger.Log, "ERR]", RegexOptions.Compiled).Count})", ref _showError);
+                    ImGui.Checkbox($"Error ({Regex.Matches(log, "ERR]", RegexOptions.Compiled).Count})", ref _showError);
 
                     ImGui.Separator();
 
                     float footerHeightToReserve = ImGui.GetFrameHeightWithSpacing();
 
                     var w = (bool)Variables.GetVariable("wrapConsole")!;
-                    string[] logLines = GameLogger.Log.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries);
+                    string[] logLines = log.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries);
 
                     if (ImGui.BeginChild("ScrollRegion",
                             new Vector2(0, -footerHeightToReserve),

@@ -232,5 +232,24 @@ namespace RE.Core.World.Physics
         {
             Schedulers.Add(scheduler);
         }
+
+        public static void Destroy()
+        {
+            if (!_init)
+                return;
+
+            DynamicsWorld.Dispose();
+
+            _dispatcher.Dispose();
+            _collisionConfiguration.Dispose();
+            _broadphase.Dispose();
+
+            _parallelSolver.Dispose();
+            _solverPool.Dispose();
+
+            Schedulers.Clear();
+
+            _init = false;
+        }
     }
 }

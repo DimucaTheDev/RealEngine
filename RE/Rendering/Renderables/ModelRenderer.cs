@@ -6,6 +6,7 @@ using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using RE.Core;
 using RE.Core.Assets;
+using RE.Core.Input;
 using RE.Core.World;
 using RE.Rendering.Lightning;
 using RE.Rendering.Renderables.ModelFormat;
@@ -14,6 +15,7 @@ using RE.Rendering.Texturing;
 using RE.Utils;
 using Serilog;
 using StbImageSharp;
+using Keys = OpenTK.Windowing.GraphicsLibraryFramework.Keys;
 using Material = RE.Rendering.Lightning.Material;
 using PrimitiveType = OpenTK.Graphics.OpenGL4.PrimitiveType;
 using Quaternion = OpenTK.Mathematics.Quaternion;
@@ -138,20 +140,22 @@ namespace RE.Rendering.Renderables
         }
 
         public void Render(FrameEventArgs args, Matrix4 model, Camera camera)
-        {
+        { 
             Matrix4 view = camera.GetViewMatrix();
             Matrix4 proj = camera.GetProjectionMatrix();
 
             GL.ActiveTexture(TextureUnit.Texture0);
             GL.BindTexture(TextureTarget.Texture2D, _texture.AsOpenGl());
             //todo: same for Texture1 and specular map
- 
-
+  
             _program.Use();
             _program.SetValue("model", model);
             _program.SetValue("view", view);
             _program.SetValue("projection", proj);
-  
+
+            if (Keyboard.IsKeyPressed(Keys.F8))
+                IgnoreLight = !IgnoreLight;
+
             // lighting.glsl
             _program.SetStruct("material", Material);
             if (IgnoreLight || (SceneEditor.Enabled && !SceneEditor.PreviewLight))

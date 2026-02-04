@@ -1,14 +1,11 @@
 ﻿using System.Text.Json.Nodes;
-using OpenTK.Windowing.Common;
-using OpenTK.Windowing.GraphicsLibraryFramework;
 using RE.Core;
-using RE.Core.Input;
 using RE.Core.World.Components;
-using RE.Editor;
+using RE.Editor.Notification;
 
 namespace TestPlugin
 {
-    public class TestComponent : Component, IEditorUpdate
+    public class TestComponent : Component
     {
         public override void Start()
         {
@@ -17,23 +14,23 @@ namespace TestPlugin
             {
                 SaveComponent = false
             });
-        }
+            ToastManager.InsertNotification(new Toast(ToastType.Error, "", "MALFUNCTION 54"));
+            string content = """
+                             ~   - Open Console (type 'help')
+                             E   - Interact
+                             F2  - Make screenshot
+                             F3  - Wireframe
+                             F4  - Open Editor
+                             F7  - Toast test
+                             F8  - Disable light
+                             F11 - Fullscreen
+                             """;
+            ToastManager.InsertNotification(new Toast(ToastType.Info, content, "Welcome! Welcome to City 17.", 10));
 
-        /// <inheritdoc />
-        public override void Update(FrameEventArgs args)
-        {
-            if(Keyboard.IsKeyPressed(Keys.LeftControl, true)) Console.WriteLine("Control!");
         }
-
         public override JsonNode GetSaveData()
         {
             return new JsonObject();
-        }
-
-        /// <inheritdoc />
-        public void EditorUpdate(FrameEventArgs args)
-        {
-            Update(args);
-        }
+        } 
     }
 }

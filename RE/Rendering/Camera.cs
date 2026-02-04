@@ -20,7 +20,16 @@ public class Camera(Vector3 position, Vector3 up, int width, int height)
 {
     public float AspectRatio => (float)RenderWidth / RenderHeight;
     public Vector3 Front = -Vector3.UnitZ;
-    public float Pitch;
+
+    public float Pitch
+    {
+        get => field;
+        set
+        {
+            field = value;
+            UpdateVectors();
+        }
+    }
     public float Yaw
     {
         get => field;
@@ -30,6 +39,17 @@ public class Camera(Vector3 position, Vector3 up, int width, int height)
             UpdateVectors();
         }
     } = -90f;
+
+    public float Roll
+    {
+        get => field;
+        set
+        {
+            field = value;
+            UpdateVectors();
+        }
+    } = 45;
+
     public float Fov
     {
         get => field;
@@ -49,8 +69,8 @@ public class Camera(Vector3 position, Vector3 up, int width, int height)
     public static void Init()
     {
         Main = new Camera(new(15, 3, 8), Vector3.UnitY, Game.Instance.ClientSize.X, Game.Instance.ClientSize.Y);
-        Editor = new Camera(new(10,10,10), Vector3.UnitY, Game.Instance.ClientSize.X, Game.Instance.ClientSize.Y);
-        Editor.LookAt((0,0,0));
+        Editor = new Camera(new(10, 10, 10), Vector3.UnitY, Game.Instance.ClientSize.X, Game.Instance.ClientSize.Y);
+        Editor.LookAt((0, 0, 0));
         Variables.VariableChanged += (s, e) =>
         {
             if (s == "fov")
@@ -69,7 +89,6 @@ public class Camera(Vector3 position, Vector3 up, int width, int height)
         Pitch = MathHelper.RadiansToDegrees(MathF.Asin(dir.Y));
         Yaw = MathHelper.RadiansToDegrees(MathF.Atan2(dir.Z, dir.X));
     }
-
 
     public Matrix4 GetViewMatrix() => Matrix4.LookAt(Position, Position + Front, Up);
     public Matrix4 GetProjectionMatrix() => GetProjectionMatrix(Fov);

@@ -28,6 +28,8 @@ namespace RE.Core.World.Testing
         private const string soundPath = "common/wpn_select";
         void StartBenchmark()
         {
+            throw new NotImplementedException();
+            /*
             var before = Variables.GetVariable("showDebugInfo");
             Variables.SetVariable("showDebugInfo", true);
             AddTask("Play 2D sound", () =>
@@ -99,7 +101,7 @@ namespace RE.Core.World.Testing
                     CommandHandler.ExecuteCommand("level lobby");
                     Variables.SetVariable("showDebugInfo", before!);
                 });
-            });
+            });*/
         }
 
         void AddTask(string name, Action action, int ms = 1000)

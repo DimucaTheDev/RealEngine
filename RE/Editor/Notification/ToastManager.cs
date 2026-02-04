@@ -15,10 +15,7 @@ namespace RE.Editor.Notification
         {
             Notifications.Add(toast);
             if (toast.Type == ToastType.Error)
-                SoundManager.Play("test\\notif", new SoundPlaybackSettings()
-                {
-                    Volume = 0.5f
-                });
+                SoundManager.PlayOneShotEvent("event:/Toast");
         }
 
         public static void RemoveNotification(int index)

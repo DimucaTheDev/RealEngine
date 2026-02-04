@@ -1,5 +1,7 @@
 ﻿using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
+using System.Text;
 using RE.Editor.Notification;
 using Serilog.Core;
 using Serilog.Events;
@@ -16,7 +18,7 @@ namespace RE.Core
     public class GameLogger(string outputTemplate) : ILogEventSink
     {
         private readonly MessageTemplateTextFormatter _formatter = new(outputTemplate);
-        public static string Log = string.Empty;
+        public static StringBuilder Log = new(2048);
 
         public void Emit(LogEvent logEvent)
         {
@@ -24,14 +26,7 @@ namespace RE.Core
                 return;
             using var writer = new StringWriter();
             _formatter.Format(logEvent, writer);
-            Log += writer.ToString();
-            if (logEvent.Level >= LogEventLevel.Error)
-            { 
-                /*var e = logEvent.Exception ?? throw new Exception(logEvent.RenderMessage());
-                var s = new StackTrace(e, true).ToString();
-                Console.WriteLine(s);
-                Log += s;*/
-            }
+            Log.Append(writer);
         }
     }
 
@@ -52,7 +47,7 @@ namespace RE.Core
                 name = $"{dllFileName}:{type.Name}/{method.Name}";
             }
             else
-                name = "???";
+                name = "<Native Call>";
             var contextProp = propertyFactory.CreateProperty("SourceContext", name);
             logEvent.AddOrUpdateProperty(contextProp);
         }
@@ -63,6 +58,9 @@ namespace RE.Core
             for (int i = 1; i < trace.FrameCount; i++)
             {
                 var method = trace.GetFrame(i)?.GetMethod();
+                if (method?.GetCustomAttribute<StackTraceHiddenAttribute>() is not null)
+                    continue;
+
                 var declaringType = method?.DeclaringType;
 
                 if (declaringType == null)
@@ -86,6 +84,19 @@ namespace RE.Core
                 }
             }
             return null;
+        }
+    }
+     
+    internal class DebuggerSink(string template) : ILogEventSink
+    {
+        private readonly MessageTemplateTextFormatter _formatter = new(template);
+
+        public void Emit(LogEvent logEvent)
+        {
+            using var stringWriter = new StringWriter();
+            _formatter.Format(logEvent, stringWriter);
+
+            System.Diagnostics.Debug.Write(stringWriter.ToString());
         }
     }
 }

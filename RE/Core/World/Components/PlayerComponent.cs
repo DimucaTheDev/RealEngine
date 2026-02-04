@@ -45,19 +45,12 @@ namespace RE.Core.World.Components
         private GameObject? _holdingObject;
         private float _objMass;
 
-        private const float BobAmount = 0.05f;
-        private const float BobSpeed = 10f;
-        private const float CameraLerpSpeed2 = 6f;
-
-        private float _bobTimer = 0f;
-        private float _bobBlend = 0f;
-        private float _currentCameraYOffset2 = 0f;
 
         private SpriteRenderer _spriteSpawnpoint = new(Vector3.Zero, "assets/sprites/editor/spawn.png", scale: 1);
 
         private float _soundCooldown = 0f;
 
-        [EditorProperty] public string InteractDenySound { get; set; } = "common/wpn_denyselect";
+        [EditorProperty] public string InteractDenySound { get; set; } = "event:/DenySelect";
 
         public override void Start()
         {
@@ -91,7 +84,7 @@ namespace RE.Core.World.Components
             im = new ImageRenderer(StaticTexture.CreateMonoColorTexture((.1f, 0.1f, 0.1f, 1)), new Vector2(0, 0), (3000, 3000));
             im.StartRender();
         }
- 
+
 
         private ImageRenderer im;
         private float d = 0;
@@ -135,7 +128,7 @@ namespace RE.Core.World.Components
             var deltaX = Mouse.Delta.X;
             var deltaY = -Mouse.Delta.Y;
 
-            _lastMousePos = new Vector2(mouseX, mouseY);
+            new Vector2(mouseX, mouseY);
 
             if (FirstMove)
             {
@@ -208,19 +201,10 @@ namespace RE.Core.World.Components
             if ((Keyboard.IsKeyDown(Keys.W) || Keyboard.IsKeyDown(Keys.S) || Keyboard.IsKeyDown(Keys.D) ||
                  Keyboard.IsKeyDown(Keys.A)) && !_isCrouching && _wasGrounded && moveDir.Length > 0.75f)
             {
-                if (_soundCooldown >= 0.45f)
-                {
-                    SoundManager.StudioSystem.getEvent("event:/Step", out var eventDescription);
-                    eventDescription.createInstance(out var instance);
-                    instance.start();
-                    instance.release();
 
-                    //SoundManager.Play("event:/Step", new SoundPlaybackSettings()
-                    //{
-                    //    Position = PlayerGameObject.Transform.Position,
-                    //    ShowDebugInfo = false,
-                    //    Volume = .15f
-                    //});
+                if ((_soundCooldown >= 0.45f && !Keyboard.Shift) || (_soundCooldown >= 0.3f && Keyboard.Shift))
+                {
+                    SoundManager.PlayOneShotEvent("event:/Step");
                     _soundCooldown = 0f;
                 }
             }
@@ -352,16 +336,12 @@ namespace RE.Core.World.Components
                         if (controller.GetComponent<UsableComponent>() != null!)
                         {
                             controller.GetComponent<UsableComponent>()!.OnUsed?.Invoke();
-                            SoundManager.Play("buttons/blip", new SoundPlaybackSettings()
-                            {
-                                InWorld = false,
-                                Pitch = 1,
-                                Volume = .25f
-                            });
+                            SoundManager.PlayOneShotEvent("event:/Blip");
                         }
                         else if (controller.GetComponent<RigidBodyComponent>() != null)
                         {
                             _holdingObject = controller.Owner;
+                            SoundManager.PlayOneShotEvent("event:/Select");
                             if (_holdingObject.GetComponent<RigidBodyComponent>() != null)
                             {
                                 var rigidBodyComponent = _holdingObject.GetComponent<RigidBodyComponent>();
@@ -374,38 +354,23 @@ namespace RE.Core.World.Components
                             if (rigidBody != null)
                                 rigidBody.ActivationState = ActivationState.DisableDeactivation;
                         }
-                        else
+                        else if (_holdingObject == null)
                         {
                             if (!string.IsNullOrWhiteSpace(InteractDenySound))
-                                SoundManager.Play(InteractDenySound, new SoundPlaybackSettings()
-                                {
-                                    InWorld = false,
-                                    Pitch = 1,
-                                    Volume = .25f
-                                });
+                                SoundManager.PlayOneShotEvent(InteractDenySound);
                         }
                     }
                     else
                     {
                         if (!string.IsNullOrWhiteSpace(InteractDenySound))
-                            SoundManager.Play(InteractDenySound, new SoundPlaybackSettings()
-                            {
-                                InWorld = false,
-                                Pitch = 1,
-                                Volume = .25f
-                            });
-                        Log.Debug("Ray hit an object, but its UserObject is not a Controller.");
+                            //   SoundManager.PlayOneShotEvent(InteractDenySound);
+                            Log.Debug("Ray hit an object, but its UserObject is not a Controller.");
                     }
                 }
-                else
+                else if (!wasHolding)
                 {
                     if (!string.IsNullOrWhiteSpace(InteractDenySound))
-                        SoundManager.Play(InteractDenySound, new SoundPlaybackSettings()
-                        {
-                            InWorld = false,
-                            Pitch = 1,
-                            Volume = .25f
-                        });
+                        SoundManager.PlayOneShotEvent(InteractDenySound);
                 }
             }
 
@@ -463,16 +428,77 @@ namespace RE.Core.World.Components
                 }
             }
 
+            var basePosition = PlayerGameObject.Transform.Position;
+            _camera.Position = new Vector3(basePosition.X, basePosition.Y + _currentCameraYOffset, basePosition.Z)
+                + CameraBob(currentVel, (float)args.Time, grounded);
 
-            if (!SceneEditor.Enabled)
+            if (rb.LinearVelocity.Y < -5 && !_falling)
             {
-                var basePosition = PlayerGameObject.Transform.Position;
-                _camera.Position = new Vector3(basePosition.X, basePosition.Y + _currentCameraYOffset, basePosition.Z);
+                StartFall();
+            }
+            else if (rb.LinearVelocity.Y < 0 && _falling)
+            {
+                _fall.SetParameter("DeltaY", -rb.LinearVelocity.Y);
+                _prevDeltaY = rb.LinearVelocity.Y;
+            }
+            else if (rb.LinearVelocity.Y >= 0 && _falling)
+            {
+                _fall.Dispose();
+                _falling = false;
+                if (_prevDeltaY <= -17)
+                    SoundManager.PlayOneShotEvent("event:/HardFall");
             }
         }
-        int curveIndex = 0;   // индекс кривой (каждая = 4 точки)
+
+        void StartFall()
+        {
+            _falling = true;
+            _fall = SoundManager.PlayEvent("event:/FallLoop");
+        }
+
+        private bool _falling = false;
+        private Sound _fall;
+        private float _prevDeltaY;
+
+        private float bobTime = 0f;
+        private float lastBob = 0f;
+        private float lastSide = 0f;
+
+        public static bool cl_viewbob_enabled = true;
+        public static float cl_viewbob_timer = 7f;
+        public static float cl_viewbob_scale = .8f;
+
+
+        public Vector3 CameraBob(Vector3 velocity, float deltaTime, bool onGround)
+        {
+            if (!cl_viewbob_enabled)
+                return Vector3.Zero;
+
+            float speed = new Vector2(velocity.X, velocity.Z).Length;
+
+            if (speed < 0.01f)
+                return Vector3.Zero;
+
+            float t = Time.ElapsedTime * cl_viewbob_timer;
+
+            float xOffset =
+                MathF.Sin(t) *
+                speed *
+                cl_viewbob_scale / 100f;
+
+            float yOffset =
+                MathF.Sin(2f * t) *
+                speed *
+                cl_viewbob_scale / 400f;
+
+            return new Vector3(xOffset, yOffset, 0f);
+        }
+
+
+
+        int curveIndex = 0;
         float t = 0.0f;
-        float speed = 0.25f; // скорость по параметру
+        float speed = 0.25f;
         bool loop = false;
         private bool ended = false;
         Vector3 Bezier(Vector3 p0, Vector3 p1, Vector3 p2, Vector3 p3, float t)
@@ -530,7 +556,7 @@ namespace RE.Core.World.Components
         private static void AddDummyCube()
         {
             GameObject obj = new GameObject();
-            obj.Components.Add(new MeshComponent("assets/models/radio.fbx"));
+            obj.Components.Add(new MeshComponent("assets/models/crate.fbx"));
             Vector3 front = Camera.Main.Front;
 
             obj.Components.Add(new BoxColliderComponent());
@@ -551,7 +577,6 @@ namespace RE.Core.World.Components
 
         private Vector3 _smoothedTargetPos = Vector3.Zero;
         private bool FirstMove = true;
-        private Vector2 _lastMousePos;
         private float mouseX;
         private float mouseY;
 
@@ -601,51 +626,6 @@ namespace RE.Core.World.Components
                    CanStandUp((0, 0, -offset)) && CanStandUp((offset, 0, offset)) && CanStandUp((-offset, 0, offset)) &&
                    CanStandUp((-offset, 0, -offset)) && CanStandUp((offset, 0, -offset));
         }
-
-        void UpdateCameraPosition2(float deltaTime, bool isWalking, bool isSprinting, bool isCrouching)
-        {
-            float targetYOffset = isCrouching ? CrouchCameraOffset : StandCameraOffset;
-            _currentCameraYOffset = MathHelper.Lerp(_currentCameraYOffset, targetYOffset, deltaTime * CameraLerpSpeed);
-
-            if (isWalking)
-                _bobTimer += deltaTime * BobSpeed * (isSprinting ? 2f : 1f);
-            else
-                _bobTimer = 0f;
-
-            float bobAmount = BobAmount * (isCrouching ? 0.5f : 1f);
-            float bobOffsetY = MathF.Sin(_bobTimer) * bobAmount * 2;
-            float bobOffsetX = MathF.Sin(_bobTimer * 0.5f) * bobAmount * 2f;
-
-            Vector3 playerPos = PlayerGameObject.Transform.Position;
-            _camera.Position = new Vector3(
-                playerPos.X + bobOffsetX,
-                playerPos.Y + _currentCameraYOffset + bobOffsetY,
-                playerPos.Z
-            );
-        }
-        void UpdateCameraPosition(float deltaTime, bool isWalking, bool isSprinting, bool isCrouching)
-        {
-            float targetYOffset = isCrouching ? CrouchCameraOffset : StandCameraOffset;
-            _currentCameraYOffset2 = MathHelper.Lerp(_currentCameraYOffset2, targetYOffset, deltaTime * CameraLerpSpeed2);
-
-            float walkSpeedFactor = isSprinting ? 2f : 1f;
-            _bobTimer += deltaTime * BobSpeed * walkSpeedFactor;
-
-            float targetBlend = isWalking ? 1f : 0f;
-            _bobBlend = MathHelper.Lerp(_bobBlend, targetBlend, deltaTime * 5f);
-
-            float bobAmount = BobAmount * (isCrouching ? 0.5f : 1f);
-            float bobOffsetY = MathF.Sin(_bobTimer * 1f) * bobAmount * _bobBlend;
-            float bobOffsetX = MathF.Sin(_bobTimer * 0.5f) * bobAmount * 0.5f * _bobBlend;
-
-            Vector3 playerPos = PlayerGameObject.Transform.Position;
-            _camera.Position = new Vector3(
-                playerPos.X + bobOffsetX,
-                playerPos.Y + _currentCameraYOffset2 + bobOffsetY,
-                playerPos.Z
-            );
-        }
-
         public void EditorRender(FrameEventArgs args)
         {
             _spriteSpawnpoint.Position = Owner.Transform.Position;

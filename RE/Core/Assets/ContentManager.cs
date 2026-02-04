@@ -179,10 +179,16 @@ namespace RE.Core.Assets
         /// <exception cref="InvalidOperationException">Thrown when no matching provider can be resolved
         /// and <see cref="Default"/> is not set.</exception>
         public static string[] GetFiles(string path, bool recursive = false)
-        {
+        { 
             var provider = FindProvider(path)
                 ?? throw new InvalidOperationException("No matching content provider found and Default is not set.");
-            return provider.GetFiles(path, recursive);
+            var f = provider.GetFiles(path, recursive);
+            return f;
+        }
+
+        public static string[] GetFiles(string path, string extension, bool recursive = false)
+        {
+            return GetFiles(path, recursive).Where(s => s.EndsWith(extension, StringComparison.InvariantCultureIgnoreCase)).ToArray();
         }
 
         /// <summary>

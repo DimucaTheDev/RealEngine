@@ -7,7 +7,7 @@ namespace RE.Launcher.Game
     {
         static void Main(string[] args)
         {
-            GameLauncher.Run(args); 
+            GameLauncher.Run(args);
         }
     }
 }

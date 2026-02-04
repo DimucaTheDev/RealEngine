@@ -122,4 +122,15 @@ internal static class ImGuiController
 
         ImGuizmo.SetRect(0, 0, Game.Instance.ClientSize.X, Game.Instance.ClientSize.Y);
     }
+
+    public static void Destroy()
+    {
+        ImGuiImplOpenGL3.Shutdown();
+        ImGuiImplGLFW.Shutdown();
+       // ImGuiImplWin32.Shutdown();
+        
+        ImPlot.DestroyContext(_imPlotContext);
+        ImNodes.DestroyContext(_imNodesContext);
+        ImGui.DestroyContext(_context);
+    }
 }

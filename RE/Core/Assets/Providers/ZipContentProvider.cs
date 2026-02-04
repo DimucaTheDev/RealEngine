@@ -17,6 +17,8 @@ namespace RE.Core.Assets.Providers
     {
         private readonly Dictionary<string, string> _fileMap = new(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, ZipArchive> _zips = new(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, ZipArchiveEntry> _fastFileMap = new(StringComparer.OrdinalIgnoreCase);
+        private readonly HashSet<string> _directoryCache = new(StringComparer.OrdinalIgnoreCase);
 
         public string Prefix => "pak:";
 
@@ -29,30 +31,64 @@ namespace RE.Core.Assets.Providers
         public void Register()
         {
             Directory.CreateDirectory("paks");
-            foreach (var pakPath in Directory.EnumerateFiles("paks"))
+            foreach (var pakPath in Directory.EnumerateFiles("paks", "*.pak"))
             {
-                var fs = File.OpenRead(pakPath);
-                var zip = new ZipArchive(fs, ZipArchiveMode.Read, leaveOpen: false);
-                _zips[pakPath] = zip;
-
-                foreach (var entry in zip.Entries)
+                try
                 {
-                    var normalized = entry.FullName.Replace('\\', '/');
+                    var fs = File.OpenRead(pakPath);
+                    var zip = new ZipArchive(fs, ZipArchiveMode.Read, leaveOpen: false);
+                    _zips[pakPath] = zip;
 
-                    // add dir
-                    _fileMap.TryAdd(Path.GetDirectoryName(normalized)!, pakPath);
-
-                    //if (entry.FullName.EndsWith("/"))
-                    //    continue; // is a directory, skip
-
-                    if (!_fileMap.TryAdd(normalized, pakPath))
-                    {
-                        Log.Error("Duplicate file {FileName} in: {Pak1} and {Pak2}", normalized, _fileMap[normalized], pakPath);
-                    }
+                    RegisterEntries(zip, pakPath);
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Failed to load PAK: {PakPath}", pakPath);
                 }
             }
 
             Log.Information("Loaded PAKs: {@Paks}", _zips.Keys.Select(pack => Path.GetRelativePath(".", pack)));
+        }
+
+        private void RegisterEntries(ZipArchive zip, string pakPath)
+        {
+            foreach (var entry in zip.Entries)
+            {
+                if (entry.FullName.EndsWith("/") || entry.FullName.EndsWith("\\"))
+                {
+                    var dirPath = entry.FullName.Replace('\\', '/').TrimEnd('/');
+                    RegisterDirectoryPath(dirPath);
+                    continue;
+                }
+
+                var normalized = entry.FullName.Replace('\\', '/');
+
+                if (!_fastFileMap.TryAdd(normalized, entry))
+                {
+                    Log.Warning("Duplicate file {FileName} in PAKs. Existing: {OldPak}", normalized, _fileMap.GetValueOrDefault(normalized));
+                }
+                else
+                {
+                    _fileMap[normalized] = pakPath;
+                }
+
+                var directoryPath = Path.GetDirectoryName(normalized)?.Replace('\\', '/');
+                if (!string.IsNullOrEmpty(directoryPath))
+                {
+                    RegisterDirectoryPath(directoryPath);
+                }
+            }
+        }
+
+        private void RegisterDirectoryPath(string directoryPath)
+        {
+            var parts = directoryPath.Split('/');
+            string currentPath = "";
+            foreach (var part in parts)
+            {
+                currentPath = string.IsNullOrEmpty(currentPath) ? part : $"{currentPath}/{part}";
+                _directoryCache.Add(currentPath);
+            }
         }
 
         public byte[] GetBytes(string path)
@@ -89,12 +125,48 @@ namespace RE.Core.Assets.Providers
         {
             return GetFileEntry(path) != null;
         }
-
-        public bool DirectoryExists(string path)
+        private ZipArchiveEntry? GetFileEntry(string path)
         {
-            return GetDirectoryEntry(path) != null;
+            var normalized = NormalizePath(path);
+            return _fastFileMap.GetValueOrDefault(normalized);
         }
 
+        private bool InternalDirectoryExists(string path)
+        {
+            var normalized = NormalizePath(path);
+            return _directoryCache.Contains(normalized);
+        }
+
+        public bool DirectoryExists(string path) => InternalDirectoryExists(path);
+
+        public string[] GetDirectories(string path, bool recursive = false)
+        {
+            var normalized = NormalizePath(path);
+            var prefix = string.IsNullOrEmpty(normalized) ? "" : normalized + "/";
+
+            return _directoryCache
+                .Where(d => d.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+                .Where(d =>
+                {
+                    if (recursive)
+                        return true;
+                    var relative = d[prefix.Length..];
+                    return !relative.Contains('/');
+                })
+                .Select(d => "Assets/" + d)
+                .ToArray();
+        }
+
+        private string NormalizePath(string path)
+        {
+            path = path.StartsWith(Prefix, StringComparison.OrdinalIgnoreCase)
+                ? path[Prefix.Length..] : path;
+
+            path = path.StartsWith("Assets/", StringComparison.OrdinalIgnoreCase)
+                ? path["Assets/".Length..] : path;
+
+            return path.Replace('\\', '/').TrimEnd('/');
+        }
         public Stream Open(string path)
         {
             var entry = GetFileEntry(path);
@@ -105,34 +177,32 @@ namespace RE.Core.Assets.Providers
         }
         public string[] GetFiles(string path, bool recursive = false)
         {
+            string normalizedPath = NormalizePath(path);
+            if (!string.IsNullOrEmpty(normalizedPath) && !normalizedPath.EndsWith("/"))
+            {
+                normalizedPath += "/";
+            }
+
             var entries = _zips.Values.SelectMany(zip => zip.Entries);
 
-            return entries.Select(s => "Assets/" + s.FullName).ToArray();
-        }
-        public string[] GetDirectories(string path, bool recursive = false)
-        {
-            throw new NotImplementedException();
-        }
-         
-        private ZipArchiveEntry? GetFileEntry(string path)
-        {
-            var normalized = Path.GetRelativePath("Assets", path).Replace('\\', '/');
-            if (!_fileMap.TryGetValue(normalized, out var pakPath))
-                return null;
+            return entries
+                .Where(entry =>
+                {
+                    string fullName = entry.FullName.Replace('\\', '/');
 
-            var zip = _zips[pakPath];
-            return zip.Entries.FirstOrDefault(e =>
-                string.Equals(e.FullName.Replace('\\', '/'), normalized, StringComparison.OrdinalIgnoreCase));
-        }
-        private ZipArchiveEntry? GetDirectoryEntry(string path)
-        {
-            var normalized = Path.GetRelativePath("Assets", path).Replace('\\', '/');
-            if (!_fileMap.TryGetValue(normalized, out var pakPath))
-                return null;
+                    if (!fullName.StartsWith(normalizedPath, StringComparison.OrdinalIgnoreCase))
+                        return false;
 
-            var zip = _zips[pakPath];
-            return zip.Entries.FirstOrDefault(e =>
-                string.Equals(Path.GetDirectoryName(e.FullName)!.Replace('\\', '/'), normalized, StringComparison.OrdinalIgnoreCase));
+                    if (!recursive)
+                    {
+                        string relativePath = fullName.Substring(normalizedPath.Length);
+                        return !relativePath.Contains('/');
+                    }
+
+                    return true;
+                })
+                .Select(s => Prefix + "Assets/" + s.FullName)
+                .ToArray();
         }
     }
 }

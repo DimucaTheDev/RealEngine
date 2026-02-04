@@ -48,43 +48,7 @@ internal class DebugOverlay : Renderable
     private static List<Type> Types = [];
     private static string _searchText = "";
     private static unsafe void RenderProfilersWindow(FrameEventArgs args)
-    {
-        Begin("Stats");
-
-        InputText("Поиск ноды", ref _searchText, 100);
-
-        var categories = Types
-            .Where(t => string.IsNullOrEmpty(_searchText) ||
-                        t.Name.Contains(_searchText, StringComparison.OrdinalIgnoreCase))
-            .GroupBy(t => "Other");
-
-        foreach (var category in categories)
-        {
-            if (CollapsingHeader(category.Key))
-            {
-                foreach (var type in category)
-                {
-                    string displayName = type.Name.Replace("Node", "");
-
-                    if (Button(displayName))
-                    {
-                        var instance = Activator.CreateInstance(type);
-                    }
-
-                    if (GetItemRectMax().X < GetWindowPos().X + GetContentRegionAvail().X - 100)
-                        SameLine();
-                }
-                NewLine();
-            }
-        }
-
-        ImNodes.BeginNodeEditor();
-        NodeManager.RenderNodes();
-        NodeManager.RenderNodeLinks();
-        ImNodes.EndNodeEditor();
-        NodeManager.ResolveInput();
-        End();
-        return;
+    { 
         UpdateUsageData();
 
         Fps.Add((int)(1 / args.Time));
@@ -142,6 +106,44 @@ internal class DebugOverlay : Renderable
             ImPlot.EndPlot();
         }
 
+        End();
+    }
+
+    static void NodeTest()
+    {
+        InputText("Поиск ноды", ref _searchText, 100);
+
+        var categories = Types
+            .Where(t => string.IsNullOrEmpty(_searchText) ||
+                        t.Name.Contains(_searchText, StringComparison.OrdinalIgnoreCase))
+            .GroupBy(t => "Other");
+
+        foreach (var category in categories)
+        {
+            Begin("Node test");
+            if (CollapsingHeader(category.Key))
+            {
+                foreach (var type in category)
+                {
+                    string displayName = type.Name.Replace("Node", "");
+
+                    if (Button(displayName))
+                    {
+                        var instance = Activator.CreateInstance(type);
+                    }
+
+                    if (GetItemRectMax().X < GetWindowPos().X + GetContentRegionAvail().X - 100)
+                        SameLine();
+                }
+                NewLine();
+            }
+        }
+
+        ImNodes.BeginNodeEditor();
+        NodeManager.RenderNodes();
+        NodeManager.RenderNodeLinks();
+        ImNodes.EndNodeEditor();
+        NodeManager.ResolveInput();
         End();
     }
 
