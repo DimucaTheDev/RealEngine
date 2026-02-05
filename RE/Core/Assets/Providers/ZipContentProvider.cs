@@ -159,13 +159,15 @@ namespace RE.Core.Assets.Providers
 
         private string NormalizePath(string path)
         {
+            path = path.Replace('\\', '/').TrimEnd('/');
+
             path = path.StartsWith(Prefix, StringComparison.OrdinalIgnoreCase)
                 ? path[Prefix.Length..] : path;
 
             path = path.StartsWith("Assets/", StringComparison.OrdinalIgnoreCase)
                 ? path["Assets/".Length..] : path;
-
-            return path.Replace('\\', '/').TrimEnd('/');
+             
+            return path;
         }
         public Stream Open(string path)
         {

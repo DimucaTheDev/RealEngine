@@ -1,7 +1,17 @@
-<Project>
-
-	<PropertyGroup Condition="'$(Configuration)'=='Production'">
+﻿<Project>
+	<PropertyGroup>
+		<PubDir>$([System.IO.Path]::GetFullPath('ProductionBuild\'))</PubDir>
+		<TaskDll>..\RE.BuildTask\bin\RE.BuildTask.dll</TaskDll>
+		<GenerateEditorExecutable>True</GenerateEditorExecutable>
 		<DefineConstants>$(DefineConstants);PROD;PRODUCTION</DefineConstants>
 		<Optimize>True</Optimize>
 	</PropertyGroup>
+	<UsingTask TaskName="RE.BuildTask.EngineBuildTask" AssemblyFile="$(TaskDll)" />
+	<Import Project="RE.Common.targets" />
+	<Target Name="BuildAll">
+		<MSBuild Projects="../RE.BuildTask/RE.BuildTask.csproj" Targets="Restore;Build" />
+		<MSBuild Projects="../RE.Launcher.Game/RE.Launcher.Game.csproj" Targets="Restore;Publish" Properties="ApplicationIcon=$(ApplicationIcon);InformationalVersion=$(Version);RuntimeIdentifier=win-x64;PublishSingleFile=True;Configuration=Production;PublishDir=$(PubDir)" />
+		<MSBuild Condition="'$(GenerateEditorExecutable)' == 'True'" Projects="../RE.Launcher.Editor/RE.Launcher.Editor.csproj" Targets="Restore;Publish" Properties="ApplicationIcon=../editor.ico;InformationalVersion=$(Version);RuntimeIdentifier=win-x64;PublishSingleFile=True;Configuration=Production;PublishDir=$(PubDir)" />
+		<EngineBuildTask AssetsFolder="$(PubDir)Assets" OutputFolder="$(PubDir)paks" CompressAssets="true" GenerateZip="true" Version="$(Version)" />
+	</Target>
 </Project>

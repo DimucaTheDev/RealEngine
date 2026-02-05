@@ -6,6 +6,7 @@ using System.Drawing.Imaging;
 using System.IO.Compression;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Text;
 using OpenTK.Graphics.OpenGL;
 using OpenTK.Windowing.Common;
 using OpenTK.Windowing.Common.Input;
@@ -122,20 +123,79 @@ namespace RE.Core
             File.Delete("Logs/Latest.log");
 
             Log.Logger = new LoggerConfiguration()
-                .MinimumLevel.Is(minLevel)
+                .MinimumLevel.Is(LogEventLevel.Verbose)
                 .Enrich.WithThreadName()
                 .Enrich.With(new EngineLoggerEnricher())
-                .WriteTo.Sink(new GameLogger("[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}"))
+                .WriteTo.Sink(new GameLogger("[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}"), minLevel)
                 .WriteTo.FileEx(
                     path: "Logs/Latest.log",
-                    restrictedToMinimumLevel: minLevel,
-                    outputTemplate: consoleTemplate)
-                .WriteTo.Console(outputTemplate: consoleTemplate)
-                .CreateLogger(); 
+                    outputTemplate: consoleTemplate, restrictedToMinimumLevel: LogEventLevel.Debug)
+                .WriteTo.Console(outputTemplate: consoleTemplate, restrictedToMinimumLevel: minLevel)
+                .CreateLogger();
 
             Log.Information("Hello, World!");
             if (hasTemplate)
                 Log.Information("Using log template from: {LogTemplatePath}", Path.GetRelativePath(".", fileInfo!.FullName));
+
+            InitializeExceptionHandling();
+        }
+
+        public static void InitializeExceptionHandling()
+        {
+            AppDomain.CurrentDomain.UnhandledException += static (s, e) =>
+            {
+                static string InternalCheck64Bit() => Environment.Is64BitProcess ? "64-bit" : "32-bit";
+
+                var ex = (Exception)e.ExceptionObject;
+                var process = Process.GetCurrentProcess();
+                var memInfo = GC.GetGCMemoryInfo();
+
+                StringBuilder report = new StringBuilder();
+                report.AppendLine("--- FATAL ERROR REPORT ---");
+                report.AppendLine($"Time: {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
+                report.AppendLine($"OS: {RuntimeInformation.OSDescription} ({InternalCheck64Bit()})");
+                report.AppendLine($"CPU: {Environment.ProcessorCount} cores, {RuntimeInformation.ProcessArchitecture}");
+                report.AppendLine($"Runtime: {RuntimeInformation.FrameworkDescription}");
+                report.AppendLine($"Process ID: {process.Id}");
+                report.AppendLine($"Thread: [{Thread.CurrentThread.ManagedThreadId}] {Thread.CurrentThread.Name}");
+                report.AppendLine($"Memory: WorkingSet {process.WorkingSet64 / 1024 / 1024}MB, GC Heap {GC.GetTotalMemory(false) / 1024 / 1024}MB");
+                report.AppendLine($"GC Strategy: {memInfo.Index} (HighMemoryLoad Threshold: {memInfo.HighMemoryLoadThresholdBytes / 1024 / 1024}MB)");
+
+                if (false)
+                {
+                    report.AppendLine("--- LOADED MODULES ---");
+                    foreach (ProcessModule module in process.Modules)
+                    {
+                        try
+                        {
+                            report.AppendLine(
+                                $"0x{module.BaseAddress:x}\t-\t{module.ModuleMemorySize / 1024} Kb \t{module.ModuleName}");
+                        }
+                        catch
+                        {
+                            // ignored
+                        }
+                    }
+                }
+
+                Log.Fatal(ex, "{Report}\nException Detail:", report.ToString());
+                Log.CloseAndFlush();
+            };
+
+            TaskScheduler.UnobservedTaskException += (s, e) =>
+            {
+                Log.Error(e.Exception, "Unobserved Task Exception (Async Leak)");
+                e.SetObserved();
+            };
+
+            Application.ThreadException += (s, e) =>
+                Log.Fatal(e.Exception, "UI/WinForms Thread Exception");
+
+            AppDomain.CurrentDomain.ProcessExit += (s, e) =>
+            {
+                Log.Information("Engine shutdown initiated (ProcessExit)");
+                Log.CloseAndFlush();
+            };
         }
 
         [StackTraceHidden]

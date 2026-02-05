@@ -1,5 +1,4 @@
-﻿using System;
-using RE.Launchers;
+﻿using RE.Launchers;
 
 namespace RE.Launcher.Game
 {

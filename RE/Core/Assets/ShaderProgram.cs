@@ -43,7 +43,7 @@ namespace RE.Core.Assets
             Handle = GL.CreateProgram();
             if (Handle is 0 or -1)
             {
-                throw new GlException("Unable to create shader program");
+                throw new GlException("Unable to create shader program.");
             }
         }
 
@@ -65,8 +65,6 @@ namespace RE.Core.Assets
             {
                 GL.LinkProgram(this);
 
-                // Эта мразь крашит игру!!!!!!!!! 
-                //_linkedShaders.ForEach(s => { s.OnUnload(); });
                 _linked = true;
             }
             GL.UseProgram(this);

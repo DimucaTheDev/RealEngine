@@ -31,6 +31,6 @@ namespace TestPlugin
         public override JsonNode GetSaveData()
         {
             return new JsonObject();
-        } 
+        }
     }
 }

@@ -8,7 +8,7 @@
 		<Nullable>enable</Nullable>
 		<LangVersion>preview</LangVersion>
 		<AllowUnsafeBlocks>True</AllowUnsafeBlocks>
-		
+
 		<Configurations>Debug;Release;Production</Configurations>
 		<GenerateDocumentationFile>True</GenerateDocumentationFile>
 		<Platforms>AnyCPU;x64</Platforms>
@@ -33,11 +33,16 @@
 
 	<ItemGroup>
 		<Compile Remove="Assets\GenerateStaticModel.cs" />
+		<Folder Include="Core\World\Ai\" />
 
 		<Resource Include="Assets\RealEngine.ico" />
 
 		<PackageReference Include="AssimpNet" Version="4.1.0" />
 		<PackageReference Include="BulletSharp" Version="0.11.1" />
+		<PackageReference Include="DotRecast.Core" Version="2026.1.1" />
+		<PackageReference Include="DotRecast.Detour" Version="2026.1.1" />
+		<PackageReference Include="DotRecast.Recast" Version="2026.1.1" />
+		<PackageReference Include="DotRecast.Recast.Toolset" Version="2026.1.1" />
 		<PackageReference Include="FmodAudio" Version="2.2.5" Condition="False" />
 		<PackageReference Include="freetype" Version="2.8.0.1" />
 		<PackageReference Include="Hexa.NET.GLFW" Version="1.0.5" />
@@ -65,10 +70,6 @@
 
 		<None Include="Assets\**; Dll\**;">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-		</None> 
-
-		<Folder Include="Assets\Audio\" />
-		<Folder Include="Assets\Cfg\" />
-	</ItemGroup> 
-
+		</None>
+	</ItemGroup>
 </Project>

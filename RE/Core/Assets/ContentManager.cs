@@ -103,7 +103,7 @@ namespace RE.Core.Assets
         public static string GetString(string path)
         {
             var provider = FindProvider(path)
-                ?? throw new InvalidOperationException($"No matching content provider found and {nameof(Default)} is not set.");
+                           ?? throw new InvalidOperationException($"No matching content provider found for {path} and Default is not set.");
 
             if (!provider.Exists(path))
                 throw new FileNotFoundException($"Asset not found: {path}");
@@ -122,7 +122,7 @@ namespace RE.Core.Assets
         public static byte[] GetBytes(string path)
         {
             var provider = FindProvider(path)
-                ?? throw new InvalidOperationException("No matching content provider found and Default is not set.");
+                ?? throw new InvalidOperationException($"No matching content provider found for {path} and Default is not set.");
 
             if (!provider.Exists(path))
                 throw new FileNotFoundException($"Asset not found: {path}");
@@ -143,7 +143,7 @@ namespace RE.Core.Assets
         public static byte[] GetBytes(string path, int offset, int count)
         {
             var provider = FindProvider(path)
-                ?? throw new InvalidOperationException("No matching content provider found and Default is not set.");
+                ?? throw new InvalidOperationException($"No matching content provider found for {path} and Default is not set.");
 
             if (!provider.Exists(path))
                 throw new FileNotFoundException($"Asset not found: {path}");
@@ -162,7 +162,7 @@ namespace RE.Core.Assets
         public static Stream Open(string path)
         {
             var provider = FindProvider(path)
-                ?? throw new InvalidOperationException("No matching content provider found and Default is not set.");
+                ?? throw new InvalidOperationException($"No matching content provider found for {path} and Default is not set.");
 
             if (!provider.Exists(path))
                 throw new FileNotFoundException($"Asset not found: {path}");
@@ -179,9 +179,9 @@ namespace RE.Core.Assets
         /// <exception cref="InvalidOperationException">Thrown when no matching provider can be resolved
         /// and <see cref="Default"/> is not set.</exception>
         public static string[] GetFiles(string path, bool recursive = false)
-        { 
+        {
             var provider = FindProvider(path)
-                ?? throw new InvalidOperationException("No matching content provider found and Default is not set.");
+                ?? throw new InvalidOperationException($"No matching content provider found for {path} and Default is not set.");
             var f = provider.GetFiles(path, recursive);
             return f;
         }
@@ -202,14 +202,16 @@ namespace RE.Core.Assets
         public static string[] GetDirectories(string path, bool recursive = false)
         {
             var provider = FindProvider(path)
-                ?? throw new InvalidOperationException("No matching content provider found and Default is not set.");
+                           ?? throw new InvalidOperationException($"No matching content provider found for {path} and Default is not set.");
             return provider.GetDirectories(path, recursive);
         }
 
         private static IContentProvider? FindProvider(string path)
         {
             if (!HasPrefix(path) && ResolveAssetsInAllContentProviders)
+            { 
                 return _providers.FirstOrDefault(s => s.Exists(path) || s.DirectoryExists(path)) ?? Default;
+            }
 
             return ResolveProvider(ref path);
         }
