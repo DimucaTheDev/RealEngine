@@ -212,7 +212,7 @@ namespace RE.Rendering.Texturing
             var t = new StaticTexture(data, size, size);
             return t;
         }
-        public static StaticTexture CreateMonoColorTexture(Vector3 color) => CreateMonoColorTexture(new Vector4(color.Xzy, 1));
+        public static StaticTexture CreateMonoColorTexture(Vector3 color) => CreateMonoColorTexture(new Vector4(color, 1));
         public static StaticTexture CreateMonoColorTexture(Vector4 color)
         {
             byte[] data =

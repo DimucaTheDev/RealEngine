@@ -132,10 +132,10 @@ namespace RE.Audio
             Check(_studioSystem.getBus("bus:/", out var bus));
             Check(bus.stopAllEvents(immediate ? STOP_MODE.IMMEDIATE : STOP_MODE.ALLOWFADEOUT));
         }
-
+        
         private static void LoadAllBanks()
         {
-            var files = ContentManager.GetFiles("Assets/Testing/bank");
+            var files = ContentManager.GetFiles("Assets/Audio");
             foreach (var file in files.Where(s => s.EndsWith(".strings.bank")))
             {
                 LoadBank(file);

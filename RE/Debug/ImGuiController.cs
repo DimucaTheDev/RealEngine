@@ -1,4 +1,6 @@
-﻿using Hexa.NET.ImGui;
+﻿using System.Runtime.InteropServices;
+using System.Text;
+using Hexa.NET.ImGui;
 using Hexa.NET.ImGui.Backends.GLFW;
 using Hexa.NET.ImGui.Backends.OpenGL3;
 using Hexa.NET.ImGui.Backends.Win32;
@@ -17,6 +19,7 @@ internal static class ImGuiController
     private static ImGuiContextPtr _context;
     private static ImPlotContextPtr _imPlotContext;
     private static ImNodesContextPtr _imNodesContext;
+    private static IntPtr _iniPtr = IntPtr.Zero;
 
     /// <summary>
     ///     Initializes ImGui.
@@ -66,6 +69,12 @@ internal static class ImGuiController
             }, [0xf000, 0xf950, 0]);
 
         ImGuiTheme.ApplyDarkTheme();
+
+        // set imgui.ini path
+        byte[] utf8 = Encoding.UTF8.GetBytes("Engine/Config/imgui.ini" + "\0");
+        _iniPtr = Marshal.AllocHGlobal(utf8.Length);
+        Marshal.Copy(utf8, 0, _iniPtr, utf8.Length);
+        io.IniFilename = (byte*)_iniPtr;
     }
 
     public static unsafe void AddFont(byte[] data, ImFontConfigPtr config, uint[]? ranges = null)

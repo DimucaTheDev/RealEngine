@@ -33,9 +33,9 @@ namespace RE.Core.PluginSystem
 
             List<Plugin> plugins = [];
 
-            Directory.CreateDirectory("DLL\\PLUGINS");
+            Directory.CreateDirectory("Engine/Plugins");
 
-            foreach (var dll in Directory.GetFiles("DLL\\PLUGINS").Select(Path.GetFullPath))
+            foreach (var dll in Directory.GetFiles("Engine/Plugins").Select(Path.GetFullPath))
             {
                 Assembly assembly;
                 try

@@ -35,9 +35,11 @@ namespace RE.Utils
             style.Colors[(int)ImGuiCol.Button] = new Vector4(0.00f, 0.00f, 0.00f, 1.00f);
             style.Colors[(int)ImGuiCol.ButtonHovered] = new Vector4(0.42f, 0.42f, 0.42f, 1.00f);
             style.Colors[(int)ImGuiCol.ButtonActive] = new Vector4(0.54f, 0.54f, 0.54f, 1.00f);
-            style.Colors[(int)ImGuiCol.Header] = new Vector4(0.26f, 0.59f, 0.98f, 0.31f);
-            style.Colors[(int)ImGuiCol.HeaderHovered] = new Vector4(0.26f, 0.59f, 0.98f, 0.80f);
-            style.Colors[(int)ImGuiCol.HeaderActive] = new Vector4(0.26f, 0.59f, 0.98f, 1.00f);
+
+            style.Colors[(int)ImGuiCol.Header] = new Vector4(0.20f, 0.20f, 0.20f, 1.00f);
+            style.Colors[(int)ImGuiCol.HeaderHovered] = new Vector4(0.30f, 0.30f, 0.30f, 1.00f);
+            style.Colors[(int)ImGuiCol.HeaderActive] = new Vector4(0.35f, 0.35f, 0.35f, 1.00f);
+
             style.Colors[(int)ImGuiCol.Separator] = new Vector4(1.00f, 1.00f, 1.00f, 0.50f);
             style.Colors[(int)ImGuiCol.SeparatorHovered] = new Vector4(1.00f, 1.00f, 1.00f, 0.78f);
             style.Colors[(int)ImGuiCol.SeparatorActive] = new Vector4(1.00f, 1.00f, 1.00f, 1.00f);
@@ -47,8 +49,13 @@ namespace RE.Utils
             style.Colors[(int)ImGuiCol.Tab] = new Vector4(0.30f, 0.30f, 0.30f, 0.86f);
             style.Colors[(int)ImGuiCol.TabHovered] = new Vector4(0.52f, 0.52f, 0.52f, 0.80f);
             style.Colors[(int)ImGuiCol.TabSelected] = new Vector4(0.55f, 0.55f, 0.55f, 1.00f);
-            //style.Colors[(int)ImGuiCol.TabUnfocused] = new Vector4(0.45f, 0.45f, 0.45f, 0.97f);
-            //style.Colors[(int)ImGuiCol.TabUnfocusedActive] = new Vector4(0.39f, 0.39f, 0.39f, 1.00f);
+            style.Colors[(int)ImGuiCol.TabSelectedOverline] = new Vector4(0.55f, 0.55f, 0.55f, 1.00f);
+            style.Colors[(int)ImGuiCol.TabDimmed] = new Vector4(0.18f, 0.18f, 0.18f, 1.00f);
+            style.Colors[(int)ImGuiCol.TabDimmedSelected] = new Vector4(0.28f, 0.28f, 0.28f, 1.00f);
+            style.Colors[(int)ImGuiCol.TabDimmedSelectedOverline] = new Vector4(0.28f, 0.28f, 0.28f, 1.00f);
+            style.Colors[(int)ImGuiCol.Header] = new Vector4(0.18f, 0.18f, 0.18f, 1.00f);
+            style.Colors[(int)ImGuiCol.HeaderHovered] = new Vector4(0.25f, 0.25f, 0.25f, 1.00f);
+            style.Colors[(int)ImGuiCol.HeaderActive] = new Vector4(0.85f, 0.85f, 0.80f, 0.55f); 
             style.Colors[(int)ImGuiCol.DockingPreview] = new Vector4(0.00f, 0.00f, 0.00f, 0.70f);
             style.Colors[(int)ImGuiCol.DockingEmptyBg] = new Vector4(0.20f, 0.20f, 0.20f, 1.00f);
             style.Colors[(int)ImGuiCol.PlotLines] = new Vector4(0.61f, 0.61f, 0.61f, 1.00f);

@@ -30,8 +30,8 @@ namespace RE.Core.Assets.Providers
         /// method should be called before attempting to access files managed by the archive system.</remarks>
         public void Register()
         {
-            Directory.CreateDirectory("paks");
-            foreach (var pakPath in Directory.EnumerateFiles("paks", "*.pak"))
+            Directory.CreateDirectory("Engine/Paks");
+            foreach (var pakPath in Directory.EnumerateFiles("Engine/Paks", "*.pak"))
             {
                 try
                 {

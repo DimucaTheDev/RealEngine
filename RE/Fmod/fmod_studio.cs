@@ -16,7 +16,7 @@ namespace FMOD.Studio
     public partial class STUDIO_VERSION
     {
 #if !UNITY_2019_4_OR_NEWER
-        public const string dll     = "DLL/WIN32/fmodstudioL";
+        public const string dll     = "Engine/Natives/fmodstudioL";
 #endif
     }
 

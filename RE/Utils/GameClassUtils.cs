@@ -119,8 +119,8 @@ namespace RE.Core
                 "[{Timestamp:HH:mm:ss.fff} {Level:u3}] [{ThreadName}] [{SourceContext:Name}] {Message:lj}{NewLine}{Exception}";
 
             var minLevel = CommandParseResult.GetValue<LogEventLevel>("--log-level");
-            Directory.CreateDirectory("Logs");
-            File.Delete("Logs/Latest.log");
+            Directory.CreateDirectory("Engine/Logs");
+            File.Delete("Engine/Logs/Latest.log");
 
             Log.Logger = new LoggerConfiguration()
                 .MinimumLevel.Is(LogEventLevel.Verbose)
@@ -128,7 +128,7 @@ namespace RE.Core
                 .Enrich.With(new EngineLoggerEnricher())
                 .WriteTo.Sink(new GameLogger("[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}"), minLevel)
                 .WriteTo.FileEx(
-                    path: "Logs/Latest.log",
+                    path: "Engine/Logs/Latest.log",
                     outputTemplate: consoleTemplate, restrictedToMinimumLevel: LogEventLevel.Debug)
                 .WriteTo.Console(outputTemplate: consoleTemplate, restrictedToMinimumLevel: minLevel)
                 .CreateLogger();
@@ -220,7 +220,7 @@ namespace RE.Core
 
         internal static WindowIcon? LoadIcon()
         {
-            var path = "Assets/RealEngine2.ico";
+            var path = "Assets/RealEngine3.ico";
             if (!ContentManager.Exists(path))
             {
                 Log.Error("Icon file not found: {IconPath}", path);
@@ -361,7 +361,7 @@ namespace RE.Core
             Option<string> nativesPathOption = new("--natives-path", "-n")
             {
                 Description = "Location where Win32 native libraries are stored.",
-                DefaultValueFactory = _ => "Dll\\WIN32",
+                DefaultValueFactory = _ => "Engine/Natives",
                 CustomParser = res =>
                 {
                     if (!res.Tokens.Any())
@@ -408,7 +408,7 @@ namespace RE.Core
             };
             Option<bool> consoleOption = new("--console", "-c")
             {
-                Description = "Allocate console.",
+                Description = "Allocate a new console.",
                 CustomParser = _ =>
                 {
                     WinApi.AllocConsole();
@@ -440,7 +440,6 @@ namespace RE.Core
 
             var result = rootCommand.Parse(args);
             result.Invoke();
-
 
             if (result.Errors.Any() || result.Action?.GetType() == typeof(HelpAction))
             {

@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics;
 using System.Numerics;
 using Hexa.NET.ImGui;
+using RE.Rendering.Texturing;
 using RE.Utils;
 using static Hexa.NET.ImGui.ImGui;
 
@@ -10,14 +11,18 @@ namespace RE.Editor.Panels
     {
         private static readonly string _assetRootPath = Path.Combine(Directory.GetCurrentDirectory(), "Assets");
         private static string _currentDirectory = Directory.Exists(_assetRootPath) ? _assetRootPath : ".";
-        private static int TileSize = 75;
+        private static Texture _dirIconFull;
+        private static Texture _dirIconEmpty;
+        private static int _tileSize = 75;
+
+        public AssetBrowserPanel()
+        {
+            _dirIconFull = new StaticTexture("Assets/Sprites/Editor/folderFull.png");
+            _dirIconEmpty = new StaticTexture("Assets/Sprites/Editor/folderEmpty.png");
+        }
 
         public void Draw()
         {
-            var vp = GetMainViewport();
-            //SetNextWindowPos(new Vector2(0, vp.WorkSize.Y - 300), ImGuiCond.FirstUseEver);
-            //SetNextWindowSize(new Vector2(vp.WorkSize.X - 400, 300), ImGuiCond.FirstUseEver);
-
             SetNextWindowPos(new Vector2(8, 692), ImGuiCond.FirstUseEver);
             SetNextWindowSize(new Vector2(894, 309), ImGuiCond.FirstUseEver);
 
@@ -98,7 +103,7 @@ namespace RE.Editor.Panels
             foreach (var dir in pathSegments.Except(["."]))
             {
                 SameLine();
-                Text("\\");
+                Text("/");
 
                 currentPathAccumulator = Path.Combine(currentPathAccumulator, dir);
 
@@ -117,12 +122,12 @@ namespace RE.Editor.Panels
             Text(tileSizeText);
             SameLine();
             SetNextItemWidth(150);
-            SliderInt("##tileSize", ref TileSize, 10, 100);
+            SliderInt("##tileSize", ref _tileSize, 10, 100);
 
             Separator();
 
             float availableWidth = GetContentRegionAvail().X;
-            float tileSize = TileSize;
+            float tileSize = _tileSize;
             float cellPadding = 15.0f;
 
             int columns = (int)Math.Max(1, Math.Floor(availableWidth / (tileSize + cellPadding)));
@@ -162,10 +167,11 @@ namespace RE.Editor.Panels
 
 
             IntPtr iconIntPtr = WindowsShell.GetFileIcon(fullPath);
-            var t = new ImTextureRef() { TexID = (IntPtr)iconIntPtr };
+            var t = isDirectory ? (Directory.EnumerateFileSystemEntries(fullPath).Any() ? _dirIconFull : _dirIconEmpty) : new ImTextureRef() { TexID = (IntPtr)iconIntPtr };
             bool isClicked = ImageButton(
                 $"##IconBtn{name}",
-                t, new Vector2(size, size),
+                t,
+                new Vector2(size, size),
                 Vector2.Zero,
                 Vector2.One,
                 new Vector4(0, 0, 0, 0));
@@ -181,7 +187,7 @@ namespace RE.Editor.Panels
                 }
             }
 
-            string displayName = TrimFileName(name, TileSize);
+            string displayName = TrimFileName(name, _tileSize);
             float textWidth = CalcTextSize(displayName).X;
             SetCursorPosX(GetCursorPosX() + (size - textWidth) * 0.5f);
             Text(displayName);

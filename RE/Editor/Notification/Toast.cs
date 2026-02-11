@@ -67,7 +67,7 @@ namespace RE.Editor.Notification
             {
                 ToastType.Success => IconFont.CheckCircle,
                 ToastType.Warning => IconFont.ExclamationTriangle,
-                ToastType.Error => IconFont.TimesCircle,
+                ToastType.Error => IconFont.CrossCircle,
                 ToastType.Info => IconFont.InfoCircle,
                 _ => null
             };

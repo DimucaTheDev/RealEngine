@@ -10,7 +10,7 @@ namespace RE.BuildTask
     public class EngineBuildTask : Task
     {
         [Required] public string AssetsFolder { get; set; } = null!;
-        [Required] public string OutputFolder { get; set; } = null!;
+        [Required] public string PakOutputFolder { get; set; } = null!;
         public bool CompressAssets { get; set; }
         public bool GenerateZip { get; set; }
         public string Version { get; set; } = "1.0.0";
@@ -20,7 +20,7 @@ namespace RE.BuildTask
             try
             {
                 string assetsDir = Path.GetFullPath(AssetsFolder);
-                string outputDir = Path.GetFullPath(OutputFolder);
+                string outputDir = Path.GetFullPath(PakOutputFolder);
 
                 Log.LogMessage(MessageImportance.High, $"RE.BuildTask: Starting processing...");
                 Log.LogMessage(MessageImportance.Normal, $"Working directory: {Environment.CurrentDirectory}");
@@ -43,6 +43,7 @@ namespace RE.BuildTask
                     }
 
                     Log.LogMessage(MessageImportance.High, $"Creating pak: {pakPath}");
+                    Directory.CreateDirectory(Path.GetDirectoryName(outputDir)!);
                     ZipFile.CreateFromDirectory(assetsDir, pakPath, CompressionLevel.Optimal, false);
 
                     try
@@ -57,7 +58,7 @@ namespace RE.BuildTask
                 }
 
                 string parentDir = Path.GetDirectoryName(assetsDir) ?? Environment.CurrentDirectory;
-                string targetDllDir = Path.Combine(parentDir, "dll", "WIN32");
+                string targetDllDir = Path.Combine(parentDir, "Engine", "Natives");
                 Directory.CreateDirectory(targetDllDir);
 
                 Log.LogMessage(MessageImportance.Normal, $"Organizing DLLs in: {parentDir}");

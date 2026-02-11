@@ -49,6 +49,7 @@ internal partial class Game : GameWindow
         Log.Information("{ProductName}; version {Version}; build {BuildDate:dd.MM.yyyy HH:mm:ss}; commit {CommitHash}", ProductName, Version, BuildDate, CommitHash[..7]);
         Log.Information("Startup args: {@Args}", args);
 
+        Directory.CreateDirectory("Engine/Config");
         if (Directory.Exists("Debug"))
             Directory.Delete("Debug", true);
 
@@ -129,28 +130,15 @@ internal partial class Game : GameWindow
         Camera.Init();
         ImGuiController.Init();
         Initializer.Init();
-        Initializer.AddStep(("Bootstrapping...", () =>
-                {
-                    DebugOverlay.Init();
-                    LineRenderer.Main!.StartRender();
-                    ConsoleWindow.Init();
-                    SoundManager.Init();
-                    PhysicsManager.Init();
-                }
-        ));
-        Initializer.AddStep(("Initializing Scene Editor...", () =>
-                {
-                    SceneEditor.Instance = new();
-                }
-        ));
-        Initializer.AddStep(("Registering Commands", CommandHandler.RegisterAllCommands));
-        Initializer.AddStep(("Running default.cfg", () =>
-        {
-            CommandHandler.ExecuteCommand("source assets/cfg/default.cfg");
-            CommandHandler.ExecuteCommand("level lobby");
-        }
-        ));
-
+        DebugOverlay.Init();
+        LineRenderer.Main!.StartRender();
+        ConsoleWindow.Init();
+        SoundManager.Init();
+        PhysicsManager.Init();
+        SceneEditor.Instance = new();
+        CommandHandler.RegisterAllCommands();
+        CommandHandler.ExecuteCommand("source assets/cfg/default.cfg");
+        
         base.OnLoad();
     }
 

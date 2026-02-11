@@ -164,7 +164,7 @@ namespace RE.Editor.Panels
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
         }
 
-        private Vector3 _baseColor = Vector3.One;
+        private Vector4 _baseColor = Vector4.One;
         private float _shininess = 32; //todo: change whole material, so we dont have to manually set defaults
         private void MaterialWindow()
         {
@@ -255,7 +255,7 @@ namespace RE.Editor.Panels
             if (TreeNodeEx("Surface", treeFlags))
             {
                 BeginChild("surface");
-                if (ColorEdit3("Base Color", ref _baseColor.X))
+                if (ColorEdit4("Base Color", ref _baseColor.X))
                 {
                     _materialPreviewModel.SetTexture(StaticTexture.CreateMonoColorTexture(_baseColor), true);
                 }

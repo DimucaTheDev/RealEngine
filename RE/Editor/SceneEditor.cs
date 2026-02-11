@@ -71,7 +71,7 @@ namespace RE.Editor
 
         static SceneEditor()
         {
-            var iconPath = ($"Assets/RealEngine{(Random.Shared.Next(100) > 50 ? "2" : "")}.ico");
+            var iconPath = ($"Assets/RealEngine3.ico");
 
             if (ContentManager.Exists(iconPath))
             {
@@ -107,11 +107,6 @@ namespace RE.Editor
                 LogoImage = StaticTexture.CreateMissingTexture(6);
             }
             GL.BindTexture(TextureTarget.Texture2D, 0);
-
-            unsafe
-            {
-                //todo: cyrillic font for imgui
-            }
         }
 
         public void Enable()
@@ -241,7 +236,7 @@ namespace RE.Editor
                         _exitButtonWait = 0;
                         Disable();
                         CloseCurrentPopup();
-                        Environment.Exit(0);
+                        Game.Instance.Close();
                     }
                     EndDisabled();
 

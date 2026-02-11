@@ -57,7 +57,8 @@ namespace RE.Debug.Overlay
                     {
                         if (this != Instance)
                             this.StopRender();
-                        else IsVisible = false;
+                        else
+                            IsVisible = false;
                     }
 
                     var log = GameLogger.Log.ToString();
@@ -232,18 +233,22 @@ namespace RE.Debug.Overlay
             if (logLine.Contains(" INF] "))
             {
                 color = _colorInfo;
+                logLine = "  " + logLine;
             }
             else if (logLine.Contains(" WRN] "))
             {
                 color = _colorWarning;
+                logLine = IconFont.ExclamationTriangle + logLine;
             }
             else if (logLine.Contains(" ERR] "))
             {
                 color = _colorError;
+                logLine = IconFont.CrossCircle + logLine;
             }
             else
             {
                 color = _colorDefault;
+                logLine = "  " + logLine;
             }
 
             ImGui.PushStyleColor(ImGuiCol.Text, color);
