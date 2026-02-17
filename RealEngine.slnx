@@ -10,17 +10,22 @@
     <File Path="BuildTargets/RE.Common.targets" />
     <File Path="BuildTargets/RE.Publish.targets" />
   </Folder>
+  <Folder Name="/Launchers/">
+    <Project Path="RE.Launcher.Editor/RE.Launcher.Editor.csproj" Id="9414d766-9acd-49e6-97f3-d4e7982b9d36">
+      <BuildType Solution="Production|*" Project="Release" />
+    </Project>
+    <Project Path="RE.Launcher.Game.Console/RE.Launcher.Game.Console.csproj" Id="ce0cc2a9-784f-4d77-bd89-308c4077ab7a">
+      <BuildType Solution="Production|*" Project="Release" />
+    </Project>
+    <Project Path="RE.Launcher.Game/RE.Launcher.Game.csproj" Id="ef7ee03a-9d91-45ad-83c6-fb9af8a3f5d9">
+      <BuildType Solution="Production|*" Project="Release" />
+    </Project>
+  </Folder>
   <Folder Name="/Solution Items/">
     <File Path=".editorconfig" />
     <File Path="README.md" />
   </Folder>
   <Project Path="RE.BuildTask/RE.BuildTask.csproj" Id="bab6b8f1-e6e8-4193-bcb5-1e431fcecc16">
-    <BuildType Solution="Production|*" Project="Release" />
-  </Project>
-  <Project Path="RE.Launcher.Editor/RE.Launcher.Editor.csproj" Id="9414d766-9acd-49e6-97f3-d4e7982b9d36">
-    <BuildType Solution="Production|*" Project="Release" />
-  </Project>
-  <Project Path="RE.Launcher.Game/RE.Launcher.Game.csproj" Id="ef7ee03a-9d91-45ad-83c6-fb9af8a3f5d9">
     <BuildType Solution="Production|*" Project="Release" />
   </Project>
   <Project Path="RE/RE.csproj">

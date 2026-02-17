@@ -1,6 +1,7 @@
 ﻿using System.CommandLine;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
+using System.Text;
 using Hexa.NET.ImGui;
 using OpenTK.Graphics.OpenGL;
 using OpenTK.Mathematics;
@@ -42,6 +43,12 @@ internal partial class Game : GameWindow
     {
         Thread.CurrentThread.Name = "Render Thread";
         Environment.CurrentDirectory = AppContext.BaseDirectory;
+
+        Console.OutputEncoding = Encoding.UTF8;
+        Console.InputEncoding = Encoding.UTF8;
+        var stdout = new StreamWriter(Console.OpenStandardOutput(), Encoding.UTF8);
+        stdout.AutoFlush = true;
+        Console.SetOut(stdout);
 
         ParseArguments(args);
         SetupLogger();
@@ -102,9 +109,7 @@ internal partial class Game : GameWindow
         if (Renderdoc.IsAvailable)
             Log.Information("RenderDoc available: {Version}", Renderdoc.Version);
 
-        game.Run();
-
-        Log.Information("End");
+        game.Run(); 
     }
 
     protected override unsafe void OnLoad()
@@ -302,6 +307,7 @@ internal partial class Game : GameWindow
         SoundManager.Destroy();
         PhysicsManager.Destroy();
         ImGuiController.Destroy();
+        Log.Information("End");
         Log.CloseAndFlush();
     }
 }

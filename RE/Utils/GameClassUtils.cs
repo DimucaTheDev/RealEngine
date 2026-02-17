@@ -19,6 +19,7 @@ using RE.Utils;
 using Serilog;
 using Serilog.Events;
 using Serilog.Sinks.File.GzArchive;
+using Serilog.Sinks.SystemConsole.Themes;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
@@ -122,6 +123,32 @@ namespace RE.Core
             Directory.CreateDirectory("Engine/Logs");
             File.Delete("Engine/Logs/Latest.log");
 
+            var ansiConsoleTheme = new AnsiConsoleTheme(new Dictionary<ConsoleThemeStyle, string>
+            {
+                [ConsoleThemeStyle.Text] = "\u001B[38;5;15m",
+                [ConsoleThemeStyle.SecondaryText] = "\u001B[38;5;7m",
+                [ConsoleThemeStyle.TertiaryText] = "\u001B[38;5;8m",
+
+                [ConsoleThemeStyle.Invalid] = "\u001B[38;5;11m",
+                [ConsoleThemeStyle.Null] = "\u001B[38;5;12m",
+                [ConsoleThemeStyle.Name] = "\u001B[38;5;7m",
+                [ConsoleThemeStyle.String] = "\u001B[38;5;14m",
+                [ConsoleThemeStyle.Number] = "\u001B[38;5;13m",
+                [ConsoleThemeStyle.Boolean] = "\u001B[38;5;12m",
+                [ConsoleThemeStyle.Scalar] = "\u001B[38;5;10m",
+
+                [ConsoleThemeStyle.LevelVerbose] = "\u001B[38;5;7m",
+                [ConsoleThemeStyle.LevelDebug] = "\u001B[38;5;7m",
+                [ConsoleThemeStyle.LevelInformation] = "\u001B[38;5;15m",
+                [ConsoleThemeStyle.LevelWarning] = "\u001B[38;5;11m",
+
+                [ConsoleThemeStyle.LevelError] =
+                    "\u001B[38;5;15m\u001B[48;5;9m",
+
+                [ConsoleThemeStyle.LevelFatal] =
+                    "\u001B[38;5;15m\u001B[48;5;9m"
+            });
+             
             Log.Logger = new LoggerConfiguration()
                 .MinimumLevel.Is(LogEventLevel.Verbose)
                 .Enrich.WithThreadName()
@@ -130,7 +157,8 @@ namespace RE.Core
                 .WriteTo.FileEx(
                     path: "Engine/Logs/Latest.log",
                     outputTemplate: consoleTemplate, restrictedToMinimumLevel: LogEventLevel.Debug)
-                .WriteTo.Console(outputTemplate: consoleTemplate, restrictedToMinimumLevel: minLevel)
+                .WriteTo.Console(outputTemplate: consoleTemplate, restrictedToMinimumLevel: minLevel,
+                    theme: ansiConsoleTheme, applyThemeToRedirectedOutput: true)
                 .CreateLogger();
 
             Log.Information("Hello, World!");
@@ -406,13 +434,27 @@ namespace RE.Core
             {
                 Action = new AttachDebuggerAction()
             };
-            Option<bool> consoleOption = new("--console", "-c")
+            Option<long> consoleOption = new Option<long>("--console", "-c")
             {
-                Description = "Allocate a new console.",
-                CustomParser = _ =>
+                Description = "Allocate a new console OR set output stream to specified handle.",
+                Arity = ArgumentArity.ZeroOrOne,
+                CustomParser = p =>
                 {
-                    WinApi.AllocConsole();
-                    return true;
+                    if (!p.Tokens.Any())
+                    {
+                        if (WinApi.AllocConsole())
+                        {
+                            SetupConsolePipes(IntPtr.Zero);
+                        }
+                        return 0;
+                    }
+                    var s = p.Tokens.Single().Value;
+                    long.TryParse(s, out long value);
+
+                    IntPtr handle = (IntPtr)value;
+                    SetupConsolePipes(handle);
+
+                    return value;
                 }
             };
             Option<string?> editorOption = new Option<string?>("--editor", "-e")
@@ -443,10 +485,28 @@ namespace RE.Core
 
             if (result.Errors.Any() || result.Action?.GetType() == typeof(HelpAction))
             {
+                Thread.Sleep(5000);
                 Environment.Exit(0);
                 return;
             }
             CommandParseResult = result;
+        }
+
+        static void SetupConsolePipes(IntPtr handle)
+        {
+            if (handle == IntPtr.Zero)
+            {
+                var stdOut = new StreamWriter(Console.OpenStandardOutput()) { AutoFlush = true };
+                Console.SetOut(stdOut);
+            }
+            else
+            {
+                Console.WriteLine(handle);
+                var safeHandle = new Microsoft.Win32.SafeHandles.SafeFileHandle(handle, false);
+                var writer = new StreamWriter(new FileStream(safeHandle, FileAccess.Write)) { AutoFlush = true };
+                Console.SetOut(writer);
+                Console.SetError(writer);
+            }
         }
 
         private class AttachDebuggerAction : SynchronousCommandLineAction

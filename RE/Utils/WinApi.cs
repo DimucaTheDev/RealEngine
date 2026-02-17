@@ -8,7 +8,11 @@ namespace RE.Utils
         public static extern bool SetCursorPos(int x, int y);
 
         [DllImport("kernel32.dll", SetLastError = true)]
-        public static extern int AllocConsole();
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool AllocConsole();
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        public static extern IntPtr GetStdHandle(int nStdHandle);
 
         [DllImport("kernel32.dll", SetLastError = true)]
         public static extern IntPtr LoadLibrary(string lpFileName);

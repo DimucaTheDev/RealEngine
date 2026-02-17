@@ -53,36 +53,19 @@ namespace RE.Core
 
             _textCurrentStep.Color = new Vector4(1f, 1f, 1f, 1f);
             _textSteps.Color = new Vector4(1f, 1f, 1f, 1f);
-
-            _textCurrentStep.StartRender();
-            _textSteps.StartRender();
-            _textTitle.StartRender();
-            _textTitleDemo.StartRender();
-
+              
             InitializationCompleted += () =>
             {
                 _initDone = true;
-                //_textCurrentStep.Text = "REAL ENGINE";
-                //_textCurrentStep.Position = new(10, 20);
-                //_textCurrentStep.Color = new Vector4(0, 0, 0, 0.345f);
-                _textSteps.StopRender();
-                _textCurrentStep.StopRender();
-                _textTitle.StopRender();
-                _textTitleDemo.StopRender();
-                _textPastSteps.ForEach(s => s.StopRender());
                 _isScreenShowing = false;
             };
         }
 
         private static void SetupScreen()
         {
-            _textPastSteps.ForEach(s => s.StartRender());
-            _textCurrentStep.StartRender();
-            _textSteps.StartRender();
-            _textTitle.StartRender();
-            _textTitleDemo.StartRender();
             _isScreenShowing = true;
         }
+
         //todo: AddAsyncStep
         public static void AddStep((string label, Action action) step)
         {
@@ -95,7 +78,7 @@ namespace RE.Core
         {
             if (!_initDone)
             {
-                if(!_isScreenShowing)
+                if (!_isScreenShowing)
                     SetupScreen();
 
                 if (_shouldExecuteAction)

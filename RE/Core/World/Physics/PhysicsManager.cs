@@ -4,6 +4,7 @@ using RE.Core.Assets;
 using RE.Core.Scripting;
 using RE.Core.World.Components;
 using RE.Core.World.Components.Physics;
+using RE.Debug;
 using RE.Utils;
 using Log = Serilog.Log;
 using SceneEditor = RE.Editor.SceneEditor;
@@ -168,7 +169,9 @@ namespace RE.Core.World.Physics
                 return;
             if (!SceneEditor.Enabled)
             {
-                DynamicsWorld.StepSimulation(deltaTime, EnableSimulation ? 5 : 0, deltaTime);
+                var renderProfiler = RenderProfiler.StartNew("physics");
+                DynamicsWorld.StepSimulation(deltaTime, EnableSimulation ? 5 : 0);
+                renderProfiler.Stop();
             }
         }
 

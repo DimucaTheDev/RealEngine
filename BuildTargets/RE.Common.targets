@@ -1,13 +1,8 @@
-<Project>
-	<ItemGroup>
-		<AssemblyAttribute Include="RE.Utils.BuildDateAttribute">
-			<_Parameter1>$([System.DateTime]::UtcNow.ToString("yyyyMMddHHmmss"))</_Parameter1>
-		</AssemblyAttribute>
-	</ItemGroup> 
-
+<Project> 
 	<PropertyGroup>
+		<ExeName>RE-Demo-App</ExeName>
 		<Version>0.1+dev</Version>
-		<ApplicationIcon>../RealEngine3.ico</ApplicationIcon>
+		<ApplicationIcon>../RealEngine.ico</ApplicationIcon>
 		<Title>Real Engine</Title>
 		<IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
 		<Authors>DimucaTheDev</Authors>
