@@ -8,6 +8,7 @@
 		<Authors>DimucaTheDev</Authors>
 		<Company>LEFT2.DEV</Company>
 		<Product>Real Engine</Product>
+		<NoWarn>CS1591</NoWarn>
 		<PackageProjectUrl>https://github.com/DimucaTheDev/RealEngine</PackageProjectUrl>
 		<Description>REAL Engine!!!!!! A replacement for Unreal Engine 7</Description>
 	</PropertyGroup>

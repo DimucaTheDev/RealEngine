@@ -1,5 +1,4 @@
-﻿<Project>
-	<Import Project="RE.Common.targets" />
+﻿<Project> 
 	<PropertyGroup>
 		<PubDir>$([System.IO.Path]::GetFullPath('ProductionBuild\'))</PubDir>
 		<TaskDll>..\RE.BuildTask\bin\RE.BuildTask.dll</TaskDll>

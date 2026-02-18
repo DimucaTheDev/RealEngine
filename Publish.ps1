@@ -1,1 +1,1 @@
-dotnet msbuild -t:BuildAll BuildTargets\RE.Publish.targets
+dotnet msbuild -t:BuildAll -v:d BuildTargets\RE.Publish.targets
