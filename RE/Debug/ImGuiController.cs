@@ -95,7 +95,7 @@ internal static class ImGuiController
     /// <summary>
     ///     Renders the ImGui draw list data.
     /// </summary>
-    public static void Render()
+    public static unsafe void Render()
     {
         var io = ImGui.GetIO();
 
@@ -109,6 +109,22 @@ internal static class ImGuiController
             ImGui.UpdatePlatformWindows();
             ImGui.RenderPlatformWindowsDefault();
         }
+
+        var platformIO = ImGui.GetPlatformIO();
+
+        IntPtr mainHwnd = (IntPtr)platformIO.Viewports[0].PlatformHandleRaw;
+
+        for (int i = 1; i < platformIO.Viewports.Size; i++)
+        {
+            var vp = platformIO.Viewports[i];
+
+            IntPtr childHwnd = (IntPtr)vp.PlatformHandleRaw;
+            if (childHwnd == IntPtr.Zero || childHwnd == mainHwnd)
+                continue;
+
+            WinApi.HideFromTaskbar(childHwnd, mainHwnd);
+        }
+
 
         Game.Instance.MakeCurrent();
     }

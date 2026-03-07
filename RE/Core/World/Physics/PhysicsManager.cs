@@ -1,6 +1,7 @@
 ﻿using BulletSharp;
 using OpenTK.Mathematics;
 using RE.Core.Assets;
+using RE.Core.Initializing;
 using RE.Core.Scripting;
 using RE.Core.World.Components;
 using RE.Core.World.Components.Physics;

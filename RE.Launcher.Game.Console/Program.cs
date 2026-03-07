@@ -12,7 +12,7 @@ if (!File.Exists(args.FirstOrDefault() ?? exeName))
 {
     var pName = Process.GetCurrentProcess().ProcessName;
     Console.WriteLine("Usage:");
-    Console.WriteLine($"\t{pName}");
+    Console.WriteLine($"\t{pName} [{exeName}]");
     Console.WriteLine($"\t{pName} <Engine Exe> [args...]");
     return -1;
 }

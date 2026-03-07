@@ -1,4 +1,4 @@
-﻿using RE.Core;
+﻿using RE.Core.Initializing;
 using RE.Core.PluginSystem;
 using Serilog;
 using Serilog.Core;
@@ -21,7 +21,11 @@ namespace TestPlugin
         public override void OnLoad()
         {
             Log.Information("Loading testing plugin omg!");
-            Initializer.AddStep(("plugin loading!", () => Thread.Sleep(100)));
+            Initializer.AddStep(new SyncInitializingTask()
+            {
+                Label = "plugin loading!",
+                Action = () => Thread.Sleep(100)
+            });
         }
     }
 }

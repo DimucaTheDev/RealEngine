@@ -38,11 +38,9 @@ public class RenderManager
 
     public static void Init()
     {
-        Renderables.Clear();
-        FrustumRenderer.Clear();
-        Initializer.InitializationCompleted += () => FrustumRenderer.StartRender();
         foreach (RenderLayer layer in Enum.GetValues(typeof(RenderLayer)))
             Renderables[layer] = new Dictionary<Type, List<Renderable>>();
+        FrustumRenderer.StartRender();
     }
     public static void AddRenderable<T>(T renderable) where T : Renderable
     {

@@ -16,6 +16,6 @@
 
 
 	<Target Name="PostBuild" AfterTargets="Build">
-		<Copy SourceFiles="$(TargetDir)$(TargetFileName)" DestinationFiles="$(SolutionDir)RE\Dll\PLUGINS\$(TargetFileName)" />
+		<Copy SourceFiles="$(TargetDir)$(TargetFileName)" DestinationFiles="$(SolutionDir)RE\Engine\Plugins\$(TargetFileName)" />
 	</Target>
 </Project>

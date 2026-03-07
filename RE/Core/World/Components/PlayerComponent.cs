@@ -80,7 +80,6 @@ namespace RE.Core.World.Components
                 new(0, 5, 0.0f),
                 new(0, 5, 0.0f),
                 new(0, 5, 0.0f));
-
             im = new ImageRenderer(StaticTexture.CreateMonoColorTexture((.1f, 0.1f, 0.1f, 1)), new Vector2(0, 0), (3000, 3000));
             im.StartRender();
         }
@@ -103,13 +102,18 @@ namespace RE.Core.World.Components
             else if (d <= 1)
             {
                 d += Time.DeltaTime / 3;
-                im.ReplaceImage(
-                    StaticTexture.CreateMonoColorTexture(Vector4.Lerp(new Vector4(.1f, 0.1f, 0.1f, 1), new Vector4(1, 1, 1, 0),
-                        Remap(d, 0.1f, 1, 0, 1))),
-                    true);
+                var color = Vector4.Lerp(
+                    new Vector4(.1f, 0.1f, 0.1f, 1),
+                    new Vector4(1, 1, 1, 0),
+                    Remap(d, 0.1f, 1, 0, 1));
+
+                im.ReplaceImage(StaticTexture.CreateMonoColorTexture(color), true);
             }
             else
-            { im.StopRender(); }
+            {
+                im.StopRender(); 
+            }
+            
 
             Camera cam = _camera;
 
@@ -127,9 +131,7 @@ namespace RE.Core.World.Components
 
             var deltaX = Mouse.Delta.X;
             var deltaY = -Mouse.Delta.Y;
-
-            new Vector2(mouseX, mouseY);
-
+            
             if (FirstMove)
             {
                 FirstMove = false;

@@ -10,6 +10,7 @@ using OpenTK.Windowing.Desktop;
 using RE.Audio;
 using RE.Core.Assets;
 using RE.Core.Assets.Providers;
+using RE.Core.Initializing;
 using RE.Core.Input;
 using RE.Core.PluginSystem;
 using RE.Core.Scripting;
@@ -87,7 +88,7 @@ internal partial class Game : GameWindow
                 Title = $"{ProductName} {Version}",
                 ClientSize = new Vector2i(width, height),
                 Location = new Vector2i(Screen.PrimaryScreen!.Bounds.Width / 2 - width / 2, Screen.PrimaryScreen.Bounds.Height / 2 - height / 2),
-                WindowState = WindowState.Normal
+                StartVisible = false
             });
         Instance = game;
 
@@ -109,7 +110,7 @@ internal partial class Game : GameWindow
         if (Renderdoc.IsAvailable)
             Log.Information("RenderDoc available: {Version}", Renderdoc.Version);
 
-        game.Run(); 
+        game.Run();
     }
 
     protected override unsafe void OnLoad()
@@ -133,17 +134,26 @@ internal partial class Game : GameWindow
         RenderManager.Init();
         Time.Init();
         Camera.Init();
-        ImGuiController.Init();
-        Initializer.Init();
+        ImGuiController.Init(); 
         DebugOverlay.Init();
         LineRenderer.Main!.StartRender();
         ConsoleWindow.Init();
         SoundManager.Init();
         PhysicsManager.Init();
+        Initializer.AddStep(new AsyncInitializingTask()
+        {
+            Action = () =>
+            {
+                Thread.Sleep(3000);
+            }
+        });
         SceneEditor.Instance = new();
         CommandHandler.RegisterAllCommands();
         CommandHandler.ExecuteCommand("source assets/cfg/default.cfg");
-        
+
+        IsVisible = true;
+        WindowState = WindowState.Normal;
+
         base.OnLoad();
     }
 
@@ -215,10 +225,11 @@ internal partial class Game : GameWindow
 
         GL.ClearColor(Color.Black);
         GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
-
-        GL.DepthFunc(DepthFunction.Lequal);
+         
         GL.Enable(EnableCap.DepthTest);
         GL.Enable(EnableCap.Blend);
+        GL.DepthFunc(DepthFunction.Lequal);
+        GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
         GL.PolygonMode(TriangleFace.FrontAndBack, Wireframe ? PolygonMode.Line : PolygonMode.Fill);
 
         RenderManager.RenderAll(args);
@@ -295,6 +306,10 @@ internal partial class Game : GameWindow
             if (SceneEditor.ShowExitConfirmationModal)
                 return;
             SceneEditor.ShowExitConfirmationModal = true;
+            unsafe
+            {
+                WinApi.StartFlashing((IntPtr)Game.Instance.WindowPtr);
+            }
             e.Cancel = true;
         }
     }

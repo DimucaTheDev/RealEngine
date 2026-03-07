@@ -201,7 +201,7 @@ namespace RE.Editor
                     }
                 }
             }
-            
+
             if (SceneManager.CurrentScene == null!)
                 return;
 
@@ -246,6 +246,10 @@ namespace RE.Editor
                         CloseCurrentPopup();
                         _exitButtonWait = 0;
                         ShowExitConfirmationModal = false;
+                        unsafe
+                        {
+                            WinApi.StopFlashing((IntPtr)Game.Instance.WindowPtr);
+                        }
                     }
 
                     EndPopup();
@@ -300,6 +304,10 @@ namespace RE.Editor
                     if (MenuItem("Exit"))
                     {
                         ShowExitConfirmationModal = true;
+                        unsafe
+                        {
+                            WinApi.StartFlashing((IntPtr)Game.Instance.WindowPtr);
+                        }
                     }
                     EndMenu();
                 }

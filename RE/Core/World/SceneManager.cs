@@ -3,6 +3,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using OpenTK.Mathematics;
 using RE.Core.Assets;
+using RE.Core.Initializing;
 using RE.Core.PluginSystem;
 using RE.Debug;
 using Serilog;
@@ -39,28 +40,31 @@ namespace RE.Core.World
         /// <param name="afterLoaded">Invoke action when scene finishes loading</param>
         public static void LoadScene(Scene scene, bool disposeCurrent, Action? afterLoaded)
         {
-            Initializer.AddStep(($"Loading level \"{scene.Name ?? "<unnamed>"}\"", () =>
+            Initializer.AddStep(new SyncInitializingTask()
             {
-                if (scene == CurrentScene)
+                Label = $"Loading level \"{scene.Name ?? "<unnamed>"}\"",
+                Action = () =>
                 {
-                    CurrentScene = Reload(scene);
-                    scene.Dispose();
-                }
-                else
-                {
-                    if (CurrentScene != null! && disposeCurrent)
+                    if (scene == CurrentScene)
                     {
-                        CurrentScene.Dispose();
+                        CurrentScene = Reload(scene);
+                        scene.Dispose();
+                    }
+                    else
+                    {
+                        if (CurrentScene != null! && disposeCurrent)
+                        {
+                            CurrentScene.Dispose();
+                        }
+
+                        CurrentScene = scene;
                     }
 
-                    CurrentScene = scene;
+                    afterLoaded?.Invoke();
+
+                    RenderProfiler.AddEvent($"scene '{scene.Name}'");
                 }
-
-                afterLoaded?.Invoke();
-
-                RenderProfiler.AddEvent($"scene '{scene.Name}'");
-            }
-            ));
+            });
         }
 
         /// <summary>

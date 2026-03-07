@@ -72,11 +72,6 @@ public class FloatingText : Renderable
         GL.BindVertexArray(0);
 
         _whiteStaticTexture = StaticTexture.CreateMonoColorTexture(Vector3.One);
-
-        // GL.Enable(EnableCap.DepthTest);
-        // GL.DepthFunc(DepthFunction.Less);
-        // GL.Enable(EnableCap.Blend);
-        // GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
     }
 
     public static void Render(string text, Vector3 pos)

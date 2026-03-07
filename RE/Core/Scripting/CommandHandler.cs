@@ -6,6 +6,7 @@ using System.Text.RegularExpressions;
 using OpenTK.Graphics.OpenGL;
 using RE.Audio;
 using RE.Core.Assets;
+using RE.Core.Initializing;
 using RE.Core.World;
 using RE.Debug.Overlay;
 using RE.Rendering;
@@ -324,8 +325,11 @@ namespace RE.Core.Scripting
             }, "Open or close debug overlay");
             RegisterSingleArgHandler("init_test", s =>
             {
-                Initializer.AddStep(("Testing!", () => { Thread.Sleep(3000); }
-                ));
+                Initializer.AddStep(new AsyncInitializingTask()
+                {
+                    Label = "Testing!",
+                    Action = () => { Thread.Sleep(3000); }
+                });
             }, "test: add dummy init step");
             RegisterHandler("gc", _ => GC.Collect(), "Call GC.Collect");
         }
