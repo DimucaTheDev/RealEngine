@@ -248,7 +248,7 @@ namespace RE.Core
 
         internal static WindowIcon? LoadIcon()
         {
-            var path = "Assets/RealEngine3.ico";
+            var path = "Assets/RealEngine.ico";
             if (!ContentManager.Exists(path))
             {
                 Log.Error("Icon file not found: {IconPath}", path);

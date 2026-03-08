@@ -71,7 +71,7 @@ namespace RE.Editor
 
         static SceneEditor()
         {
-            var iconPath = ($"Assets/RealEngine3.ico");
+            var iconPath = ($"Assets/RealEngine.ico");
 
             if (ContentManager.Exists(iconPath))
             {

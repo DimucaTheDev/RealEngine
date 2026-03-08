@@ -88,7 +88,8 @@ internal partial class Game : GameWindow
                 Title = $"{ProductName} {Version}",
                 ClientSize = new Vector2i(width, height),
                 Location = new Vector2i(Screen.PrimaryScreen!.Bounds.Width / 2 - width / 2, Screen.PrimaryScreen.Bounds.Height / 2 - height / 2),
-                StartVisible = false
+                StartVisible = false,
+                Vsync = VSyncMode.On
             });
         Instance = game;
 
