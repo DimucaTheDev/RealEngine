@@ -24,7 +24,7 @@ namespace TestPlugin
             Initializer.AddStep(new SyncInitializingTask()
             {
                 Label = "plugin loading!",
-                Action = () => Thread.Sleep(100)
+                Action = () => Thread.Sleep(1000)
             });
         }
     }

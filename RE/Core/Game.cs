@@ -142,9 +142,10 @@ internal partial class Game : GameWindow
         PhysicsManager.Init();
         Initializer.AddStep(new AsyncInitializingTask()
         {
+            Label = "Long action in Game.cs",
             Action = () =>
             {
-                Thread.Sleep(3000);
+                Thread.Sleep(2000);
             }
         });
         SceneEditor.Instance = new();
