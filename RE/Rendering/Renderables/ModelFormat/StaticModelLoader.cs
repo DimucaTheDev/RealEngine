@@ -1,6 +1,6 @@
 ﻿using System.Text;
 using OpenTK.Mathematics;
-using RE.Core.Assets;
+using RE.Core.Assets; 
 
 namespace RE.Rendering.Renderables.ModelFormat
 {

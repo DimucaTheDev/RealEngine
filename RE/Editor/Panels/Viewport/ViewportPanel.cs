@@ -2,8 +2,6 @@
 using Hexa.NET.ImGui;
 using Hexa.NET.ImGuizmo;
 using OpenTK.Mathematics;
-using OpenTK.Windowing.Common;
-using OpenTK.Windowing.GraphicsLibraryFramework;
 using RE.Core;
 using RE.Core.Input;
 using RE.Core.World;
@@ -47,6 +45,8 @@ namespace RE.Editor.Panels.Viewport
         private readonly Texture _physOptionsIcon;
         private readonly Texture _particlesOn;
         private readonly Texture _particlesOff;
+        private readonly Texture _startSimulation;
+        private readonly Texture _stopSimulation;
 
         private readonly string[] _options = ["World", "Local"];
 
@@ -70,6 +70,7 @@ namespace RE.Editor.Panels.Viewport
         private Vector2 _lockedGlobalPos;
         private Vector3 _cameraVelocity = Vector3.Zero;
         private Vector4 _viewportRect;
+        private string _sceneBeforeSimulation;
 
         public static bool CameraRotate;
 
@@ -79,22 +80,26 @@ namespace RE.Editor.Panels.Viewport
         {
             SetupBullet();
 
-            _cameraSprite = new(Vector3.Zero, "Assets/sprites/editor/camera.png", scale: 0.5f);
+            _cameraSprite = new(Vector3.Zero, "Assets/editor/sprites/camera.png", scale: 0.5f);
 
-            _translateIcon = new StaticTexture("assets/sprites/editor/translate.png");
-            _rotateIcon = new StaticTexture("assets/sprites/editor/rotate.png");
-            _scaleIcon = new StaticTexture("assets/sprites/editor/scale.png");
-            _lightOffIcon = new StaticTexture("assets/sprites/editor/lightOff.png");
-            _lightOnIcon = new StaticTexture("assets/sprites/editor/lightOn.png");
-            _skyboxOffIcon = new StaticTexture("assets/sprites/editor/skyboxOff.png");
-            _skyboxOnIcon = new StaticTexture("assets/sprites/editor/skyboxOn.png");
-            _axisOffIcon = new StaticTexture("assets/sprites/editor/axisOff.png");
-            _axisOnIcon = new StaticTexture("assets/sprites/editor/axisOn.png");
-            _gridOffIcon = new StaticTexture("assets/sprites/editor/gridOff.png");
-            _gridOnIcon = new StaticTexture("assets/sprites/editor/gridOn.png");
-            _physOptionsIcon = new AnimatedTexture([StaticTexture.CreateMissingTexture(4), StaticTexture.CreateMissingTexture(4, [0, 255, 0, 255])], 2);
-            _particlesOn = new StaticTexture("assets/sprites/editor/previewParticlesOn.png");
-            _particlesOff = new StaticTexture("assets/sprites/editor/previewParticlesOff.png");
+            _translateIcon = new StaticTexture("assets/editor/sprites/translate.png");
+            _rotateIcon = new StaticTexture("assets/editor/sprites/rotate.png");
+            _scaleIcon = new StaticTexture("assets/editor/sprites/scale.png");
+            _lightOffIcon = new StaticTexture("assets/editor/sprites/lightOff.png");
+            _lightOnIcon = new StaticTexture("assets/editor/sprites/lightOn.png");
+            _skyboxOffIcon = new StaticTexture("assets/editor/sprites/skyboxOff.png");
+            _skyboxOnIcon = new StaticTexture("assets/editor/sprites/skyboxOn.png");
+            _axisOffIcon = new StaticTexture("assets/editor/sprites/axisOff.png");
+            _axisOnIcon = new StaticTexture("assets/editor/sprites/axisOn.png");
+            _gridOffIcon = new StaticTexture("assets/editor/sprites/gridOff.png");
+            _gridOnIcon = new StaticTexture("assets/editor/sprites/gridOn.png");
+            _physOptionsIcon = new AnimatedTexture(
+            [StaticTexture.CreateMissingTexture(4),
+                StaticTexture.CreateMissingTexture(4, [0, 255, 0, 255])], 2);
+            _particlesOn = new StaticTexture("assets/editor/sprites/previewParticlesOn.png");
+            _particlesOff = new StaticTexture("assets/editor/sprites/previewParticlesOff.png");
+            _startSimulation = new StaticTexture("assets/editor/sprites/run.png");
+            _stopSimulation = new StaticTexture("assets/editor/sprites/stop.png");
         }
 
         private void SetupBullet()
@@ -535,6 +540,25 @@ namespace RE.Editor.Panels.Viewport
 
             SameLine(350);
 
+            if (ImageButton("##simulation", !SceneEditor.SimulationRunning ? _startSimulation : _stopSimulation,
+                    new Vector2(size, size)))
+            {
+                if (!SceneEditor.SimulationRunning)
+                {
+                    _sceneBeforeSimulation = SceneManager.SerializeScene(SceneManager.CurrentScene);
+                    SceneEditor.SimulationRunning = true;
+                }
+                else
+                {
+                    SceneManager.CurrentScene.Dispose();
+                    SceneManager.CurrentScene = SceneManager.DeserializeScene(_sceneBeforeSimulation);
+                    SceneEditor.SimulationRunning = false;
+                }
+            }
+            TextTooltip($"{(!SceneEditor.SimulationRunning ? "Start" : "Stop")} world simulation.\nScene will return to its original state after simulation stops.");
+
+            SameLine(400);
+
             if (ImageButton("##light", SceneEditor.PreviewLight ? _lightOnIcon : _lightOffIcon, new Vector2(size, size)))
                 SceneEditor.PreviewLight = !SceneEditor.PreviewLight;
             TextTooltip("Preview light on objects");
@@ -565,6 +589,7 @@ namespace RE.Editor.Panels.Viewport
             if (ImageButton("##particles", SceneEditor.PreviewParticles ? _particlesOn : _particlesOff, new Vector2(size, size)))
                 SceneEditor.PreviewParticles = !SceneEditor.PreviewParticles;
             TextTooltip("Update and render particles in editor.");
+
         }
 
         private void ShowPhysTooltip()
@@ -616,7 +641,7 @@ namespace RE.Editor.Panels.Viewport
             End();
 
             PopStyleColor();
-        } 
+        }
 
         private void MoveCamera()
         {

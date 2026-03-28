@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace RE.Utils
+﻿namespace RE.Utils
 {
     // Funny settings haha
     internal static class Fun

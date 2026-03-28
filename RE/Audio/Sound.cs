@@ -1,13 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Runtime.CompilerServices;
-using System.Text;
-using FMOD;
-using Hexa.NET.ImGui.Backends.Vulkan;
 using Serilog;
-using static BulletSharp.DiscreteCollisionDetectorInterface;
-using EventInstance = FMOD.Studio.EventInstance;
+using EventInstance = RE.Fmod.Studio.EventInstance;
+using RESULT = RE.Fmod.RESULT;
+using STOP_MODE = RE.Fmod.Studio.STOP_MODE;
 
 namespace RE.Audio
 {
@@ -43,7 +39,7 @@ namespace RE.Audio
 
             if (disposing)
             {
-                Check(_sound.stop(FMOD.Studio.STOP_MODE.IMMEDIATE));
+                Check(_sound.stop(STOP_MODE.IMMEDIATE));
             }
             Check(_sound.release());
 
@@ -54,7 +50,7 @@ namespace RE.Audio
         private static void Check(RESULT result, [CallerArgumentExpression(nameof(result))] string exp = "")
         {
             if (result != RESULT.OK)
-                Log.Error("{Expression}: {Result}", exp, Error.String(result));
+                Log.Error("{Expression}: {Result}", exp, Fmod.Error.String(result));
 
             System.Diagnostics.Debug.Assert(result == RESULT.OK, $"'{exp}' != {nameof(RESULT.OK)}");
         }

@@ -1,7 +1,8 @@
-﻿using OpenTK.Mathematics;
+﻿using Assimp;
+using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using RE.Core;
-using RE.Core.Scripting;
+using RE.Core.World;
 using RE.Debug;
 using RE.Editor;
 using RE.Utils;
@@ -147,10 +148,21 @@ public class RenderManager
         //});
 
         if (!SceneEditor.Enabled)
-            foreach (var s in RenderingComponents.ToList())
+        {
+            FrameProfiler.Begin("scene");
+            foreach (var s in RenderingComponents)
             {
+                if (SceneManager.SceneChanged)
+                {
+                    SceneManager.SceneChanged = false;
+                    return;
+                }
+                FrameProfiler.Begin(s.GetType().Name);
                 s.Render(args);
+                FrameProfiler.End();
             }
+            FrameProfiler.End();
+        }
 
         foreach (var kvp in Renderables)
         {
@@ -161,6 +173,7 @@ public class RenderManager
                 List<Renderable> list = pair.Value;
 
                 foreach (var renderable in list.ToList())
+                {
                     if (renderable.IsVisible)
                     {
                         if (renderable is ICullable { ShouldCull: true } cull)
@@ -170,10 +183,14 @@ public class RenderManager
                                 continue;
                             }
                         }
-
+                        if (SceneManager.SceneChanged)
+                        {
+                            SceneManager.SceneChanged = false;
+                            return;
+                        }
                         renderable.Render(args);
                     }
-
+                }
             }
         }
     }

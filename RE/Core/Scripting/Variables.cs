@@ -24,5 +24,11 @@
             GlobalVariables.TryGetValue(key, out var value);
             return value ?? null!;
         }
+
+        public static object? GetVariableOrDefault(string key, object? @default)
+        {
+            GlobalVariables.TryGetValue(key, out var value);
+            return value ?? @default;
+        }
     }
 }

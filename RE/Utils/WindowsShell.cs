@@ -97,7 +97,7 @@ namespace RE.Utils
                 return cachedId;
             }
 
-            var iconOverride = $"Assets/Sprites/IconOverride/{Path.GetExtension(extensionOrPath).Replace(".", "")}.png";
+            var iconOverride = $"Assets/Editor/ExtensionIconOverride/{Path.GetExtension(extensionOrPath).Replace(".", "")}.png";
             if (File.Exists(iconOverride))
             {
                 return LoadImageIcon(iconOverride);

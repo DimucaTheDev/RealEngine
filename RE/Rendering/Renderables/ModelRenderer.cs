@@ -4,11 +4,10 @@ using Assimp;
 using OpenTK.Graphics.OpenGL4;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
-using RE.Core;
 using RE.Core.Assets;
 using RE.Core.Input;
 using RE.Core.World;
-using RE.Rendering.Lightning;
+using RE.Rendering.Lighting;
 using RE.Rendering.Renderables.ModelFormat;
 using RE.Rendering.Text;
 using RE.Rendering.Texturing;
@@ -16,7 +15,7 @@ using RE.Utils;
 using Serilog;
 using StbImageSharp;
 using Keys = OpenTK.Windowing.GraphicsLibraryFramework.Keys;
-using Material = RE.Rendering.Lightning.Material;
+using Material = RE.Rendering.Lighting.Material;
 using PrimitiveType = OpenTK.Graphics.OpenGL4.PrimitiveType;
 using Quaternion = OpenTK.Mathematics.Quaternion;
 using Scene = Assimp.Scene;
@@ -111,7 +110,7 @@ namespace RE.Rendering.Renderables
 
             if (!(_modelLoaded = LoadModel(path)))
             {
-                _noModelSprite = new SpriteRenderer(Position, "Assets/Sprites/Editor/no_model.png");
+                _noModelSprite = new SpriteRenderer(Position, "Assets/Editor/Sprites/no_model.png");
                 _noModelText = new FloatingText($"[{Name}]\n{path}\n{_exception}", Position + new Vector3(0, .5f, 0), Font, true);
                 _noModelSprite.StartRender();
                 _noModelText.StartRender();

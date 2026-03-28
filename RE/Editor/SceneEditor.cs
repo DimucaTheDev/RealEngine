@@ -5,7 +5,6 @@ using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using Hexa.NET.ImGui;
 using OpenTK.Graphics.OpenGL;
-using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using RE.Audio;
 using RE.Core;
@@ -15,19 +14,17 @@ using RE.Core.PluginSystem;
 using RE.Core.Scripting;
 using RE.Core.Scripting.Attributes;
 using RE.Core.World;
-using RE.Debug.Overlay;
+using RE.Debug;
 using RE.Editor.Notification;
 using RE.Editor.Panels;
 using RE.Editor.Panels.Viewport;
 using RE.Rendering;
-using RE.Rendering.Renderables;
 using RE.Rendering.Texturing;
 using RE.Utils;
 using Serilog;
 using static Hexa.NET.ImGui.ImGui;
 using Image = System.Drawing.Image;
 using Vector2 = System.Numerics.Vector2;
-using Vector4 = System.Numerics.Vector4;
 
 namespace RE.Editor
 {
@@ -50,6 +47,7 @@ namespace RE.Editor
         public static bool PreviewLight, PreviewSkybox, ShowAxis = true, ShowGrid = true, PreviewParticles;
         public static GameObject? SelectedObject;
         public static bool ShowExitConfirmationModal = false;
+        public static bool SimulationRunning;
 
         private static readonly ImFontPtr _bigFont;
         private static readonly Texture LogoImage;
@@ -111,8 +109,8 @@ namespace RE.Editor
 
         public void Enable()
         {
-#if PRODUCTION || PROD // + RELEASE?
-            Log.Error("Scene Editor is disabled in production builds.");
+#if DISABLE_SCENE_EDITOR
+            Log.Error("Scene Editor is disabled.");
             return;
 #endif
 
@@ -186,21 +184,48 @@ namespace RE.Editor
 
         public override void Render(FrameEventArgs args)
         {
+            FrameProfiler.Begin("editor");
+            FrameProfiler.Begin("update");
             foreach (var obj in _scene.GameObjects)
             {
+                if (!obj.Components.Any())
+                    continue;
+
+                FrameProfiler.Begin(obj.Name ?? $"<{obj.Id}>");
                 foreach (var com in obj.Components)
                 {
                     // ReSharper disable once SuspiciousTypeConversion.Global
                     if (com is IEditorUpdate u)
                     {
+                        FrameProfiler.Begin(com.GetType().Name);
                         u.EditorUpdate(args);
-                    }
-                    if (com is IEditorRender r)
-                    {
-                        r.EditorRender(args);
+                        FrameProfiler.End();
                     }
                 }
+                FrameProfiler.End();
             }
+            FrameProfiler.End();
+
+            FrameProfiler.Begin("render");
+            foreach (var obj in _scene.GameObjects)
+            {
+                if (!obj.Components.Any())
+                    continue;
+
+                FrameProfiler.Begin(obj.Name ?? $"<{obj.Id}>");
+                foreach (var com in obj.Components)
+                {
+                    if (com is IEditorRender r)
+                    {
+                        FrameProfiler.Begin(com.GetType().Name);
+                        r.EditorRender(args);
+                        FrameProfiler.End();
+                    }
+                }
+                FrameProfiler.End();
+            }
+            FrameProfiler.End();
+
 
             if (SceneManager.CurrentScene == null!)
                 return;
@@ -214,6 +239,7 @@ namespace RE.Editor
             _consoleWindow.Render(args);
 
             ShowExitModalWindow();
+            FrameProfiler.End();
         }
 
         private double _exitButtonWait;
@@ -527,8 +553,8 @@ namespace RE.Editor
         private static string _valStr = "";
         private static int _hash;
 
-
         private bool _popupOpened;
+
         #endregion
 
         private string AddSpacesToCamelCase(string text)

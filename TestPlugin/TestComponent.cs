@@ -1,5 +1,6 @@
 ﻿using System.Text.Json.Nodes;
 using RE.Core;
+using RE.Core.Logging;
 using RE.Core.World.Components;
 using RE.Editor.Notification;
 

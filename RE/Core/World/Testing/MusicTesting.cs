@@ -1,8 +1,6 @@
 ﻿using System.Text.Json.Nodes;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
-using RE.Audio;
-using RE.Core.Scripting;
 using RE.Core.World.Components;
 using RE.Rendering;
 

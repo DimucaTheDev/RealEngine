@@ -6,12 +6,10 @@
 /* https://fmod.com/docs/2.02/api/core-api.html                                             */
 /* ======================================================================================== */
 
-using System;
-using System.Text;
 using System.Runtime.InteropServices;
-using System.Collections.Generic;
+using System.Text;
 
-namespace FMOD
+namespace RE.Fmod
 {
     /*
         FMOD version number.  Check this against FMOD::System::getVersion / System_GetVersion

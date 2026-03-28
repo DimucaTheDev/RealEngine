@@ -1,17 +1,6 @@
-﻿using System.Runtime.CompilerServices;
-using Hexa.NET.ImGui;
-using Hexa.NET.ImGuizmo;
-using OpenTK.Audio.OpenAL;
-using OpenTK.Graphics.OpenGL;
-using OpenTK.Mathematics;
-using OpenTK.Windowing.Common;
-using OpenTK.Windowing.GraphicsLibraryFramework;
-using RE.Core;
+﻿using OpenTK.Mathematics;
 using RE.Core.Scripting;
-using RE.Core.World;
-using RE.Core.World.Components;
-using RE.Core.World.Components.Physics;
-using RE.Editor.Panels.Viewport;
+using RE.Utils;
 using SceneEditor = RE.Editor.SceneEditor;
 
 namespace RE.Rendering;

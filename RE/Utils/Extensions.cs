@@ -5,9 +5,6 @@ using OpenTK.Mathematics;
 using RE.Core;
 using RE.Core.World.Physics;
 using RE.Rendering;
-using Quaternion = System.Numerics.Quaternion;
-using Vector2 = System.Numerics.Vector2;
-using Vector3 = System.Numerics.Vector3;
 using Vector4 = System.Numerics.Vector4;
 
 namespace RE.Utils

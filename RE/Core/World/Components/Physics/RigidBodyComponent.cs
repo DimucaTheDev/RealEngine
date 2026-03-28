@@ -2,7 +2,6 @@
 using BulletSharp;
 using BulletSharp.Math;
 using OpenTK.Windowing.Common;
-using RE.Core.Scripting;
 using RE.Core.Scripting.Attributes;
 using RE.Core.World.Physics;
 using RE.Editor;

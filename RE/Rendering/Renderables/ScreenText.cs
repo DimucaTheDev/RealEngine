@@ -2,9 +2,9 @@
 using OpenTK.Graphics.OpenGL;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
-using RE.Core;
 using RE.Core.Assets;
 using RE.Rendering.Text;
+using RE.Utils;
 
 namespace RE.Rendering.Renderables;
 

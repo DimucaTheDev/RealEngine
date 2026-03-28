@@ -28,6 +28,9 @@
   <Project Path="RE.BuildTask/RE.BuildTask.csproj" Id="bab6b8f1-e6e8-4193-bcb5-1e431fcecc16">
     <BuildType Solution="Production|*" Project="Release" />
   </Project>
+  <Project Path="RE.Fmod/RE.Fmod.csproj" Id="04f0a6f3-2599-4f86-8d63-a52e177afa14">
+    <BuildType Solution="Production|*" Project="Release" />
+  </Project>
   <Project Path="RE/RE.csproj">
     <BuildType Solution="Production|Any CPU" Project="Debug" />
     <Platform Solution="*|x64" Project="x64" />

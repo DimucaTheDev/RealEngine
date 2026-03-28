@@ -53,7 +53,7 @@ namespace RE.Core
                     obj.Add(property.Name, v.ToJsonArray());
                 else
                     obj.Add(property.Name, JsonValue.Create(value));
-
+                
             }
 
             return obj;

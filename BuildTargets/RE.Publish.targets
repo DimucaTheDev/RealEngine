@@ -3,10 +3,10 @@
 		<PubDir>$([System.IO.Path]::GetFullPath('ProductionBuild\'))</PubDir>
 		<TaskDll>..\RE.BuildTask\bin\RE.BuildTask.dll</TaskDll>
 
-		<GenerateEditorExecutable>False <!-- Use -e arg instead --></GenerateEditorExecutable>
+		<GenerateEditorExecutable>False <!-- Use -e arg instead --> </GenerateEditorExecutable>
 		<GenerateConsoleExecutable>True</GenerateConsoleExecutable>
 
-		<DefineConstants>$(DefineConstants);PROD;PRODUCTION</DefineConstants>
+		<DefineConstants>$(DefineConstants);PROD;PRODUCTION;DISABLE_SCENE_EDITOR</DefineConstants>
 		<Optimize>True</Optimize>
 		<ApplicationIcon>../RealEngineYB.ico</ApplicationIcon>
 	</PropertyGroup>

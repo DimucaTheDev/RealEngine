@@ -208,7 +208,7 @@
       "components": {
         "SpriteComponent": {
           "args": [
-            "Assets/sprites/editor/blank.png"
+            "assets/editor/sprites/blank.png"
           ]
         },
         "BillboardTextComponent": {

@@ -12,7 +12,15 @@ namespace RE.Core.World
     /// </summary>
     public class GameObjectList(Scene scene) : IEnumerable<GameObject>
     {
-        private readonly List<GameObject> _objects = new();
+        internal readonly List<GameObject> _objects = new();
+
+        public GameObject FindByTag(string tag) =>
+            _objects.First(g => g.Tag!.Equals(tag, StringComparison.InvariantCultureIgnoreCase));
+        public GameObject FindByName(string name) =>
+            _objects.First(g => g.Name!.Equals(name, StringComparison.InvariantCultureIgnoreCase));
+
+        public IEnumerator<GameObject> GetEnumerator() => _objects.GetEnumerator();
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
         public void Add(GameObject g, bool doNotCallStart = false)
         {
@@ -22,19 +30,27 @@ namespace RE.Core.World
                 return;
             }
 
-            _objects.Add(g);
+            SceneManager._objectsToAdd.Add(g);
             g.Scene = scene;
 
             if (!doNotCallStart)
             {
-                //todo: set g.Scene 
-                foreach (var component in g.Components.ToList())
+                foreach (var component in g.Components)
                 {
                     component.Start();
                 }
             }
 
             CreateVpObject(g);
+        }
+
+        public void Remove(GameObject g)
+        {
+            foreach (var child in g.Children.ToList())
+            {
+                Remove(child);
+            }
+            SceneManager._objectsToRemove.Add(g);
         }
 
         private void CreateVpObject(GameObject g)
@@ -78,33 +94,10 @@ namespace RE.Core.World
             ViewportPanel.CollisionWorld.AddCollisionObject(g.ViewportObject);
         }
 
-        public void Remove(GameObject g)
-        {
-            foreach (var child in g.Children.ToList())
-            {
-                Remove(child);
-            }
-            foreach (var component in g.Components.ToList())
-            {
-                g.Components.Remove(component);
-            }
-            _objects.Remove(g);
-            ViewportPanel.CollisionWorld.RemoveCollisionObject(g.ViewportObject);
-            g.ViewportObject.Dispose();
-        }
-
-        public GameObject FindByTag(string tag) =>
-            _objects.First(g => g.Tag!.Equals(tag, StringComparison.InvariantCultureIgnoreCase));
-        public GameObject FindByName(string name) =>
-            _objects.First(g => g.Name!.Equals(name, StringComparison.InvariantCultureIgnoreCase));
-
-        public IEnumerator<GameObject> GetEnumerator() => _objects.GetEnumerator();
-        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
-
         private static BulletSharp.Math.Vector3[] ConvertToBulletVectors(float[] data, Vector3 scale)
         {
             if (data.Length % 3 != 0)
-                throw new ArgumentException("PhysicsVertices should be multiple of 3");
+                throw new ArgumentException("PhysicsVertices must be multiple of 3");
 
             var result = new BulletSharp.Math.Vector3[data.Length / 3];
             for (int i = 0; i < result.Length; i++)

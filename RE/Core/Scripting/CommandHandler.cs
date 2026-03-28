@@ -1,18 +1,17 @@
 ﻿using System.Collections;
 using System.Collections.Immutable;
 using System.Globalization;
-using System.Text;
 using System.Text.RegularExpressions;
-using OpenTK.Graphics.OpenGL;
+using OpenTK.Windowing.Common;
 using RE.Audio;
 using RE.Core.Assets;
 using RE.Core.Initializing;
+using RE.Core.Logging;
 using RE.Core.World;
-using RE.Debug.Overlay;
+using RE.Debug;
 using RE.Rendering;
 using RE.Utils;
 using Serilog;
-using SixLabors.ImageSharp;
 using SceneEditor = RE.Editor.SceneEditor;
 
 namespace RE.Core.Scripting
@@ -188,6 +187,11 @@ namespace RE.Core.Scripting
             }, "Set a value to the variable");
             RegisterHandler("vars", _ =>
             {
+                if (!Variables.GlobalVariables.Any())
+                {
+                    Log.Information("Nothing to show");
+                    return;
+                }
                 int l = Math.Max(15, Variables.GlobalVariables.Keys.Select(s => s.Length).Max());
                 int valueWidth = 15;
                 int totalWidth = l + valueWidth + 1;
@@ -206,7 +210,7 @@ namespace RE.Core.Scripting
             }, "Get all variables in formatted table");
             RegisterHandler("clear", _ =>
             {
-                GameLogger.Log = new StringBuilder();
+                GameLogger.Log.Clear();
             }, "Clear the log");
             RegisterHandler("sound", list =>
             {
@@ -241,7 +245,7 @@ namespace RE.Core.Scripting
                     });*/
                 }
             }, "Play or stop sound. Enter command with no arguments to see more info");
-            RegisterHandler("exit", _ => Game.Instance.Close(), "Close the game");
+            RegisterHandler("exit", _ => Utils.Game.Instance.Close(), "Close the game");
             RegisterHandler("source", list =>
             {
                 if (list.Count == 0)
@@ -292,7 +296,7 @@ namespace RE.Core.Scripting
                     Log.Information("Current level: {Level}", SceneManager.CurrentScene.Name ?? "<unnamed>");
                 else
                 {
-                    SceneEditor.Instance?.Disable();
+                    //SceneEditor.Instance?.Disable();
                     var name = args[0];
                     if (!ContentManager.Exists($"assets/maps/{name}/data.json"))
                     {
@@ -332,6 +336,24 @@ namespace RE.Core.Scripting
                 });
             }, "test: add dummy init step");
             RegisterHandler("gc", _ => GC.Collect(), "Call GC.Collect");
+            RegisterHandler("vsync", args =>
+            {
+                if (args.Count == 0)
+                {
+                    Log.Information("V-Sync {State}", Utils.Game.Instance.VSync == VSyncMode.Off ? "OFF" : "ON");
+                    return;
+                }
+
+                if (args[0] is not ("enable" or "disable"))
+                {
+                    Log.Error("Usage: {Usage}", "vsync enable|disable");
+                    return;
+                }
+                Utils.Game.Instance.VSync = args[0] == "enable" ? VSyncMode.On : VSyncMode.Off;
+                Log.Information("V-Sync {State}", Utils.Game.Instance.VSync == VSyncMode.Off ? "OFF" : "ON");
+
+            }, "Enable or disable V-Sync");
+            RegisterHandler("fps", list => { Game.Instance.UpdateFrequency = int.Parse(list.First()); }, "Set max frame rate");
         }
 
         private static string Format(object? obj)

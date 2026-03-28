@@ -1,6 +1,6 @@
 ﻿using RE.Editor.Panels.Viewport;
 using RE.Rendering;
-using RE.Rendering.Lightning;
+using RE.Rendering.Lighting;
 
 namespace RE.Core.World
 {

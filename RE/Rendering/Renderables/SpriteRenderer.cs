@@ -28,7 +28,7 @@ namespace RE.Rendering.Renderables
         public bool LockRotationY { get; set; } = false;
         public bool LockRotationZ { get; set; } = false;
 
-        public SpriteRenderer(Vector3 position, string spritePath = "Assets/Sprites/Editor/blank.png",
+        public SpriteRenderer(Vector3 position, string spritePath = "Assets/Editor/Sprites/blank.png",
             bool constantSize = false, float scale = 1f)
         {
             Position = position;

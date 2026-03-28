@@ -1,26 +1,27 @@
 ﻿using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using FMOD;
-using FMOD.Studio;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
-using RE.Core;
 using RE.Core.Assets;
+using RE.Fmod.Studio;
 using RE.Rendering;
 using RE.Utils;
 using Serilog;
-using ADVANCEDSETTINGS = FMOD.Studio.ADVANCEDSETTINGS;
-using Result = FMOD.RESULT;
-using FmodBank = FMOD.Studio.Bank;
-using INITFLAGS = FMOD.Studio.INITFLAGS;
+using DEBUG_CALLBACK = RE.Fmod.DEBUG_CALLBACK;
+using DEBUG_FLAGS = RE.Fmod.DEBUG_FLAGS;
+using DEBUG_MODE = RE.Fmod.DEBUG_MODE;
+using Result = RE.Fmod.RESULT;
+using FmodBank = RE.Fmod.Studio.Bank;
+using LOAD_BANK_FLAGS = RE.Fmod.Studio.LOAD_BANK_FLAGS;
+using STOP_MODE = RE.Fmod.Studio.STOP_MODE;
 
 namespace RE.Audio
 {
     public static unsafe class SoundManager
     {
-        private static FMOD.System _fmodSystem;
-        private static FMOD.Studio.System _studioSystem;
+        private static Fmod.System _fmodSystem;
+        private static Fmod.Studio.System _studioSystem;
 
         public const int MaxChannels = 256;
 
@@ -47,7 +48,7 @@ namespace RE.Audio
         /// </summary>
         public static void Init()
         {
-            Check(FMOD.Debug.Initialize(
+            Check(Fmod.Debug.Initialize(
                  DEBUG_FLAGS.ERROR | DEBUG_FLAGS.WARNING,
                 DEBUG_MODE.CALLBACK,
                 _fmodDebugCallback
@@ -55,8 +56,8 @@ namespace RE.Audio
 
             var studioFlags = Debugger.IsAttached ? INITFLAGS.LIVEUPDATE : INITFLAGS.NORMAL;
 
-            Check(FMOD.Studio.System.create(out _studioSystem));
-            Check(_studioSystem.initialize(MaxChannels, studioFlags, FMOD.INITFLAGS.NORMAL, IntPtr.Zero));
+            Check(Fmod.Studio.System.create(out _studioSystem));
+            Check(_studioSystem.initialize(MaxChannels, studioFlags, INITFLAGS.NORMAL, IntPtr.Zero));
             Check(_studioSystem.getCoreSystem(out _fmodSystem));
             Check(_fmodSystem.getVersion(out uint version));
 
@@ -150,10 +151,10 @@ namespace RE.Audio
         [StackTraceHidden]
         private static void Check(Result result, [CallerArgumentExpression(nameof(result))] string exp = "")
         {
-            if (result != RESULT.OK)
-                Log.Error("[FMOD] Check failed: {Expression} returned {Result}", exp, Error.String(result));
+            if (result != Result.OK)
+                Log.Error("[FMOD] Check failed: {Expression} returned {Result}", exp, Fmod.Error.String(result));
 
-            System.Diagnostics.Debug.Assert(result == RESULT.OK, $"'{exp}' != {nameof(RESULT.OK)}");
+            System.Diagnostics.Debug.Assert(result == Result.OK, $"'{exp}' != {nameof(Result.OK)}");
         }
 
         public static void Destroy()

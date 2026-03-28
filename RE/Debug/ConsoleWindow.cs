@@ -1,18 +1,16 @@
 ﻿using System.Numerics;
 using System.Text;
-using System.Text.RegularExpressions;
 using Hexa.NET.ImGui;
 using OpenTK.Windowing.Common;
-using RE.Core;
-using RE.Core.Input;
+using RE.Core.Logging;
 using RE.Core.Scripting;
 using RE.Editor;
 using RE.Rendering;
 using RE.Utils;
 using Serilog;
-using Keys = OpenTK.Windowing.GraphicsLibraryFramework.Keys;
+using Serilog.Events;
 
-namespace RE.Debug.Overlay
+namespace RE.Debug
 {
     public class ConsoleWindow : Renderable
     {
@@ -29,8 +27,7 @@ namespace RE.Debug.Overlay
         private static readonly Vector4 _colorInfo = new(0.75f, 0.75f, 0.75f, 1.0f);
         private static readonly Vector4 _colorWarning = new(1.0f, 1.0f, 0.0f, 1.0f);
         private static readonly Vector4 _colorError = new(1.0f, 0.4f, 0.4f, 1.0f);
-
-        private static List<string> _commandHistory = new();
+        private static readonly List<string> _commandHistory = new();
 
         private bool _focusNextFrame = false;
         private bool _showInfo = true;
@@ -38,6 +35,7 @@ namespace RE.Debug.Overlay
         private bool _showError = true;
         private int _historyIndex = -1;
         private string _savedInput = string.Empty;
+        private int _infoCount, _warnCount, _errorCount;
 
         public required string Id;
 
@@ -61,19 +59,18 @@ namespace RE.Debug.Overlay
                             IsVisible = false;
                     }
 
-                    var log = GameLogger.Log.ToString();
-                    ImGui.Checkbox($"Info ({Regex.Matches(log, "INF]", RegexOptions.Compiled).Count})", ref _showInfo);
+                    var log = GameLogger.Log;
+                    ImGui.Checkbox($"Info ({log.Count(s => s.Level is LogEventLevel.Information)})", ref _showInfo);
                     ImGui.SameLine();
-                    ImGui.Checkbox($"Warning ({Regex.Matches(log, "WRN]", RegexOptions.Compiled).Count})", ref _showWarn);
+                    ImGui.Checkbox($"Warning ({log.Count(s => s.Level is LogEventLevel.Warning)})", ref _showWarn);
                     ImGui.SameLine();
-                    ImGui.Checkbox($"Error ({Regex.Matches(log, "ERR]", RegexOptions.Compiled).Count})", ref _showError);
+                    ImGui.Checkbox($"Error ({log.Count(s => s.Level is LogEventLevel.Error or LogEventLevel.Fatal)})", ref _showError);
 
                     ImGui.Separator();
 
                     float footerHeightToReserve = ImGui.GetFrameHeightWithSpacing();
 
-                    var w = (bool)Variables.GetVariable("wrapConsole")!;
-                    string[] logLines = log.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries);
+                    var w = (bool)Variables.GetVariableOrDefault("wrapConsole", false)!;
 
                     if (ImGui.BeginChild("ScrollRegion",
                             new Vector2(0, -footerHeightToReserve),
@@ -89,15 +86,27 @@ namespace RE.Debug.Overlay
                             _shouldScrollToBottom = true;
 
                         ImGui.PushStyleVar(ImGuiStyleVar.ItemSpacing, new Vector2(4, 1));
-                        foreach (string line in logLines)
+                        if (ImGui.BeginTable("##console", 3))
                         {
-                            if (line.Contains("INF] ") && !_showInfo)
-                                continue;
-                            if (line.Contains("WRN] ") && !_showWarn)
-                                continue;
-                            if (line.Contains("ERR] ") && !_showError)
-                                continue;
-                            DrawLogLine(line, w);
+                            ImGui.TableSetupColumn("##icon", ImGuiTableColumnFlags.WidthFixed, 10); // минимальная ширина
+                            ImGui.TableSetupColumn("##code", ImGuiTableColumnFlags.WidthFixed, 50); // минимальная ширина
+                            ImGui.TableSetupColumn("##message", ImGuiTableColumnFlags.WidthStretch);
+                            ImGui.TableHeadersRow();
+
+                            foreach (LogEntry entry in log)
+                            {
+                                if (entry.Level is LogEventLevel.Information && !_showInfo)
+                                    continue;
+                                if (entry.Level is LogEventLevel.Warning && !_showWarn)
+                                    continue;
+                                if (entry.Level is LogEventLevel.Error or LogEventLevel.Fatal && !_showError)
+                                    continue;
+
+                                DrawLogLine(entry, w);
+                            }
+
+                            ImGui.EndTable();
+                            ImGui.Dummy(new Vector2(0, 0)); // фикс для предупреждения
                         }
                         ImGui.PopStyleVar();
 
@@ -226,39 +235,67 @@ namespace RE.Debug.Overlay
                 data->InsertChars(0, newText);
             }
         }
-        private void DrawLogLine(string logLine, bool wrap)
+        private void DrawLogLine(LogEntry entry, bool wrap)
         {
             Vector4 color;
+            string icon;
+            string level;
 
-            if (logLine.Contains(" INF] "))
+            switch (entry.Level)
             {
-                color = _colorInfo;
-                logLine = "  " + logLine;
-            }
-            else if (logLine.Contains(" WRN] "))
-            {
-                color = _colorWarning;
-                logLine = IconFont.ExclamationTriangle + logLine;
-            }
-            else if (logLine.Contains(" ERR] "))
-            {
-                color = _colorError;
-                logLine = IconFont.CrossCircle + logLine;
-            }
-            else
-            {
-                color = _colorDefault;
-                logLine = "  " + logLine;
+                case LogEventLevel.Information:
+                    color = _colorInfo;
+                    icon = IconFont.InfoCircle;
+                    level = "INFO";
+                    break;
+
+                case LogEventLevel.Warning:
+                    color = _colorWarning;
+                    icon = IconFont.ExclamationTriangle;
+                    level = "WARN";
+                    break;
+
+                case LogEventLevel.Error:
+                case LogEventLevel.Fatal:
+                    color = _colorError;
+                    icon = IconFont.CrossCircle;
+                    level = "ERROR";
+                    break;
+
+                default:
+                    color = _colorDefault;
+                    icon = "  ";
+                    level = "LOG";
+                    break;
             }
 
+            ImGui.PushID(entry.GetHashCode());
+
+            // Вставляем новую строку таблицы
+            ImGui.TableNextRow();
+
+            // Иконка
+            ImGui.TableSetColumnIndex(0);
             ImGui.PushStyleColor(ImGuiCol.Text, color);
-
-            if (wrap)
-                ImGui.TextWrapped(logLine);
-            else
-                ImGui.TextUnformatted(logLine);
-
+            ImGui.TextUnformatted(icon);
             ImGui.PopStyleColor();
+
+            // Код/уровень
+            ImGui.TableSetColumnIndex(1);
+            ImGui.PushStyleColor(ImGuiCol.Text, color);
+            ImGui.TextUnformatted(level);
+            ImGui.PopStyleColor();
+
+            // Сообщение
+            ImGui.TableSetColumnIndex(2);
+            ImGui.PushStyleColor(ImGuiCol.Text, _colorDefault);
+            if (wrap)
+                ImGui.TextWrapped(entry.Message);
+            else
+                ImGui.TextUnformatted(entry.Message);
+            ImGui.PopStyleColor();
+
+            ImGui.PopID();
         }
         public static void Init()
         {

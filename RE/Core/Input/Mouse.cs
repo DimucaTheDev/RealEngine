@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using Hexa.NET.ImGui;
+﻿using Hexa.NET.ImGui;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using OpenTK.Windowing.GraphicsLibraryFramework;
@@ -14,7 +11,7 @@ namespace RE.Core.Input
     public static class Mouse
     {
         public static bool IsInputEnabled { get; set; } = true;
-        public static CursorState CursorState { get => Game.Instance.CursorState; set => Game.Instance.CursorState = value; }
+        public static CursorState CursorState { get => Utils.Game.Instance.CursorState; set => Utils.Game.Instance.CursorState = value; }
 
         public static bool CanCaptureInput => IsInputEnabled && !ImGui.GetIO().WantCaptureMouse;
         public static Vector2 ScreenPosition => ImGui.GetMousePos().ToOpenTkVector2();
@@ -22,7 +19,7 @@ namespace RE.Core.Input
         public static Vector2 Delta => ImGui.GetIO().MouseDelta.ToOpenTkVector2();
         public static float ScrollDelta => ImGui.GetIO().MouseWheel;
 
-        private static MouseState TkState => Game.Instance.MouseState;
+        private static MouseState TkState => Utils.Game.Instance.MouseState;
 
         public static bool IsButtonDown(TkMouseButton button, bool force = false)
         {

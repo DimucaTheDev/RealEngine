@@ -1,9 +1,10 @@
-﻿using System.CommandLine;
+﻿#define THROW_ON_GL_EXCEPTION
+
+using System.CommandLine;
 using System.CommandLine.Help;
 using System.CommandLine.Invocation;
 using System.Diagnostics;
 using System.Drawing.Imaging;
-using System.IO.Compression;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -12,13 +13,13 @@ using OpenTK.Windowing.Common;
 using OpenTK.Windowing.Common.Input;
 using OpenTK.Windowing.Desktop;
 using RE.Core.Assets;
+using RE.Core.Logging;
 using RE.Core.Scripting;
 using RE.Editor.Notification;
 using RE.Rendering;
 using RE.Utils;
 using Serilog;
 using Serilog.Events;
-using Serilog.Sinks.File.GzArchive;
 using Serilog.Sinks.SystemConsole.Themes;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
@@ -37,7 +38,8 @@ using TextureParameterName = OpenTK.Graphics.OpenGL.TextureParameterName;
 using TextureTarget = OpenTK.Graphics.OpenGL.TextureTarget;
 
 #pragma warning disable IDE0130
-namespace RE.Core
+
+namespace RE.Utils
 {
     internal partial class Game
     {
@@ -242,8 +244,10 @@ namespace RE.Core
                 DebugSeverity.DebugSeverityNotification => LogEventLevel.Verbose,
                 _ => LogEventLevel.Information
             }, "[{OpenGL}:{Action}] {Message}", "OpenGL", type, msg);
-            if (severity == DebugSeverity.DebugSeverityHigh)
+#if THROW_ON_GL_EXCEPTION
+            if (false && severity == DebugSeverity.DebugSeverityHigh)
                 throw new GlException(msg);
+#endif
         }
 
         internal static WindowIcon? LoadIcon()

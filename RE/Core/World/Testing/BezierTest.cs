@@ -2,11 +2,9 @@
 using Hexa.NET.ImGuizmo;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
-using RE.Core.World.Components;
 using RE.Debug;
 using RE.Editor.Panels.Viewport;
 using RE.Rendering;
-using RE.Rendering.Texturing;
 using RE.Utils;
 using SceneEditor = RE.Editor.SceneEditor;
 

@@ -10,7 +10,7 @@ namespace RE.Core.World.Testing
         public override void Update(FrameEventArgs args)
         {
             base.Update(args);
-            if (Game.Instance.MouseState.IsButtonPressed(0))
+            if (Utils.Game.Instance.MouseState.IsButtonPressed(0))
             {
                 var forward = Camera.Main.Front.Normalized();
 

@@ -2,7 +2,7 @@
 using RE.Core.Assets;
 using RE.Utils;
 
-namespace RE.Rendering.Lightning
+namespace RE.Rendering.Lighting
 {
     [GlStructName(StructName)]
     public struct SpotLight() : ILightSource

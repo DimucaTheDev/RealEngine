@@ -5,7 +5,6 @@ using OpenTK.Windowing.Common;
 using RE.Core.Scripting;
 using RE.Core.Scripting.Attributes;
 using RE.Editor;
-using RE.Editor.Panels.Viewport;
 using RE.Rendering.Renderables;
 using SceneEditor = RE.Editor.SceneEditor;
 
@@ -36,7 +35,7 @@ namespace RE.Core.World.Components
         public override void Start()
         {
             if (_emitterSpriteRenderer == null!)
-                _emitterSpriteRenderer = new SpriteRenderer(Vector3.Zero, "assets/sprites/editor/emitter.png", scale: 0.75f);
+                _emitterSpriteRenderer = new SpriteRenderer(Vector3.Zero, "assets/editor/sprites/emitter.png", scale: 0.75f);
         }
 
         public override void Render(FrameEventArgs args)

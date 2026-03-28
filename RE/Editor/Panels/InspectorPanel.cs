@@ -41,8 +41,8 @@ namespace RE.Editor.Panels
         private int _materialPreviewFboId;
         private int _materialPreviewTextureId;
         private int _materialPreviewRboId;
-        private readonly Texture _cubeModelButtonStaticTexture = new StaticTexture("assets/sprites/editor/previewCube.png");
-        private readonly Texture _sphereModelButtonStaticTexture = new StaticTexture("assets/sprites/editor/previewSphere.png");
+        private readonly Texture _cubeModelButtonStaticTexture = new StaticTexture("assets/editor/sprites/previewCube.png");
+        private readonly Texture _sphereModelButtonStaticTexture = new StaticTexture("assets/editor/sprites/previewSphere.png");
 
         public void Draw()
         {

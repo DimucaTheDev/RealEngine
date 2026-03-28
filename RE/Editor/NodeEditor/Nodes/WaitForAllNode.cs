@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using RE.Editor.NodeEditor.Pins;
-
-namespace RE.Editor.NodeEditor.Nodes
+﻿namespace RE.Editor.NodeEditor.Nodes
 {
     internal class WaitForAllNode : ActionNode
     {

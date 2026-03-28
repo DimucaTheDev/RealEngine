@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using Hexa.NET.ImGui;
+﻿using Hexa.NET.ImGui;
 using RE.Core.Assets;
 
 namespace RE.Rendering.Texturing

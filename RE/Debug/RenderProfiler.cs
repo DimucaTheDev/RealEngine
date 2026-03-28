@@ -1,72 +1,69 @@
-﻿using System.Collections.Concurrent;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using RE.Core;
 
 namespace RE.Debug
 {
-    public class RenderProfiler
+    public static class FrameProfiler
     {
-        private static readonly ConcurrentDictionary<string, RenderProfiler> _running = new();
-        private static readonly ConcurrentDictionary<string, double> _latestValues = new();
-        private readonly Stopwatch _sw = Stopwatch.StartNew();
 
-        public string Name { get; private set; }
-
-        private RenderProfiler() { }
-
-        public static readonly List<(long timestamp, string e)> Events = [];
-
-        public static RenderProfiler StartNew(string name)
+        public sealed class ProfilerNode
         {
-            if (!_running.TryAdd(name, new RenderProfiler() { Name = name }))
-                throw new InvalidOperationException($"Profiler '{name}' is already started.");
-
-            return _running[name];
+            public string Name = "";
+            public double Start;
+            public double End;
+            public ProfilerNode? Parent;
+            public List<ProfilerNode> Children = new();
         }
 
-        public static void AddEvent(string name)
+        private static readonly Stopwatch _sw = new();
+        private static readonly Stack<ProfilerNode> _stack = new();
+        private static ProfilerNode _lastFrame = new();
+
+        public static ProfilerNode Root { get; private set; } = new();
+
+        public static ProfilerNode GetLastFrame() => _lastFrame ?? Root;
+
+        internal static int UpdateDelay = 20;
+
+        public static void BeginFrame()
         {
-            Events.Add((Time.ElapsedFrames, name));
-        }
-
-        public static double GetLast(string name)
-        {
-            return _latestValues.GetValueOrDefault(name, 0);
-        }
-
-        public static double Stop(string name)
-        {
-            if (!_running.TryRemove(name, out var profiler))
-                throw new InvalidOperationException("Unknown profiler.");
-
-            profiler._sw.Stop();
-
-            var e = profiler._sw.Elapsed.TotalSeconds;
-            _latestValues[name] = e;
-            return e;
-        }
-
-        public static IReadOnlyDictionary<string, double> StopAll()
-        {
-            var result = new Dictionary<string, double>();
-
-            foreach (var kv in _running.ToArray())
+            Root = new ProfilerNode
             {
-                if (_running.TryRemove(kv.Key, out var profiler))
-                {
-                    profiler._sw.Stop();
-                    var swElapsed = profiler._sw.Elapsed;
-                    _latestValues[kv.Key] = swElapsed.TotalSeconds;
-                    result[kv.Key] = swElapsed.TotalSeconds;
-                }
-            }
+                Name = $"Frame",
+                Start = 0
+            };
 
-            return result;
+            _sw.Restart();
+            _stack.Clear();
+            _stack.Push(Root);
         }
 
-        public void Stop()
+        public static void EndFrame()
         {
-            Stop(Name);
+            Root.End = _sw.Elapsed.TotalMilliseconds;
+            if (Time.ElapsedFrames % UpdateDelay == 0)
+                _lastFrame = Root;
+        }
+
+        public static void Begin(string name)
+        {
+            var parent = _stack.Peek();
+
+            var node = new ProfilerNode
+            {
+                Name = name,
+                Start = _sw.Elapsed.TotalMilliseconds,
+                Parent = parent
+            };
+
+            parent.Children.Add(node);
+            _stack.Push(node);
+        }
+
+        public static void End()
+        {
+            var node = _stack.Pop();
+            node.End = _sw.Elapsed.TotalMilliseconds;
         }
     }
 }

@@ -170,9 +170,9 @@ namespace RE.Core.World.Physics
                 return;
             if (!SceneEditor.Enabled)
             {
-                var renderProfiler = RenderProfiler.StartNew("physics");
+                FrameProfiler.Begin("bullet");
                 DynamicsWorld.StepSimulation(deltaTime, EnableSimulation ? 5 : 0);
-                renderProfiler.Stop();
+                FrameProfiler.End();
             }
         }
 

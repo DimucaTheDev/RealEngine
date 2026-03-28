@@ -1,24 +1,24 @@
 ﻿using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
-using System.Text;
-using RE.Editor.Notification;
+using RE.Debug;
+using RE.Utils;
 using Serilog.Core;
 using Serilog.Events;
 using Serilog.Formatting.Display;
 
-namespace RE.Core
+namespace RE.Core.Logging
 {
     /// <summary>
     /// This class is used to log game events to a string (<see cref="Log"/>).
     /// </summary>
     /// <example>
-    /// Game console (see <see cref="RE.Debug.Overlay.ConsoleWindow"/>) uses this class to display log messages in-game.
+    /// Game console (see <see cref="ConsoleWindow"/>) uses this class to display log messages in-game.
     /// </example>
     public class GameLogger(string outputTemplate) : ILogEventSink
     {
         private readonly MessageTemplateTextFormatter _formatter = new(outputTemplate);
-        public static StringBuilder Log = new(2048);
+        
+        public static readonly List<LogEntry> Log = new(128);
 
         public void Emit(LogEvent logEvent)
         {
@@ -26,7 +26,7 @@ namespace RE.Core
                 return;
             using var writer = new StringWriter();
             _formatter.Format(logEvent, writer);
-            Log.Append(writer);
+            Log.Add(new LogEntry(writer.ToString(), logEvent.Timestamp, logEvent.Level));
         }
     }
 
@@ -44,6 +44,8 @@ namespace RE.Core
             {
                 var type = method.DeclaringType!;
                 var dllFileName = Path.GetFileNameWithoutExtension(type.Assembly.Location);
+                if (dllFileName.IsNullOrEmpty())
+                    dllFileName = type.Assembly.FullName;
                 name = $"{dllFileName}:{type.Name}/{method.Name}";
             }
             else
@@ -84,19 +86,6 @@ namespace RE.Core
                 }
             }
             return null;
-        }
-    }
-     
-    internal class DebuggerSink(string template) : ILogEventSink
-    {
-        private readonly MessageTemplateTextFormatter _formatter = new(template);
-
-        public void Emit(LogEvent logEvent)
-        {
-            using var stringWriter = new StringWriter();
-            _formatter.Format(logEvent, stringWriter);
-
-            System.Diagnostics.Debug.Write(stringWriter.ToString());
         }
     }
 }

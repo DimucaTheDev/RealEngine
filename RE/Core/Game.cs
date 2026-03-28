@@ -8,6 +8,7 @@ using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using OpenTK.Windowing.Desktop;
 using RE.Audio;
+using RE.Core;
 using RE.Core.Assets;
 using RE.Core.Assets.Providers;
 using RE.Core.Initializing;
@@ -17,7 +18,6 @@ using RE.Core.Scripting;
 using RE.Core.World;
 using RE.Core.World.Physics;
 using RE.Debug;
-using RE.Debug.Overlay;
 using RE.Editor.Notification;
 using RE.Editor.Panels.Viewport;
 using RE.Launchers;
@@ -30,9 +30,8 @@ using Color = System.Drawing.Color;
 using GL = OpenTK.Graphics.OpenGL.GL;
 using Keys = OpenTK.Windowing.GraphicsLibraryFramework.Keys;
 using SceneEditor = RE.Editor.SceneEditor;
-using Vector4 = System.Numerics.Vector4;
 
-namespace RE.Core;
+namespace RE.Utils;
 
 //todo: refactor this class into smaller parts
 internal partial class Game : GameWindow
@@ -51,10 +50,10 @@ internal partial class Game : GameWindow
         stdout.AutoFlush = true;
         Console.SetOut(stdout);
 
-        ParseArguments(args);
-        SetupLogger();
+        Utils.Game.ParseArguments(args);
+        Utils.Game.SetupLogger();
 
-        Log.Information("{ProductName}; version {Version}; build {BuildDate:dd.MM.yyyy HH:mm:ss}; commit {CommitHash}", ProductName, Version, BuildDate, CommitHash[..7]);
+        Log.Information("{ProductName}; version {Version}; build {BuildDate:dd.MM.yyyy HH:mm:ss}; commit {CommitHash}", Utils.Game.ProductName, Utils.Game.Version, Utils.Game.BuildDate, Utils.Game.CommitHash[..7]);
         Log.Information("Startup args: {@Args}", args);
 
         Directory.CreateDirectory("Engine/Config");
@@ -66,7 +65,7 @@ internal partial class Game : GameWindow
         foreach (var lib in Directory.GetFiles(nativesPath, "*.dll"))
         {
             nint handle;
-            LoadedLibs.TryAdd(handle = WinApi.LoadLibrary(lib), lib);
+            Utils.Game.LoadedLibs.TryAdd(handle = WinApi.LoadLibrary(lib), lib);
             var fName = Path.GetFileName(lib);
             var errCode = Marshal.GetLastWin32Error();
 
@@ -81,30 +80,30 @@ internal partial class Game : GameWindow
         var width = CommandParseResult.GetValue<int>("--width");
         var height = CommandParseResult.GetValue<int>("--height");
 
-        using var game = new Game(
+        using var game = new Utils.Game(
             new GameWindowSettings { UpdateFrequency = FpsLock },
             new NativeWindowSettings
             {
-                Title = $"{ProductName} {Version}",
+                Title = $"{Utils.Game.ProductName} {Utils.Game.Version}",
                 ClientSize = new Vector2i(width, height),
                 Location = new Vector2i(Screen.PrimaryScreen!.Bounds.Width / 2 - width / 2, Screen.PrimaryScreen.Bounds.Height / 2 - height / 2),
                 StartVisible = false,
-                Vsync = VSyncMode.On
+                Vsync = VSyncMode.Off
             });
-        Instance = game;
+        Utils.Game.Instance = game;
 
-        Instance.JoystickConnected += static e =>
+        Utils.Game.Instance.JoystickConnected += static e =>
         {
             if (e.IsConnected)
             {
-                Log.Information("Joystick connected: {Name} ({JoystickId})", Instance.JoystickStates[e.JoystickId].Name,
+                Log.Information("Joystick connected: {Name} ({JoystickId})", Utils.Game.Instance.JoystickStates[e.JoystickId].Name,
                     e.JoystickId);
-                JoystickNames[e.JoystickId] = Instance.JoystickStates[e.JoystickId].Name;
+                Utils.Game.JoystickNames[e.JoystickId] = Utils.Game.Instance.JoystickStates[e.JoystickId].Name;
             }
             else
             {
-                Log.Information("Joystick disconnected: {Name} ({JoystickId})", JoystickNames[e.JoystickId], e.JoystickId);
-                JoystickNames.Remove(e.JoystickId);
+                Log.Information("Joystick disconnected: {Name} ({JoystickId})", Utils.Game.JoystickNames[e.JoystickId], e.JoystickId);
+                Utils.Game.JoystickNames.Remove(e.JoystickId);
             }
         };
 
@@ -122,7 +121,7 @@ internal partial class Game : GameWindow
         GL.Enable(EnableCap.DebugOutput);
         GL.Enable(EnableCap.DebugOutputSynchronous);
 
-        GL.DebugMessageCallback(GlLogCallback, 0);
+        GL.DebugMessageCallback(Utils.Game.GlLogCallback, 0);
         GL.DebugMessageControl(DebugSourceControl.DontCare, DebugTypeControl.DontCare, DebugSeverityControl.DontCare, 0, (int[]?)null, false);
         GL.DebugMessageControl(DebugSourceControl.DontCare, DebugTypeControl.DebugTypeError, DebugSeverityControl.DebugSeverityHigh, 0, (int[]?)null, true);
         //GL.DebugMessageControl(DebugSourceControl.DontCare, DebugTypeControl.DontCare, DebugSeverityControl.DebugSeverityMedium, 0, (int[]?)null, true);
@@ -130,12 +129,12 @@ internal partial class Game : GameWindow
         ContentManager.Register(new FileContentProvider());
         ContentManager.Register(new ZipContentProvider());
 
-        Icon = LoadIcon();
+        Icon = Utils.Game.LoadIcon();
 
         RenderManager.Init();
         Time.Init();
         Camera.Init();
-        ImGuiController.Init(); 
+        ImGuiController.Init();
         DebugOverlay.Init();
         LineRenderer.Main!.StartRender();
         ConsoleWindow.Init();
@@ -157,29 +156,11 @@ internal partial class Game : GameWindow
         WindowState = WindowState.Normal;
 
         base.OnLoad();
+
+        if(SceneManager.CurrentScene == null!)
+            Log.Warning("No scene has been loaded. ({Name} = {Value})", nameof(SceneManager.CurrentScene), null);
     }
 
-    protected override void OnUpdateFrame(FrameEventArgs args)
-    {
-        RenderProfiler.StopAll();
-
-        Time.Update(args);
-        PhysicsManager.Update((float)args.Time);
-        SoundManager.Update(args);
-
-        var rp = RenderProfiler.StartNew("update");
-        if (!SceneEditor.Enabled && SceneManager.CurrentScene != null!)
-        {
-            foreach (var scene in SceneManager.CurrentScene.GameObjects.ToList())
-            {
-                foreach (var c in scene.Components.ToList())
-                {
-                    c.Update(args);
-                }
-            }
-        }
-        rp.Stop();
-    }
     protected override void OnResize(ResizeEventArgs e)
     {
         Camera.Main.RenderWidth = SceneEditor.Enabled ? (int)ViewportPanel.ViewportSize.X : e.Width;
@@ -192,9 +173,35 @@ internal partial class Game : GameWindow
         base.OnResize(e);
     }
 
+    protected override void OnUpdateFrame(FrameEventArgs args)
+    {
+        FrameProfiler.BeginFrame(); 
+
+        Time.Update(args);
+        SoundManager.Update(args);
+
+        if ((!SceneEditor.Enabled || (SceneEditor.Enabled && SceneEditor.SimulationRunning)) && SceneManager.CurrentScene != null!)
+        {
+            FrameProfiler.Begin("update");
+            
+            PhysicsManager.Update((float)args.Time);
+            
+            foreach (var scene in SceneManager.CurrentScene.GameObjects)
+            {
+                foreach (var c in scene.Components)
+                {
+                    c.Update(args);
+                }
+            }
+            SceneManager.ApplyObjectModification();
+
+            FrameProfiler.End();
+        }
+    }
+
     protected override void OnRenderFrame(FrameEventArgs args)
     {
-        RenderProfiler.StartNew("render");
+        FrameProfiler.Begin("render");
 
         Context.MakeCurrent();
 
@@ -210,16 +217,18 @@ internal partial class Game : GameWindow
         GL.Enable(EnableCap.DepthTest);
         GL.Enable(EnableCap.Blend);
         GL.ClearColor(Color.CadetBlue);
-        GL.PolygonMode(TriangleFace.FrontAndBack, Wireframe ? PolygonMode.Line : PolygonMode.Fill);
+        GL.PolygonMode(TriangleFace.FrontAndBack, Utils.Game.Wireframe ? PolygonMode.Line : PolygonMode.Fill);
         #endregion
 
+        FrameProfiler.Begin("imgui_update");
         ImGuiController.Update();
+        FrameProfiler.End();
         if (ToastManager.MainWindowViewport == (ImGuiViewportPtr)null)
             ToastManager.MainWindowViewport = ImGui.GetWindowViewport();
 
 
         if (SceneEditor.Enabled)
-            GL.BindFramebuffer(FramebufferTarget.Framebuffer, SceneFboId);
+            GL.BindFramebuffer(FramebufferTarget.Framebuffer, (int)SceneFboId);
 
         var w = Camera.GetActiveCamera().RenderWidth;
         var h = Camera.GetActiveCamera().RenderHeight;
@@ -227,14 +236,15 @@ internal partial class Game : GameWindow
 
         GL.ClearColor(Color.Black);
         GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
-         
+
         GL.Enable(EnableCap.DepthTest);
         GL.Enable(EnableCap.Blend);
         GL.DepthFunc(DepthFunction.Lequal);
         GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
-        GL.PolygonMode(TriangleFace.FrontAndBack, Wireframe ? PolygonMode.Line : PolygonMode.Fill);
+        GL.PolygonMode(TriangleFace.FrontAndBack, Utils.Game.Wireframe ? PolygonMode.Line : PolygonMode.Fill);
 
         RenderManager.RenderAll(args);
+        SceneManager.ApplyObjectModification();
 
         if (SceneEditor.Enabled)
         {
@@ -244,8 +254,11 @@ internal partial class Game : GameWindow
             GL.Viewport(0, 0, ClientSize.X, ClientSize.Y);
         }
 
+        FrameProfiler.Begin("imgui_render");
         ToastManager.RenderNotifications();
         ImGuiController.Render();
+        FrameProfiler.End();
+
         SwapBuffers();
 
         #region Keybinds
@@ -277,9 +290,9 @@ internal partial class Game : GameWindow
         if (Keyboard.IsKeyPressed(Keys.GraveAccent))
             ConsoleWindow.Instance!.IsVisible = !ConsoleWindow.Instance.IsVisible;
         if (Keyboard.IsKeyPressed(Keys.F3, true))
-            Wireframe = !Wireframe;
+            Utils.Game.Wireframe = !Utils.Game.Wireframe;
         if (Keyboard.IsKeyPressed(Keys.F11, true))
-            Game.Instance.ToggleFullscreen();
+            Utils.Game.Instance.ToggleFullscreen();
         if (Keyboard.IsKeyPressed(Keys.F4, true))
             CommandHandler.ExecuteCommand("editor");
         if (Keyboard.IsKeyPressed(Keys.F5, true))
@@ -295,11 +308,14 @@ internal partial class Game : GameWindow
         }
         if (Keyboard.IsKeyPressed(Keys.F2, true))
         {
-            var p = Game.TakeScreenshot();
+            var p = Utils.Game.TakeScreenshot();
             if (p != null!)
                 Log.Information("Screenshot saved to {Path}", p);
         }
         #endregion
+
+        FrameProfiler.End();
+        FrameProfiler.EndFrame();
     }
     protected override void OnClosing(CancelEventArgs e)
     {
@@ -310,7 +326,7 @@ internal partial class Game : GameWindow
             SceneEditor.ShowExitConfirmationModal = true;
             unsafe
             {
-                WinApi.StartFlashing((IntPtr)Game.Instance.WindowPtr);
+                WinApi.StartFlashing((IntPtr)Utils.Game.Instance.WindowPtr);
             }
             e.Cancel = true;
         }

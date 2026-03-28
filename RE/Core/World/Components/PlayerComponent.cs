@@ -1,15 +1,10 @@
 ﻿using System.Text.Json.Nodes;
 using BulletSharp;
-using Hexa.NET.ImGui;
-using Hexa.NET.ImGuizmo;
-using Microsoft.VisualBasic.Devices;
-using OpenCvSharp.Internal.Vectors;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using OpenTK.Windowing.GraphicsLibraryFramework;
 using RE.Audio;
 using RE.Core.Input;
-using RE.Core.Scripting;
 using RE.Core.Scripting.Attributes;
 using RE.Core.World.Components.Physics;
 using RE.Core.World.Physics;
@@ -19,10 +14,7 @@ using RE.Rendering.Texturing;
 using RE.Utils;
 using Serilog;
 using Camera = RE.Rendering.Camera;
-using Keyboard = RE.Core.Input.Keyboard;
 using Keys = OpenTK.Windowing.GraphicsLibraryFramework.Keys;
-using Mouse = RE.Core.Input.Mouse;
-using SceneEditor = RE.Editor.SceneEditor;
 
 namespace RE.Core.World.Components
 {
@@ -46,12 +38,12 @@ namespace RE.Core.World.Components
         private float _objMass;
 
 
-        private SpriteRenderer _spriteSpawnpoint = new(Vector3.Zero, "assets/sprites/editor/spawn.png", scale: 1);
+        private SpriteRenderer _spriteSpawnpoint = new(Vector3.Zero, "assets/editor/sprites/spawn.png", scale: 1);
 
         private float _soundCooldown = 0f;
 
         [EditorProperty] public string InteractDenySound { get; set; } = "event:/DenySelect";
-
+          
         public override void Start()
         {
             PlayerGameObject = new GameObject(Owner)
@@ -73,7 +65,7 @@ namespace RE.Core.World.Components
             rigidBodyComponent.RigidBody.ActivationState = ActivationState.DisableDeactivation;
             rigidBodyComponent.RigidBody.Gravity = new BulletSharp.Math.Vector3(0, -25f, 0);
 
-            Mouse.CursorState = CursorState.Grabbed;
+            Input.Mouse.CursorState = CursorState.Grabbed;
             FirstMove = true;
 
             path.AddRange(
@@ -117,20 +109,20 @@ namespace RE.Core.World.Components
 
             Camera cam = _camera;
 
-            if (Mouse.IsButtonPressed(MouseButton.Left))
-                Mouse.CursorState = CursorState.Grabbed;
-            if (Keyboard.IsKeyPressed(Keys.Escape))
+            if (Input.Mouse.IsButtonPressed(MouseButton.Left))
+                Input.Mouse.CursorState = CursorState.Grabbed;
+            if (Input.Keyboard.IsKeyPressed(Keys.Escape))
             {
-                Mouse.CursorState = CursorState.Normal;
+                Input.Mouse.CursorState = CursorState.Normal;
                 FirstMove = true;
                 return;
             }
 
-            if (Mouse.CursorState != CursorState.Grabbed)
+            if (Input.Mouse.CursorState != CursorState.Grabbed)
                 return;
 
-            var deltaX = Mouse.Delta.X;
-            var deltaY = -Mouse.Delta.Y;
+            var deltaX = Input.Mouse.Delta.X;
+            var deltaY = -Input.Mouse.Delta.Y;
             
             if (FirstMove)
             {
@@ -189,22 +181,22 @@ namespace RE.Core.World.Components
             var camForward = (_camera.Front with { Y = 0 }).Normalized();
             var camRight = Vector3.Normalize(Vector3.Cross(camForward, _camera.Up));
 
-            if (Keyboard.IsKeyDown(Keys.W))
+            if (Input.Keyboard.IsKeyDown(Keys.W))
                 moveDir += camForward;
-            if (Keyboard.IsKeyDown(Keys.S))
+            if (Input.Keyboard.IsKeyDown(Keys.S))
                 moveDir -= camForward;
-            if (Keyboard.IsKeyDown(Keys.D))
+            if (Input.Keyboard.IsKeyDown(Keys.D))
                 moveDir += camRight;
-            if (Keyboard.IsKeyDown(Keys.A))
+            if (Input.Keyboard.IsKeyDown(Keys.A))
                 moveDir -= camRight;
 
             _soundCooldown += (float)args.Time;
 
-            if ((Keyboard.IsKeyDown(Keys.W) || Keyboard.IsKeyDown(Keys.S) || Keyboard.IsKeyDown(Keys.D) ||
-                 Keyboard.IsKeyDown(Keys.A)) && !_isCrouching && _wasGrounded && moveDir.Length > 0.75f)
+            if ((Input.Keyboard.IsKeyDown(Keys.W) || Input.Keyboard.IsKeyDown(Keys.S) || Input.Keyboard.IsKeyDown(Keys.D) ||
+                 Input.Keyboard.IsKeyDown(Keys.A)) && !_isCrouching && _wasGrounded && moveDir.Length > 0.75f)
             {
 
-                if ((_soundCooldown >= 0.45f && !Keyboard.Shift) || (_soundCooldown >= 0.3f && Keyboard.Shift))
+                if ((_soundCooldown >= 0.45f && !Input.Keyboard.Shift) || (_soundCooldown >= 0.3f && Input.Keyboard.Shift))
                 {
                     SoundManager.PlayOneShotEvent("event:/Step");
                     _soundCooldown = 0f;
@@ -216,7 +208,7 @@ namespace RE.Core.World.Components
                 moveDir = moveDir.Normalized();
 
             bool crouching = _isCrouching;
-            bool sprinting = Keyboard.IsKeyDown(Keys.LeftShift);
+            bool sprinting = Input.Keyboard.IsKeyDown(Keys.LeftShift);
             float maxSpeed = crouching ? 5f : (sprinting ? 13.5f : 10f);
 
             float accel = 120f;
@@ -270,7 +262,7 @@ namespace RE.Core.World.Components
 
             _wasGrounded = grounded;
 
-            if (Keyboard.IsKeyDown(Keys.Space) && grounded && _jumpCd <= 0)
+            if (Input.Keyboard.IsKeyDown(Keys.Space) && grounded && _jumpCd <= 0)
             {
                 rb.ApplyCentralImpulse(9f * BulletSharp.Math.Vector3.UnitY);
                 _jumpCd = 0.3f;
@@ -279,7 +271,7 @@ namespace RE.Core.World.Components
             if (_jumpCd > 0f)
                 _jumpCd -= Time.DeltaTime;
 
-            var crouchKeyDown = Keyboard.IsKeyDown(Keys.LeftControl);
+            var crouchKeyDown = Input.Keyboard.IsKeyDown(Keys.LeftControl);
             if (crouchKeyDown != _isCrouching)
             {
                 float newHeight = crouchKeyDown ? CrouchHeight : StandHeight;
@@ -420,7 +412,7 @@ namespace RE.Core.World.Components
 
                     rigidBody.ActivationState = ActivationState.ActiveTag;
 
-                    if (false && Game.Instance.MouseState.IsButtonPressed(MouseButton.Button1))
+                    if (false && Utils.Game.Instance.MouseState.IsButtonPressed(MouseButton.Button1))
                     {
                         if (_holdingObject.GetComponent<RigidBodyComponent>() != null)
                             _holdingObject.GetComponent<RigidBodyComponent>().Mass = _objMass;

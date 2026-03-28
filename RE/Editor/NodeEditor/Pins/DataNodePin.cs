@@ -1,5 +1,4 @@
 ﻿using System.Collections;
-using System.Diagnostics;
 using Hexa.NET.ImGui;
 using OpenTK.Mathematics;
 using RE.Utils;

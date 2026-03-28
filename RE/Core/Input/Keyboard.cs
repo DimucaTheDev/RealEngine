@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using Hexa.NET.ImGui;
+﻿using Hexa.NET.ImGui;
 using OpenTK.Windowing.GraphicsLibraryFramework;
 using RE.Editor;
 using TkKeys = OpenTK.Windowing.GraphicsLibraryFramework.Keys;
@@ -18,7 +15,7 @@ namespace RE.Core.Input
         public static bool Alt => ImGui.GetIO().KeyAlt || TkState.IsKeyDown(TkKeys.LeftAlt) || TkState.IsKeyDown(TkKeys.RightAlt);
 
         //opentk keyboard state
-        private static KeyboardState TkState => Game.Instance.KeyboardState;
+        private static KeyboardState TkState => Utils.Game.Instance.KeyboardState;
 
         public static bool IsKeyDown(TkKeys key, bool force = false)
         {

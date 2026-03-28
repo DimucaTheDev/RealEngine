@@ -1,6 +1,6 @@
 ﻿using RE.Core.Assets;
 
-namespace RE.Rendering.Lightning;
+namespace RE.Rendering.Lighting;
 
 public interface ILightSource
 {

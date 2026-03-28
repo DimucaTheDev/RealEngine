@@ -1,33 +1,23 @@
 ﻿using System.Diagnostics;
 using System.Numerics;
 using System.Reflection;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using DotRecast.Core.Collections;
-using DotRecast.Core.Numerics;
-using DotRecast.Detour;
-using DotRecast.Recast;
-using DotRecast.Recast.Geom;
-using DotRecast.Recast.Toolset.Builder;
 using Hexa.NET.ImGui;
 using Hexa.NET.ImNodes;
 using Hexa.NET.ImPlot;
-using Microsoft.VisualBasic.Devices;
 using OpenTK.Windowing.Common;
-using RE.Audio;
 using RE.Core;
-using RE.Core.World;
-using RE.Core.World.Components;
-using RE.Core.World.Components.Physics;
 using RE.Editor.NodeEditor;
 using RE.Rendering;
 using RE.Utils;
 using static Hexa.NET.ImGui.ImGui;
+using Game = RE.Utils.Game;
 
-namespace RE.Debug.Overlay;
+namespace RE.Debug;
 
 internal class DebugOverlay : Renderable
 {
+
     private DebugOverlay()
     {
 #if DEBUG
@@ -42,32 +32,256 @@ internal class DebugOverlay : Renderable
     private static readonly RingBuffer<int> Fps = new(1000);
     private static readonly RingBuffer<double> ManagedHeap = new(1000);
     private static readonly RingBuffer<double> PrivateBytes = new(1000);
+    private static int _updFrames = 1;
+    private static int _timeTreshold;
 
     public override void Render(FrameEventArgs args)
     {
-        RenderProfilersWindow(args);
+        //RenderProfilersWindow(args);
         RenderTimingsWindowWhatTheHellIsThisHelpMe();
     }
 
     private void RenderTimingsWindowWhatTheHellIsThisHelpMe()
     {
-        
+        Begin("Profiler Window");
+
+        var root = FrameProfiler.GetLastFrame();
+        if (root.End <= 0)
+        {
+            End();
+            return;
+        }
+
+        SetNextItemWidth(200);
+        if (SliderInt("Update info every N frames", ref _updFrames, 1, Math.Max(1, 2 * (int)Game.Instance.UpdateFrequency)))
+            FrameProfiler.UpdateDelay = Math.Max(1, _updFrames);
+        SetNextItemWidth(200);
+        SliderInt("Do not show nodes with ns below", ref _timeTreshold, 0, 100);
+
+        Separator();
+
+        float rowHeight = 22f;
+        float minWidthToDrawText = 60f;
+        var origin = GetCursorScreenPos();
+        var draw = GetWindowDrawList();
+        float width = GetContentRegionAvail().X;
+        double totalTime = root.End - root.Start;
+
+        uint GetNodeColor(string name, int depth)
+        {
+            int hash = name.GetHashCode();
+
+            float hue = (hash & 0xFFFF) / (float)0xFFFF;
+
+            float sat = 0.5f + ((hash >> 16 & 0xFF) / 255f) * 0.2f;
+
+            float light = Math.Clamp(0.7f - depth * 0.03f, 0.2f, .7f);
+
+            Vector3 HsvToRgb(float h, float s, float v)
+            {
+                float r = 0, g = 0, b = 0;
+                int i = (int)(h * 6);
+                float f = h * 6 - i;
+                float p = v * (1 - s);
+                float q = v * (1 - f * s);
+                float t = v * (1 - (1 - f) * s);
+
+                switch (i % 6)
+                {
+                    case 0:
+                        r = v;
+                        g = t;
+                        b = p;
+                        break;
+                    case 1:
+                        r = q;
+                        g = v;
+                        b = p;
+                        break;
+                    case 2:
+                        r = p;
+                        g = v;
+                        b = t;
+                        break;
+                    case 3:
+                        r = p;
+                        g = q;
+                        b = v;
+                        break;
+                    case 4:
+                        r = t;
+                        g = p;
+                        b = v;
+                        break;
+                    case 5:
+                        r = v;
+                        g = p;
+                        b = q;
+                        break;
+                }
+
+                return new Vector3(r, g, b);
+            }
+            Vector3 rgb = HsvToRgb(hue, sat, light);
+            return ColorConvertFloat4ToU32(new Vector4(rgb, 1f));
+        }
+
+
+        void DrawNode(FrameProfiler.ProfilerNode node, int depth)
+        {
+            if (_timeTreshold / 1000d >= (node.End - node.Start))
+                return;
+
+            float x = origin.X + (float)(node.Start / totalTime * width);
+            float w = (float)((node.End - node.Start) / totalTime * width);
+            w = MathF.Max(w, 2f);
+            float y = origin.Y + depth * rowHeight;
+
+            uint col = GetNodeColor(node.Name, depth);
+
+            draw.AddRectFilled(new Vector2(x, y), new Vector2(x + w, y + rowHeight - 2), col);
+
+            string label = $"{node.Name} {(node.End - node.Start):0.00} ms";
+            if (w >= CalcTextSize(label).X)
+            {
+                draw.AddText(new Vector2(x + 3, y + 3), 0xffffffff, label);
+            }
+            else
+            {
+                label = $"{(node.End - node.Start):0.00} ms";
+                if (w >= CalcTextSize(label).X)
+                {
+                    draw.AddText(new Vector2(x + 3, y + 3), 0xffffffff, label);
+                }
+                else
+                {
+                    label = $"{(node.End - node.Start):0.##}";
+                    if (w >= CalcTextSize(label).X)
+                    {
+                        draw.AddText(new Vector2(x + 3, y + 3), 0xffffffff, label);
+                    }
+                }
+            }
+
+            foreach (var child in node.Children)
+                DrawNode(child, depth + 1);
+        }
+
+        DrawNode(root, 0);
+
+        int maxDepth = GetDepth(root);
+        Dummy(new Vector2(width, maxDepth * rowHeight));
+
+        void TextNodeInfo(FrameProfiler.ProfilerNode node, string idPrefix = "")
+        {
+            string id = idPrefix + node.Name;
+
+            ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags.DefaultOpen | ImGuiTreeNodeFlags.SpanAvailWidth;
+
+            string displayName = $"{node.Name} ({(node.End - node.Start):0.000} ms)";
+
+            if (_timeTreshold / 1000d >= (node.End - node.Start))
+                return;
+
+            if (node.Children.Count == 0)
+            {
+                Text("  " + displayName);
+                return;
+            }
+
+            if (TreeNodeEx(id + $"##{id}", flags, displayName))
+            {
+                int childIndex = 0;
+                foreach (var child in node.Children)
+                {
+                    TextNodeInfo(child, id + "_" + childIndex);
+                    childIndex++;
+                }
+                TreePop();
+            }
+        }
+        BeginChild("##nodes", new Vector2(0, 300), ImGuiWindowFlags.None);
+
+        TextNodeInfo(root);
+
+        EndChild();
+
+        Separator();
+
+        Text($"est. fps: {(int)(1 / ((root.End - root.Start) / 1000))}");
+
+        void UpdateHistory(FrameProfiler.ProfilerNode node)
+        {
+            if (Time.ElapsedFrames % _updFrames != 0)
+                return;
+
+            double value = node.End - node.Start;
+
+            if (NodeFrameSum.ContainsKey(node.Name))
+                NodeFrameSum[node.Name] += value;
+            else
+                NodeFrameSum[node.Name] = value;
+
+            foreach (var child in node.Children)
+                UpdateHistory(child);
+        }
+
+        void CommitFrameHistory()
+        {
+            foreach (var kv in NodeFrameSum)
+            {
+                if (!NodeHistory.TryGetValue(kv.Key, out var buffer))
+                {
+                    buffer = new RingBuffer<double>(100);
+                    NodeHistory[kv.Key] = buffer;
+                    NodeEnabled[kv.Key] = false;
+                }
+                buffer.Add(kv.Value);
+            }
+            NodeFrameSum.Clear();
+        }
+
+        UpdateHistory(root);
+        CommitFrameHistory();
+
+        if (CollapsingHeader("Node Graph"))
+        {
+            BeginChild("##checkboxes", new Vector2(0, 160), ImGuiWindowFlags.None);
+            foreach (var key in NodeEnabled.Keys.ToList())
+            {
+                bool val = NodeEnabled[key];
+                if (ImGui.Checkbox(key, ref val))
+                    NodeEnabled[key] = val;
+            }
+            EndChild();
+
+            ImPlot.SetNextAxesLimits(0, NodeHistory.Values.First().Length, 0, NodeHistory.Values.Max(b => b.Last()));
+            if (ImPlot.BeginPlot("Node Times"))
+            {
+                foreach (var kv in NodeHistory)
+                {
+                    if (!NodeEnabled[kv.Key])
+                        continue;
+
+                    var data = kv.Value.ToArrayOrdered();
+                    ImPlot.PlotLine(kv.Key, ref data[0], data.Length);
+                }
+                ImPlot.EndPlot();
+            }
+        }
+        End();
+    }
+    private static readonly Dictionary<string, RingBuffer<double>> NodeHistory = new();
+    private static readonly Dictionary<string, bool> NodeEnabled = new();
+    private static readonly Dictionary<string, double> NodeFrameSum = new();
+    private static int GetDepth(FrameProfiler.ProfilerNode n)
+    {
+        int d = 1;
+        foreach (var c in n.Children)
+            d = Math.Max(d, 1 + GetDepth(c));
+        return d;
     }
 
-    private const float m_cellSize = 0.3f;
-    private const float m_cellHeight = 0.2f;
-    private const float m_agentHeight = 2.0f;
-    private const float m_agentRadius = 0.6f;
-    private const float m_agentMaxClimb = 0.9f;
-    private const float m_agentMaxSlope = 45.0f;
-    private const int m_regionMinSize = 8;
-    private const int m_regionMergeSize = 20;
-    private const float m_edgeMaxLen = 12.0f;
-    private const float m_edgeMaxError = 1.3f;
-    private const int m_vertsPerPoly = 6;
-    private const float m_detailSampleDist = 6.0f;
-    private const float m_detailSampleMaxError = 1.0f;
-  
     public static void Init()
     {
         Instance ??= new DebugOverlay();
@@ -116,11 +330,6 @@ internal class DebugOverlay : Renderable
             fixed (int* a = Fps.ToArrayOrdered().Reverse().ToArray())
                 ImPlot.PlotLine("#fps", a, Fps.Length);
 
-            foreach (var (timestamp, e) in RenderProfiler.Events.Where(s => Time.ElapsedFrames - s.timestamp <= 1000))
-            {
-                ImPlot.PlotText(e, Time.ElapsedFrames - timestamp, yMaxLimit / 4, ImPlotTextFlags.Vertical);
-            }
-
             ImPlot.EndPlot();
         }
         Text($"Mem: " + PrivateBytes.Last());
@@ -137,11 +346,6 @@ internal class DebugOverlay : Renderable
                 ImPlot.PlotLine("Managed Heap", a, ManagedHeap.Length);
             fixed (double* b = PrivateBytes.ToArrayOrdered().Reverse().ToArray())
                 ImPlot.PlotLine("Working Set", b, PrivateBytes.Length);
-
-            foreach (var (timestamp, e) in RenderProfiler.Events.Where(s => Time.ElapsedFrames - s.timestamp <= 1000))
-            {
-                ImPlot.PlotText(e, Time.ElapsedFrames - timestamp, yMaxLimit / 4, ImPlotTextFlags.Vertical);
-            }
 
             ImPlot.EndPlot();
         }

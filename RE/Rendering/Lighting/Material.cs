@@ -1,7 +1,7 @@
 ﻿using RE.Utils;
 using sampler2D = int;
 
-namespace RE.Rendering.Lightning
+namespace RE.Rendering.Lighting
 {
     [GlStructName("Material")]
     public struct Material()

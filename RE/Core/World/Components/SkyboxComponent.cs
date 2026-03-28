@@ -4,7 +4,6 @@ using OpenTK.Graphics.OpenGL4;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using RE.Core.Assets;
-using RE.Core.Scripting;
 using RE.Core.Scripting.Attributes;
 using RE.Editor;
 using RE.Rendering;
@@ -20,7 +19,7 @@ namespace RE.Core.World.Components
     internal class SkyboxComponent(string path) : Component, IEditorRender
     {
         private ShaderProgram _program = null!;
-        private SpriteRenderer _sprite = new(Vector3.Zero, "assets/sprites/editor/skybox.png", scale: 0.5f);
+        private SpriteRenderer _sprite = new(Vector3.Zero, "assets/editor/sprites/skybox.png", scale: 0.5f);
 
         private static int _vao, _vbo;
         private static readonly float[] _cubeVertices =

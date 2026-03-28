@@ -1,7 +1,4 @@
-﻿using System.Numerics;
-using Hexa.NET.ImGui;
-
-namespace RE.Utils
+﻿namespace RE.Utils
 {
     //todo: refactor os smth.
     internal static class IconFont

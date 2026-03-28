@@ -1,6 +1,5 @@
 ﻿using System.Text.Json.Nodes;
 using BulletSharp;
-using RE.Core.Scripting;
 using RE.Core.Scripting.Attributes;
 using RE.Utils;
 

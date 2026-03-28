@@ -1,5 +1,4 @@
 ﻿using Hexa.NET.ImGui;
-using RE.Editor.NodeEditor.Pins;
 
 namespace RE.Editor.NodeEditor.Nodes
 {

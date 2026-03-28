@@ -3,12 +3,9 @@ using System.Text;
 using Hexa.NET.ImGui;
 using Hexa.NET.ImGui.Backends.GLFW;
 using Hexa.NET.ImGui.Backends.OpenGL3;
-using Hexa.NET.ImGui.Backends.Win32;
 using Hexa.NET.ImGuizmo;
 using Hexa.NET.ImNodes;
 using Hexa.NET.ImPlot;
-using OpenTK.Graphics.OpenGL;
-using RE.Core;
 using RE.Core.Assets;
 using RE.Utils;
 

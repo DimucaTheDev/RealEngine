@@ -1,7 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<OutputType>Library</OutputType>
+		<OutputType Condition="'$(Configuration)'=='Debug'">Exe</OutputType>
+		<OutputType Condition="'$(Configuration)'!='Debug'">Library</OutputType>
+
 		<TargetFramework>net10.0-windows</TargetFramework>
 		<UseWindowsForms>True</UseWindowsForms>
 		<ImplicitUsings>enable</ImplicitUsings>
@@ -78,6 +80,10 @@
 		<None Include="Assets\**; Engine\**;">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</None>
+	</ItemGroup>
+
+	<ItemGroup>
+	  <ProjectReference Include="..\RE.Fmod\RE.Fmod.csproj" />
 	</ItemGroup>
  
 </Project>

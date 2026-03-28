@@ -1,4 +1,4 @@
-﻿using RE.Core;
+﻿using RE.Utils;
 
 namespace RE.Launchers
 {

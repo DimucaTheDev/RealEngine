@@ -6,8 +6,8 @@ using RE.Core.Assets;
 using RE.Core.Initializing;
 using RE.Core.PluginSystem;
 using RE.Debug;
+using RE.Editor.Panels.Viewport;
 using Serilog;
-using Quaternion = OpenTK.Mathematics.Quaternion;
 
 namespace RE.Core.World
 {
@@ -16,10 +16,16 @@ namespace RE.Core.World
     /// </summary>
     public static class SceneManager
     {
+
+        internal static readonly List<GameObject> _objectsToAdd = new();
+        internal static readonly List<GameObject> _objectsToRemove = new();
+
+        internal static bool SceneChanged = false;
+
         /// <summary>
         /// Currently loaded and active scene.
         /// </summary>
-        public static Scene CurrentScene { get; private set; } = null!;
+        public static Scene CurrentScene { get; internal set; } = null!;
 
         /// <summary>
         /// Transitions to a new scene, disposing of the current one.
@@ -45,6 +51,7 @@ namespace RE.Core.World
                 Label = $"Loading level \"{scene.Name ?? "<unnamed>"}\"",
                 Action = () =>
                 {
+                    SceneChanged = true;
                     if (scene == CurrentScene)
                     {
                         CurrentScene = Reload(scene);
@@ -60,9 +67,7 @@ namespace RE.Core.World
                         CurrentScene = scene;
                     }
 
-                    afterLoaded?.Invoke();
-
-                    RenderProfiler.AddEvent($"scene '{scene.Name}'");
+                    afterLoaded?.Invoke(); 
                 }
             });
         }
@@ -304,7 +309,9 @@ namespace RE.Core.World
 
                     scene.GameObjects.Add(gameObject, true);
                 }
-
+                
+                ApplyObjectModification();
+                
                 foreach (var go in scene.GameObjects.ToList())
                 {
                     foreach (var c in go.Components.ToList())
@@ -330,6 +337,27 @@ namespace RE.Core.World
         {
             var newScene = DeserializeScene(SerializeScene(scene), scene.Name);
             return newScene;
+        }
+
+        internal static void ApplyObjectModification()
+        {
+            if(CurrentScene == null!) return;
+            CurrentScene.GameObjects._objects.AddRange(_objectsToAdd);
+
+            foreach (var g in _objectsToRemove)
+            {
+                for (var i = g.Components.Count - 1; i >= 0; i--)
+                {
+                    g.Components.Remove(g.Components[i]);
+                }
+
+                CurrentScene.GameObjects._objects.Remove(g);
+                ViewportPanel.CollisionWorld.RemoveCollisionObject(g.ViewportObject);
+                g.ViewportObject.Dispose();
+            }
+
+            _objectsToAdd.Clear();
+            _objectsToRemove.Clear();
         }
     }
 }

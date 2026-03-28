@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using RE.Fmod;
 
 namespace RE.Utils
 {
@@ -35,7 +33,7 @@ namespace RE.Utils
         {
             public BulletSharp.Math.Vector3 ToBulletVector3() => new(v.X, v.Y, v.Z);
             public System.Numerics.Vector3 ToSystemVector3() => new(v.X, v.Y, v.Z);
-            public FMOD.VECTOR ToFmodVector3() => new() { x = v.X, y = v.Y, z = v.Z };
+            public VECTOR ToFmodVector3() => new() { x = v.X, y = v.Y, z = v.Z };
         }
 
         extension(OpenTK.Mathematics.Vector2 v)
@@ -79,7 +77,7 @@ namespace RE.Utils
         }
         #endregion
 
-        extension(FMOD.VECTOR v)
+        extension(VECTOR v)
         {
             public OpenTK.Mathematics.Vector3 ToOpenTkVector3() => new(v.x, v.y, v.z);
             public System.Numerics.Vector3 ToSystemVector3() => new(v.x, v.y, v.z);

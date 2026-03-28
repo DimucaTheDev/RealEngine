@@ -1,11 +1,10 @@
 ﻿using System.Text.Json.Nodes;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
-using RE.Core.Scripting;
 using RE.Core.Scripting.Attributes;
 using RE.Debug;
 using RE.Editor;
-using RE.Rendering.Lightning;
+using RE.Rendering.Lighting;
 using RE.Rendering.Renderables;
 
 namespace RE.Core.World.Components.Lighting
@@ -115,7 +114,7 @@ namespace RE.Core.World.Components.Lighting
             }
         } = 17.5f;
 
-        private SpriteRenderer _bulbSprite = new(Vector3.Zero, "assets/sprites/editor/bulb.png", scale: 0.3f);
+        private SpriteRenderer _bulbSprite = new(Vector3.Zero, "assets/editor/sprites/bulb.png", scale: 0.3f);
         private ILightSource _lightSource = null!;
 
         // we should rethink how we call this.... maybe

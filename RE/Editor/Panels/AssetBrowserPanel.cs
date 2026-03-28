@@ -1,6 +1,10 @@
 ﻿using System.Diagnostics;
 using System.Numerics;
+using System.Text.Json;
+using System.Text.RegularExpressions;
+using DotRecast.Core;
 using Hexa.NET.ImGui;
+using RE.Core.Assets;
 using RE.Rendering.Texturing;
 using RE.Utils;
 using static Hexa.NET.ImGui.ImGui;
@@ -11,14 +15,16 @@ namespace RE.Editor.Panels
     {
         private static readonly string _assetRootPath = Path.Combine(Directory.GetCurrentDirectory(), "Assets");
         private static string _currentDirectory = Directory.Exists(_assetRootPath) ? _assetRootPath : ".";
+        private static Dictionary<Regex, Texture> _iconOverrides = new();
         private static Texture _dirIconFull;
-        private static Texture _dirIconEmpty;
+        private static Texture _dirIconEmpty; 
         private static int _tileSize = 75;
 
         public AssetBrowserPanel()
         {
-            _dirIconFull = new StaticTexture("Assets/Sprites/Editor/folderFull.png");
-            _dirIconEmpty = new StaticTexture("Assets/Sprites/Editor/folderEmpty.png");
+            _dirIconFull = new StaticTexture("Assets/Editor/Sprites/folderFull.png");
+            _dirIconEmpty = new StaticTexture("Assets/Editor/Sprites/folderEmpty.png"); 
+            LoadIconOverrides();
         }
 
         public void Draw()
@@ -165,12 +171,10 @@ namespace RE.Editor.Panels
 
             BeginGroup();
 
-
-            IntPtr iconIntPtr = WindowsShell.GetFileIcon(fullPath);
-            var t = isDirectory ? (Directory.EnumerateFileSystemEntries(fullPath).Any() ? _dirIconFull : _dirIconEmpty) : new ImTextureRef() { TexID = (IntPtr)iconIntPtr };
+            var iconIntPtr = GetTileIcon(fullPath, isDirectory); 
             bool isClicked = ImageButton(
                 $"##IconBtn{name}",
-                t,
+                iconIntPtr,
                 new Vector2(size, size),
                 Vector2.Zero,
                 Vector2.One,
@@ -197,6 +201,44 @@ namespace RE.Editor.Panels
             EndGroup();
             PopID();
 
+        }
+
+        private static ImTextureRef GetTileIcon(string fullPath, bool isDirectory)
+        {
+            foreach (var (regex, icon) in _iconOverrides)
+            {
+                if (regex.IsMatch(fullPath))
+                    return icon;
+            }
+
+            if (isDirectory)
+            {
+                return Directory.EnumerateFileSystemEntries(fullPath).Any()
+                    ? _dirIconFull
+                    : _dirIconEmpty;
+            }
+
+            return new ImTextureRef
+            {
+                TexID = WindowsShell.GetFileIcon(fullPath)
+            };
+        }
+
+        public static void LoadIconOverrides()
+        {
+            if (!ContentManager.Exists("Assets/Editor/FileIconOverride/overrides.json"))
+                return;
+
+            var json = ContentManager.GetString("Assets/Editor/FileIconOverride/overrides.json");
+
+            var dict = JsonSerializer.Deserialize<Dictionary<string, string>>(json);
+
+            foreach (var kv in dict)
+            {
+                var regex = new Regex(kv.Key, RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
+                _iconOverrides.Add(regex, new StaticTexture(kv.Value));
+            }
         }
 
         // cuts string until it matches tile size

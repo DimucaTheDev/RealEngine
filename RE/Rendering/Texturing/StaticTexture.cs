@@ -1,8 +1,4 @@
-﻿using System.Diagnostics;
-using System.Reflection;
-using System.Runtime.CompilerServices;
-using Assimp;
-using Hexa.NET.ImGui;
+﻿using Hexa.NET.ImGui;
 using OpenTK.Graphics.OpenGL4;
 using OpenTK.Mathematics;
 using RE.Core.Assets;
@@ -152,7 +148,8 @@ namespace RE.Rendering.Texturing
                 if (!_keepTextureData)
                     ImageData = null;
 
-                if (GL.GetError() != ErrorCode.NoError)
+                var error = GL.GetError();
+                if (error != ErrorCode.NoError)
                 {
                     Delete();
                     throw new GlException("Unable to create texture.");
@@ -178,7 +175,7 @@ namespace RE.Rendering.Texturing
         {
             if (_glHandle == 0)
             {
-                Log.Warning("Redundant texture {Id} deletion.", _glHandle);
+                Log.Error("Redundant texture {Id} deletion.", _glHandle);
                 //Debugger.Break();
                 return;
             }

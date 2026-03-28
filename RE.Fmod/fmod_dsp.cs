@@ -10,11 +10,9 @@
 /* https://fmod.com/docs/2.02/api/plugin-api-dsp.html                                       */
 /* =========================================================================================*/
 
-using System;
-using System.Text;
 using System.Runtime.InteropServices;
 
-namespace FMOD
+namespace RE.Fmod
 {
     [StructLayout(LayoutKind.Sequential)]
     public struct DSP_BUFFER_ARRAY

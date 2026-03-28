@@ -6,12 +6,9 @@
 /* https://fmod.com/docs/2.02/api/studio-api.html                                           */
 /* ======================================================================================== */
 
-using System;
-using System.Text;
 using System.Runtime.InteropServices;
-using System.Collections;
 
-namespace FMOD.Studio
+namespace RE.Fmod.Studio
 {
     public partial class STUDIO_VERSION
     {
@@ -404,7 +401,7 @@ namespace FMOD.Studio
             {
                 IntPtr userKey = settings.encryptionkey;
                 settings.encryptionkey = encoder.intptrFromStringUTF8(encryptionKey);
-                FMOD.RESULT result = setAdvancedSettings(settings);
+                RESULT result = setAdvancedSettings(settings);
                 settings.encryptionkey = userKey;
                 return result;
             }
@@ -414,7 +411,7 @@ namespace FMOD.Studio
             settings.cbsize = Marshal.SizeOf<ADVANCEDSETTINGS>();
             return FMOD_Studio_System_GetAdvancedSettings(this.handle, out settings);
         }
-        public RESULT initialize(int maxchannels, INITFLAGS studioflags, FMOD.INITFLAGS flags, IntPtr extradriverdata)
+        public RESULT initialize(int maxchannels, INITFLAGS studioflags, INITFLAGS flags, IntPtr extradriverdata)
         {
             return FMOD_Studio_System_Initialize(this.handle, maxchannels, studioflags, flags, extradriverdata);
         }
@@ -426,7 +423,7 @@ namespace FMOD.Studio
         {
             return FMOD_Studio_System_Update(this.handle);
         }
-        public RESULT getCoreSystem(out FMOD.System coresystem)
+        public RESULT getCoreSystem(out Fmod.System coresystem)
         {
             return FMOD_Studio_System_GetCoreSystem(this.handle, out coresystem.handle);
         }
@@ -788,7 +785,7 @@ namespace FMOD.Studio
 
             return RESULT.OK;
         }
-        public RESULT getCPUUsage(out CPU_USAGE usage, out FMOD.CPU_USAGE usage_core)
+        public RESULT getCPUUsage(out CPU_USAGE usage, out Fmod.CPU_USAGE usage_core)
         {
             return FMOD_Studio_System_GetCPUUsage(this.handle, out usage, out usage_core);
         }
@@ -831,7 +828,7 @@ namespace FMOD.Studio
         [DllImport(STUDIO_VERSION.dll)]
         private static extern RESULT FMOD_Studio_System_GetAdvancedSettings     (IntPtr system, out ADVANCEDSETTINGS settings);
         [DllImport(STUDIO_VERSION.dll)]
-        private static extern RESULT FMOD_Studio_System_Initialize              (IntPtr system, int maxchannels, INITFLAGS studioflags, FMOD.INITFLAGS flags, IntPtr extradriverdata);
+        private static extern RESULT FMOD_Studio_System_Initialize              (IntPtr system, int maxchannels, INITFLAGS studioflags, INITFLAGS flags, IntPtr extradriverdata);
         [DllImport(STUDIO_VERSION.dll)]
         private static extern RESULT FMOD_Studio_System_Release                 (IntPtr system);
         [DllImport(STUDIO_VERSION.dll)]
@@ -925,7 +922,7 @@ namespace FMOD.Studio
         [DllImport(STUDIO_VERSION.dll)]
         private static extern RESULT FMOD_Studio_System_GetParameterDescriptionList(IntPtr system, [Out] PARAMETER_DESCRIPTION[] array, int capacity, out int count);
         [DllImport(STUDIO_VERSION.dll)]
-        private static extern RESULT FMOD_Studio_System_GetCPUUsage             (IntPtr system, out CPU_USAGE usage, out FMOD.CPU_USAGE usage_core);
+        private static extern RESULT FMOD_Studio_System_GetCPUUsage             (IntPtr system, out CPU_USAGE usage, out Fmod.CPU_USAGE usage_core);
         [DllImport(STUDIO_VERSION.dll)]
         private static extern RESULT FMOD_Studio_System_GetBufferUsage          (IntPtr system, out BUFFER_USAGE usage);
         [DllImport(STUDIO_VERSION.dll)]
@@ -1388,7 +1385,7 @@ namespace FMOD.Studio
         {
             return FMOD_Studio_EventInstance_GetPlaybackState(this.handle, out state);
         }
-        public RESULT getChannelGroup(out FMOD.ChannelGroup group)
+        public RESULT getChannelGroup(out ChannelGroup group)
         {
             return FMOD_Studio_EventInstance_GetChannelGroup(this.handle, out group.handle);
         }
@@ -1651,7 +1648,7 @@ namespace FMOD.Studio
         {
             return FMOD_Studio_Bus_UnlockChannelGroup(this.handle);
         }
-        public RESULT getChannelGroup(out FMOD.ChannelGroup group)
+        public RESULT getChannelGroup(out ChannelGroup group)
         {
             return FMOD_Studio_Bus_GetChannelGroup(this.handle, out group.handle);
         }

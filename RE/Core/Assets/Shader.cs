@@ -114,8 +114,7 @@ namespace RE.Core.Assets
                 throw new GlException($"Cant compile shader id:{Handle} src:{AssetPath}. {shaderInfoLog}");
             }
 
-            Log.Debug("Compiled shader id:{Handle} src:{AssetPath}", Handle, AssetPath);
-            RenderProfiler.AddEvent($"shader '{Path.GetFileName(AssetPath)}'");
+            Log.Debug("Compiled shader id:{Handle} src:{AssetPath}", Handle, AssetPath); 
             CompiledShaders.Add(this);
         }
 
