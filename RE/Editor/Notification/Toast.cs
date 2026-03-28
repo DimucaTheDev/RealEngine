@@ -101,11 +101,12 @@ namespace RE.Editor.Notification
 
             if (phase == ToastPhase.FadeIn)
             {
-                return ((float)LifeTime / ToastManagerConfig.FadeInOutTime) * ToastManagerConfig.Opacity;
+                return (LifeTime / ToastManagerConfig.FadeInOutTime) * ToastManagerConfig.Opacity;
             }
-            else if (phase == ToastPhase.FadeOut)
+
+            if (phase == ToastPhase.FadeOut)
             {
-                return (1.0f - ((float)LifeTime - ToastManagerConfig.FadeInOutTime - DismissTime) / ToastManagerConfig.FadeInOutTime) * ToastManagerConfig.Opacity;
+                return (1.0f - (LifeTime - ToastManagerConfig.FadeInOutTime - DismissTime) / ToastManagerConfig.FadeInOutTime) * ToastManagerConfig.Opacity;
             }
 
             return ToastManagerConfig.Opacity;

@@ -14,10 +14,10 @@ namespace RE.Debug
 {
     public class ConsoleWindow : Renderable
     {
-        public static ConsoleWindow? Instance = null!;
+        public static ConsoleWindow? Instance;
 
         public override RenderLayer RenderLayer => RenderLayer.ImGui;
-        public override bool IsVisible { get; set; } = false;
+        public override bool IsVisible { get; set; }
 
         private static bool _shouldScrollToBottom = true;
         private static string _inputBuffer = string.Empty;
@@ -29,7 +29,7 @@ namespace RE.Debug
         private static readonly Vector4 _colorError = new(1.0f, 0.4f, 0.4f, 1.0f);
         private static readonly List<string> _commandHistory = new();
 
-        private bool _focusNextFrame = false;
+        private bool _focusNextFrame;
         private bool _showInfo = true;
         private bool _showWarn = true;
         private bool _showError = true;
@@ -299,7 +299,7 @@ namespace RE.Debug
         }
         public static void Init()
         {
-            Instance ??= new ConsoleWindow() { Id = "Main" };
+            Instance ??= new ConsoleWindow { Id = "Main" };
             Instance.StartRender();
         }
     }

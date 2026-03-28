@@ -15,6 +15,7 @@ using RE.Utils;
 using Serilog;
 using Camera = RE.Rendering.Camera;
 using Keys = OpenTK.Windowing.GraphicsLibraryFramework.Keys;
+using Quaternion = BulletSharp.Math.Quaternion;
 
 namespace RE.Core.World.Components
 {
@@ -24,13 +25,13 @@ namespace RE.Core.World.Components
         private const float MouseSensitivity = 0.2f;
         private Camera _camera = Camera.Main;
         protected GameObject PlayerGameObject = null!;
-        private bool _isCrouching = false;
+        private bool _isCrouching;
         private const float StandHeight = 1.75f;
         private const float CrouchHeight = 0.4f;
         private const float CrouchCameraOffset = 0.7f;
         private const float StandCameraOffset = 1.45f;
         private const float CameraLerpSpeed = 10f;
-        private float _jumpCd = 0;
+        private float _jumpCd;
         private float _currentCameraYOffset = 1.45f;
         private float _targetCameraYOffset = 1.45f;
         private bool _wasGrounded;
@@ -40,7 +41,7 @@ namespace RE.Core.World.Components
 
         private SpriteRenderer _spriteSpawnpoint = new(Vector3.Zero, "assets/editor/sprites/spawn.png", scale: 1);
 
-        private float _soundCooldown = 0f;
+        private float _soundCooldown;
 
         [EditorProperty] public string InteractDenySound { get; set; } = "event:/DenySelect";
           
@@ -65,7 +66,7 @@ namespace RE.Core.World.Components
             rigidBodyComponent.RigidBody.ActivationState = ActivationState.DisableDeactivation;
             rigidBodyComponent.RigidBody.Gravity = new BulletSharp.Math.Vector3(0, -25f, 0);
 
-            Input.Mouse.CursorState = CursorState.Grabbed;
+            Mouse.CursorState = CursorState.Grabbed;
             FirstMove = true;
 
             path.AddRange(
@@ -78,7 +79,7 @@ namespace RE.Core.World.Components
 
 
         private ImageRenderer im;
-        private float d = 0;
+        private float d;
         private void CameraControl()
         {
             float Remap(float value, float fromMin, float fromMax, float toMin, float toMax)
@@ -109,20 +110,20 @@ namespace RE.Core.World.Components
 
             Camera cam = _camera;
 
-            if (Input.Mouse.IsButtonPressed(MouseButton.Left))
-                Input.Mouse.CursorState = CursorState.Grabbed;
-            if (Input.Keyboard.IsKeyPressed(Keys.Escape))
+            if (Mouse.IsButtonPressed(MouseButton.Left))
+                Mouse.CursorState = CursorState.Grabbed;
+            if (Keyboard.IsKeyPressed(Keys.Escape))
             {
-                Input.Mouse.CursorState = CursorState.Normal;
+                Mouse.CursorState = CursorState.Normal;
                 FirstMove = true;
                 return;
             }
 
-            if (Input.Mouse.CursorState != CursorState.Grabbed)
+            if (Mouse.CursorState != CursorState.Grabbed)
                 return;
 
-            var deltaX = Input.Mouse.Delta.X;
-            var deltaY = -Input.Mouse.Delta.Y;
+            var deltaX = Mouse.Delta.X;
+            var deltaY = -Mouse.Delta.Y;
             
             if (FirstMove)
             {
@@ -181,22 +182,22 @@ namespace RE.Core.World.Components
             var camForward = (_camera.Front with { Y = 0 }).Normalized();
             var camRight = Vector3.Normalize(Vector3.Cross(camForward, _camera.Up));
 
-            if (Input.Keyboard.IsKeyDown(Keys.W))
+            if (Keyboard.IsKeyDown(Keys.W))
                 moveDir += camForward;
-            if (Input.Keyboard.IsKeyDown(Keys.S))
+            if (Keyboard.IsKeyDown(Keys.S))
                 moveDir -= camForward;
-            if (Input.Keyboard.IsKeyDown(Keys.D))
+            if (Keyboard.IsKeyDown(Keys.D))
                 moveDir += camRight;
-            if (Input.Keyboard.IsKeyDown(Keys.A))
+            if (Keyboard.IsKeyDown(Keys.A))
                 moveDir -= camRight;
 
             _soundCooldown += (float)args.Time;
 
-            if ((Input.Keyboard.IsKeyDown(Keys.W) || Input.Keyboard.IsKeyDown(Keys.S) || Input.Keyboard.IsKeyDown(Keys.D) ||
-                 Input.Keyboard.IsKeyDown(Keys.A)) && !_isCrouching && _wasGrounded && moveDir.Length > 0.75f)
+            if ((Keyboard.IsKeyDown(Keys.W) || Keyboard.IsKeyDown(Keys.S) || Keyboard.IsKeyDown(Keys.D) ||
+                 Keyboard.IsKeyDown(Keys.A)) && !_isCrouching && _wasGrounded && moveDir.Length > 0.75f)
             {
 
-                if ((_soundCooldown >= 0.45f && !Input.Keyboard.Shift) || (_soundCooldown >= 0.3f && Input.Keyboard.Shift))
+                if ((_soundCooldown >= 0.45f && !Keyboard.Shift) || (_soundCooldown >= 0.3f && Keyboard.Shift))
                 {
                     SoundManager.PlayOneShotEvent("event:/Step");
                     _soundCooldown = 0f;
@@ -208,13 +209,13 @@ namespace RE.Core.World.Components
                 moveDir = moveDir.Normalized();
 
             bool crouching = _isCrouching;
-            bool sprinting = Input.Keyboard.IsKeyDown(Keys.LeftShift);
+            bool sprinting = Keyboard.IsKeyDown(Keys.LeftShift);
             float maxSpeed = crouching ? 5f : (sprinting ? 13.5f : 10f);
 
             float accel = 120f;
             float friction = 8f;
 
-            Vector3 currentVel = new((float)rb.LinearVelocity.X, 0, (float)rb.LinearVelocity.Z);
+            Vector3 currentVel = new(rb.LinearVelocity.X, 0, rb.LinearVelocity.Z);
             Vector3 targetVel = moveDir * maxSpeed;
 
             if (moveDir.LengthSquared > 0.001f)
@@ -262,7 +263,7 @@ namespace RE.Core.World.Components
 
             _wasGrounded = grounded;
 
-            if (Input.Keyboard.IsKeyDown(Keys.Space) && grounded && _jumpCd <= 0)
+            if (Keyboard.IsKeyDown(Keys.Space) && grounded && _jumpCd <= 0)
             {
                 rb.ApplyCentralImpulse(9f * BulletSharp.Math.Vector3.UnitY);
                 _jumpCd = 0.3f;
@@ -271,7 +272,7 @@ namespace RE.Core.World.Components
             if (_jumpCd > 0f)
                 _jumpCd -= Time.DeltaTime;
 
-            var crouchKeyDown = Input.Keyboard.IsKeyDown(Keys.LeftControl);
+            var crouchKeyDown = Keyboard.IsKeyDown(Keys.LeftControl);
             if (crouchKeyDown != _isCrouching)
             {
                 float newHeight = crouchKeyDown ? CrouchHeight : StandHeight;
@@ -370,7 +371,7 @@ namespace RE.Core.World.Components
 
             _targetCameraYOffset = _isCrouching ? CrouchCameraOffset : StandCameraOffset;
             _currentCameraYOffset = MathHelper.Lerp(_currentCameraYOffset, _targetCameraYOffset,
-                (float)(Time.DeltaTime * CameraLerpSpeed));
+                Time.DeltaTime * CameraLerpSpeed);
 
 
             if (_holdingObject != null)
@@ -400,11 +401,11 @@ namespace RE.Core.World.Components
                     rigidBody.ApplyCentralForce(force.ToBulletVector3());
 
                     var currentOrientation = rigidBody.Orientation;
-                    var targetOrientation = BulletSharp.Math.Quaternion.Identity;
+                    var targetOrientation = Quaternion.Identity;
 
                     float rotationSmoothFactor = 5f * Time.DeltaTime;
 
-                    var newOrientation = BulletSharp.Math.Quaternion.Slerp(currentOrientation, targetOrientation, rotationSmoothFactor);
+                    var newOrientation = Quaternion.Slerp(currentOrientation, targetOrientation, rotationSmoothFactor);
 
                     _holdingObject.SetRotation(newOrientation.ToOpenTkQuaternion());
 
@@ -412,7 +413,7 @@ namespace RE.Core.World.Components
 
                     rigidBody.ActivationState = ActivationState.ActiveTag;
 
-                    if (false && Utils.Game.Instance.MouseState.IsButtonPressed(MouseButton.Button1))
+                    if (false && Game.Instance.MouseState.IsButtonPressed(MouseButton.Button1))
                     {
                         if (_holdingObject.GetComponent<RigidBodyComponent>() != null)
                             _holdingObject.GetComponent<RigidBodyComponent>().Mass = _objMass;
@@ -450,7 +451,7 @@ namespace RE.Core.World.Components
             _fall = SoundManager.PlayEvent("event:/FallLoop");
         }
 
-        private bool _falling = false;
+        private bool _falling;
         private Sound _fall;
         private float _prevDeltaY;
 
@@ -490,8 +491,8 @@ namespace RE.Core.World.Components
 
 
 
-        int curveIndex = 0;
-        float t = 0.0f;
+        int curveIndex;
+        float t;
         float speed = 0.25f;
         bool loop = false;
         private bool ended = false;

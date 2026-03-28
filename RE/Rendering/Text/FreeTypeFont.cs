@@ -161,7 +161,7 @@ public class FreeTypeFont
         var char_x = 0.0f;
         foreach (var c in text)
         {
-            if (_characters.ContainsKey(c) == false)
+            if (!_characters.ContainsKey(c))
                 continue;
             var ch = _characters[c];
 

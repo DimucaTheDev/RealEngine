@@ -1,5 +1,4 @@
-﻿using Assimp;
-using OpenTK.Mathematics;
+﻿using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using RE.Core;
 using RE.Core.World;
@@ -34,7 +33,7 @@ public class RenderManager
     public static LineRenderer FrustumRenderer = new();
     public static List<Component> RenderingComponents = [];
 
-    private static bool _hasCameraFrustum = false;
+    private static bool _hasCameraFrustum;
     private static Matrix4 _cachedViewMatrix, _cachedProjMatrix;
 
     public static void Init()

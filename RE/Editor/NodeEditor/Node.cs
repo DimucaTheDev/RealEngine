@@ -27,7 +27,7 @@ namespace RE.Editor.NodeEditor
         public Action<Node> ExecuteAction;
 
         public virtual string Name { get; set; }
-        protected float MinInputWidth = 0f;
+        protected float MinInputWidth;
 
         public void Execute() => ExecuteAction?.Invoke(this);
 
@@ -205,10 +205,5 @@ namespace RE.Editor.NodeEditor
 
     internal class ActionNode : Node
     {
-        public ActionNode()
-        {
-            //InputPins.Add(new ActionNodePin(" ", this));
-            //OutputPins.Add(new ActionNodePin(" ", this));
-        } 
     }
 }

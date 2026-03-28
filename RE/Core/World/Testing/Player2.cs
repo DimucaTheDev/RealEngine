@@ -1,7 +1,9 @@
-﻿using OpenTK.Windowing.Common;
+﻿using BulletSharp.Math;
+using OpenTK.Windowing.Common;
 using RE.Core.World.Components;
 using RE.Core.World.Components.Physics;
 using RE.Rendering;
+using RE.Utils;
 
 namespace RE.Core.World.Testing
 {
@@ -10,7 +12,7 @@ namespace RE.Core.World.Testing
         public override void Update(FrameEventArgs args)
         {
             base.Update(args);
-            if (Utils.Game.Instance.MouseState.IsButtonPressed(0))
+            if (Game.Instance.MouseState.IsButtonPressed(0))
             {
                 var forward = Camera.Main.Front.Normalized();
 
@@ -18,7 +20,7 @@ namespace RE.Core.World.Testing
                 float recoilForce = 16f;
 
                 // Отдача назад
-                var impulse = new BulletSharp.Math.Vector3(
+                var impulse = new Vector3(
                     -forward.X * recoilForce,
                     -forward.Y * recoilForce,
                     -forward.Z * recoilForce

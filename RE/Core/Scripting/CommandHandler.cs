@@ -33,7 +33,7 @@ namespace RE.Core.Scripting
         public static IReadOnlyList<string> RegisteredCommands => CommandDescriptions.Keys.ToList().AsReadOnly();
 
 
-        private static int _recursionDepth = 0;
+        private static int _recursionDepth;
         private static readonly Dictionary<string, string> CommandDescriptions = [];
         private const int MaxRecursionDepth = 100;
 
@@ -245,7 +245,7 @@ namespace RE.Core.Scripting
                     });*/
                 }
             }, "Play or stop sound. Enter command with no arguments to see more info");
-            RegisterHandler("exit", _ => Utils.Game.Instance.Close(), "Close the game");
+            RegisterHandler("exit", _ => Game.Instance.Close(), "Close the game");
             RegisterHandler("source", list =>
             {
                 if (list.Count == 0)
@@ -329,7 +329,7 @@ namespace RE.Core.Scripting
             }, "Open or close debug overlay");
             RegisterSingleArgHandler("init_test", s =>
             {
-                Initializer.AddStep(new AsyncInitializingTask()
+                Initializer.AddStep(new AsyncInitializingTask
                 {
                     Label = "Testing!",
                     Action = () => { Thread.Sleep(3000); }
@@ -340,7 +340,7 @@ namespace RE.Core.Scripting
             {
                 if (args.Count == 0)
                 {
-                    Log.Information("V-Sync {State}", Utils.Game.Instance.VSync == VSyncMode.Off ? "OFF" : "ON");
+                    Log.Information("V-Sync {State}", Game.Instance.VSync == VSyncMode.Off ? "OFF" : "ON");
                     return;
                 }
 
@@ -349,8 +349,8 @@ namespace RE.Core.Scripting
                     Log.Error("Usage: {Usage}", "vsync enable|disable");
                     return;
                 }
-                Utils.Game.Instance.VSync = args[0] == "enable" ? VSyncMode.On : VSyncMode.Off;
-                Log.Information("V-Sync {State}", Utils.Game.Instance.VSync == VSyncMode.Off ? "OFF" : "ON");
+                Game.Instance.VSync = args[0] == "enable" ? VSyncMode.On : VSyncMode.Off;
+                Log.Information("V-Sync {State}", Game.Instance.VSync == VSyncMode.Off ? "OFF" : "ON");
 
             }, "Enable or disable V-Sync");
             RegisterHandler("fps", list => { Game.Instance.UpdateFrequency = int.Parse(list.First()); }, "Set max frame rate");

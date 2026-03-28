@@ -19,7 +19,7 @@ namespace RE.Core.World.Components
         public int MaxParticles { get; set; } = 1000;
 
         private readonly List<ParticleInstance> _particles = new();
-        private float _spawnAccumulator = 0f;
+        private float _spawnAccumulator;
         private const int TotalPhases = 11;
         private static readonly Dictionary<int, string> PhaseTextures = Enumerable.Range(0, TotalPhases)
             .ToDictionary(i => i, i => $"assets/testing/big_smoke_{i}.png");
@@ -298,8 +298,7 @@ namespace RE.Core.World.Components
         {
             if (Owner != null!)
                 return new() { Width = 500, Height = 700, Title = $"Particle Editor (0x{Owner.Id:x}, {Owner.Name})" };
-            else
-                return new PopupSettings();
+            return new PopupSettings();
         }
 
         private class ParticleSettings
@@ -310,28 +309,28 @@ namespace RE.Core.World.Components
             public float Emission = 50; public float Emission_temp = 50;
 
             public float Angle = -90; public float Angle_temp = -90;
-            public float Angle3D = 0; public float Angle3D_temp = 0;
+            public float Angle3D; public float Angle3D_temp;
             public float Speed = 20; public float Speed_temp = 20;
 
-            public float PosVarX = 0; public float PosVarX_temp = 0;
-            public float PosVarY = 0; public float PosVarY_temp = 0;
-            public float PosVarZ = 0; public float PosVarZ_temp = 0;
+            public float PosVarX; public float PosVarX_temp;
+            public float PosVarY; public float PosVarY_temp;
+            public float PosVarZ; public float PosVarZ_temp;
 
-            public float VelVarX = 0; public float VelVarX_temp = 0;
-            public float VelVarY = 0; public float VelVarY_temp = 0;
-            public float VelVarZ = 0; public float VelVarZ_temp = 0;
+            public float VelVarX; public float VelVarX_temp;
+            public float VelVarY; public float VelVarY_temp;
+            public float VelVarZ; public float VelVarZ_temp;
 
-            public float GravityX = 0; public float GravityX_temp = 0;
+            public float GravityX; public float GravityX_temp;
             public float GravityY = -9.8f; public float GravityY_temp = -9.8f;
-            public float GravityZ = 0; public float GravityZ_temp = 0;
+            public float GravityZ; public float GravityZ_temp;
 
-            public float AccelRad = 0; public float AccelRad_temp = 0;
-            public float AccelTan = 0; public float AccelTan_temp = 0;
+            public float AccelRad; public float AccelRad_temp;
+            public float AccelTan; public float AccelTan_temp;
             public float Drag = 0.1f; public float Drag_temp = 0.1f;
 
             public float SizeStart = 1.0f; public float SizeStart_temp = 1.0f;
             public float SizeEnd = 0.1f; public float SizeEnd_temp = 0.1f;
-            public float SizeVar = 0.0f; public float SizeVar_temp = 0.0f;
+            public float SizeVar; public float SizeVar_temp;
 
             public Color4 ColorStart = Color4.Orange;
             public Color4 ColorEnd = Color4.Red;

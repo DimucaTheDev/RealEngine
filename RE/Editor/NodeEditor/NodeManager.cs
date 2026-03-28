@@ -14,7 +14,7 @@ namespace RE.Editor.NodeEditor
         private static Dictionary<int, Node> Nodes = [];
         private static Dictionary<int, NodePin> NodePins = [];
         private static List<NodePinLink> NodeLinks = [];
-        private static int _nextId = 0;
+        private static int _nextId;
 
         public static void RenderNodes()
         {
@@ -131,7 +131,7 @@ namespace RE.Editor.NodeEditor
             {
                 if (!NodePins[e].MultipleInputs)
                     NodeLinks.RemoveAll(s => s.EndPinId == e);
-                ObtainNodeLinkId(new NodePinLink() { StartPinId = s, EndPinId = e });
+                ObtainNodeLinkId(new NodePinLink { StartPinId = s, EndPinId = e });
             }
             if (ImNodes.IsLinkDestroyed(ref i))
             {

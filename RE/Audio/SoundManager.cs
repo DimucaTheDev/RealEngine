@@ -4,7 +4,7 @@ using System.Runtime.InteropServices;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using RE.Core.Assets;
-using RE.Fmod.Studio;
+using RE.Fmod;
 using RE.Rendering;
 using RE.Utils;
 using Serilog;
@@ -13,12 +13,13 @@ using DEBUG_FLAGS = RE.Fmod.DEBUG_FLAGS;
 using DEBUG_MODE = RE.Fmod.DEBUG_MODE;
 using Result = RE.Fmod.RESULT;
 using FmodBank = RE.Fmod.Studio.Bank;
+using INITFLAGS = RE.Fmod.Studio.INITFLAGS;
 using LOAD_BANK_FLAGS = RE.Fmod.Studio.LOAD_BANK_FLAGS;
 using STOP_MODE = RE.Fmod.Studio.STOP_MODE;
 
 namespace RE.Audio
 {
-    public static unsafe class SoundManager
+    public static class SoundManager
     {
         private static Fmod.System _fmodSystem;
         private static Fmod.Studio.System _studioSystem;
@@ -152,7 +153,7 @@ namespace RE.Audio
         private static void Check(Result result, [CallerArgumentExpression(nameof(result))] string exp = "")
         {
             if (result != Result.OK)
-                Log.Error("[FMOD] Check failed: {Expression} returned {Result}", exp, Fmod.Error.String(result));
+                Log.Error("[FMOD] Check failed: {Expression} returned {Result}", exp, Error.String(result));
 
             System.Diagnostics.Debug.Assert(result == Result.OK, $"'{exp}' != {nameof(Result.OK)}");
         }

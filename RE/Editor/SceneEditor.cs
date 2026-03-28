@@ -24,6 +24,7 @@ using RE.Utils;
 using Serilog;
 using static Hexa.NET.ImGui.ImGui;
 using Image = System.Drawing.Image;
+using PixelFormat = System.Drawing.Imaging.PixelFormat;
 using Vector2 = System.Numerics.Vector2;
 
 namespace RE.Editor
@@ -40,13 +41,13 @@ namespace RE.Editor
         public SceneEditor() => this.StartRender();
 
         public override RenderLayer RenderLayer => RenderLayer.ImGui;
-        public override bool IsVisible { get; set; } = false;
+        public override bool IsVisible { get; set; }
 
         public static SceneEditor Instance;
-        public static bool Enabled = false;
+        public static bool Enabled;
         public static bool PreviewLight, PreviewSkybox, ShowAxis = true, ShowGrid = true, PreviewParticles;
         public static GameObject? SelectedObject;
-        public static bool ShowExitConfirmationModal = false;
+        public static bool ShowExitConfirmationModal;
         public static bool SimulationRunning;
 
         private static readonly ImFontPtr _bigFont;
@@ -69,7 +70,7 @@ namespace RE.Editor
 
         static SceneEditor()
         {
-            var iconPath = ($"Assets/RealEngine.ico");
+            var iconPath = ("Assets/RealEngine.ico");
 
             if (ContentManager.Exists(iconPath))
             {
@@ -89,7 +90,7 @@ namespace RE.Editor
 
                 var data = bmp.LockBits(new Rectangle(0, 0, bmp.Width, bmp.Height),
                     ImageLockMode.ReadOnly,
-                    System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+                    PixelFormat.Format32bppArgb);
 
                 var bytesPerPixel = Image.GetPixelFormatSize(bmp.PixelFormat) / 8;
                 var stride = bmp.Width * bytesPerPixel;
@@ -330,10 +331,7 @@ namespace RE.Editor
                     if (MenuItem("Exit"))
                     {
                         ShowExitConfirmationModal = true;
-                        unsafe
-                        {
-                            WinApi.StartFlashing((IntPtr)Game.Instance.WindowPtr);
-                        }
+                        WinApi.StartFlashing((IntPtr)Game.Instance.WindowPtr);
                     }
                     EndMenu();
                 }
@@ -362,7 +360,7 @@ namespace RE.Editor
                 {
                     if (MenuItem("Console"))
                     {
-                        var consoleWindow = new ConsoleWindow() { Id = $"NewConsoleInstance{Random.Shared.Next(10000)}" };
+                        var consoleWindow = new ConsoleWindow { Id = $"NewConsoleInstance{Random.Shared.Next(10000)}" };
                         consoleWindow.StartRender();
                         consoleWindow.IsVisible = true;
                     }
@@ -383,7 +381,7 @@ namespace RE.Editor
                 {
                     if (MenuItem("Open Docs"))
                     {
-                        Process.Start(new ProcessStartInfo()
+                        Process.Start(new ProcessStartInfo
                         {
                             FileName = "https://dimucathedev.github.io/RealEngine/docs/editor/about.html",
                             UseShellExecute = true

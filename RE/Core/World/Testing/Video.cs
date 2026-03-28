@@ -27,9 +27,9 @@ namespace RE.Core.World.Testing
             }
         }
 
-        int frame = 0;
+        int frame;
         double frameDuration;
-        double timeAccumulator = 0;
+        double timeAccumulator;
 
         public override void Update(FrameEventArgs args)
         {

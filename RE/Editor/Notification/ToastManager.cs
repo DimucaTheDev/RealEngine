@@ -9,7 +9,7 @@ namespace RE.Editor.Notification
     {
         private static readonly List<Toast> Notifications = new();
 
-        internal static ImGuiViewportPtr MainWindowViewport = default;
+        internal static ImGuiViewportPtr MainWindowViewport;
 
         public static void InsertNotification(Toast toast)
         {
@@ -68,13 +68,13 @@ namespace RE.Editor.Notification
                 var phase = currentToast.GetPhase();
                 if (phase == ToastPhase.FadeIn)
                 {
-                    float progress = (float)elapsed / ToastManagerConfig.FadeInOutTime;
+                    float progress = elapsed / ToastManagerConfig.FadeInOutTime;
                     float easeOut = 1f - MathF.Pow(1f - progress, 3);
                     currentX = offscreenX - (offscreenX - targetX) * easeOut;
                 }
                 else if (phase == ToastPhase.FadeOut)
                 {
-                    float progress = (float)(elapsed - ToastManagerConfig.FadeInOutTime - currentToast.DismissTime) / ToastManagerConfig.FadeInOutTime;
+                    float progress = (elapsed - ToastManagerConfig.FadeInOutTime - currentToast.DismissTime) / ToastManagerConfig.FadeInOutTime;
                     float easeIn = MathF.Pow(progress, 3);
                     currentX = targetX + (offscreenX - targetX) * easeIn;
                 }

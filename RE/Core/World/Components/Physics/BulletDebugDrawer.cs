@@ -15,7 +15,7 @@ namespace RE.Core.World.Components.Physics
     /// simulation. The debug output can be customized using the static Mode and Xray properties. This class is
     /// typically used for development and debugging purposes to visualize collision shapes, contact points, and other
     /// physics-related data.</remarks>
-    public class BulletDebugDrawer : BulletSharp.DebugDraw
+    public class BulletDebugDrawer : DebugDraw
     {
         public static DebugDrawModes Mode = DebugDrawModes.None;
 

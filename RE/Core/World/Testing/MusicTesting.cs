@@ -9,7 +9,7 @@ namespace RE.Core.World.Testing
     internal class MusicTesting : Component
     {
         private BillboardTextComponent textState;
-        private bool ActionRunning = false;
+        private bool ActionRunning;
         private Queue<Action> testQueue = new();
 
         public override void Start()

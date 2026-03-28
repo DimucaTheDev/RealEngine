@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using RE.Fmod;
 using Serilog;
 using EventInstance = RE.Fmod.Studio.EventInstance;
 using RESULT = RE.Fmod.RESULT;
@@ -50,7 +51,7 @@ namespace RE.Audio
         private static void Check(RESULT result, [CallerArgumentExpression(nameof(result))] string exp = "")
         {
             if (result != RESULT.OK)
-                Log.Error("{Expression}: {Result}", exp, Fmod.Error.String(result));
+                Log.Error("{Expression}: {Result}", exp, Error.String(result));
 
             System.Diagnostics.Debug.Assert(result == RESULT.OK, $"'{exp}' != {nameof(RESULT.OK)}");
         }

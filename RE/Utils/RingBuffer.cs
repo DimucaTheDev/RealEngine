@@ -3,7 +3,7 @@
     internal class RingBuffer<T>(int size)
     {
         private readonly T[] _data = new T[size];
-        private int _index = 0;
+        private int _index;
 
         public int Length => _data.Length;
 

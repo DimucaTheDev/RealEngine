@@ -103,7 +103,7 @@ namespace RE.Core.Assets
             int location = GL.GetUniformLocation(this, name);
             if (location == -1)
             {
-                Log.Error("Unknown uniform location {Name} in: {Shaders}", name, this._linkedShaders.Select(s => Path.GetFileName(s.AssetPath!).Replace("\\\\", "\\")).ToArray());
+                Log.Error("Unknown uniform location {Name} in: {Shaders}", name, _linkedShaders.Select(s => Path.GetFileName(s.AssetPath!).Replace("\\\\", "\\")).ToArray());
                 if (!_unknownLocations.Contains(name))
                     _unknownLocations.Add(name);
                 return;

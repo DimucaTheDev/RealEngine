@@ -29,7 +29,7 @@ namespace RE.Debug
         {
             Root = new ProfilerNode
             {
-                Name = $"Frame",
+                Name = "Frame",
                 Start = 0
             };
 

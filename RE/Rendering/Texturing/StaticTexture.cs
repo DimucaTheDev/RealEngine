@@ -9,6 +9,7 @@ using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 using SixLabors.ImageSharp.Processing.Processors.Transforms;
 using StbImageSharp;
+using Buffer = System.Buffer;
 using Image = SixLabors.ImageSharp.Image;
 using Size = SixLabors.ImageSharp.Size;
 
@@ -168,7 +169,7 @@ namespace RE.Rendering.Texturing
         /// </summary> 
         public override ImTextureRef AsImGui()
         {
-            return _imHandle ??= new ImTextureRef() { TexID = new ImTextureID(AsOpenGl()) };
+            return _imHandle ??= new ImTextureRef { TexID = new ImTextureID(AsOpenGl()) };
         }
 
         public override void Delete()
@@ -202,7 +203,7 @@ namespace RE.Rendering.Texturing
                     byte[] color = isPurple ? purple : black;
 
                     int index = (y * size + x) * 4;
-                    System.Buffer.BlockCopy(color, 0, data, index, 4);
+                    Buffer.BlockCopy(color, 0, data, index, 4);
                 }
             }
 
@@ -234,7 +235,7 @@ namespace RE.Rendering.Texturing
 
         public static StaticTexture FromGlHandle(uint handle)
         {
-            return new StaticTexture()
+            return new StaticTexture
             {
                 _glHandle = handle
                 //todo

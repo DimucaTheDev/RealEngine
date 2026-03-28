@@ -26,7 +26,7 @@ namespace RE.Editor.Panels.MaterialPreview
         private static readonly Dictionary<string, Texture> TextureCache = new();
         private static readonly Dictionary<string, (uint vao, uint vbo, uint ebo, int indexCount, List<float> vertices, List<int> indices)> MeshCache = new();
         private static ShaderProgram _program = null!;
-        private static bool _shaderInitialized = false;
+        private static bool _shaderInitialized;
         private uint _vao, _vbo, _ebo;
         private Texture _texture;
         private int _indexCount;
@@ -36,7 +36,7 @@ namespace RE.Editor.Panels.MaterialPreview
             get;
             set
             {
-                this.IsVisible = false;
+                IsVisible = false;
                 LoadModel(value);
                 InitShader();
                 field = value;
@@ -92,7 +92,7 @@ namespace RE.Editor.Panels.MaterialPreview
                 _program.SetValue("hasSpotLight", false);
                 _program.SetValue("hasDirLight", true);
                 _program.SetValue("viewPos", camera.Position);
-                ILightSource light = new DirectionalLight()
+                ILightSource light = new DirectionalLight
                 {
                     Direction = (.3f, -.5f, -.3f),
                     DiffuseColor = Vector3.One,
@@ -225,8 +225,6 @@ namespace RE.Editor.Panels.MaterialPreview
                 MeshCache[path] = (_vao, _vbo, _ebo, _indexCount, renderVertices, indices.Select(s => (int)s).ToList());
 
                 _texture = GetOrLoadTexture(path);
-
-                return;
             }
             else
             {
@@ -322,7 +320,7 @@ namespace RE.Editor.Panels.MaterialPreview
                 GL.EnableVertexAttribArray(2);
 
 
-                MeshCache[path] = ((uint)_vao, (uint)_vbo, (uint)_ebo, _indexCount, renderVertices,
+                MeshCache[path] = (_vao, _vbo, _ebo, _indexCount, renderVertices,
                     indices.Select(s => (int)s).ToList());
 
                 var mat = scene.Materials[mesh.MaterialIndex];
@@ -337,7 +335,6 @@ namespace RE.Editor.Panels.MaterialPreview
                     Material = new Material();
 
                 _texture = GetOrLoadTexture(path, scene);
-                return;
             }
         }
 

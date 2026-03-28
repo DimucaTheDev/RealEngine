@@ -15,7 +15,7 @@ namespace RE.Core.World.Components.Physics
         }
         public override JsonNode GetSaveData()
         {
-            JsonObject root = new() { { nameof(Multiplier), new JsonArray() { Multiplier } } };
+            JsonObject root = new() { { nameof(Multiplier), new JsonArray { Multiplier } } };
             return root;
         }
     }

@@ -1,8 +1,10 @@
 ﻿using BulletSharp;
-using OpenTK.Mathematics;
+using BulletSharp.Math;
 using RE.Core.World.Components;
 using RE.Core.World.Components.Physics;
 using RE.Utils;
+using Quaternion = OpenTK.Mathematics.Quaternion;
+using Vector3 = OpenTK.Mathematics.Vector3;
 
 namespace RE.Core.World
 {
@@ -14,7 +16,7 @@ namespace RE.Core.World
         // this is used in the viewport for selection. todo: make public
         internal CollisionObject ViewportObject;
 
-        private static int _next = 0;
+        private static int _next;
          
         /// <summary>
         /// Initializes a new instance of <see cref="GameObject"/> with no parent.
@@ -118,7 +120,7 @@ namespace RE.Core.World
             {
                 var rigidBody = rigidBodyComponent.RigidBody;
                 var transform = rigidBody.WorldTransform;
-                transform.Basis = BulletSharp.Math.Matrix.RotationQuaternion(
+                transform.Basis = Matrix.RotationQuaternion(
                     q.ToBulletQuaternion()
                 );
                 rigidBody.WorldTransform = transform;

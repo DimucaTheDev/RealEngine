@@ -1,8 +1,9 @@
 ﻿using BulletSharp;
-using OpenTK.Mathematics;
+using BulletSharp.Math;
 using RE.Core.Scripting.Attributes;
 using RE.Core.World.Physics;
 using RE.Utils;
+using Vector3 = OpenTK.Mathematics.Vector3;
 
 namespace RE.Core.World.Components.Physics
 {
@@ -49,10 +50,10 @@ namespace RE.Core.World.Components.Physics
             {
 
                 var transform = Owner.Transform;
-                var startTransform = BulletSharp.Math.Matrix.Identity;
+                var startTransform = Matrix.Identity;
                 startTransform.Origin = transform.Position.ToBulletVector3();
                 startTransform.Basis =
-                    BulletSharp.Math.Matrix.RotationQuaternion(transform.Rotation.ToBulletQuaternion());
+                    Matrix.RotationQuaternion(transform.Rotation.ToBulletQuaternion());
 
                 var motionState = new DefaultMotionState(startTransform);
                 var rbInfo = new RigidBodyConstructionInfo(0f, motionState, _collisionShape, BulletSharp.Math.Vector3.Zero);

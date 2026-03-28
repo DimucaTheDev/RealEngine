@@ -1,11 +1,11 @@
 ﻿using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Text.Json.Serialization.Metadata;
 using OpenTK.Mathematics;
 using RE.Core.Assets;
 using RE.Core.Initializing;
 using RE.Core.PluginSystem;
-using RE.Debug;
 using RE.Editor.Panels.Viewport;
 using Serilog;
 
@@ -20,7 +20,7 @@ namespace RE.Core.World
         internal static readonly List<GameObject> _objectsToAdd = new();
         internal static readonly List<GameObject> _objectsToRemove = new();
 
-        internal static bool SceneChanged = false;
+        internal static bool SceneChanged;
 
         /// <summary>
         /// Currently loaded and active scene.
@@ -46,7 +46,7 @@ namespace RE.Core.World
         /// <param name="afterLoaded">Invoke action when scene finishes loading</param>
         public static void LoadScene(Scene scene, bool disposeCurrent, Action? afterLoaded)
         {
-            Initializer.AddStep(new SyncInitializingTask()
+            Initializer.AddStep(new SyncInitializingTask
             {
                 Label = $"Loading level \"{scene.Name ?? "<unnamed>"}\"",
                 Action = () =>
@@ -136,10 +136,10 @@ namespace RE.Core.World
             }
             root.Add("objects", objects);
 
-            var jsonString = root.ToJsonString(new JsonSerializerOptions()
+            var jsonString = root.ToJsonString(new JsonSerializerOptions
             {
                 WriteIndented = true,
-                TypeInfoResolver = new System.Text.Json.Serialization.Metadata.DefaultJsonTypeInfoResolver()
+                TypeInfoResolver = new DefaultJsonTypeInfoResolver()
             });
             return jsonString;
         }
@@ -153,7 +153,7 @@ namespace RE.Core.World
         /// <returns>A new scene instance</returns>
         public static Scene ParseScene(string name)
         {
-            string dataPath = Path.Combine("Assets", "Maps", name, $"data.json");
+            string dataPath = Path.Combine("Assets", "Maps", name, "data.json");
 
             return DeserializeScene(ContentManager.GetString(dataPath), name);
         }
@@ -171,8 +171,8 @@ namespace RE.Core.World
                     .ToList();
 
                 JsonDocument doc = JsonDocument.Parse(jsonString,
-                    new JsonDocumentOptions()
-                    { CommentHandling = JsonCommentHandling.Skip, AllowTrailingCommas = true });
+                    new JsonDocumentOptions
+                        { CommentHandling = JsonCommentHandling.Skip, AllowTrailingCommas = true });
 
                 Scene scene = new Scene();
                 CurrentScene = scene;

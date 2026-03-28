@@ -2,6 +2,8 @@
 using Hexa.NET.ImGui;
 using OpenTK.Mathematics;
 using RE.Utils;
+using Vector2 = System.Numerics.Vector2;
+using Vector3 = System.Numerics.Vector3;
 
 namespace RE.Editor.NodeEditor.Pins
 {
@@ -26,8 +28,8 @@ namespace RE.Editor.NodeEditor.Pins
             { typeof(object), Color4.MediumPurple.ToImGuiColor() },
             { typeof(Guid), Color4.Plum.ToImGuiColor() },
             { typeof(DateTime), Color4.SandyBrown.ToImGuiColor() },
-            { typeof(System.Numerics.Vector2), Color4.MediumSpringGreen.ToImGuiColor() },
-            { typeof(System.Numerics.Vector3), Color4.SpringGreen.ToImGuiColor() }
+            { typeof(Vector2), Color4.MediumSpringGreen.ToImGuiColor() },
+            { typeof(Vector3), Color4.SpringGreen.ToImGuiColor() }
         };
 
         public Node Owner => NodeManager.FindNodeByPin(this);

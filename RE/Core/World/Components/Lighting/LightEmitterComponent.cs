@@ -131,7 +131,7 @@ namespace RE.Core.World.Components.Lighting
             {
                 case LightType.Directional:
 
-                    _lightSource = new DirectionalLight()
+                    _lightSource = new DirectionalLight
                     {
                         AmbientColor = AmbientColor,
                         DiffuseColor = DiffuseColor,
@@ -140,7 +140,7 @@ namespace RE.Core.World.Components.Lighting
                     };
                     break;
                 case LightType.Point:
-                    _lightSource = new PointLight()
+                    _lightSource = new PointLight
                     {
                         AmbientColor = AmbientColor,
                         SpecularColor = SpecularColor,
@@ -153,7 +153,7 @@ namespace RE.Core.World.Components.Lighting
                     break;
                 case LightType.Spot:
 
-                    _lightSource = new SpotLight()
+                    _lightSource = new SpotLight
                     {
                         AmbientColor = AmbientColor,
                         DiffuseColor = DiffuseColor,
@@ -244,8 +244,6 @@ namespace RE.Core.World.Components.Lighting
                     }
 
 
-                    break;
-                default:
                     break;
             }
         }

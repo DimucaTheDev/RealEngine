@@ -8,8 +8,8 @@ namespace RE.Core.World.Testing
 {
     internal class CameraLerpTestComponent : Component
     {
-        int curveIndex = 0;   // индекс кривой (каждая = 4 точки)
-        float t = 0.0f;
+        int curveIndex;   // индекс кривой (каждая = 4 точки)
+        float t;
         float speed = 0.25f; // скорость по параметру
         bool loop = true;
         Vector3[] path =

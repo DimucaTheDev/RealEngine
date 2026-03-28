@@ -9,7 +9,10 @@ using RE.Editor;
 using RE.Rendering;
 using RE.Rendering.Renderables;
 using Serilog;
+using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
+using Buffer = System.Buffer;
+using Image = SixLabors.ImageSharp.Image;
 using SceneEditor = RE.Editor.SceneEditor;
 using Vector3 = OpenTK.Mathematics.Vector3;
 
@@ -77,7 +80,7 @@ namespace RE.Core.World.Components
                     if (ContentManager.Exists(pathToFace))
                     {
                         using var image =
-                            SixLabors.ImageSharp.Image.Load<SixLabors.ImageSharp.PixelFormats.Rgba32>(ContentManager.Open(pathToFace));
+                            Image.Load<Rgba32>(ContentManager.Open(pathToFace));
                         image.Mutate(x => x.Flip(FlipMode.Horizontal)); // OpenGL flip
                         var pixels = new byte[4 * image.Width * image.Height];
                         image.CopyPixelDataTo(pixels);
@@ -193,7 +196,7 @@ namespace RE.Core.World.Components
                     byte[] color = isPurple ? purple : black;
 
                     int index = (y * size + x) * 4;
-                    System.Buffer.BlockCopy(color, 0, data, index, 4);
+                    Buffer.BlockCopy(color, 0, data, index, 4);
                 }
             }
             return data;

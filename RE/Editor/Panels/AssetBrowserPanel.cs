@@ -2,7 +2,6 @@
 using System.Numerics;
 using System.Text.Json;
 using System.Text.RegularExpressions;
-using DotRecast.Core;
 using Hexa.NET.ImGui;
 using RE.Core.Assets;
 using RE.Rendering.Texturing;

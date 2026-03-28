@@ -250,7 +250,7 @@ internal class DebugOverlay : Renderable
             foreach (var key in NodeEnabled.Keys.ToList())
             {
                 bool val = NodeEnabled[key];
-                if (ImGui.Checkbox(key, ref val))
+                if (Checkbox(key, ref val))
                     NodeEnabled[key] = val;
             }
             EndChild();
@@ -309,12 +309,12 @@ internal class DebugOverlay : Renderable
         var fps = Fps.ToArrayOrdered().Skip(Fps.Length - s).Select(s => (float)s).ToArray();
         fps[0] = 0;
         fps[^1] = 200;
-        ImGui.PlotLines("FPS", ref fps[0], s, $"FPS: {fps[^2]}", new Vector2(s, 100));
+        PlotLines("FPS", ref fps[0], s, $"FPS: {fps[^2]}", new Vector2(s, 100));
 
         var r = PrivateBytes.ToArrayOrdered().Skip(Fps.Length - s).Select(s => (float)s).ToArray();
         r[0] = 0;
         r[^1] = 500;
-        ImGui.PlotLines("RAM",
+        PlotLines("RAM",
             ref r[0],
             s, $"RAM: {r[^2]:F1}Mb",
             new Vector2(s, 100));
@@ -332,7 +332,7 @@ internal class DebugOverlay : Renderable
 
             ImPlot.EndPlot();
         }
-        Text($"Mem: " + PrivateBytes.Last());
+        Text("Mem: " + PrivateBytes.Last());
         yMaxLimit = (PrivateBytes.Last()) * 1.1;
         ImPlot.SetNextAxesLimits(0, ManagedHeap.Length + 1, 0, (PrivateBytes.Last()) * 1.1);
         if (ImPlot.BeginPlot("#mem", ImPlotFlags.NoTitle))

@@ -2,7 +2,6 @@
 using System.Text;
 using System.Text.RegularExpressions;
 using OpenTK.Graphics.OpenGL4;
-using RE.Debug;
 using RE.Rendering;
 using Log = Serilog.Log;
 
@@ -97,7 +96,7 @@ namespace RE.Core.Assets
             if (!ContentManager.Exists(AssetPath))
             {
                 GL.DeleteShader(Handle);
-                throw new FileNotFoundException($"Shader does not exist!", AssetPath);
+                throw new FileNotFoundException("Shader does not exist!", AssetPath);
             }
             var content = ContentManager.GetString(AssetPath!);
 

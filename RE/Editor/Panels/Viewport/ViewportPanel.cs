@@ -1,4 +1,5 @@
 ﻿using BulletSharp;
+using BulletSharp.Math;
 using Hexa.NET.ImGui;
 using Hexa.NET.ImGuizmo;
 using OpenTK.Mathematics;
@@ -14,8 +15,10 @@ using RE.Rendering.Texturing;
 using RE.Utils;
 using static Hexa.NET.ImGui.ImGui;
 using Keys = OpenTK.Windowing.GraphicsLibraryFramework.Keys;
+using Quaternion = BulletSharp.Math.Quaternion;
 using TkVector3 = OpenTK.Mathematics.Vector3;
 using Vector2 = System.Numerics.Vector2;
+using Vector3 = BulletSharp.Math.Vector3;
 using Vector4 = System.Numerics.Vector4;
 
 namespace RE.Editor.Panels.Viewport
@@ -68,7 +71,7 @@ namespace RE.Editor.Panels.Viewport
         private Vector2 _lastClickPosition;
         private Vector2 _lockedMousePos;
         private Vector2 _lockedGlobalPos;
-        private Vector3 _cameraVelocity = Vector3.Zero;
+        private TkVector3 _cameraVelocity = TkVector3.Zero;
         private Vector4 _viewportRect;
         private string _sceneBeforeSimulation;
 
@@ -80,7 +83,7 @@ namespace RE.Editor.Panels.Viewport
         {
             SetupBullet();
 
-            _cameraSprite = new(Vector3.Zero, "Assets/editor/sprites/camera.png", scale: 0.5f);
+            _cameraSprite = new(TkVector3.Zero, "Assets/editor/sprites/camera.png", scale: 0.5f);
 
             _translateIcon = new StaticTexture("assets/editor/sprites/translate.png");
             _rotateIcon = new StaticTexture("assets/editor/sprites/rotate.png");
@@ -164,7 +167,7 @@ namespace RE.Editor.Panels.Viewport
 
                 var size = _viewportRect = SetImGuizmoRect();
 
-                Image(new ImTextureRef() { TexID = Game.Instance.SceneTextureId }, ViewportSize,
+                Image(new ImTextureRef { TexID = Game.Instance.SceneTextureId }, ViewportSize,
                     new Vector2(0, 1),
                     new Vector2(1, 0));
                 _isOverViewport = IsItemHovered();
@@ -401,13 +404,13 @@ namespace RE.Editor.Panels.Viewport
                 var pos = g.Transform.Position;
                 var rot = g.Transform.Rotation;
 
-                var position = new BulletSharp.Math.Vector3(pos.X, pos.Y, pos.Z);
-                var rotation = new BulletSharp.Math.Quaternion(rot.X, rot.Y, rot.Z, rot.W);
+                var position = new Vector3(pos.X, pos.Y, pos.Z);
+                var rotation = new Quaternion(rot.X, rot.Y, rot.Z, rot.W);
 
-                g.ViewportObject.WorldTransform = BulletSharp.Math.Matrix.RotationQuaternion(rotation) * BulletSharp.Math.Matrix.Translation(position);
+                g.ViewportObject.WorldTransform = Matrix.RotationQuaternion(rotation) * Matrix.Translation(position);
 
                 var scale = g.Transform.Scale;
-                var bulletScale = new BulletSharp.Math.Vector3(scale.X, scale.Y, scale.Z);
+                var bulletScale = new Vector3(scale.X, scale.Y, scale.Z);
 
                 if (g.ViewportObject.CollisionShape.LocalScaling != bulletScale)
                 {
@@ -649,28 +652,28 @@ namespace RE.Editor.Panels.Viewport
             const float lerpFactor = 10f;
 
             var cam = Camera.Editor;
-            Vector3 inputDir = Vector3.Zero;
+            TkVector3 inputDir = TkVector3.Zero;
 
             if (Keyboard.IsKeyDown(Keys.W))
                 inputDir += (cam.Front with { Y = 0 }).Normalized();
             if (Keyboard.IsKeyDown(Keys.S))
                 inputDir -= (cam.Front with { Y = 0 }).Normalized();
             if (Keyboard.IsKeyDown(Keys.A))
-                inputDir -= Vector3.Normalize(Vector3.Cross(cam.Front, cam.Up));
+                inputDir -= TkVector3.Normalize(TkVector3.Cross(cam.Front, cam.Up));
             if (Keyboard.IsKeyDown(Keys.D))
-                inputDir += Vector3.Normalize(Vector3.Cross(cam.Front, cam.Up));
+                inputDir += TkVector3.Normalize(TkVector3.Cross(cam.Front, cam.Up));
 
             if (Keyboard.IsKeyDown(Keys.Space))
-                inputDir += Vector3.UnitY;
+                inputDir += TkVector3.UnitY;
             if (Keyboard.IsKeyDown(Keys.LeftShift))
-                inputDir -= Vector3.UnitY;
+                inputDir -= TkVector3.UnitY;
 
             if (inputDir.LengthSquared > 0)
                 inputDir = inputDir.Normalized();
 
             float currentSpeedLimit = targetSpeed;
-            Vector3 targetVelocity = inputDir * currentSpeedLimit;
-            _cameraVelocity = Vector3.Lerp(_cameraVelocity, targetVelocity, lerpFactor * Time.DeltaTime);
+            TkVector3 targetVelocity = inputDir * currentSpeedLimit;
+            _cameraVelocity = TkVector3.Lerp(_cameraVelocity, targetVelocity, lerpFactor * Time.DeltaTime);
             cam.Position += _cameraVelocity * Time.DeltaTime;
 
             if (Mouse.ScrollDelta != 0 && IsWindowHovered())

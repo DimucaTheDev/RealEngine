@@ -1,5 +1,6 @@
 ﻿using System.Text.Json.Nodes;
 using BulletSharp;
+using BulletSharp.Math;
 using RE.Core.Scripting.Attributes;
 using RE.Utils;
 
@@ -10,7 +11,7 @@ namespace RE.Core.World.Components.Physics
     {
         public override CollisionShape CreateCollisionShape()
         {
-            BulletSharp.Math.Vector3 halfExtents = new BulletSharp.Math.Vector3(
+            Vector3 halfExtents = new Vector3(
                 Owner.Transform.Scale.X * 1,// 0.5f,
                 Owner.Transform.Scale.Y * 1,// 0.5f,
                 Owner.Transform.Scale.Z * 1 // 0.5f
@@ -20,7 +21,7 @@ namespace RE.Core.World.Components.Physics
         }
         public override JsonNode GetSaveData()
         {
-            JsonObject root = new() { { nameof(Multiplier), new JsonArray() { Multiplier.X, Multiplier.Y, Multiplier.Z } } };
+            JsonObject root = new() { { nameof(Multiplier), new JsonArray { Multiplier.X, Multiplier.Y, Multiplier.Z } } };
             return root;
         }
     }

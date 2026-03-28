@@ -28,7 +28,7 @@ namespace RE.Editor.Panels
             { typeof(int), new IntDrawer() },
             { typeof(float), new FloatDrawer() },
             { typeof(bool), new BoolDrawer() },
-            { typeof(OpenTK.Mathematics.Vector3), new Vector3Drawer() },
+            { typeof(Vector3), new Vector3Drawer() },
             { typeof(System.Numerics.Vector3), new Vector3Drawer() },
             { typeof(MeshComponent), new MeshComponentDrawer() },
             { typeof(Enum), new EnumDrawer() }
@@ -57,10 +57,10 @@ namespace RE.Editor.Panels
             //SetNextWindowPos(inspectorWindowPos, ImGuiCond.FirstUseEver);
             //SetNextWindowSize(inspectorWindowSize, ImGuiCond.FirstUseEver);
 
-            ImGui.SetNextWindowPos(new Vector2(1512, 27), ImGuiCond.FirstUseEver);
-            ImGui.SetNextWindowSize(new Vector2(400, 974), ImGuiCond.FirstUseEver);
+            SetNextWindowPos(new Vector2(1512, 27), ImGuiCond.FirstUseEver);
+            SetNextWindowSize(new Vector2(400, 974), ImGuiCond.FirstUseEver);
 
-            Begin($"Inspector"/*, ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoResize*/);
+            Begin("Inspector"/*, ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoResize*/);
 
             if (SceneEditor.SelectedObject == null)
             {
@@ -146,7 +146,7 @@ namespace RE.Editor.Panels
 
             GL.GenTextures(1, out _materialPreviewTextureId);
             GL.BindTexture(TextureTarget.Texture2D, _materialPreviewTextureId);
-            GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba, width, height, 0, OpenTK.Graphics.OpenGL.PixelFormat.Rgba, PixelType.UnsignedByte, IntPtr.Zero);
+            GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba, width, height, 0, PixelFormat.Rgba, PixelType.UnsignedByte, IntPtr.Zero);
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Linear);
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Linear);
             GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2D, _materialPreviewTextureId, 0);
@@ -178,7 +178,7 @@ namespace RE.Editor.Panels
             if (_materialPreviewModel == null)
             {
                 _materialPreviewModel = new(boxModelPath);
-                _materialPreviewModel.SetTexture(StaticTexture.CreateMonoColorTexture(_baseColor), false);
+                _materialPreviewModel.SetTexture(StaticTexture.CreateMonoColorTexture(_baseColor));
             }
             if (_materialPreviewFloor == null)
             {
@@ -219,7 +219,7 @@ namespace RE.Editor.Panels
                 GL.Viewport(0, 0, w, h);
 
 
-                var r = ImGui.GetContentRegionAvail();
+                var r = GetContentRegionAvail();
                 r.X -= 40;
                 if (r != _materialPreviewSize)
                 {
@@ -231,7 +231,7 @@ namespace RE.Editor.Panels
 
                 var cursor = GetCursorPos();
 
-                Image(new ImTextureRef() { TexID = new ImTextureID(_materialPreviewTextureId) }, _materialPreviewSize, new Vector2(1, 1),
+                Image(new ImTextureRef { TexID = new ImTextureID(_materialPreviewTextureId) }, _materialPreviewSize, new Vector2(1, 1),
                     new Vector2(0, 0));
 
                 void ModelButton(ImTextureRef texture, string path)

@@ -39,7 +39,7 @@ namespace RE.Core.World
 
         public object Clone()
         {
-            return new Transform() { Position = Position, Rotation = Rotation, Scale = Scale };
+            return new Transform { Position = Position, Rotation = Rotation, Scale = Scale };
         }
     }
 }

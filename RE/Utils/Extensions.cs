@@ -84,7 +84,7 @@ namespace RE.Utils
          
         
 
-        public static JsonArray ToJsonArray(this OpenTK.Mathematics.Vector3 v) => new(v.X, v.Y, v.Z);
+        public static JsonArray ToJsonArray(this Vector3 v) => new(v.X, v.Y, v.Z);
         public static bool IsNullOrEmpty(this string str) => string.IsNullOrEmpty(str);
 
     }

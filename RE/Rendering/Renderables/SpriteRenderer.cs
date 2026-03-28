@@ -13,7 +13,7 @@ namespace RE.Rendering.Renderables
         private readonly int _vao;
         private readonly int _vbo;
         private Texture _texture;
-        private float _texWidth = 0, _texHeight = 0;
+        private float _texWidth, _texHeight;
         private readonly bool _constantSize;
         private readonly ShaderProgram _shaderProgram;
 

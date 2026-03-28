@@ -8,6 +8,7 @@ using System.Drawing.Imaging;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
+using Microsoft.Win32.SafeHandles;
 using OpenTK.Graphics.OpenGL;
 using OpenTK.Windowing.Common;
 using OpenTK.Windowing.Common.Input;
@@ -17,7 +18,6 @@ using RE.Core.Logging;
 using RE.Core.Scripting;
 using RE.Editor.Notification;
 using RE.Rendering;
-using RE.Utils;
 using Serilog;
 using Serilog.Events;
 using Serilog.Sinks.SystemConsole.Themes;
@@ -367,7 +367,7 @@ namespace RE.Utils
                         return null;
                     if (!File.Exists(res.Tokens.Single().Value))
                     {
-                        res.AddError($"Specified logger template does not exist.");
+                        res.AddError("Specified logger template does not exist.");
                         return null;
                     }
                     return new(res.Tokens.Single().Value);
@@ -506,7 +506,7 @@ namespace RE.Utils
             else
             {
                 Console.WriteLine(handle);
-                var safeHandle = new Microsoft.Win32.SafeHandles.SafeFileHandle(handle, false);
+                var safeHandle = new SafeFileHandle(handle, false);
                 var writer = new StreamWriter(new FileStream(safeHandle, FileAccess.Write)) { AutoFlush = true };
                 Console.SetOut(writer);
                 Console.SetError(writer);

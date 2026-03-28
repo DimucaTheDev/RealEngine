@@ -30,14 +30,14 @@ namespace RE.Rendering.Renderables
         private static readonly Dictionary<string, Texture> TextureCache = new();
         private static readonly Dictionary<string, (uint vao, uint vbo, uint ebo, int indexCount, List<float> vertices, List<int> indices, Vector3 min, Vector3 max)> MeshCache = new();
         private static ShaderProgram _program = null!;
-        private static bool _shaderInitialized = false;
+        private static bool _shaderInitialized;
   
         private uint _vao, _vbo, _ebo;
         private int _indexCount;
         private Texture _texture;
         private FloatingText? _noModelText;
         private SpriteRenderer? _noModelSprite;
-        private bool _modelLoaded = false;
+        private bool _modelLoaded;
         private string? _exception;
 
         public string Path
@@ -47,7 +47,7 @@ namespace RE.Rendering.Renderables
             {
                 _noModelSprite?.StopRender();
                 _noModelText?.StopRender();
-                this.IsVisible = false;
+                IsVisible = false;
                 TryLoad(value);
                 InitShader();
                 field = value;
@@ -444,7 +444,7 @@ namespace RE.Rendering.Renderables
                 GL.EnableVertexAttribArray(2);
 
 
-                MeshCache[path] = ((uint)_vao, (uint)_vbo, (uint)_ebo, _indexCount, renderVertices,
+                MeshCache[path] = (_vao, _vbo, _ebo, _indexCount, renderVertices,
                     indices.Select(s => (int)s).ToList(), MinBounds, MaxBounds);
 
                 var mat = scene.Materials[mesh.MaterialIndex];

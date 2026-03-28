@@ -14,7 +14,7 @@ namespace RE.Core.World.Testing
     {
         private GameObject _door;
         private bool shouldOpen, used;
-        private bool _wasOpen = false;
+        private bool _wasOpen;
         private Sound sound;
 
         [EditorProperty("State")] public float State { get; set; }
@@ -30,7 +30,7 @@ namespace RE.Core.World.Testing
             _door.Transform = (Transform)Owner.Transform.Clone(); 
             _door.Components.Add(new BoxColliderComponent());
             _door.Components.Add(new MeshComponent("assets/models/crate.fbx"));
-            _door.Components.Add(new UsableComponent()
+            _door.Components.Add(new UsableComponent
             {
                 OnUsed = () =>
                 {
