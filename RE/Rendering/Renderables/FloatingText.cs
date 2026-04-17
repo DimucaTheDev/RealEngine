@@ -141,6 +141,10 @@ public class FloatingText : Renderable
         _shaderProgram.SetValue("uProjection", projection);
         _shaderProgram.SetValue("uColor", BackgroundColor);
 
+        //GL.ActiveTexture(TextureUnit.Texture2);
+        //GL.BindTexture(TextureTarget.Texture2D, Game.Instance.OitDepthTexture);
+        //GL.Uniform1(GL.GetUniformLocation(_shaderProgram.Handle, "uDepthTex"), 2); // указываем слот в шейдере
+
 
         GL.BindVertexArray(_vao);
         GL.BindTexture(TextureTarget.Texture2D, _whiteStaticTexture.AsOpenGl());

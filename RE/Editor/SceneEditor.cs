@@ -208,22 +208,92 @@ namespace RE.Editor
             FrameProfiler.End();
 
             FrameProfiler.Begin("render");
-            foreach (var obj in _scene.GameObjects)
             {
-                if (!obj.Components.Any())
-                    continue;
+                GL.BindFramebuffer(FramebufferTarget.Framebuffer, Game.Instance.SceneFboId);
 
-                FrameProfiler.Begin(obj.Name ?? $"<{obj.Id}>");
-                foreach (var com in obj.Components)
+                GL.Enable(EnableCap.DepthTest);
+                GL.DepthMask(true);
+                GL.Disable(EnableCap.Blend);
+
+                foreach (var s in RenderManager.RenderingComponents.Where(s => s.IsOpaque))
                 {
-                    if (com is IEditorRender r)
+                    if (SceneManager.SceneChanged)
                     {
-                        FrameProfiler.Begin(com.GetType().Name);
-                        r.EditorRender(args);
-                        FrameProfiler.End();
+                        SceneManager.SceneChanged = false;
+                        return;
                     }
+                    FrameProfiler.Begin(s.GetType().Name);
+                    if (s is IEditorRender r)
+                    {
+                        r.EditorRender(args);
+                    }
+                    FrameProfiler.End();
                 }
-                FrameProfiler.End();
+
+                GL.BindFramebuffer(FramebufferTarget.DrawFramebuffer, Game.Instance.OitFbo);
+
+                int width = Game.Instance.ClientSize.X;
+                int height = Game.Instance.ClientSize.Y;
+
+                GL.BlitFramebuffer(
+                    0, 0, width, height,
+                    0, 0, width, height,
+                    ClearBufferMask.DepthBufferBit,
+                    BlitFramebufferFilter.Nearest
+                );
+
+                GL.BindFramebuffer(FramebufferTarget.Framebuffer, Game.Instance.OitFbo);
+
+                float[] clearZero = { 0.0f, 0.0f, 0.0f, 0.0f };
+
+                GL.ClearBuffer(ClearBuffer.Color, 0, clearZero);
+                GL.ClearBuffer(ClearBuffer.Color, 1, clearZero);
+
+                GL.Enable(EnableCap.DepthTest);
+                GL.DepthFunc(DepthFunction.Less);
+                GL.DepthMask(false);
+
+                GL.Enable(EnableCap.Blend);
+                GL.BlendFunc(0, BlendingFactorSrc.One, BlendingFactorDest.One);
+                GL.BlendFunc(1, BlendingFactorSrc.One, BlendingFactorDest.One);
+
+
+                foreach (var s in RenderManager.RenderingComponents.Where(s => !s.IsOpaque))
+                {
+                    if (SceneManager.SceneChanged)
+                    {
+                        SceneManager.SceneChanged = false;
+                        return;
+                    }
+                    FrameProfiler.Begin(s.GetType().Name);
+                    s.Render(args);
+                    FrameProfiler.End();
+                }
+
+
+                GL.BindFramebuffer(FramebufferTarget.Framebuffer, Game.Instance.SceneFboId);
+
+                GL.DepthMask(true);
+                GL.Disable(EnableCap.DepthTest);
+
+                GL.Enable(EnableCap.Blend);
+                GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
+
+                RenderManager._oitShaderProgram.Use();
+
+                GL.Uniform1(RenderManager._oitShaderProgram.GetLocation("accumColorTex"), 0);
+                GL.Uniform1(RenderManager._oitShaderProgram.GetLocation("accumWeightTex"), 1);
+
+                GL.ActiveTexture(TextureUnit.Texture0);
+                GL.BindTexture(TextureTarget.Texture2D, Game.Instance.AccumColorTex);
+
+                GL.ActiveTexture(TextureUnit.Texture1);
+                GL.BindTexture(TextureTarget.Texture2D, Game.Instance.AccumWeightTex);
+
+                GL.BindVertexArray(RenderManager._fullscreenVao);
+                GL.DrawArrays(PrimitiveType.Triangles, 0, 3);
+
+                GL.Enable(EnableCap.DepthTest);
             }
             FrameProfiler.End();
 

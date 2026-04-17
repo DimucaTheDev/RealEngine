@@ -37,6 +37,8 @@ namespace RE.Core.Assets
         private bool _linked;
         private readonly List<Shader> _linkedShaders = [];
         private List<string> _unknownLocations = new();
+        private readonly List<FileSystemWatcher> _watchers = new();
+        internal static readonly List<ShaderProgram> ShaderReloadList = new();
 
         public ShaderProgram()
         {
@@ -54,7 +56,33 @@ namespace RE.Core.Assets
         public void AttachShader(Shader shader)
         {
             GL.AttachShader(this, shader);
+            if (File.Exists(shader.AssetPath))
+            {
+                var fsw = new FileSystemWatcher(Path.GetDirectoryName(shader.AssetPath)!);
+                fsw.Filter = Path.GetFileName(shader.AssetPath);
+                fsw.Changed += (s, e) =>
+                {
+                    ShaderReloadList.Add(this);
+                };
+                _watchers.Add(fsw);
+            }
+
             _linkedShaders.Add(shader);
+        }
+
+        public void Reload(string path)
+        {
+            Log.Debug("Shader {Shader} changed, reloading...", Path.GetFileName(path));
+            Delete();
+            Handle = GL.CreateProgram();
+            if (Handle is 0 or -1)
+            {
+                throw new GlException("Unable to create shader program.");
+            }
+            foreach (var shader in _linkedShaders.ToList().Select(s => s.AssetPath))
+            {
+                AttachShader(shader!);
+            }
         }
 
         /// <inheritdoc cref="GL.UseProgram(int)"/>
@@ -251,5 +279,10 @@ namespace RE.Core.Assets
         }
 
         public static implicit operator int(ShaderProgram s) => s.Handle;
+
+        public int GetLocation(string accumcolortex)
+        {
+            return GL.GetUniformLocation(this, accumcolortex);
+        }
     }
 }

@@ -161,6 +161,7 @@ namespace RE.Editor.Panels.Viewport
                 {
                     ViewportSize = contentSize;
                     Game.Instance.SetupSceneFbo((int)ViewportSize.X, (int)ViewportSize.Y);
+                    Game.Instance.SetupOitFbo((int)ViewportSize.X, (int)ViewportSize.Y);
                     Camera.Editor.RenderWidth = (int)ViewportSize.X;
                     Camera.Editor.RenderHeight = (int)ViewportSize.Y;
                 }

@@ -26,6 +26,8 @@ namespace RE.Core
         [JsonIgnore]
         public bool SaveComponent { get; set; } = true;
 
+        public virtual bool IsOpaque { get; } = true;
+
         /// <typeparam name="T">Component type</typeparam>
         /// <returns>Returns the first component of type T that is attached to the same <see cref="GameObject"/> as this component, or null if no such component exists.</returns>
         public T? GetComponent<T>() where T : Component

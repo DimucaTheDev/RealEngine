@@ -156,7 +156,7 @@ internal partial class Game : GameWindow
 
         base.OnLoad();
 
-        if(SceneManager.CurrentScene == null!)
+        if (SceneManager.CurrentScene == null!)
             Log.Warning("No scene has been loaded. ({Name} = {Value})", nameof(SceneManager.CurrentScene), null);
     }
 
@@ -169,12 +169,13 @@ internal partial class Game : GameWindow
         var h = Camera.Main.RenderHeight;
         GL.Viewport(0, 0, w, h);
         SetupSceneFbo(w, h);
+        SetupOitFbo(w, h);
         base.OnResize(e);
     }
 
     protected override void OnUpdateFrame(FrameEventArgs args)
     {
-        FrameProfiler.BeginFrame(); 
+        FrameProfiler.BeginFrame();
 
         Time.Update(args);
         SoundManager.Update(args);
@@ -182,9 +183,9 @@ internal partial class Game : GameWindow
         if ((!SceneEditor.Enabled || (SceneEditor.Enabled && SceneEditor.SimulationRunning)) && SceneManager.CurrentScene != null!)
         {
             FrameProfiler.Begin("update");
-            
+
             PhysicsManager.Update((float)args.Time);
-            
+
             foreach (var scene in SceneManager.CurrentScene.GameObjects)
             {
                 foreach (var c in scene.Components)

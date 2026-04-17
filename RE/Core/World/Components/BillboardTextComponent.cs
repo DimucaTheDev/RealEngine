@@ -18,6 +18,8 @@ namespace RE.Core.World.Components
         [EditorProperty] public Vector3 PositionOffset { get; set; }
         [EditorProperty] public string Text { get => _text.Text; set => _text.Text = value; }
 
+        public override bool IsOpaque => false;
+
         public override void Update(FrameEventArgs args)
         {
             _text.Position = Owner.Transform.Position + PositionOffset;

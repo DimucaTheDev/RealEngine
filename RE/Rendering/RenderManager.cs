@@ -1,6 +1,8 @@
-﻿using OpenTK.Mathematics;
+﻿using OpenTK.Graphics.OpenGL;
+using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using RE.Core;
+using RE.Core.Assets;
 using RE.Core.World;
 using RE.Debug;
 using RE.Editor;
@@ -35,12 +37,18 @@ public class RenderManager
 
     private static bool _hasCameraFrustum;
     private static Matrix4 _cachedViewMatrix, _cachedProjMatrix;
+    internal static ShaderProgram _oitShaderProgram;
+    internal static int _fullscreenVao;
 
     public static void Init()
     {
         foreach (RenderLayer layer in Enum.GetValues(typeof(RenderLayer)))
             Renderables[layer] = new Dictionary<Type, List<Renderable>>();
         FrustumRenderer.StartRender();
+        _oitShaderProgram = new ShaderProgram();
+        _oitShaderProgram.AttachShader("Assets/Shaders/oit.frag");
+        _oitShaderProgram.AttachShader("Assets/Shaders/oit.vert");
+        GL.GenVertexArrays(1, out _fullscreenVao);
     }
     public static void AddRenderable<T>(T renderable) where T : Renderable
     {
@@ -136,20 +144,17 @@ public class RenderManager
 
     public static void RenderAll(FrameEventArgs args)
     {
-        GenerateFrustum();
-
-        var camPos = Camera.GetActiveCamera().Position;
-        //RenderingComponents.Sort((a, b) =>
-        //{
-        //    float da = (a.Owner.Transform.Position - camPos).LengthSquared;
-        //    float db = (b.Owner.Transform.Position - camPos).LengthSquared;
-        //    return db.CompareTo(da);
-        //});
+        GenerateFrustum(); 
 
         if (!SceneEditor.Enabled)
         {
-            FrameProfiler.Begin("scene");
-            foreach (var s in RenderingComponents)
+            GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
+
+            GL.Enable(EnableCap.DepthTest);
+            GL.DepthMask(true);
+            GL.Disable(EnableCap.Blend);
+
+            foreach (var s in RenderingComponents.Where(s => s.IsOpaque))
             {
                 if (SceneManager.SceneChanged)
                 {
@@ -160,15 +165,69 @@ public class RenderManager
                 s.Render(args);
                 FrameProfiler.End();
             }
-            FrameProfiler.End();
+
+            GL.BindFramebuffer(FramebufferTarget.ReadFramebuffer, 0);
+            GL.BindFramebuffer(FramebufferTarget.DrawFramebuffer, Game.Instance.OitFbo);
+
+            int width = Game.Instance.ClientSize.X;
+            int height = Game.Instance.ClientSize.Y;
+
+            GL.BlitFramebuffer(
+                0, 0, width, height,
+                0, 0, width, height,
+                ClearBufferMask.DepthBufferBit,
+                BlitFramebufferFilter.Nearest
+            );
+
+            GL.BindFramebuffer(FramebufferTarget.Framebuffer, Game.Instance.OitFbo);
+
+            float[] clearZero = { 0.0f, 0.0f, 0.0f, 0.0f };
+
+            GL.ClearBuffer(ClearBuffer.Color, 0, clearZero);
+            GL.ClearBuffer(ClearBuffer.Color, 1, clearZero);
+
+            GL.Enable(EnableCap.DepthTest);
+            GL.DepthFunc(DepthFunction.Less);
+            GL.DepthMask(false);
+
+            GL.Enable(EnableCap.Blend);
+            GL.BlendFunc(0, BlendingFactorSrc.One, BlendingFactorDest.One);
+            GL.BlendFunc(1, BlendingFactorSrc.One, BlendingFactorDest.One);
+
+
+            foreach (var s in RenderingComponents.Where(s => !s.IsOpaque))
+            { if (SceneManager.SceneChanged) { SceneManager.SceneChanged = false; return; } FrameProfiler.Begin(s.GetType().Name); s.Render(args); FrameProfiler.End(); }
+
+
+            GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
+
+            GL.DepthMask(true);
+            GL.Disable(EnableCap.DepthTest);
+
+            GL.Enable(EnableCap.Blend);
+            GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
+
+            _oitShaderProgram.Use();
+
+            GL.Uniform1(_oitShaderProgram.GetLocation("accumColorTex"), 0);
+            GL.Uniform1(_oitShaderProgram.GetLocation("accumWeightTex"), 1);
+
+            GL.ActiveTexture(TextureUnit.Texture0);
+            GL.BindTexture(TextureTarget.Texture2D, Game.Instance.AccumColorTex);
+
+            GL.ActiveTexture(TextureUnit.Texture1);
+            GL.BindTexture(TextureTarget.Texture2D, Game.Instance.AccumWeightTex);
+
+            GL.BindVertexArray(_fullscreenVao);
+            GL.DrawArrays(PrimitiveType.Triangles, 0, 3);
+
+            GL.Enable(EnableCap.DepthTest);
         }
 
         foreach (var kvp in Renderables)
         {
             foreach (var pair in kvp.Value)
             {
-                //todo: move to RenderType()
-
                 List<Renderable> list = pair.Value;
 
                 foreach (var renderable in list.ToList())
