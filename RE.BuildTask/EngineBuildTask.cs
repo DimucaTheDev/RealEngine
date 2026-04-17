@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.IO.Compression;
+using System.Text.Json;
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
 
@@ -32,19 +33,20 @@ namespace RE.BuildTask
                         Log.LogError($"Assets folder does not exist: {assetsDir}");
                         return false;
                     }
-
+                     
                     Directory.CreateDirectory(outputDir);
-                    string pakPath = Path.Combine(outputDir, "assets.pak");
+                    Log.LogMessage(MessageImportance.Normal, $"Created source assets directory: {assetsDir}");
 
-                    if (File.Exists(pakPath))
-                    {
-                        Log.LogMessage(MessageImportance.Low, $"Removing existing pak: {pakPath}");
-                        File.Delete(pakPath);
-                    }
+                    string configPath = Path.Combine(assetsDir, "build.pack_info.json");
 
-                    Log.LogMessage(MessageImportance.High, $"Creating pak: {pakPath}");
+                    var config = JsonSerializer.Deserialize<AssetArchiveManager.Config>(File.ReadAllText(configPath),
+                        new JsonSerializerOptions
+                        {
+                            PropertyNameCaseInsensitive = true
+                        });
+
                     Directory.CreateDirectory(Path.GetDirectoryName(outputDir)!);
-                    ZipFile.CreateFromDirectory(assetsDir, pakPath, CompressionLevel.Optimal, false);
+                    AssetArchiveManager.Process(assetsDir, outputDir, config, Log);
 
                     try
                     {

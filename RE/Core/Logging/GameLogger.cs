@@ -45,7 +45,7 @@ namespace RE.Core.Logging
                 var type = method.DeclaringType!;
                 var dllFileName = Path.GetFileNameWithoutExtension(type.Assembly.Location);
                 if (dllFileName.IsNullOrEmpty())
-                    dllFileName = type.Assembly.FullName;
+                    dllFileName = "??";
                 name = $"{dllFileName}:{type.Name}/{method.Name}";
             }
             else

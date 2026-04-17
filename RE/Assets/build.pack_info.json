@@ -1,0 +1,7 @@
+{
+    "Default": "main.pak",
+    "Cases": {
+        "editor.pak": ["Editor"],
+        "world.pak": ["Maps", "Skybox"]
+    }
+}
