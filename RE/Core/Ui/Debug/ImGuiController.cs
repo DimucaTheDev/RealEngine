@@ -9,7 +9,7 @@ using Hexa.NET.ImPlot;
 using RE.Core.Assets;
 using RE.Utils;
 
-namespace RE.Debug;
+namespace RE.Core.Ui.Debug;
 
 internal static class ImGuiController
 {

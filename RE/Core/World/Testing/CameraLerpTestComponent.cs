@@ -1,7 +1,7 @@
 ﻿using System.Text.Json.Nodes;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
-using RE.Debug;
+using RE.Core.Ui.Debug;
 using RE.Rendering;
 
 namespace RE.Core.World.Testing

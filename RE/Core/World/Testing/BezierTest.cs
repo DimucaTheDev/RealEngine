@@ -2,7 +2,7 @@
 using Hexa.NET.ImGuizmo;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
-using RE.Debug;
+using RE.Core.Ui.Debug;
 using RE.Editor.Panels.Viewport;
 using RE.Rendering;
 using RE.Utils;

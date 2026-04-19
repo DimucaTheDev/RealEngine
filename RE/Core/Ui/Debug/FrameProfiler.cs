@@ -1,7 +1,7 @@
 ﻿using System.Diagnostics;
 using RE.Core;
 
-namespace RE.Debug
+namespace RE.Core.Ui.Debug
 {
     public static class FrameProfiler
     {

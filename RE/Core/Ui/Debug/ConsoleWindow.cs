@@ -10,7 +10,7 @@ using RE.Utils;
 using Serilog;
 using Serilog.Events;
 
-namespace RE.Debug
+namespace RE.Core.Ui.Debug
 {
     public class ConsoleWindow : Renderable
     {

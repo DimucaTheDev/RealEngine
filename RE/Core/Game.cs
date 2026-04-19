@@ -15,9 +15,10 @@ using RE.Core.Initializing;
 using RE.Core.Input;
 using RE.Core.PluginSystem;
 using RE.Core.Scripting;
+using RE.Core.Ui;
+using RE.Core.Ui.Debug;
 using RE.Core.World;
 using RE.Core.World.Physics;
-using RE.Debug;
 using RE.Editor.Notification;
 using RE.Editor.Panels.Viewport;
 using RE.Launchers;
@@ -37,6 +38,7 @@ internal partial class Game : GameWindow
 {
     public static ParseResult CommandParseResult = null!;
     public const int FpsLock = 165; // fixme: fpsLock above 200 may (and will) cause physics issues
+    private static bool _inited;
 
     public static void Start(string[] args)
     {
@@ -149,7 +151,11 @@ internal partial class Game : GameWindow
         });
         SceneEditor.Instance = new();
         CommandHandler.RegisterAllCommands();
-        CommandHandler.ExecuteCommand("source assets/cfg/default.cfg");
+        Initializer.AddStep(new SyncInitializingTask
+        {
+            Label = "Doing our doings in default.cfg",
+            Action = () => CommandHandler.ExecuteCommand("source assets/cfg/default.cfg")
+        });
 
         IsVisible = true;
         WindowState = WindowState.Normal;
@@ -180,12 +186,13 @@ internal partial class Game : GameWindow
         Time.Update(args);
         SoundManager.Update(args);
 
-        if ((!SceneEditor.Enabled || (SceneEditor.Enabled && SceneEditor.SimulationRunning)) && SceneManager.CurrentScene != null!)
+        if (_inited && (!SceneEditor.Enabled || (SceneEditor.Enabled && SceneEditor.SimulationRunning)) && SceneManager.CurrentScene != null!)
         {
             FrameProfiler.Begin("update");
 
             PhysicsManager.Update((float)args.Time);
 
+            FrameProfiler.Begin("components");
             foreach (var scene in SceneManager.CurrentScene.GameObjects)
             {
                 foreach (var c in scene.Components)
@@ -194,6 +201,11 @@ internal partial class Game : GameWindow
                 }
             }
             SceneManager.ApplyObjectModification();
+            FrameProfiler.End();
+
+            FrameProfiler.Begin("ui");
+            Hud.Update(args);
+            FrameProfiler.End();
 
             FrameProfiler.End();
         }
@@ -201,11 +213,14 @@ internal partial class Game : GameWindow
 
     protected override void OnRenderFrame(FrameEventArgs args)
     {
-        FrameProfiler.Begin("render");
+        var pb = FrameProfiler.Begin;
+        var pe = FrameProfiler.End;
+
+        pb("render");
 
         Context.MakeCurrent();
 
-        if (Initializer.Render(args))
+        if (!(_inited = !Initializer.Render(args)))
         {
             return;
         }
@@ -220,12 +235,14 @@ internal partial class Game : GameWindow
         GL.PolygonMode(TriangleFace.FrontAndBack, Wireframe ? PolygonMode.Line : PolygonMode.Fill);
         #endregion
 
-        FrameProfiler.Begin("imgui_update");
-        ImGuiController.Update();
-        FrameProfiler.End();
+        pb("imgui_update");
+        {
+            ImGuiController.Update();
+        }
+        pe();
+
         if (ToastManager.MainWindowViewport == (ImGuiViewportPtr)null)
             ToastManager.MainWindowViewport = ImGui.GetWindowViewport();
-
 
         if (SceneEditor.Enabled)
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, SceneFboId);
@@ -243,8 +260,12 @@ internal partial class Game : GameWindow
         GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
         GL.PolygonMode(TriangleFace.FrontAndBack, Wireframe ? PolygonMode.Line : PolygonMode.Fill);
 
-        RenderManager.RenderAll(args);
-        SceneManager.ApplyObjectModification();
+        pb("components");
+        {
+            RenderManager.RenderAll(args);
+            SceneManager.ApplyObjectModification();
+        }
+        pe();
 
         if (SceneEditor.Enabled)
         {
@@ -254,10 +275,21 @@ internal partial class Game : GameWindow
             GL.Viewport(0, 0, ClientSize.X, ClientSize.Y);
         }
 
-        FrameProfiler.Begin("imgui_render");
-        ToastManager.RenderNotifications();
-        ImGuiController.Render();
-        FrameProfiler.End();
+        pb("ui"); // damn check how these brackets look!!! sad there are no macros :(
+        {
+            pb("imgui_render");
+            {
+                ToastManager.RenderNotifications();
+                ImGuiController.Render();
+            }
+            pe();
+            pb("hud");
+            {
+                Hud.Render();
+            }
+            pe();
+        }
+        pe();
 
         SwapBuffers();
 

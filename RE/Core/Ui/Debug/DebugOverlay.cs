@@ -13,7 +13,7 @@ using RE.Utils;
 using static Hexa.NET.ImGui.ImGui;
 using Game = RE.Utils.Game;
 
-namespace RE.Debug;
+namespace RE.Core.Ui.Debug;
 
 internal class DebugOverlay : Renderable
 {

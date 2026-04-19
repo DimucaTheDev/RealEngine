@@ -2,7 +2,7 @@
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using RE.Core.Scripting.Attributes;
-using RE.Debug;
+using RE.Core.Ui.Debug;
 using RE.Editor;
 using RE.Rendering.Lighting;
 using RE.Rendering.Renderables;

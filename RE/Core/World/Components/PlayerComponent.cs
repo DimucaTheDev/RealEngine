@@ -6,6 +6,8 @@ using OpenTK.Windowing.GraphicsLibraryFramework;
 using RE.Audio;
 using RE.Core.Input;
 using RE.Core.Scripting.Attributes;
+using RE.Core.Ui;
+using RE.Core.Ui.Controls;
 using RE.Core.World.Components.Physics;
 using RE.Core.World.Physics;
 using RE.Editor;
@@ -44,7 +46,7 @@ namespace RE.Core.World.Components
         private float _soundCooldown;
 
         [EditorProperty] public string InteractDenySound { get; set; } = "event:/DenySelect";
-          
+
         public override void Start()
         {
             PlayerGameObject = new GameObject(Owner)
@@ -73,13 +75,25 @@ namespace RE.Core.World.Components
                 new(0, 5, 0.0f),
                 new(0, 5, 0.0f),
                 new(0, 5, 0.0f));
-            im = new ImageRenderer(StaticTexture.CreateMonoColorTexture((.1f, 0.1f, 0.1f, 1)), new Vector2(0, 0), (3000, 3000));
-            im.StartRender();
+
+            im = new ImageControl(new ImageRenderer(StaticTexture.CreateMonoColorTexture((.1f, 0.1f, 0.1f, 1)), new Vector2(0, 0), (3000, 3000)));
+            Hud.Root.Children.AddRange(im, new ImageControl("assets/testing/alpha.png")
+            {
+                ZIndex = 1
+            });
         }
 
-
-        private ImageRenderer im;
+        private ImageControl im;
         private float d;
+
+        /// <inheritdoc />
+        public override bool IsOpaque => false;
+
+        /// <inheritdoc />
+        public override void Render(FrameEventArgs args)
+        {
+        }
+
         private void CameraControl()
         {
             float Remap(float value, float fromMin, float fromMax, float toMin, float toMax)
@@ -100,13 +114,13 @@ namespace RE.Core.World.Components
                     new Vector4(1, 1, 1, 0),
                     Remap(d, 0.1f, 1, 0, 1));
 
-                im.ReplaceImage(StaticTexture.CreateMonoColorTexture(color), true);
+                im.ImageRenderer.ReplaceImage(StaticTexture.CreateMonoColorTexture(color), true);
             }
             else
             {
-                im.StopRender(); 
+                Hud.Root.Children.Remove(im);
             }
-            
+
 
             Camera cam = _camera;
 
@@ -124,7 +138,7 @@ namespace RE.Core.World.Components
 
             var deltaX = Mouse.Delta.X;
             var deltaY = -Mouse.Delta.Y;
-            
+
             if (FirstMove)
             {
                 FirstMove = false;

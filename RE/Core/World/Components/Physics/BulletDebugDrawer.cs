@@ -1,7 +1,7 @@
 ﻿using BulletSharp;
 using BulletSharp.Math;
 using OpenTK.Graphics.OpenGL4;
-using RE.Debug;
+using RE.Core.Ui.Debug;
 using RE.Utils;
 using Vector4 = OpenTK.Mathematics.Vector4;
 

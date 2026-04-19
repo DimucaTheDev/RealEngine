@@ -6,7 +6,7 @@ using RE.Core;
 using RE.Core.Assets;
 using RE.Rendering;
 
-namespace RE.Debug;
+namespace RE.Core.Ui.Debug;
 
 public class LineRenderer : Renderable
 {

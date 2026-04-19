@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics;
 using System.Reflection;
-using RE.Debug;
+using RE.Core.Ui.Debug;
 using RE.Utils;
 using Serilog.Core;
 using Serilog.Events;

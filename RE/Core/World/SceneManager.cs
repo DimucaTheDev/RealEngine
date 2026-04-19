@@ -1,4 +1,5 @@
 ﻿using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization.Metadata;
@@ -6,6 +7,7 @@ using OpenTK.Mathematics;
 using RE.Core.Assets;
 using RE.Core.Initializing;
 using RE.Core.PluginSystem;
+using RE.Core.Ui;
 using RE.Editor.Panels.Viewport;
 using Serilog;
 
@@ -20,7 +22,15 @@ namespace RE.Core.World
         internal static readonly List<GameObject> _objectsToAdd = new();
         internal static readonly List<GameObject> _objectsToRemove = new();
 
-        internal static bool SceneChanged;
+        internal static bool SceneChanged
+        {
+            get;
+            set
+            {
+                field = value;
+                Log.Debug("Set {Property} to {Value}", nameof(SceneChanged), value);
+            }
+        }
 
         /// <summary>
         /// Currently loaded and active scene.
@@ -52,6 +62,9 @@ namespace RE.Core.World
                 Action = () =>
                 {
                     SceneChanged = true;
+                    //Hud.Root.Children.Clear();
+                    Log.Debug("Scene changed, HUD canvas cleared");
+
                     if (scene == CurrentScene)
                     {
                         CurrentScene = Reload(scene);

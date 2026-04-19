@@ -3,8 +3,8 @@ using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using RE.Core;
 using RE.Core.Assets;
+using RE.Core.Ui.Debug;
 using RE.Core.World;
-using RE.Debug;
 using RE.Editor;
 using RE.Utils;
 using Plane = System.Numerics.Plane;
@@ -144,9 +144,9 @@ public class RenderManager
 
     public static void RenderAll(FrameEventArgs args)
     {
-        GenerateFrustum(); 
+        GenerateFrustum();
 
-        if (!SceneEditor.Enabled)
+        if (!SceneEditor.Enabled && SceneManager.CurrentScene != null!)
         {
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
 
@@ -181,7 +181,7 @@ public class RenderManager
 
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, Game.Instance.OitFbo);
 
-            float[] clearZero = { 0.0f, 0.0f, 0.0f, 0.0f };
+            float[] clearZero = [0.0f, 0.0f, 0.0f, 0.0f];
 
             GL.ClearBuffer(ClearBuffer.Color, 0, clearZero);
             GL.ClearBuffer(ClearBuffer.Color, 1, clearZero);
@@ -196,7 +196,16 @@ public class RenderManager
 
 
             foreach (var s in RenderingComponents.Where(s => !s.IsOpaque))
-            { if (SceneManager.SceneChanged) { SceneManager.SceneChanged = false; return; } FrameProfiler.Begin(s.GetType().Name); s.Render(args); FrameProfiler.End(); }
+            {
+                if (SceneManager.SceneChanged)
+                {
+                    SceneManager.SceneChanged = false;
+                    return;
+                }
+                FrameProfiler.Begin(s.GetType().Name);
+                s.Render(args);
+                FrameProfiler.End();
+            }
 
 
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
@@ -222,6 +231,7 @@ public class RenderManager
             GL.DrawArrays(PrimitiveType.Triangles, 0, 3);
 
             GL.Enable(EnableCap.DepthTest);
+            GL.ActiveTexture(TextureUnit.Texture0);
         }
 
         foreach (var kvp in Renderables)
