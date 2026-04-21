@@ -1,1 +1,2 @@
+@echo off
 dotnet msbuild -t:BuildAll -v:d BuildTargets\RE.Publish.targets

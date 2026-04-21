@@ -3,7 +3,7 @@ using BulletSharp;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using OpenTK.Windowing.GraphicsLibraryFramework;
-using RE.Audio;
+using RE.Core.Audio;
 using RE.Core.Input;
 using RE.Core.Scripting.Attributes;
 using RE.Core.Ui;

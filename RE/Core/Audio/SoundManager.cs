@@ -17,7 +17,7 @@ using INITFLAGS = RE.Fmod.Studio.INITFLAGS;
 using LOAD_BANK_FLAGS = RE.Fmod.Studio.LOAD_BANK_FLAGS;
 using STOP_MODE = RE.Fmod.Studio.STOP_MODE;
 
-namespace RE.Audio
+namespace RE.Core.Audio
 {
     public static class SoundManager
     {
@@ -49,7 +49,7 @@ namespace RE.Audio
         /// </summary>
         public static void Init()
         {
-            Check(Fmod.Debug.Initialize(
+            Assert(Fmod.Debug.Initialize(
                  DEBUG_FLAGS.ERROR | DEBUG_FLAGS.WARNING,
                 DEBUG_MODE.CALLBACK,
                 _fmodDebugCallback
@@ -57,10 +57,10 @@ namespace RE.Audio
 
             var studioFlags = Debugger.IsAttached ? INITFLAGS.LIVEUPDATE : INITFLAGS.NORMAL;
 
-            Check(Fmod.Studio.System.create(out _studioSystem));
-            Check(_studioSystem.initialize(MaxChannels, studioFlags, INITFLAGS.NORMAL, IntPtr.Zero));
-            Check(_studioSystem.getCoreSystem(out _fmodSystem));
-            Check(_fmodSystem.getVersion(out uint version));
+            Assert(Fmod.Studio.System.create(out _studioSystem));
+            Assert(_studioSystem.initialize(MaxChannels, studioFlags, INITFLAGS.NORMAL, IntPtr.Zero));
+            Assert(_studioSystem.getCoreSystem(out _fmodSystem));
+            Assert(_fmodSystem.getVersion(out uint version));
 
             uint major = version >> 16;
             uint minor = (version >> 8) & 0xFF;
@@ -68,7 +68,7 @@ namespace RE.Audio
 
             Log.Information("[FMOD] Version: {Mj}.{Mn}.{Dv}", major, minor, patch);
             Log.Debug("[FMOD] Live Update is {State}.",
-                studioFlags.HasFlag(INITFLAGS.LIVEUPDATE) ? "Enabled" : "Not Enabled");
+                studioFlags.HasFlag(INITFLAGS.LIVEUPDATE) ? "Enabled" : "Disabled");
 
             LoadAllBanks();
         }
@@ -89,17 +89,17 @@ namespace RE.Audio
             var up = System.Numerics.Vector3.Cross(right.ToSystemVector3(), forward.ToSystemVector3()).ToOpenTkVector3().ToFmodVector3();
             var vel = Vector3.Zero.ToFmodVector3();
 
-            Check(_studioSystem.update());
-            Check(_fmodSystem.update());
-            Check(_fmodSystem.set3DListenerAttributes(0, ref pos, ref vel, ref forward, ref up));
+            Assert(_studioSystem.update());
+            Assert(_fmodSystem.update());
+            Assert(_fmodSystem.set3DListenerAttributes(0, ref pos, ref vel, ref forward, ref up));
         }
 
-        public static FmodBank LoadBank(string resourcePath)
-        { 
+        private static FmodBank LoadBank(string resourcePath)
+        {
             var buffer = ContentManager.GetBytes(resourcePath);
 
-            Check(_studioSystem.loadBankMemory(buffer, LOAD_BANK_FLAGS.NORMAL, out var bank));
-            Check(bank.getEventList(out var eventArray));
+            Assert(_studioSystem.loadBankMemory(buffer, LOAD_BANK_FLAGS.NORMAL, out var bank));
+            Assert(bank.getEventList(out var eventArray));
 
             Log.Debug("[FMOD] Events in {Bank}: {@List}",
                 resourcePath,
@@ -115,26 +115,26 @@ namespace RE.Audio
 
         public static Sound PlayEvent(string eventName)
         {
-            Check(_studioSystem.getEvent(eventName, out var eventDescription));
-            Check(eventDescription.createInstance(out var instance));
-            Check(instance.start());
+            Assert(_studioSystem.getEvent(eventName, out var eventDescription));
+            Assert(eventDescription.createInstance(out var instance));
+            Assert(instance.start());
             return new Sound(instance);
         }
 
         public static void PlayOneShotEvent(string eventName)
         {
-            Check(_studioSystem.getEvent(eventName, out var eventDescription));
-            Check(eventDescription.createInstance(out var instance));
-            Check(instance.start());
-            Check(instance.release());
+            Assert(_studioSystem.getEvent(eventName, out var eventDescription));
+            Assert(eventDescription.createInstance(out var instance));
+            Assert(instance.start());
+            Assert(instance.release());
         }
 
         public static void StopAll(bool immediate = true)
         {
-            Check(_studioSystem.getBus("bus:/", out var bus));
-            Check(bus.stopAllEvents(immediate ? STOP_MODE.IMMEDIATE : STOP_MODE.ALLOWFADEOUT));
+            Assert(_studioSystem.getBus("bus:/", out var bus));
+            Assert(bus.stopAllEvents(immediate ? STOP_MODE.IMMEDIATE : STOP_MODE.ALLOWFADEOUT));
         }
-        
+
         private static void LoadAllBanks()
         {
             var files = ContentManager.GetFiles("Assets/Audio");
@@ -150,10 +150,10 @@ namespace RE.Audio
         }
 
         [StackTraceHidden]
-        private static void Check(Result result, [CallerArgumentExpression(nameof(result))] string exp = "")
+        private static void Assert(Result result, [CallerArgumentExpression(nameof(result))] string exp = "")
         {
             if (result != Result.OK)
-                Log.Error("[FMOD] Check failed: {Expression} returned {Result}", exp, Error.String(result));
+                Log.Error("[FMOD] Assert failed: '{Expression}' returned {Result}", exp, Error.String(result));
 
             System.Diagnostics.Debug.Assert(result == Result.OK, $"'{exp}' != {nameof(Result.OK)}");
         }
@@ -162,11 +162,16 @@ namespace RE.Audio
         {
             if (_studioSystem.isValid())
             {
-                Check(_studioSystem.release());
+                Assert(_studioSystem.release());
             }
 
             _studioSystem.clearHandle();
             _fmodSystem.clearHandle();
+        }
+
+        public static bool Exists(string audioEvent)
+        {
+            return _studioSystem.getEvent(audioEvent, out _) != Result.ERR_FILE_NOTFOUND;
         }
     }
 }

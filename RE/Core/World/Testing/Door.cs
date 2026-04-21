@@ -1,7 +1,7 @@
 ﻿using System.Text.Json.Nodes;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
-using RE.Audio;
+using RE.Core.Audio;
 using RE.Core.Scripting.Attributes;
 using RE.Core.World.Components;
 using RE.Core.World.Components.Physics;

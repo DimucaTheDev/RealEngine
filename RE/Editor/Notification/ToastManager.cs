@@ -1,7 +1,7 @@
 ﻿using System.Numerics;
 using Hexa.NET.ImGui;
-using RE.Audio;
 using RE.Core;
+using RE.Core.Audio;
 
 namespace RE.Editor.Notification
 {

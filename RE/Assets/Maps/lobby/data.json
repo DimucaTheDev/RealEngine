@@ -103,7 +103,10 @@
         ]
       },
       "components": {
-        "PlayerComponent": {}
+        "PlayerComponent": {},
+        "AudioSourceComponent": {
+          "AudioEvent": "event:/CreepyMusic"
+        }
       }
     },
     {

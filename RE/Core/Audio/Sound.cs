@@ -6,7 +6,7 @@ using EventInstance = RE.Fmod.Studio.EventInstance;
 using RESULT = RE.Fmod.RESULT;
 using STOP_MODE = RE.Fmod.Studio.STOP_MODE;
 
-namespace RE.Audio
+namespace RE.Core.Audio
 {
     public class Sound : IDisposable
     {

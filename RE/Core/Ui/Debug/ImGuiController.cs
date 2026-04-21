@@ -33,8 +33,10 @@ internal static class ImGuiController
         io.ConfigFlags |= ImGuiConfigFlags.NavEnableKeyboard;
         io.ConfigFlags |= ImGuiConfigFlags.NavEnableGamepad;
         io.ConfigFlags |= ImGuiConfigFlags.DockingEnable;
-        io.ConfigFlags |= ImGuiConfigFlags.ViewportsEnable;
-
+        io.ConfigFlags |= ImGuiConfigFlags.ViewportsEnable; // laggy af, up to 6 ms/frame
+#if PRODUCTION
+#warning ImGui viewports are enabled in Release build. This may hit performance!
+#endif
 
         if ((io.ConfigFlags & ImGuiConfigFlags.ViewportsEnable) != 0)
         {
@@ -48,7 +50,7 @@ internal static class ImGuiController
             throw new Exception("Failed to init ImGui Impl GLFW");
 
         ImGuiImplOpenGL3.SetCurrentContext(_context);
-        if (!ImGuiImplOpenGL3.Init("#version 150"))
+        if (!ImGuiImplOpenGL3.Init("#version 330 core"))
             throw new Exception("Failed to init ImGui Impl OpenGL3");
 
 
