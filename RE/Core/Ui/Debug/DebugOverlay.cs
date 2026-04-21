@@ -6,7 +6,6 @@ using Hexa.NET.ImGui;
 using Hexa.NET.ImNodes;
 using Hexa.NET.ImPlot;
 using OpenTK.Windowing.Common;
-using RE.Core;
 using RE.Editor.NodeEditor;
 using RE.Rendering;
 using RE.Utils;

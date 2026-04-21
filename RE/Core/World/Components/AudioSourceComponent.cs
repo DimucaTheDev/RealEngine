@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Text.Json.Nodes;
-using JetBrains.Annotations;
-using Microsoft.VisualBasic.Logging;
+﻿using System.Text.Json.Nodes;
 using RE.Core.Audio;
 using RE.Core.Scripting.Attributes;
 using Log = Serilog.Log;

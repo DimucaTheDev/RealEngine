@@ -1,5 +1,4 @@
 ﻿using System.Diagnostics;
-using RE.Core;
 
 namespace RE.Core.Ui.Debug
 {

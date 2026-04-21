@@ -1,10 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using OpenTK.Windowing.Common;
+﻿using OpenTK.Windowing.Common;
 using RE.Core.Ui.Controls;
-using RE.Core.World;
-using Serilog;
 
 namespace RE.Core.Ui
 {

@@ -2,7 +2,6 @@
 using OpenTK.Graphics.OpenGL4;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
-using RE.Core;
 using RE.Core.Assets;
 using RE.Rendering;
 
