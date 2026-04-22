@@ -363,6 +363,12 @@ internal partial class Game : GameWindow
             e.Cancel = true;
         }
     }
+     
+    public override void Close()
+    {
+        ImGuiController.Destroy();
+        base.Close();
+    }
 
     protected override void OnUnload()
     {
@@ -370,8 +376,7 @@ internal partial class Game : GameWindow
 
         PluginManager.UnloadPlugins();
         SoundManager.Destroy();
-        PhysicsManager.Destroy();
-        ImGuiController.Destroy();
+        PhysicsManager.Destroy(); 
         Log.Information("End");
         Log.CloseAndFlush();
     }

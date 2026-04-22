@@ -149,10 +149,13 @@ internal static class ImGuiController
 
     public static void Destroy()
     {
+        ImGui.SetCurrentContext(_context);
+
+        ImGui.DestroyPlatformWindows();
+
         ImGuiImplOpenGL3.Shutdown();
         ImGuiImplGLFW.Shutdown();
-       // ImGuiImplWin32.Shutdown();
-        
+
         ImPlot.DestroyContext(_imPlotContext);
         ImNodes.DestroyContext(_imNodesContext);
         ImGui.DestroyContext(_context);
