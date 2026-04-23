@@ -1,10 +1,15 @@
 ﻿namespace RE.Core.Initializing
 {
-    public class InitializingTask
+    public sealed class InitializingTask(string label, InitializingTask.TaskType type, Action action)
     {
-        internal InitializingTask(){}
+        public enum TaskType
+        {
+            Synchronized,
+            Asynchronized
+        }
 
-        public required Action Action { get; init; }
-        public string? Label { get; init; }
+        public required Action Action { get; init; } = action;
+        public string? Label { get; init; } = label;
+        public required TaskType Type { get; init; } = type;
     }
 }

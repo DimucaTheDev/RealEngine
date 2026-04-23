@@ -1,4 +1,5 @@
-﻿using OpenTK.Graphics.OpenGL4;
+﻿using System.Diagnostics;
+using OpenTK.Graphics.OpenGL4;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using RE.Rendering.Renderables;
@@ -138,17 +139,19 @@ namespace RE.Core.Initializing
 
             Log.Debug("Executing {TaskName}", _runningTaskName);
 
-            switch (task)
+            switch (task.Type)
             {
-                case SyncInitializingTask syncTask:
-                    syncTask.Action.Invoke();
+                case InitializingTask.TaskType.Synchronized:
+                    task.Action.Invoke();
                     return true;
 
-                case AsyncInitializingTask asyncTask:
-                    _runningTask = Task.Run(() => asyncTask.Action.Invoke());
+                case InitializingTask.TaskType.Asynchronized:
+                    _runningTask = Task.Run(() => task.Action.Invoke());
                     return true;
 
                 default:
+                    Log.Error("Unknown task type: {TaskType}", task.Type);
+                    Debugger.Break();
                     return true;
             }
         }
