@@ -11,7 +11,7 @@ namespace RE.Core.World.Components
     [ComponentInfo("Text", Description = "Shows a text that always faces camera")]
     public class BillboardTextComponent(string text) : Component, IEditorUpdate, IEditorRender
     {
-        private readonly FloatingText _text = new(text, Vector3.Zero, new FreeTypeFont(64, Fonts.Consolas));
+        private readonly FloatingText _text = new(text, Vector3.Zero, new FreeTypeFont(Fonts.Consolas, 64));
 
         public BillboardTextComponent() : this("Billboard Text") { }
 

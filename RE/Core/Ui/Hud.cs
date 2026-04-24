@@ -5,7 +5,7 @@ namespace RE.Core.Ui
 {
     internal static class Hud
     {
-        public static CanvasControl Root { get; } = new();
+        public static CanvasControl Root { get; } = new() { Name = "Canvas" };
 
         internal static void Update(FrameEventArgs e)
         {
@@ -29,7 +29,8 @@ namespace RE.Core.Ui
 
         private static void RenderControl(UiControl control)
         {
-            if(!control.Visible) return;
+            if (!control.Visible)
+                return;
 
             control.Render();
             foreach (var child in control.Children)

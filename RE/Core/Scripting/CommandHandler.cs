@@ -329,7 +329,7 @@ namespace RE.Core.Scripting
             }, "Open or close debug overlay");
             RegisterSingleArgHandler("init_test", s =>
             {
-                Initializer.AddStep(new AsyncInitializingTask
+                Initializer.AddStep(new InitializingTask
                 {
                     Label = "Testing!",
                     Action = () => { Thread.Sleep(3000); }

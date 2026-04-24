@@ -4,6 +4,7 @@ using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using RE.Core.Assets;
 using RE.Rendering;
+using RE.Utils;
 
 namespace RE.Core.Ui.Debug;
 
@@ -34,6 +35,9 @@ public class LineRenderer : Renderable
     public static void DrawLine(Vector3 start, Vector3 end, Vector4 colorStart, Vector4 colorEnd)
         => Main.RenderLine(start, end, colorStart, colorEnd);
 
+    public static void DrawLine2D(Vector2 start, Vector2 end, Vector4 colorStart, Vector4 colorEnd)
+        => Main.RenderScreenLine(start, end, colorStart, colorEnd);
+
     public override void Render(FrameEventArgs args)
     {
         if (_lines.Count == 0 || !IsVisible)
@@ -44,31 +48,71 @@ public class LineRenderer : Renderable
 
     public void RenderLine(Vector3 start, Vector3 end, Vector4 colorStart, Vector4 colorEnd)
     {
-        AddLine(start, end, colorStart, colorEnd, 0);
+        AddLine(start, end, colorStart, colorEnd, false, 0);
+    }
+
+    public void RenderScreenLine(Vector2 start, Vector2 end, Vector4 colorStart, Vector4 colorEnd)
+    {
+        AddLine(
+            new Vector3(start.X, start.Y, 0f),
+            new Vector3(end.X, end.Y, 0f),
+            colorStart,
+            colorEnd,
+            true,
+            0);
     }
 
     private void RenderInternal()
     {
         _shaderProgram.Use();
-        var camera = Camera.GetActiveCamera();
-        _shaderProgram.SetValue("uView", camera.GetViewMatrix());
-        _shaderProgram.SetValue("uProjection", camera.GetProjectionMatrix());
-
-        int vertexCount = Math.Min(_lines.Count * 2, MaxVertices);
-
-        for (int i = 0; i < _lines.Count && (i * 2 + 1) < MaxVertices; i++)
-        {
-            ref var line = ref CollectionsMarshal.AsSpan(_lines)[i];
-            _vertexBatch[i * 2] = new Vertex { Position = line.Start, Color = line.ColorStart };
-            _vertexBatch[i * 2 + 1] = new Vertex { Position = line.End, Color = line.ColorEnd };
-        }
 
         GL.BindVertexArray(_vao);
         GL.BindBuffer(BufferTarget.ArrayBuffer, _vbo);
 
-        GL.BufferSubData(BufferTarget.ArrayBuffer, nint.Zero, vertexCount * Marshal.SizeOf<Vertex>(), _vertexBatch);
+        var camera = Camera.GetActiveCamera();
 
-        GL.DrawArrays(PrimitiveType.Lines, 0, vertexCount);
+        for (int i = 0; i < _lines.Count && (i * 2 + 1) < MaxVertices; i++)
+        {
+            ref var line = ref CollectionsMarshal.AsSpan(_lines)[i];
+
+            if (line.ScreenSpace)
+            {
+                float w = Game.Instance.Size.X;
+                float h = Game.Instance.Size.Y;
+
+                var ortho = Matrix4.CreateOrthographicOffCenter(0, w, h, 0, -1f, 1f);
+
+                _shaderProgram.SetValue("uView", Matrix4.Identity);
+                _shaderProgram.SetValue("uProjection", ortho);
+            }
+            else
+            {
+                _shaderProgram.SetValue("uView", camera.GetViewMatrix());
+                _shaderProgram.SetValue("uProjection", camera.GetProjectionMatrix());
+            }
+
+            _vertexBatch[0] = new Vertex
+            {
+                Position = line.Start,
+                Color = line.ColorStart
+            };
+
+            _vertexBatch[1] = new Vertex
+            {
+                Position = line.End,
+                Color = line.ColorEnd
+            };
+
+            GL.BufferSubData(
+                BufferTarget.ArrayBuffer,
+                nint.Zero,
+                2 * Marshal.SizeOf<Vertex>(),
+                _vertexBatch);
+
+            GL.DrawArrays(PrimitiveType.Lines, 0, 2);
+        }
+
+        GL.BindVertexArray(0);
 
         _lines.RemoveAll(l => l.DurationMs == 0);
     }
@@ -85,34 +129,52 @@ public class LineRenderer : Renderable
         GL.BindVertexArray(_vao);
         GL.BindBuffer(BufferTarget.ArrayBuffer, _vbo);
 
-        GL.BufferData(BufferTarget.ArrayBuffer, MaxVertices * Marshal.SizeOf<Vertex>(), nint.Zero, BufferUsageHint.DynamicDraw);
+        GL.BufferData(
+            BufferTarget.ArrayBuffer,
+            MaxVertices * Marshal.SizeOf<Vertex>(),
+            nint.Zero,
+            BufferUsageHint.DynamicDraw);
 
-        var stride = Marshal.SizeOf<Vertex>();
+        int stride = Marshal.SizeOf<Vertex>();
+
         GL.EnableVertexAttribArray(0);
         GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, stride, 0);
+
         GL.EnableVertexAttribArray(1);
-        GL.VertexAttribPointer(1, 4, VertexAttribPointerType.Float, false, stride, Marshal.OffsetOf<Vertex>(nameof(Vertex.Color)));
+        GL.VertexAttribPointer(
+            1,
+            4,
+            VertexAttribPointerType.Float,
+            false,
+            stride,
+            Marshal.OffsetOf<Vertex>(nameof(Vertex.Color)));
 
         GL.BindVertexArray(0);
     }
 
-    public int AddLine(Vector3 start, Vector3 end, Vector4 colorStart, Vector4 colorEnd, int msRemove = 10000)
+    public int AddLine(
+        Vector3 start,
+        Vector3 end,
+        Vector4 colorStart,
+        Vector4 colorEnd,
+        bool screenSpace,
+        int msRemove = 10000)
     {
-        var id = _nextId++;
+        int id = _nextId++;
+
         _lines.Add(new LineEntry
         {
             Start = start,
             End = end,
             ColorStart = colorStart,
             ColorEnd = colorEnd,
+            ScreenSpace = screenSpace,
             Id = id,
             DurationMs = msRemove
         });
 
         if (msRemove > 0)
-        {
             Time.Schedule(msRemove, () => ScheduleRemove(id));
-        }
 
         return id;
     }
@@ -120,6 +182,7 @@ public class LineRenderer : Renderable
     public void ScheduleRemove(int id)
     {
         _toRemove.Add(id);
+
         if (_toRemove.Count == 1)
             Time.Schedule(100, ProcessRemovals);
     }
@@ -161,6 +224,7 @@ public class LineRenderer : Renderable
         public Vector3 End;
         public Vector4 ColorStart;
         public Vector4 ColorEnd;
+        public bool ScreenSpace;
         public int Id;
         public int DurationMs;
     }

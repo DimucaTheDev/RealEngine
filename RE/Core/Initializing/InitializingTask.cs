@@ -1,6 +1,6 @@
 ﻿namespace RE.Core.Initializing
 {
-    public sealed class InitializingTask(string label, InitializingTask.TaskType type, Action action)
+    public sealed class InitializingTask
     {
         public enum TaskType
         {
@@ -8,8 +8,8 @@
             Asynchronized
         }
 
-        public required Action Action { get; init; } = action;
-        public string? Label { get; init; } = label;
-        public required TaskType Type { get; init; } = type;
+        public required Action Action { get; init; }
+        public string? Label { get; init; }
+        public TaskType Type { get; init; } = TaskType.Synchronized;
     }
 }

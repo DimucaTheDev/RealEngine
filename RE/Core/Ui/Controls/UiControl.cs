@@ -7,6 +7,7 @@ namespace RE.Core.Ui.Controls
         public UiControl? Parent { get; internal set; }
         public UiControlList Children { get; internal set; }
 
+        public string Name { get; set; }
         public Vector2 Position { get; set; }
         public Vector2 Scale { get; set; }
         public bool Visible { get; set; } = true;
@@ -24,6 +25,7 @@ namespace RE.Core.Ui.Controls
         protected UiControl()
         {
             Children = new UiControlList(this);
+            Name = GetType().Name;
         }
 
        public virtual void Render() { }
@@ -31,5 +33,10 @@ namespace RE.Core.Ui.Controls
        public virtual void OnMouseHoverEnter() { }
        public virtual void OnMouseHoverLeave() { }
        public virtual void OnClick() { }
+
+       public virtual (Vector2 Position, Vector2 Scale) GetBoundary()
+       {
+           return (Position, Scale);
+       }
     }
 }

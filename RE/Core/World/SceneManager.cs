@@ -54,7 +54,7 @@ namespace RE.Core.World
         /// <param name="afterLoaded">Invoke action when scene finishes loading</param>
         public static void LoadScene(Scene scene, bool disposeCurrent, Action? afterLoaded)
         {
-            Initializer.AddStep(new SyncInitializingTask
+            Initializer.AddStep(new InitializingTask
             {
                 Label = $"Loading level \"{scene.Name ?? "<unnamed>"}\"",
                 Action = () =>

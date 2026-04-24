@@ -26,7 +26,7 @@ namespace RE.Rendering.Renderables
     [DebuggerDisplay("{Name}")]
     public class ModelRenderer : Renderable, ICullable
     {
-        private static readonly FreeTypeFont Font = new(32, "Assets/Fonts/consola.ttf");
+        private static readonly FreeTypeFont Font = new("Assets/Fonts/consola.ttf", 32);
         private static readonly Dictionary<string, Texture> TextureCache = new();
         private static readonly Dictionary<string, (uint vao, uint vbo, uint ebo, int indexCount, List<float> vertices, List<int> indices, Vector3 min, Vector3 max)> MeshCache = new();
         private static ShaderProgram _program = null!;

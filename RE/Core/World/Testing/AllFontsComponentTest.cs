@@ -14,7 +14,7 @@ namespace RE.Core.World.Testing
         public AllFontsComponentTest()
         {
             Texts = new List<FloatingText>();
-            var freeTypeFont = new FreeTypeFont(32, Fonts.Consolas);
+            var freeTypeFont = new FreeTypeFont(Fonts.Consolas, 32);
 
             string input = string.Join(" ",
                 Enumerable.Range(0, freeTypeFont.CharacterMap.Count).Select(s => (char)s).ToArray());

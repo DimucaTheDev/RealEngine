@@ -3,6 +3,7 @@ using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using RE.Core;
 using RE.Core.Assets;
+using RE.Core.Ui;
 using RE.Core.Ui.Debug;
 using RE.Core.World;
 using RE.Editor;
@@ -144,10 +145,14 @@ public class RenderManager
 
     public static void RenderAll(FrameEventArgs args)
     {
+
         GenerateFrustum();
 
         if (!SceneEditor.Enabled && SceneManager.CurrentScene != null!)
         {
+            FrameProfiler.Begin("components");
+
+
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
 
             GL.Enable(EnableCap.DepthTest);
@@ -206,8 +211,7 @@ public class RenderManager
                 s.Render(args);
                 FrameProfiler.End();
             }
-
-
+             
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
 
             GL.DepthMask(true);
@@ -231,7 +235,18 @@ public class RenderManager
             GL.DrawArrays(PrimitiveType.Triangles, 0, 3);
 
             GL.Enable(EnableCap.DepthTest);
+
+            GL.BindTexture(TextureTarget.Texture2D, 0);
             GL.ActiveTexture(TextureUnit.Texture0);
+            GL.BindTexture(TextureTarget.Texture2D, 0);
+
+            FrameProfiler.End();
+
+
+            FrameProfiler.Begin("hud");
+            Hud.Render();
+            FrameProfiler.End();
+
         }
 
         foreach (var kvp in Renderables)
@@ -320,18 +335,18 @@ public class RenderManager
         float r = .5f;
 
         var corners = GetFrustumCorners(_cachedProjMatrix, _cachedViewMatrix);
-        FrustumRenderer.AddLine(corners[0], corners[1], new Vector4(r, 0, 0, 1), new Vector4(r, 0, 0, 1), 0);
-        FrustumRenderer.AddLine(corners[1], corners[2], new Vector4(r, 0, 0, 1), new Vector4(r, 0, 0, 1), 0);
-        FrustumRenderer.AddLine(corners[2], corners[3], new Vector4(r, 0, 0, 1), new Vector4(r, 0, 0, 1), 0);
-        FrustumRenderer.AddLine(corners[3], corners[0], new Vector4(r, 0, 0, 1), new Vector4(r, 0, 0, 1), 0);
-        FrustumRenderer.AddLine(corners[4], corners[5], new Vector4(r, 0, 0, 1), new Vector4(r, 0, 0, 1), 0);
-        FrustumRenderer.AddLine(corners[5], corners[6], new Vector4(r, 0, 0, 1), new Vector4(r, 0, 0, 1), 0);
-        FrustumRenderer.AddLine(corners[6], corners[7], new Vector4(r, 0, 0, 1), new Vector4(r, 0, 0, 1), 0);
-        FrustumRenderer.AddLine(corners[7], corners[4], new Vector4(r, 0, 0, 1), new Vector4(r, 0, 0, 1), 0);
+        FrustumRenderer.AddLine(corners[0], corners[1], new Vector4(r, 0, 0, 1), new Vector4(r, 0, 0, 1), false, 0);
+        FrustumRenderer.AddLine(corners[1], corners[2], new Vector4(r, 0, 0, 1), new Vector4(r, 0, 0, 1), false, 0);
+        FrustumRenderer.AddLine(corners[2], corners[3], new Vector4(r, 0, 0, 1), new Vector4(r, 0, 0, 1), false, 0);
+        FrustumRenderer.AddLine(corners[3], corners[0], new Vector4(r, 0, 0, 1), new Vector4(r, 0, 0, 1), false, 0);
+        FrustumRenderer.AddLine(corners[4], corners[5], new Vector4(r, 0, 0, 1), new Vector4(r, 0, 0, 1), false, 0);
+        FrustumRenderer.AddLine(corners[5], corners[6], new Vector4(r, 0, 0, 1), new Vector4(r, 0, 0, 1), false, 0);
+        FrustumRenderer.AddLine(corners[6], corners[7], new Vector4(r, 0, 0, 1), new Vector4(r, 0, 0, 1), false, 0);
+        FrustumRenderer.AddLine(corners[7], corners[4], new Vector4(r, 0, 0, 1), new Vector4(r, 0, 0, 1), false, 0);
 
         for (int i = 0; i < 4; i++)
         {
-            FrustumRenderer.AddLine(corners[i], corners[i + 4], new Vector4(r, 0, 0, 1), new Vector4(r, 0, 0, 1), 0);
+            FrustumRenderer.AddLine(corners[i], corners[i + 4], new Vector4(r, 0, 0, 1), new Vector4(r, 0, 0, 1), false, 0);
         }
     }
 

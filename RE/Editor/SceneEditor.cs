@@ -13,6 +13,7 @@ using RE.Core.Input;
 using RE.Core.PluginSystem;
 using RE.Core.Scripting;
 using RE.Core.Scripting.Attributes;
+using RE.Core.Ui;
 using RE.Core.Ui.Debug;
 using RE.Core.World;
 using RE.Editor.Notification;
@@ -45,7 +46,7 @@ namespace RE.Editor
 
         public static SceneEditor Instance;
         public static bool Enabled;
-        public static bool PreviewLight, PreviewSkybox, ShowAxis = true, ShowGrid = true, PreviewParticles;
+        public static bool PreviewLight, PreviewSkybox, ShowAxis = true, ShowGrid = true, PreviewParticles, ShowHud;
         public static GameObject? SelectedObject;
         public static bool ShowExitConfirmationModal;
         public static bool SimulationRunning;
@@ -63,6 +64,7 @@ namespace RE.Editor
 
         private readonly List<Type> _customPopups = new();
         private readonly HierarchyPanel _hierarchyPanel = new();
+        private readonly HudHierarchyPanel _hudHierarchyPanel = new();
         private readonly InspectorPanel _inspectorPanel = new();
         private readonly AssetBrowserPanel _assetBrowserPanel = new();
         private readonly ViewportPanel _viewportPanel = new();
@@ -294,9 +296,19 @@ namespace RE.Editor
                 GL.DrawArrays(PrimitiveType.Triangles, 0, 3);
 
                 GL.Enable(EnableCap.DepthTest);
+
+                GL.BindTexture(TextureTarget.Texture2D, 0);
+                GL.ActiveTexture(TextureUnit.Texture0);
+                GL.BindTexture(TextureTarget.Texture2D, 0);
             }
             FrameProfiler.End();
 
+            if (ShowHud)
+            {
+                FrameProfiler.Begin("hud");
+                Hud.Render();
+                FrameProfiler.End();
+            }
 
             if (SceneManager.CurrentScene == null!)
                 return;
@@ -304,6 +316,7 @@ namespace RE.Editor
             SetupDockSpace();
 
             _hierarchyPanel.Draw();
+            _hudHierarchyPanel.Draw();
             _inspectorPanel.Draw();
             _assetBrowserPanel.Draw();
             _viewportPanel.Draw();
@@ -325,9 +338,9 @@ namespace RE.Editor
                     Text("Are you sure you want to exit the Scene Editor?\nUnsaved changes will be lost.");
                     Separator();
 
-                    BeginDisabled((_exitButtonWait += Time.DeltaTime) <= 4);
+                    BeginDisabled((_exitButtonWait += Time.DeltaTime) <= 3);
 
-                    var label = _exitButtonWait > 4 ? "Yes" : $"Yes ({(4 - (int)_exitButtonWait)}s)";
+                    var label = _exitButtonWait > 3 ? "Yes" : $"Yes ({(3 - (int)_exitButtonWait)}s)";
                     if (Button(label))
                     {
                         _exitButtonWait = 0;
@@ -501,6 +514,7 @@ namespace RE.Editor
                 ImGuiP.DockBuilderSplitNode(nodeBottom, ImGuiDir.Left, 0.59f, &nodeAssetBrowser, &nodeConsole);
 
                 ImGuiP.DockBuilderDockWindow("Scene Hierarchy", nodeHierarchy);
+                ImGuiP.DockBuilderDockWindow("UI Hierarchy", nodeHierarchy);
                 ImGuiP.DockBuilderDockWindow("Viewport", nodeViewport);
                 ImGuiP.DockBuilderDockWindow("Inspector", nodeInspector);
                 ImGuiP.DockBuilderDockWindow("Asset browser", nodeAssetBrowser);

@@ -38,7 +38,7 @@ namespace RE.Core.Initializing
                 _text = new ScreenText(
                     null,
                     new(Game.Instance.ClientSize.X / 2, Game.Instance.ClientSize.Y / 4 * 3),
-                    (FreeTypeFont)Fonts.Default,
+                    new FreeTypeFont(Fonts.Default),
                     1);
 
                 _text.Color = Vector4.One;

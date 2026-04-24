@@ -9,17 +9,9 @@ namespace RE.Editor.Panels
     { 
         public void Draw()
         {
-            ImGuiViewportPtr viewport = GetMainViewport();
-            float totalWorkWidth = viewport.WorkSize.X;
-            float totalWorkHeight = viewport.WorkSize.Y;
+            ImGuiViewportPtr viewport = GetMainViewport(); 
             float sidebarWidth = 400;
-
-            Vector2 hierarchyWindowPos = new Vector2(viewport.WorkPos.X + totalWorkWidth - sidebarWidth, viewport.WorkPos.Y);
-            Vector2 hierarchyWindowSize = new Vector2(sidebarWidth, totalWorkHeight / 2);
-
-            //SetNextWindowPos(hierarchyWindowPos, ImGuiCond.FirstUseEver);
-            //SetNextWindowSize(hierarchyWindowSize, ImGuiCond.FirstUseEver);
-
+              
             SetNextWindowPos(new Vector2(8, 27), ImGuiCond.FirstUseEver);
             SetNextWindowSize(new Vector2(310, 665), ImGuiCond.FirstUseEver);
 
@@ -36,19 +28,7 @@ namespace RE.Editor.Panels
                 DrawObjectTree(obj);
             }
             End();
-
-            if (renderQuit)
-            {
-                OpenPopup("Quit");
-                renderQuit = false;
-            }
-            if (renderAbout)
-            {
-                OpenPopup("About");
-                renderAbout = false;
-            }
-            //DrawAbout();
-            //DrawQuit();
+             
         }
         private void DrawObjectTree(GameObject obj)
         {

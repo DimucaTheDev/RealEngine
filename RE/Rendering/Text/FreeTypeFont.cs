@@ -14,20 +14,22 @@ public class FreeTypeFont
     private readonly Dictionary<uint, Character> _characters = new();
     private readonly int _vao;
     private readonly int _vbo;
-
+    private static Dictionary<(uint height, string path), (int vao, int vbo, Dictionary<uint, Character> map)> Cache = new();
+    
     public readonly uint PixelHeight;
     public ReadOnlyDictionary<uint, Character> CharacterMap => _characters.AsReadOnly();
 
-    private static Dictionary<(uint height, string path), (int vao, int vbo, Dictionary<uint, Character> map)>
-        Cache = new();
 
-    public FreeTypeFont(uint pixelheight, string ttfPath)
+
+    public FreeTypeFont(string ttfPath) : this(ttfPath, 48) { }
+    public FreeTypeFont(string ttfPath, uint pixelheight)
     {
         if (Cache.TryGetValue((pixelheight, ttfPath), out var cache))
         {
             _vao = cache.vao;
             _vbo = cache.vbo;
             _characters = cache.map;
+            PixelHeight = pixelheight;
             return;
         }
 
@@ -190,6 +192,4 @@ public class FreeTypeFont
         GL.BindVertexArray(0);
         GL.BindTexture(TextureTarget.Texture2D, 0);
     }
-
-    public static explicit operator FreeTypeFont(string path) => new(48, path);
 }

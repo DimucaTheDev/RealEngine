@@ -78,7 +78,7 @@ public class FloatingText : Renderable
     {
         if (_instance == null!)
         {
-            _instance = new FloatingText("", Vector3.Zero, (FreeTypeFont)Fonts.Default);
+            _instance = new FloatingText("", Vector3.Zero, new FreeTypeFont(Fonts.Default));
         }
         _instance.Text = text;
         _instance.Position = pos;

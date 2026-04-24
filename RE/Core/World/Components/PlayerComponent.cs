@@ -80,7 +80,7 @@ namespace RE.Core.World.Components
             Hud.Root.Children.AddRange(im, new ImageControl("assets/testing/alpha.png")
             {
                 ZIndex = 1
-            });
+            }, new LabelControl { ZIndex = 2, Text = "hud test", Position = (0,200)});
         }
 
         private ImageControl im;

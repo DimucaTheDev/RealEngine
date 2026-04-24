@@ -11,6 +11,7 @@ namespace RE.Rendering.Renderables;
 [DebuggerDisplay("Text: \"{Text}\"")]
 internal class ScreenText : Renderable
 {
+    public ScreenText() : this(null, Vector2.Zero, new(Fonts.Default)) { }
     public ScreenText(string? content, Vector2 position, FreeTypeFont font)
     {
         Text = content ?? "";

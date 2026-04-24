@@ -21,7 +21,7 @@ namespace TestPlugin
         public override void OnLoad()
         {
             Log.Information("Loading testing plugin omg!");
-            Initializer.AddStep(new SyncInitializingTask()
+            Initializer.AddStep(new InitializingTask
             {
                 Label = "plugin loading!",
                 Action = () => Thread.Sleep(1000)

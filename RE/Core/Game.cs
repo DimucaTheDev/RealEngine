@@ -141,9 +141,10 @@ internal partial class Game : GameWindow
         ConsoleWindow.Init();
         SoundManager.Init();
         PhysicsManager.Init();
-        Initializer.AddStep(new AsyncInitializingTask
+        Initializer.AddStep(new InitializingTask
         {
-            Label = "Long action in Game.cs",
+            Type = InitializingTask.TaskType.Asynchronized,
+            Label = "Long async action in Game.cs",
             Action = () =>
             {
                 Thread.Sleep(2000);
@@ -151,7 +152,7 @@ internal partial class Game : GameWindow
         });
         SceneEditor.Instance = new();
         CommandHandler.RegisterAllCommands();
-        Initializer.AddStep(new SyncInitializingTask
+        Initializer.AddStep(new InitializingTask
         {
             Label = "Doing our doings in default.cfg",
             Action = () => CommandHandler.ExecuteCommand("source assets/cfg/default.cfg")
@@ -260,34 +261,23 @@ internal partial class Game : GameWindow
         GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
         GL.PolygonMode(TriangleFace.FrontAndBack, Wireframe ? PolygonMode.Line : PolygonMode.Fill);
 
-        pb("components");
-        {
-            RenderManager.RenderAll(args);
-            SceneManager.ApplyObjectModification();
-        }
-        pe();
+        RenderManager.RenderAll(args);
+        SceneManager.ApplyObjectModification();
 
-        if (SceneEditor.Enabled)
-        {
-            GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
-            GL.ClearColor(Color4.Black);
-            GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
-            GL.Viewport(0, 0, ClientSize.X, ClientSize.Y);
-        }
 
-        pb("ui"); // damn check how these brackets look!!! sad there are no macros :(
+        // damn check how these brackets look!!! sad there are no macros :(
+        pb("imgui_render");
         {
-            pb("imgui_render");
+            if (SceneEditor.Enabled)
             {
-                ToastManager.RenderNotifications();
-                ImGuiController.Render();
+                GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
+                GL.ClearColor(Color4.Black);
+                GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
+                GL.Viewport(0, 0, ClientSize.X, ClientSize.Y);
             }
-            pe();
-            pb("hud");
-            {
-                Hud.Render();
-            }
-            pe();
+
+            ToastManager.RenderNotifications();
+            ImGuiController.Render();
         }
         pe();
 
@@ -363,7 +353,7 @@ internal partial class Game : GameWindow
             e.Cancel = true;
         }
     }
-     
+
     public override void Close()
     {
         ImGuiController.Destroy();
@@ -376,7 +366,7 @@ internal partial class Game : GameWindow
 
         PluginManager.UnloadPlugins();
         SoundManager.Destroy();
-        PhysicsManager.Destroy(); 
+        PhysicsManager.Destroy();
         Log.Information("End");
         Log.CloseAndFlush();
     }

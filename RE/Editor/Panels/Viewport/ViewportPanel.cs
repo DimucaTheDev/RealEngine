@@ -5,6 +5,7 @@ using Hexa.NET.ImGuizmo;
 using OpenTK.Mathematics;
 using RE.Core;
 using RE.Core.Input;
+using RE.Core.Ui;
 using RE.Core.Ui.Debug;
 using RE.Core.World;
 using RE.Core.World.Components.Physics;
@@ -50,6 +51,7 @@ namespace RE.Editor.Panels.Viewport
         private readonly Texture _particlesOff;
         private readonly Texture _startSimulation;
         private readonly Texture _stopSimulation;
+        private readonly Texture _hud;
 
         private readonly string[] _options = ["World", "Local"];
 
@@ -103,6 +105,7 @@ namespace RE.Editor.Panels.Viewport
             _particlesOff = new StaticTexture("assets/editor/sprites/previewParticlesOff.png");
             _startSimulation = new StaticTexture("assets/editor/sprites/run.png");
             _stopSimulation = new StaticTexture("assets/editor/sprites/stop.png");
+            _hud = new StaticTexture("assets/editor/sprites/hud.png");
         }
 
         private void SetupBullet()
@@ -178,7 +181,15 @@ namespace RE.Editor.Panels.Viewport
                     CameraControl();
                 }
 
+                var cursorScreenPos = GetCursorScreenPos() - ViewportSize with { X = 0 };
+                SetNextWindowPos(cursorScreenPos, ImGuiCond.Appearing);
+                PushStyleColor(ImGuiCol.WindowBg, new Vector4(0, 0, 0, 0.6f));
+                PushStyleVar(ImGuiStyleVar.WindowRounding, 0);
+                Begin("##debug_info", ImGuiWindowFlags.NoTitleBar);
                 DrawDebugText();
+                End();
+                PopStyleColor();
+                PopStyleVar();
 
                 DrawGrid();
                 DrawGizmos();
@@ -196,10 +207,30 @@ namespace RE.Editor.Panels.Viewport
                 if (IsMouseDown(ImGuiMouseButton.Middle) && hovered && !gizmoActive)
                     PanoramicCameraMove();
                 LeftMouseButtonHandler();
+
+                DrawHudBoundaries();
             }
             End();
 
             //CollisionWorld.DebugDrawWorld();
+        }
+
+        private void DrawHudBoundaries()
+        { 
+            foreach (var child in Hud.Root.Children)
+            {
+                var b = child.GetBoundary();
+
+                var p1 = b.Position;
+                var p2 = b.Position + new OpenTK.Mathematics.Vector2(b.Scale.X, 0);
+                var p3 = b.Position + b.Scale;
+                var p4 = b.Position + new OpenTK.Mathematics.Vector2(0, b.Scale.Y);
+
+                LineRenderer.DrawLine2D(p1, p2, (1, 0, 0, 1), (1, 0, 0, 1));
+                LineRenderer.DrawLine2D(p2, p3, (1, 0, 0, 1), (1, 0, 0, 1));
+                LineRenderer.DrawLine2D(p3, p4, (1, 0, 0, 1), (1, 0, 0, 1));
+                LineRenderer.DrawLine2D(p4, p1, (1, 0, 0, 1), (1, 0, 0, 1));
+            }
         }
 
         private void CameraControl()
@@ -485,7 +516,7 @@ namespace RE.Editor.Panels.Viewport
             ];
             foreach (var line in data.Index())
             {
-                SetCursorPos(new Vector2(15, 70 + CalcTextSize(line.Item).Y * line.Index));
+                SetCursorPos(new Vector2(10, 10 + CalcTextSize(line.Item).Y * line.Index));
                 Text(line.Item);
             }
         }
@@ -593,6 +624,11 @@ namespace RE.Editor.Panels.Viewport
             if (ImageButton("##particles", SceneEditor.PreviewParticles ? _particlesOn : _particlesOff, new Vector2(size, size)))
                 SceneEditor.PreviewParticles = !SceneEditor.PreviewParticles;
             TextTooltip("Update and render particles in editor.");
+
+            SameLine();
+            if (ImageButton("##hud", _hud, new Vector2(size, size)))
+                SceneEditor.ShowHud = !SceneEditor.ShowHud;
+            TextTooltip("Show HUD");
 
         }
 
