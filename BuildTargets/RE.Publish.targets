@@ -6,16 +6,16 @@
 		<GenerateEditorExecutable>False <!-- Use -e arg instead --> </GenerateEditorExecutable>
 		<GenerateConsoleExecutable>True</GenerateConsoleExecutable>
 
-		<DefineConstants>$(DefineConstants);PROD;PRODUCTION;DISABLE_SCENE_EDITOR</DefineConstants>
+		<DefineConstants>$(DefineConstants);PROD;PRODUCTION; <!--DISABLE_SCENE_EDITOR--> </DefineConstants>
 		<Optimize>True</Optimize>
 		<ApplicationIcon>../RealEngineYB.ico</ApplicationIcon>
 	</PropertyGroup>
 	<UsingTask TaskName="RE.BuildTask.EngineBuildTask" AssemblyFile="$(TaskDll)" />
 	<Target Name="BuildAll">
 		<MSBuild Projects="../RE.BuildTask/RE.BuildTask.csproj" Targets="Restore;Build" />
-		<MSBuild Projects="../RE.Launcher.Game/RE.Launcher.Game.csproj" Targets="Restore;Publish" Properties="ApplicationIcon=$(ApplicationIcon);InformationalVersion=$(Version);RuntimeIdentifier=win-x64;PublishSingleFile=True;Configuration=Production;PublishDir=$(PubDir)" />
+		<MSBuild Projects="../RE.Launcher.Game/RE.Launcher.Game.csproj" Targets="Restore;Publish" Properties="ApplicationIcon=$(ApplicationIcon);InformationalVersion=$(Version);RuntimeIdentifier=win-x64;PublishSingleFile=True;Configuration=Production;PublishDir=$(PubDir);SelfContained=true" />
 		<MSBuild Condition="'$(GenerateEditorExecutable)' == 'True'" Projects="../RE.Launcher.Editor/RE.Launcher.Editor.csproj" Targets="Restore;Publish" Properties="ApplicationIcon=../RealEngine-Editor.ico;InformationalVersion=$(Version);RuntimeIdentifier=win-x64;PublishSingleFile=True;Configuration=Production;PublishDir=$(PubDir)" />
-		<MSBuild Condition="'$(GenerateConsoleExecutable)' == 'True'" Projects="../RE.Launcher.Game.Console/RE.Launcher.Game.Console.csproj" Targets="Restore;Publish" Properties="ApplicationIcon=../RealEngine.ico;InformationalVersion=$(Version);RuntimeIdentifier=win-x64;PublishSingleFile=True;Configuration=Production;PublishDir=$(PubDir)" />
+		<MSBuild Condition="'$(GenerateConsoleExecutable)' == 'True'" Projects="../RE.Launcher.Game.Console/RE.Launcher.Game.Console.csproj" Targets="Restore;Publish" Properties="ApplicationIcon=../RealEngine.ico;InformationalVersion=$(Version);RuntimeIdentifier=win-x64;PublishSingleFile=True;Configuration=Production;PublishDir=$(PubDir);SelfContained=true" />
 
 		<EngineBuildTask AssetsFolder="$(PubDir)Assets" PakOutputFolder="$(PubDir)Engine/Content" CompressAssets="true" GenerateZip="false" Version="$(Version)" />
 	</Target>
