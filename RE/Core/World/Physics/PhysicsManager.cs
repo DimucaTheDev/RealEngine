@@ -171,7 +171,7 @@ namespace RE.Core.World.Physics
             if (!SceneEditor.Enabled)
             {
                 FrameProfiler.Begin("bullet");
-                DynamicsWorld.StepSimulation(deltaTime, EnableSimulation ? 5 : 0);
+                DynamicsWorld.StepSimulation(deltaTime, EnableSimulation ? 5 : 0, deltaTime);
                 FrameProfiler.End();
             }
         }
