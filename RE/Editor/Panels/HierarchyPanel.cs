@@ -6,12 +6,12 @@ using static Hexa.NET.ImGui.ImGui;
 namespace RE.Editor.Panels
 {
     internal class HierarchyPanel
-    { 
+    {
         public void Draw()
         {
-            ImGuiViewportPtr viewport = GetMainViewport(); 
+            ImGuiViewportPtr viewport = GetMainViewport();
             float sidebarWidth = 400;
-              
+
             SetNextWindowPos(new Vector2(8, 27), ImGuiCond.FirstUseEver);
             SetNextWindowSize(new Vector2(310, 665), ImGuiCond.FirstUseEver);
 
@@ -21,14 +21,25 @@ namespace RE.Editor.Panels
             bool renderAbout = false;
             bool renderQuit = false;
 
-            Begin("Scene Hierarchy", flags); 
+            Begin("Scene Hierarchy", flags);
 
-            foreach (var obj in SceneManager.CurrentScene.GameObjects.Where(s => s is { DoNotShowInEditor: false, Parent: null }).ToList())
+            var gameObjects = SceneManager.CurrentScene.GameObjects;
+            foreach (var obj in gameObjects.Where(s => s is { DoNotShowInEditor: false, Parent: null }).ToList())
             {
                 DrawObjectTree(obj);
             }
+
+            if (BeginPopupContextWindow())
+            {
+                if (MenuItem("Create object"))
+                {
+                    gameObjects.Add(new GameObject { Name = $"New Object {gameObjects.Count() + 1}" });
+                }
+                EndPopup();
+            }
+
             End();
-             
+
         }
         private void DrawObjectTree(GameObject obj)
         {
@@ -60,7 +71,7 @@ namespace RE.Editor.Panels
             PopStyleColor();
 
             if (IsItemClicked())
-            { 
+            {
                 SceneEditor.SelectedObject = obj;
             }
 

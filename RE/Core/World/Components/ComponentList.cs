@@ -63,6 +63,9 @@ namespace RE.Core.World.Components
                 else if (c is IEditorStart s)
                     s.EditorStart();
             }
+
+            //todo: remove or rewrite
+            GameObjectList.CreateVpObject(_owner);
         }
 
         /// <summary>
@@ -86,6 +89,8 @@ namespace RE.Core.World.Components
             _components.Remove(c);
 
             c.Owner = null!;
+            GameObjectList.CreateVpObject(_owner);
+
         }
         public void Clear()
         {

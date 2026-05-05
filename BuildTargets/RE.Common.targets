@@ -1,12 +1,12 @@
 <Project> 
 	<PropertyGroup>
 		<ExeName>RE-Demo-App</ExeName>
-		<Version>0.1+dev</Version>
+		<Version>0.2+dev</Version>
 		<ApplicationIcon>../RealEngine.ico</ApplicationIcon>
 		<Title>Real Engine</Title>
 		<IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
 		<Authors>DimucaTheDev</Authors>
-		<Company>LEFT2.DEV</Company>
+		<Company>CMDEV</Company>
 		<Product>Real Engine</Product>
 		<NoWarn>CS1591</NoWarn>
 		<PackageProjectUrl>https://github.com/DimucaTheDev/RealEngine</PackageProjectUrl>

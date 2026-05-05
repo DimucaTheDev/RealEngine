@@ -2,6 +2,7 @@
 using System.Collections.Immutable;
 using System.Globalization;
 using System.Text.RegularExpressions;
+using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using RE.Core.Assets;
 using RE.Core.Audio;
@@ -9,6 +10,8 @@ using RE.Core.Initializing;
 using RE.Core.Logging;
 using RE.Core.Ui.Debug;
 using RE.Core.World;
+using RE.Core.World.Components;
+using RE.Core.World.Components.Physics;
 using RE.Rendering;
 using RE.Utils;
 using Serilog;
@@ -354,6 +357,47 @@ namespace RE.Core.Scripting
 
             }, "Enable or disable V-Sync");
             RegisterHandler("fps", list => { Game.Instance.UpdateFrequency = int.Parse(list.First()); }, "Set max frame rate");
+
+
+            RegisterSingleArgHandler("test_1", _ =>
+            {
+                void SpawnCube(Vector3 p)
+                {
+                    GameObject g = new();
+                    g.Components.Add(new RigidBodyComponent(0.5f));
+                    g.Components.Add(new BoxColliderComponent());
+                    g.Components.Add(new MeshComponent("assets/models/crate.fbx"));
+                    SceneManager.CurrentScene.GameObjects.Add(g);
+                    g.SetPosition(p);
+                }
+
+                Vector3 start = new Vector3(7f, 1.3f, -3f);
+
+                int baseCount = 6;
+                float step = 2.3f;
+
+                int c = 0;
+                for (int row = 0; row < baseCount; row++)
+                {
+                    int count = baseCount - row;
+
+                    float zOffset = row * step;
+                    float xStart = row * (step / 2f);
+
+                    for (int i = 0; i < count; i++)
+                    {
+                        c++;
+                        Vector3 pos = new Vector3(
+                            start.Z + xStart + i * step,
+                            start.Y + row * step + 0.2f,
+                            start.X
+                          //  start.X + zOffset
+                        );
+
+                        Time.Schedule(100 + 150 * (c), () => SpawnCube(pos));
+                    }
+                }
+            });
         }
 
         private static string Format(object? obj)

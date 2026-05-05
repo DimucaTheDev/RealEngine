@@ -34,6 +34,7 @@ namespace RE.Core.Ui.Controls
 
         public override (Vector2 Position, Vector2 Scale) GetBoundary()
         { 
+            //buggy!
             return (Position - (0, TextRenderer.Font.GetTextHeight(Text!)), 1.25f * new Vector2(TextRenderer.Font.GetTextWidth(Text!), TextRenderer.Font.GetTextHeight(Text!)));
         }
     }

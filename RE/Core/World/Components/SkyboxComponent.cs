@@ -19,7 +19,7 @@ using Vector3 = OpenTK.Mathematics.Vector3;
 namespace RE.Core.World.Components
 {
     [ComponentInfo("World", Description = $"Renders Skybox with 6 images located in '{nameof(Path)}':\r\n/right.png\r\n/left.png\r\n/top.png\r\n/bottom.png\r\n/front.png\r\n/back.png\r\n")]
-    internal class SkyboxComponent(string path) : Component, IEditorRender
+    internal class SkyboxComponent : Component, IEditorRender
     {
         private ShaderProgram _program = null!;
         private SpriteRenderer _sprite = new(Vector3.Zero, "assets/editor/sprites/skybox.png", scale: 0.5f);
@@ -60,9 +60,29 @@ namespace RE.Core.World.Components
                 field = value;
                 LoadSkybox();
             }
-        } = path;
+        }
 
-        public SkyboxComponent() : this("") { }
+        public SkyboxComponent() : this(""){}
+        public SkyboxComponent(string path) 
+        {
+            _program = new ShaderProgram();
+
+            _program.AttachShader("Assets/shaders/skybox.vert");
+            _program.AttachShader("Assets/shaders/skybox.frag");
+
+            _vao = GL.GenVertexArray();
+            _vbo = GL.GenBuffer();
+
+            GL.BindVertexArray(_vao);
+            GL.BindBuffer(BufferTarget.ArrayBuffer, _vbo);
+            GL.BufferData(BufferTarget.ArrayBuffer, _cubeVertices.Length * sizeof(float), _cubeVertices,
+                BufferUsageHint.StaticDraw);
+
+            GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, 3 * sizeof(float), 0);
+            GL.EnableVertexAttribArray(0);
+
+            Path = path;
+        }
 
         private void LoadSkybox()
         {
@@ -120,23 +140,7 @@ namespace RE.Core.World.Components
 
         public override void Start()
         {
-            _program = new ShaderProgram();
-
-            _program.AttachShader("Assets/shaders/skybox.vert");
-            _program.AttachShader("Assets/shaders/skybox.frag");
-
-            _vao = GL.GenVertexArray();
-            _vbo = GL.GenBuffer();
-
-            GL.BindVertexArray(_vao);
-            GL.BindBuffer(BufferTarget.ArrayBuffer, _vbo);
-            GL.BufferData(BufferTarget.ArrayBuffer, _cubeVertices.Length * sizeof(float), _cubeVertices,
-                BufferUsageHint.StaticDraw);
-
-            GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, 3 * sizeof(float), 0);
-            GL.EnableVertexAttribArray(0);
-
-            LoadSkybox();
+            
         }
 
         public override void Render(FrameEventArgs args)
@@ -173,7 +177,7 @@ namespace RE.Core.World.Components
         }
         private byte[] CreateMissingTexture()
         {
-            const int size = 100;
+            const int size = 12;
 
             byte[] data = new byte[size * size * 4];
 
@@ -185,8 +189,10 @@ namespace RE.Core.World.Components
                 255
             ];
 
-            byte[] purple = { 255, 0, 255, 255 };
-            byte[] black = { 0, 0, 0, 255 };
+            // [110, 110, 110, 255], [35, 35, 35, 255]
+
+            byte[] purple = [110, 110, 110, 255];//{ 255, 0, 255, 255 };
+            byte[] black = [35, 35, 35, 255];//{ 0, 0, 0, 255 };
 
             for (int y = 0; y < size; y++)
             {

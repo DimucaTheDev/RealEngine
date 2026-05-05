@@ -1,4 +1,5 @@
 ﻿using System.Reflection;
+using System.Text;
 using System.Text.RegularExpressions;
 using Hexa.NET.ImGui;
 using OpenTK.Graphics.OpenGL;
@@ -6,6 +7,7 @@ using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using RE.Core;
 using RE.Core.Scripting.Attributes;
+using RE.Core.World;
 using RE.Core.World.Components;
 using RE.Editor.Panels.MaterialPreview;
 using RE.Editor.PropertyDrawers;
@@ -41,6 +43,8 @@ namespace RE.Editor.Panels
         private int _materialPreviewFboId;
         private int _materialPreviewTextureId;
         private int _materialPreviewRboId;
+        private string _componentSearchString = "";
+        private List<Type> _components = [];
         private readonly Texture _cubeModelButtonStaticTexture = new StaticTexture("assets/editor/sprites/previewCube.png");
         private readonly Texture _sphereModelButtonStaticTexture = new StaticTexture("assets/editor/sprites/previewSphere.png");
 
@@ -123,6 +127,37 @@ namespace RE.Editor.Panels
                         DrawComponent(selectedObject);
                     }
 
+                if (Button("Add Component"))
+                    _componentSearchString = "";
+
+                if (BeginPopupContextItem(ImGuiPopupFlags.MouseButtonLeft))
+                {
+                    if (InputText("##search", ref _componentSearchString, 128))
+                    {
+                        _components = Assembly.GetExecutingAssembly().GetTypes()
+                            .Where(s => s != typeof(Component) && s.IsAssignableTo(typeof(Component))).ToList();
+                    }
+                    Separator();
+                    foreach (var c in _components)
+                    {
+                        if (Button(SplitComponentName(c.Name)))
+                        {
+                            SceneEditor.SelectedObject.Components.Add((Component)Activator.CreateInstance(c));
+                        }
+                        
+                        if (IsItemHovered())
+                        {
+                            if (BeginTooltip())
+                            {
+                                Text(c.FullName);
+                                EndTooltip();
+                            }
+                        }
+                    }
+
+                    EndPopup();
+                }
+
                 EndTable();
             }
             EndChild();
@@ -131,9 +166,35 @@ namespace RE.Editor.Panels
 
             End();
         }
+        public static string SplitComponentName(string input)
+        {
+            if (string.IsNullOrEmpty(input))
+                return input;
 
+            const string suffix = "Component";
+
+            if (input.EndsWith(suffix))
+                input = input.Substring(0, input.Length - suffix.Length);
+
+            var result = new StringBuilder();
+            result.Append(input[0]);
+
+            for (int i = 1; i < input.Length; i++)
+            {
+                char c = input[i];
+
+                if (char.IsUpper(c) && input[i - 1] != ' ')
+                    result.Append(' ');
+
+                result.Append(c);
+            }
+
+            return result.ToString();
+        }
         private void SetupSceneFbo(int width, int height)
         {
+            if(width <= 0 || height <= 0) return;
+            
             if (_materialPreviewFboId != 0)
             {
                 GL.DeleteFramebuffer(_materialPreviewFboId);

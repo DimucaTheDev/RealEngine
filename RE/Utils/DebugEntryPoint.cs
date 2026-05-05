@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using JetBrains.Annotations;
 using RE.Launchers;
 
 namespace RE.Utils
@@ -7,6 +8,6 @@ namespace RE.Utils
     internal class DebugEntryPoint
     {
         [Conditional("DEBUG")]
-        static void Main(string[] args) => GameLauncher.Run(args);
+        private static void Main(string[] args) => GameLauncher.Run(args);
     }
 }

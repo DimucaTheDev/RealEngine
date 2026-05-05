@@ -28,8 +28,7 @@
 			<AssemblyAttribute Include="RE.Utils.GitCommitAttribute">
 				<_Parameter1>$(GitCommitHash)</_Parameter1>
 			</AssemblyAttribute>
-		</ItemGroup>
-		<ItemGroup>
+		
 			<AssemblyAttribute Include="RE.Utils.BuildDateAttribute">
 				<_Parameter1>$([System.DateTime]::UtcNow.ToString("yyyyMMddHHmmss"))</_Parameter1>
 			</AssemblyAttribute>

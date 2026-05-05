@@ -77,6 +77,8 @@ namespace RE.Core.World.Components
                 new(0, 5, 0.0f));
 
             im = new ImageControl(new ImageRenderer(StaticTexture.CreateMonoColorTexture((.1f, 0.1f, 0.1f, 1)), new Vector2(0, 0), (3000, 3000)));
+            Hud.Root.Children.AddRange(im);
+            return;
             Hud.Root.Children.AddRange(im, new ImageControl("assets/testing/alpha.png")
             {
                 ZIndex = 1
@@ -269,6 +271,8 @@ namespace RE.Core.World.Components
             {
                 var lv = rb.LinearVelocity;
                 rb.LinearVelocity = new BulletSharp.Math.Vector3(currentVel.X, 0, currentVel.Z);
+                SoundManager.PlayOneShotEvent("event:/Step");
+
             }
             else
             {
@@ -280,6 +284,8 @@ namespace RE.Core.World.Components
             if (Keyboard.IsKeyDown(Keys.Space) && grounded && _jumpCd <= 0)
             {
                 rb.ApplyCentralImpulse(9f * BulletSharp.Math.Vector3.UnitY);
+                SoundManager.PlayOneShotEvent("event:/Step");
+
                 _jumpCd = 0.3f;
             }
 

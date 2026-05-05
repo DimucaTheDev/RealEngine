@@ -1,4 +1,6 @@
 ﻿using OpenTK.Mathematics;
+using RE.Core.World;
+using RE.Core.World.Components.Physics;
 
 namespace RE.Core.Ui.Controls
 {
@@ -16,7 +18,7 @@ namespace RE.Core.Ui.Controls
         {
             get;
             set
-            {
+            {  
                 field = value;
                 Parent?.Children.ResortControls();
             }

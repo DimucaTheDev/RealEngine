@@ -43,25 +43,30 @@ namespace RE.Utils
 {
     internal partial class Game
     {
-        internal Game(GameWindowSettings gws, NativeWindowSettings nws) : base(gws, nws) { }
+        internal Game(GameWindowSettings gws, NativeWindowSettings nws) : base(gws, nws)
+        {
+        }
 
         public static Game Instance { get; internal set; } = null!;
+
         public static readonly DateTime BuildDate =
             Assembly.GetExecutingAssembly().GetCustomAttribute<BuildDateAttribute>()?.DateTime.ToLocalTime() ??
             DateTime.MinValue;
-        public static readonly string CommitHash = Assembly.GetExecutingAssembly().GetCustomAttribute<GitCommitAttribute>()?.CommitHash ?? "unknown";
-        public static readonly string Version = Assembly.GetExecutingAssembly().GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion ?? "unknown";
+
+        public static readonly string CommitHash =
+            Assembly.GetExecutingAssembly().GetCustomAttribute<GitCommitAttribute>()?.CommitHash ?? "unknown";
+
+        // RE.Common.targets
+        public static readonly string Version =
+            Assembly.GetExecutingAssembly().GetCustomAttribute<AssemblyInformationalVersionAttribute>()
+                ?.InformationalVersion ?? "unknown";
 
         public const string ProductName = "Real Engine";
 
         internal static readonly Dictionary<nint, string> LoadedLibs = new();
         internal static readonly Dictionary<int, string> JoystickNames = [];
 
-        private static bool Wireframe
-        {
-            get => (bool)(Variables.GetVariable("wireframe") ?? false);
-            set => Variables.SetVariable("wireframe", value);
-        }
+        private static bool Wireframe { get; set; }
 
         public int SceneFboId;
         public int SceneTextureId;
@@ -81,6 +86,7 @@ namespace RE.Utils
         public static string TakeScreenshot() => TakeScreenshot(Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.MyPictures), ProductName,
             $"re_{DateTime.Now:yyyy-MM-dd_HH-mm-ss}.png"));
+
         //todo: make methods non-static
         /// <summary>
         /// Takes a screenshot of the current frame and saves it to the specified file.
@@ -121,8 +127,9 @@ namespace RE.Utils
             var fileInfo = CommandParseResult.GetValue<FileInfo?>("--log-template");
 
             var hasTemplate = fileInfo != null;
-            var consoleTemplate = hasTemplate ? File.ReadAllText(fileInfo!.FullName) :
-                "[{Timestamp:HH:mm:ss.fff} {Level:u3}] [{ThreadName}] [{SourceContext:Name}] {Message:lj}{NewLine}{Exception}";
+            var consoleTemplate = hasTemplate
+                ? File.ReadAllText(fileInfo!.FullName)
+                : "[{Timestamp:HH:mm:ss.fff} {Level:u3}] [{ThreadName}] [{SourceContext:Name}] {Message:lj}{NewLine}{Exception}";
 
             var minLevel = CommandParseResult.GetValue<LogEventLevel>("--log-level");
             Directory.CreateDirectory("Engine/Logs");
@@ -158,7 +165,8 @@ namespace RE.Utils
                 .MinimumLevel.Is(LogEventLevel.Verbose)
                 .Enrich.WithThreadName()
                 .Enrich.With(new EngineLoggerEnricher())
-                .WriteTo.Sink(new GameLogger("[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}"), minLevel)
+                .WriteTo.Sink(new GameLogger("[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}"),
+                    minLevel)
                 .WriteTo.FileEx(
                     path: "Engine/Logs/Latest.log",
                     outputTemplate: consoleTemplate, restrictedToMinimumLevel: LogEventLevel.Debug)
@@ -168,7 +176,8 @@ namespace RE.Utils
 
             Log.Information("Hello, World!");
             if (hasTemplate)
-                Log.Information("Using log template from: {LogTemplatePath}", Path.GetRelativePath(".", fileInfo!.FullName));
+                Log.Information("Using log template from: {LogTemplatePath}",
+                    Path.GetRelativePath(".", fileInfo!.FullName));
 
             InitializeExceptionHandling();
         }
@@ -191,8 +200,10 @@ namespace RE.Utils
                 report.AppendLine($"Runtime: {RuntimeInformation.FrameworkDescription}");
                 report.AppendLine($"Process ID: {process.Id}");
                 report.AppendLine($"Thread: [{Thread.CurrentThread.ManagedThreadId}] {Thread.CurrentThread.Name}");
-                report.AppendLine($"Memory: WorkingSet {process.WorkingSet64 / 1024 / 1024}MB, GC Heap {GC.GetTotalMemory(false) / 1024 / 1024}MB");
-                report.AppendLine($"GC Strategy: {memInfo.Index} (HighMemoryLoad Threshold: {memInfo.HighMemoryLoadThresholdBytes / 1024 / 1024}MB)");
+                report.AppendLine(
+                    $"Memory: WorkingSet {process.WorkingSet64 / 1024 / 1024}MB, GC Heap {GC.GetTotalMemory(false) / 1024 / 1024}MB");
+                report.AppendLine(
+                    $"GC Strategy: {memInfo.Index} (HighMemoryLoad Threshold: {memInfo.HighMemoryLoadThresholdBytes / 1024 / 1024}MB)");
 
                 if (false)
                 {
@@ -232,7 +243,8 @@ namespace RE.Utils
         }
 
         [StackTraceHidden]
-        internal static void GlLogCallback(DebugSource source, DebugType type, int id, DebugSeverity severity, int length, IntPtr message, IntPtr userParam)
+        internal static void GlLogCallback(DebugSource source, DebugType type, int id, DebugSeverity severity,
+            int length, IntPtr message, IntPtr userParam)
         {
             if (type == DebugType.DebugTypeOther)
                 return;
@@ -261,6 +273,7 @@ namespace RE.Utils
                 Log.Error("Icon file not found: {IconPath}", path);
                 return null;
             }
+
             try
             {
                 using var icon = new Icon(ContentManager.Open(path));
@@ -319,6 +332,8 @@ namespace RE.Utils
 
         public void SetupOitFbo(int width, int height)
         {
+            if (width <= 0 || height <= 0) return;
+
             GL.GenFramebuffers(1, out OitFbo);
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, OitFbo);
 
@@ -326,29 +341,40 @@ namespace RE.Utils
             GL.BindTexture(TextureTarget.Texture2D, AccumColorTex);
             GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba16f,
                 width, height, 0, OpenTK.Graphics.OpenGL.PixelFormat.Rgba, PixelType.Float, IntPtr.Zero);
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
-            GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2D, AccumColorTex, 0);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter,
+                (int)TextureMinFilter.Nearest);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter,
+                (int)TextureMagFilter.Nearest);
+            GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0,
+                TextureTarget.Texture2D, AccumColorTex, 0);
 
             GL.GenTextures(1, out AccumWeightTex);
             GL.BindTexture(TextureTarget.Texture2D, AccumWeightTex);
             GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.R16f,
                 width, height, 0, OpenTK.Graphics.OpenGL.PixelFormat.Red, PixelType.Float, IntPtr.Zero);
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
-            GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment1, TextureTarget.Texture2D, AccumWeightTex, 0);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter,
+                (int)TextureMinFilter.Nearest);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter,
+                (int)TextureMagFilter.Nearest);
+            GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment1,
+                TextureTarget.Texture2D, AccumWeightTex, 0);
 
             GL.GenTextures(1, out OitDepthTexture);
             GL.BindTexture(TextureTarget.Texture2D, OitDepthTexture);
             GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.DepthComponent24,
                 width, height, 0, OpenTK.Graphics.OpenGL.PixelFormat.DepthComponent, PixelType.Float, IntPtr.Zero);
 
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)TextureWrapMode.ClampToEdge);
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)TextureWrapMode.ClampToEdge);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter,
+                (int)TextureMinFilter.Nearest);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter,
+                (int)TextureMagFilter.Nearest);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS,
+                (int)TextureWrapMode.ClampToEdge);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT,
+                (int)TextureWrapMode.ClampToEdge);
 
-            GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.DepthAttachment, TextureTarget.Texture2D, OitDepthTexture, 0);
+            GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.DepthAttachment,
+                TextureTarget.Texture2D, OitDepthTexture, 0);
 
             DrawBuffersEnum[] buffers = [DrawBuffersEnum.ColorAttachment0, DrawBuffersEnum.ColorAttachment1];
             GL.DrawBuffers(2, buffers);
@@ -359,8 +385,11 @@ namespace RE.Utils
 
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
         }
+
         public void SetupSceneFbo(int width, int height)
         {
+            if (width <= 0 || height <= 0) return;
+
             if (SceneFboId != 0)
             {
                 GL.DeleteFramebuffer(SceneFboId);
@@ -373,19 +402,24 @@ namespace RE.Utils
 
             GL.GenTextures(1, out SceneTextureId);
             GL.BindTexture(TextureTarget.Texture2D, SceneTextureId);
-            GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba, width, height, 0, OpenTK.Graphics.OpenGL.PixelFormat.Rgba, PixelType.UnsignedByte, IntPtr.Zero);
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Linear);
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Linear);
-            GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2D, SceneTextureId, 0);
+            GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba, width, height, 0,
+                OpenTK.Graphics.OpenGL.PixelFormat.Rgba, PixelType.UnsignedByte, IntPtr.Zero);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter,
+                (int)TextureMinFilter.Linear);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter,
+                (int)TextureMagFilter.Linear);
+            GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0,
+                TextureTarget.Texture2D, SceneTextureId, 0);
 
             GL.GenRenderbuffers(1, out SceneRboId);
             GL.BindRenderbuffer(RenderbufferTarget.Renderbuffer, SceneRboId);
             GL.RenderbufferStorage(RenderbufferTarget.Renderbuffer, RenderbufferStorage.Depth24Stencil8, width, height);
-            GL.FramebufferRenderbuffer(FramebufferTarget.Framebuffer, FramebufferAttachment.DepthStencilAttachment, RenderbufferTarget.Renderbuffer, SceneRboId);
+            GL.FramebufferRenderbuffer(FramebufferTarget.Framebuffer, FramebufferAttachment.DepthStencilAttachment,
+                RenderbufferTarget.Renderbuffer, SceneRboId);
 
             if (GL.CheckFramebufferStatus(FramebufferTarget.Framebuffer) != FramebufferErrorCode.FramebufferComplete)
             {
-                Log.Error("{Method}: GL Framebuffer is not complete", nameof(SetupSceneFbo));
+                Log.Error("GL Framebuffer is not complete");
             }
 
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
@@ -415,25 +449,30 @@ namespace RE.Utils
                         res.AddError("Specified logger template does not exist.");
                         return null;
                     }
+
                     return new(res.Tokens.Single().Value);
                 }
             };
             Option<bool> useSequentialTaskSchedulerOption = new("--phys-sequential", "-s")
             {
-                Description = "[libbulletc] Sequential: Executes all tasks in a strict single-threaded order. No parallelism is used.",
+                Description =
+                    "[libbulletc] Sequential: Executes all tasks in a strict single-threaded order. No parallelism is used.",
                 DefaultValueFactory = _ => true
             };
             Option<bool> useMpTaskSchedulerOption = new("--phys-mp", "-mp")
             {
-                Description = "[libbulletc] Multi-Processing: Uses the OpenMP framework to parallelize workload across available CPU cores, primarily through directives on loops and code blocks."
+                Description =
+                    "[libbulletc] Multi-Processing: Uses the OpenMP framework to parallelize workload across available CPU cores, primarily through directives on loops and code blocks."
             };
             Option<bool> useTbbTaskSchedulerOption = new("--phys-tbb", "-tbb")
             {
-                Description = "[libbulletc] Threading Building Block: Employs the Intel TBB library and a work-stealing algorithm for efficient, high-level task parallelism and dynamic load balancing."
+                Description =
+                    "[libbulletc] Threading Building Block: Employs the Intel TBB library and a work-stealing algorithm for efficient, high-level task parallelism and dynamic load balancing."
             };
             Option<bool> usePplTaskSchedulerOption = new("--phys-ppl", "-ppl")
             {
-                Description = "[libbulletc] Parallel Patterns Library: Utilizes the Microsoft PPL for scalable task-based parallelism and streamlined flow control."
+                Description =
+                    "[libbulletc] Parallel Patterns Library: Utilizes the Microsoft PPL for scalable task-based parallelism and streamlined flow control."
             };
             Option<string> nativesPathOption = new("--natives-path", "-n")
             {
@@ -449,6 +488,7 @@ namespace RE.Utils
                         res.AddError($"Directory '{first.Value}' does not exist.");
                         return null;
                     }
+
                     return new(first.Value);
                 }
             };
@@ -473,7 +513,8 @@ namespace RE.Utils
                     else
                     {
                         level = LogEventLevel.Information;
-                        res.AddError($"Unknown log level '{name}'. Possible values are: {string.Join(", ", Enum.GetNames(typeof(LogEventLevel)))}.");
+                        res.AddError(
+                            $"Unknown log level '{name}'. Possible values are: {string.Join(", ", Enum.GetNames(typeof(LogEventLevel)))}.");
                     }
 
                     return level;
@@ -495,8 +536,10 @@ namespace RE.Utils
                         {
                             SetupConsolePipes(IntPtr.Zero);
                         }
+
                         return 0;
                     }
+
                     var s = p.Tokens.Single().Value;
                     long.TryParse(s, out long value);
 
@@ -538,6 +581,7 @@ namespace RE.Utils
                 Environment.Exit(0);
                 return;
             }
+
             CommandParseResult = result;
         }
 
@@ -568,6 +612,7 @@ namespace RE.Utils
                     Environment.Exit(-1);
                     return -1;
                 }
+
                 return 0;
             }
         }

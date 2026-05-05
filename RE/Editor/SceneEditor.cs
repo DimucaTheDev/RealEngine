@@ -281,10 +281,10 @@ namespace RE.Editor
                 GL.Enable(EnableCap.Blend);
                 GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
 
-                RenderManager._oitShaderProgram.Use();
+                RenderManager.OitShaderProgram.Use();
 
-                GL.Uniform1(RenderManager._oitShaderProgram.GetLocation("accumColorTex"), 0);
-                GL.Uniform1(RenderManager._oitShaderProgram.GetLocation("accumWeightTex"), 1);
+                GL.Uniform1(RenderManager.OitShaderProgram.GetLocation("accumColorTex"), 0);
+                GL.Uniform1(RenderManager.OitShaderProgram.GetLocation("accumWeightTex"), 1);
 
                 GL.ActiveTexture(TextureUnit.Texture0);
                 GL.BindTexture(TextureTarget.Texture2D, Game.Instance.AccumColorTex);
@@ -292,7 +292,7 @@ namespace RE.Editor
                 GL.ActiveTexture(TextureUnit.Texture1);
                 GL.BindTexture(TextureTarget.Texture2D, Game.Instance.AccumWeightTex);
 
-                GL.BindVertexArray(RenderManager._fullscreenVao);
+                GL.BindVertexArray(RenderManager.FullscreenVao);
                 GL.DrawArrays(PrimitiveType.Triangles, 0, 3);
 
                 GL.Enable(EnableCap.DepthTest);
@@ -398,8 +398,11 @@ namespace RE.Editor
                     { }
                     if (MenuItem("Open scene"))
                     { }
+
                     if (MenuItem("Save scene"))
-                    { }
+                    {
+                        SceneManager.SaveSceneToFile(_scene, "assets/maps/demo");
+                    }
                     if (MenuItem("Save scene as"))
                     { }
                     if (BeginMenu("Preferences"))

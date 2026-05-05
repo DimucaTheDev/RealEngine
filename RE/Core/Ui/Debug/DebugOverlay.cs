@@ -6,6 +6,8 @@ using Hexa.NET.ImGui;
 using Hexa.NET.ImNodes;
 using Hexa.NET.ImPlot;
 using OpenTK.Windowing.Common;
+using RE.Core.Audio;
+using RE.Core.World;
 using RE.Editor.NodeEditor;
 using RE.Rendering;
 using RE.Utils;
@@ -38,6 +40,14 @@ internal class DebugOverlay : Renderable
     {
         //RenderProfilersWindow(args);
         RenderTimingsWindowWhatTheHellIsThisHelpMe();
+        TestWindow();
+    }
+
+    private void TestWindow()
+    {
+        Begin(">:(");
+        Text(SceneManager.CurrentScene.Name);
+        End();
     }
 
     private void RenderTimingsWindowWhatTheHellIsThisHelpMe()

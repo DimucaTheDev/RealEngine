@@ -38,7 +38,7 @@ internal partial class Game : GameWindow
 {
     public static ParseResult CommandParseResult = null!;
     public const int FpsLock = 165; // fixme: fpsLock above 200 may (and will) cause physics issues
-    private static bool _inited;
+    private static bool _initialized, _closing, _closed;
 
     public static void Start(string[] args)
     {
@@ -47,8 +47,7 @@ internal partial class Game : GameWindow
 
         Console.OutputEncoding = Encoding.UTF8;
         Console.InputEncoding = Encoding.UTF8;
-        var stdout = new StreamWriter(Console.OpenStandardOutput(), Encoding.UTF8);
-        stdout.AutoFlush = true;
+        var stdout = new StreamWriter(Console.OpenStandardOutput(), Encoding.Default) { AutoFlush = true }; 
         Console.SetOut(stdout);
 
         ParseArguments(args);
@@ -59,7 +58,10 @@ internal partial class Game : GameWindow
 
         Directory.CreateDirectory("Engine/Config");
         if (Directory.Exists("Debug"))
+        {
             Directory.Delete("Debug", true);
+            Log.Debug("Deleted Debug Directory");
+        }
 
         var nativesPath = CommandParseResult.GetValue<string>("--natives-path")!;
 
@@ -97,8 +99,7 @@ internal partial class Game : GameWindow
         {
             if (e.IsConnected)
             {
-                Log.Information("Joystick connected: {Name} ({JoystickId})", Instance.JoystickStates[e.JoystickId].Name,
-                    e.JoystickId);
+                Log.Information("Joystick connected: {Name} ({JoystickId})", Instance.JoystickStates[e.JoystickId].Name, e.JoystickId);
                 JoystickNames[e.JoystickId] = Instance.JoystickStates[e.JoystickId].Name;
             }
             else
@@ -159,7 +160,7 @@ internal partial class Game : GameWindow
         });
 
         IsVisible = true;
-        WindowState = WindowState.Normal;
+        WindowState = WindowState.Maximized;
 
         base.OnLoad();
 
@@ -182,12 +183,13 @@ internal partial class Game : GameWindow
 
     protected override void OnUpdateFrame(FrameEventArgs args)
     {
+
         FrameProfiler.BeginFrame();
 
         Time.Update(args);
         SoundManager.Update(args);
 
-        if (_inited && (!SceneEditor.Enabled || (SceneEditor.Enabled && SceneEditor.SimulationRunning)) && SceneManager.CurrentScene != null!)
+        if (_initialized && (!SceneEditor.Enabled || (SceneEditor.Enabled && SceneEditor.SimulationRunning)) && SceneManager.CurrentScene != null!)
         {
             FrameProfiler.Begin("update");
 
@@ -214,6 +216,11 @@ internal partial class Game : GameWindow
 
     protected override void OnRenderFrame(FrameEventArgs args)
     {
+        if (_closing)
+        {
+            return;
+        }
+
         var pb = FrameProfiler.Begin;
         var pe = FrameProfiler.End;
 
@@ -221,7 +228,7 @@ internal partial class Game : GameWindow
 
         Context.MakeCurrent();
 
-        if (!(_inited = !Initializer.Render(args)))
+        if (!(_initialized = !Initializer.Render(args)))
         {
             return;
         }
@@ -348,7 +355,7 @@ internal partial class Game : GameWindow
             SceneEditor.ShowExitConfirmationModal = true;
             unsafe
             {
-                WinApi.StartFlashing((IntPtr)Instance.WindowPtr);
+                WinApi.StartFlashing((IntPtr)WindowPtr);
             }
             e.Cancel = true;
         }
@@ -356,8 +363,13 @@ internal partial class Game : GameWindow
 
     public override void Close()
     {
+        _closing = true;
+    }
+
+    private void HandleClosing()
+    {
+        _closed = true;
         ImGuiController.Destroy();
-        base.Close();
     }
 
     protected override void OnUnload()

@@ -38,18 +38,18 @@ public class RenderManager
 
     private static bool _hasCameraFrustum;
     private static Matrix4 _cachedViewMatrix, _cachedProjMatrix;
-    internal static ShaderProgram _oitShaderProgram;
-    internal static int _fullscreenVao;
+    internal static ShaderProgram OitShaderProgram;
+    internal static int FullscreenVao;
 
     public static void Init()
     {
         foreach (RenderLayer layer in Enum.GetValues(typeof(RenderLayer)))
             Renderables[layer] = new Dictionary<Type, List<Renderable>>();
         FrustumRenderer.StartRender();
-        _oitShaderProgram = new ShaderProgram();
-        _oitShaderProgram.AttachShader("Assets/Shaders/oit.frag");
-        _oitShaderProgram.AttachShader("Assets/Shaders/oit.vert");
-        GL.GenVertexArrays(1, out _fullscreenVao);
+        OitShaderProgram = new ShaderProgram();
+        OitShaderProgram.AttachShader("Assets/Shaders/oit.frag");
+        OitShaderProgram.AttachShader("Assets/Shaders/oit.vert");
+        GL.GenVertexArrays(1, out FullscreenVao);
     }
     public static void AddRenderable<T>(T renderable) where T : Renderable
     {
@@ -151,8 +151,7 @@ public class RenderManager
         if (!SceneEditor.Enabled && SceneManager.CurrentScene != null!)
         {
             FrameProfiler.Begin("components");
-
-
+ 
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
 
             GL.Enable(EnableCap.DepthTest);
@@ -164,7 +163,8 @@ public class RenderManager
                 if (SceneManager.SceneChanged)
                 {
                     SceneManager.SceneChanged = false;
-                    return;
+                    //uncomment line below if components crash after switching scenes.
+                    //return;
                 }
                 FrameProfiler.Begin(s.GetType().Name);
                 s.Render(args);
@@ -220,10 +220,10 @@ public class RenderManager
             GL.Enable(EnableCap.Blend);
             GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
 
-            _oitShaderProgram.Use();
+            OitShaderProgram.Use();
 
-            GL.Uniform1(_oitShaderProgram.GetLocation("accumColorTex"), 0);
-            GL.Uniform1(_oitShaderProgram.GetLocation("accumWeightTex"), 1);
+            GL.Uniform1(OitShaderProgram.GetLocation("accumColorTex"), 0);
+            GL.Uniform1(OitShaderProgram.GetLocation("accumWeightTex"), 1);
 
             GL.ActiveTexture(TextureUnit.Texture0);
             GL.BindTexture(TextureTarget.Texture2D, Game.Instance.AccumColorTex);
@@ -231,7 +231,7 @@ public class RenderManager
             GL.ActiveTexture(TextureUnit.Texture1);
             GL.BindTexture(TextureTarget.Texture2D, Game.Instance.AccumWeightTex);
 
-            GL.BindVertexArray(_fullscreenVao);
+            GL.BindVertexArray(FullscreenVao);
             GL.DrawArrays(PrimitiveType.Triangles, 0, 3);
 
             GL.Enable(EnableCap.DepthTest);

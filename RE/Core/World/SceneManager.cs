@@ -16,7 +16,6 @@ namespace RE.Core.World
     /// </summary>
     public static class SceneManager
     {
-
         internal static readonly List<GameObject> _objectsToAdd = new();
         internal static readonly List<GameObject> _objectsToRemove = new();
 
@@ -26,7 +25,7 @@ namespace RE.Core.World
             set
             {
                 field = value;
-                Log.Debug("Set {Property} to {Value}", nameof(SceneChanged), value);
+                //Log.Debug("Set {Property} to {Value}", nameof(SceneChanged), value);
             }
         }
 
@@ -40,12 +39,14 @@ namespace RE.Core.World
         /// </summary>
         /// <param name="scene">New scene to be loaded</param>
         public static void LoadScene(Scene scene) => LoadScene(scene, true, null);
+
         /// <summary>
         /// Transitions to a new scene, optionally disposing of the current one.
         /// </summary>
         /// <param name="scene">New scene to be loaded</param>
         /// <param name="disposeCurrent">Whether to dispose currently loaded scene or not</param>
         public static void LoadScene(Scene scene, bool disposeCurrent) => LoadScene(scene, disposeCurrent, null);
+
         /// <summary>
         /// Transitions to a new scene, optionally disposing of the current one, and invoking action after loading.
         /// </summary>
@@ -54,33 +55,37 @@ namespace RE.Core.World
         /// <param name="afterLoaded">Invoke action when scene finishes loading</param>
         public static void LoadScene(Scene scene, bool disposeCurrent, Action? afterLoaded)
         {
-            Initializer.AddStep(new InitializingTask
+            /*Initializer.AddStep(new InitializingTask
             {
                 Label = $"Loading level \"{scene.Name ?? "<unnamed>"}\"",
                 Action = () =>
+                {*/
+            SceneChanged = true;
+
+            //Hud.Root.Children.Clear();
+            //Log.Debug("Scene changed, HUD canvas cleared");
+
+            if (scene == CurrentScene)
+            {
+                CurrentScene = Reload(scene);
+                scene.Dispose();
+            }
+            else
+            {
+                if (CurrentScene != null! && disposeCurrent)
                 {
-                    SceneChanged = true;
-                    //Hud.Root.Children.Clear();
-                    Log.Debug("Scene changed, HUD canvas cleared");
-
-                    if (scene == CurrentScene)
-                    {
-                        CurrentScene = Reload(scene);
-                        scene.Dispose();
-                    }
-                    else
-                    {
-                        if (CurrentScene != null! && disposeCurrent)
-                        {
-                            CurrentScene.Dispose();
-                        }
-
-                        CurrentScene = scene;
-                    }
-
-                    afterLoaded?.Invoke(); 
+                    CurrentScene.Dispose();
                 }
-            });
+
+                CurrentScene = scene;
+
+                if (!CurrentScene.LightSources.Any())
+                    Log.Warning("No light sources in {SceneName}", CurrentScene.Name);
+            }
+
+            afterLoaded?.Invoke();
+            /*}
+        });*/
         }
 
         /// <summary>
@@ -118,6 +123,7 @@ namespace RE.Core.World
                     Directory.CreateDirectory(path);
                 File.WriteAllText(savedTo = Path.Combine(path, "data.json"), jsonString);
             }
+
             Log.Information("Saved level to '{Path}'", savedTo);
         }
 
@@ -133,7 +139,12 @@ namespace RE.Core.World
                 JsonObject trObj = new()
                 {
                     { "position", new JsonArray(transform.Position[0], transform.Position[1], transform.Position[2]) },
-                    { "rotation", new JsonArray(MathHelper.RadiansToDegrees(transform.Rotation.X),MathHelper.RadiansToDegrees( transform.Rotation.Y),MathHelper.RadiansToDegrees( transform.Rotation.Z)) },
+                    {
+                        "rotation",
+                        new JsonArray(MathHelper.RadiansToDegrees(transform.Rotation.X),
+                            MathHelper.RadiansToDegrees(transform.Rotation.Y),
+                            MathHelper.RadiansToDegrees(transform.Rotation.Z))
+                    },
                     { "scale", new JsonArray(transform.Scale[0], transform.Scale[1], transform.Scale[2]) }
                 };
                 o.Add("transform", trObj);
@@ -145,6 +156,7 @@ namespace RE.Core.World
                     componentsObj.Add(com.GetType().Name, saveData);
                 }
             }
+
             root.Add("objects", objects);
 
             var jsonString = root.ToJsonString(new JsonSerializerOptions
@@ -217,7 +229,6 @@ namespace RE.Core.World
 
                     if (obj.TryGetProperty("transform", out var transformElement))
                     {
-
                         if (transformElement.TryGetProperty("position", out var positionElement))
                         {
                             var array = positionElement.EnumerateArray().Select(s => s.GetSingle()).ToList();
@@ -243,11 +254,12 @@ namespace RE.Core.World
                         {
                             var type = assemblyTypes
                                 .FirstOrDefault(s => s.Name.ToLower().Replace("component", "") ==
-                                            component.Name.ToLower().Replace("component", ""));
+                                                     component.Name.ToLower().Replace("component", ""));
 
                             if (type == null)
                             {
-                                Log.Error("Unknown component {ComponentName} on object {ObjectName} in {SceneName}", component.Name, gameObject.Name, scene.Name);
+                                Log.Error("Unknown component {ComponentName} on object {ObjectName} in {SceneName}",
+                                    component.Name, gameObject.Name, scene.Name);
                                 continue;
                             }
 
@@ -320,9 +332,9 @@ namespace RE.Core.World
 
                     scene.GameObjects.Add(gameObject, true);
                 }
-                
+
                 ApplyObjectModification();
-                
+
                 foreach (var go in scene.GameObjects.ToList())
                 {
                     foreach (var c in go.Components.ToList())
@@ -352,7 +364,7 @@ namespace RE.Core.World
 
         internal static void ApplyObjectModification()
         {
-            if(CurrentScene == null!) return;
+            if (CurrentScene == null!) return;
             CurrentScene.GameObjects._objects.AddRange(_objectsToAdd);
 
             foreach (var g in _objectsToRemove)

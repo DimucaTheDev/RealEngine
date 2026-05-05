@@ -9,7 +9,7 @@ namespace RE.Editor.PropertyDrawers
 
         public bool Draw(string label, ref object value, PropertyInfo propInfo)
         {
-            string stringValue = (string)value;
+            string stringValue = value as string ?? "";
 
             bool changed = ImGui.InputText(label, ref stringValue, MaxStringSize, ImGuiInputTextFlags.EnterReturnsTrue);
 

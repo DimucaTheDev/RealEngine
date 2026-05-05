@@ -53,7 +53,7 @@ namespace RE.Core.World
             SceneManager._objectsToRemove.Add(g);
         }
 
-        private void CreateVpObject(GameObject g)
+        internal static void CreateVpObject(GameObject g)
         {
             CollisionShape shape;
             g.ViewportObject = new CollisionObject();

@@ -1,7 +1,0 @@
-<Project>
-	<ItemGroup>
-		<AssemblyAttribute Include="RE.Utils.BuildDateAttribute">
-			<_Parameter1>$([System.DateTime]::UtcNow.ToString("yyyyMMddHHmmss"))</_Parameter1>
-		</AssemblyAttribute>
-	</ItemGroup> 
-</Project>

@@ -192,8 +192,8 @@ namespace RE.Rendering.Texturing
         {
             byte[] data = new byte[size * size * 4];
 
-            byte[] purple = color1 ?? [255, 0, 255, 255];
-            byte[] black = color2 ?? [0, 0, 0, 255];
+            byte[] purple = color1 ?? [110, 110, 110, 255];//[255, 0, 255, 255];
+            byte[] black = color2 ?? [35, 35, 35, 255];//[0, 0, 0, 255];
 
             for (int y = 0; y < size; y++)
             {
