@@ -186,7 +186,7 @@ namespace RE.Editor
         }
 
         public override void Render(FrameEventArgs args)
-        {
+        {  
             FrameProfiler.Begin("editor");
             FrameProfiler.Begin("update");
             foreach (var obj in _scene.GameObjects)
@@ -301,8 +301,8 @@ namespace RE.Editor
                 GL.ActiveTexture(TextureUnit.Texture0);
                 GL.BindTexture(TextureTarget.Texture2D, 0);
             }
-            FrameProfiler.End();
-
+            FrameProfiler.End();  
+            
             if (ShowHud)
             {
                 FrameProfiler.Begin("hud");

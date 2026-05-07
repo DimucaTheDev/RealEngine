@@ -9,7 +9,7 @@ using Serilog;
 
 namespace RE.Core.Initializing
 {
-    public sealed class Initializer
+    public static class Initializer
     {
         public static bool HasJob => _queue.Count > 0 || _runningTask != null || _finishAnimation;
 
@@ -29,7 +29,11 @@ namespace RE.Core.Initializing
         private static double _finishStartTime;
         private const float FinishDuration = 1.25f;
 
-        public static void AddStep(InitializingTask step) => _queue.Enqueue(step);
+        public static void AddStep(InitializingTask step)
+        {
+            _allDone = false;
+            _queue.Enqueue(step);
+        }
 
         private static void UpdateScreen()
         {
@@ -70,21 +74,20 @@ namespace RE.Core.Initializing
 
                 offsetY = t * Game.Instance.ClientSize.Y;
             }
-
-            GL.ClearColor(0.1f, 0.1f, 0.1f, 1f);
+            
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
-
-            _text.Text = _runningTaskName +
-                         (_runningTask != null
-                            ? _dots[((int)(Time.ElapsedTime * 2)) % 4]
-                            : "");
+            GL.ClearColor(0.1f, 0.1f, 0.1f, 1f);
+            GL.Enable(EnableCap.DepthTest);
+            GL.Enable(EnableCap.Blend);
+            GL.DepthFunc(DepthFunction.Lequal);
+            GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
+            
+            _text.Text = _runningTaskName + (_runningTask != null ? _dots[((int)(Time.ElapsedTime * 2)) % 4] : "");
 
             float baseTextY = Game.Instance.ClientSize.Y / 4f * 3f;
             float baseImageY = Game.Instance.ClientSize.Y / 2f - 230f;
 
-            _text.Position = new Vector2(
-                Game.Instance.ClientSize.X / 2f - _text.Font.GetTextWidth(_text.Text) / 2f,
-                baseTextY + offsetY);
+            _text.Position = new Vector2(Game.Instance.ClientSize.X / 2f - _text.Font.GetTextWidth(_text.Text) / 2f, baseTextY + offsetY);
 
             _image.Position = new Vector2(
                 Game.Instance.ClientSize.X / 2f - (400 * 1.75f) / 2f,

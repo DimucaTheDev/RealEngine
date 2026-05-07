@@ -1,4 +1,6 @@
-﻿using BulletSharp;
+﻿using System.Reflection;
+using BulletSharp;
+using DotRecast.Core.Collections.Extensions;
 using OpenTK.Mathematics;
 using RE.Core.Assets;
 using RE.Core.Initializing;
@@ -10,6 +12,7 @@ using RE.Utils;
 using Log = Serilog.Log;
 using SceneEditor = RE.Editor.SceneEditor;
 using TaskScheduler = BulletSharp.TaskScheduler;
+
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
 
 namespace RE.Core.World.Physics
@@ -26,6 +29,12 @@ namespace RE.Core.World.Physics
     /// </remarks>
     public class PhysicsManager : DynamicAsset
     {
+        private class ContactState
+        {
+            public bool isInside;
+            public int Counter;
+        }
+        
         private static readonly List<TaskScheduler> Schedulers = [];
         private static bool _init;
         private static int _currentScheduler;
@@ -34,14 +43,20 @@ namespace RE.Core.World.Physics
         private static DbvtBroadphase _broadphase;
         private static CollisionDispatcherMultiThreaded _dispatcher;
         private static CollisionConfiguration _collisionConfiguration;
+        private static readonly int MaxThreadSolver = Environment.ProcessorCount;
+        static readonly Dictionary<(CollisionObject, CollisionObject), ContactState> _states = new();
 
+        const int EnterDelay = 3;
+        const int ExitDelay = 10;
+ 
         /// <summary>
-        /// Provides access to the multi-threaded discrete dynamics world instance used for physics simulation.
+        /// Provides access to the multithreaded discrete dynamics world instance used for physics simulation.
         /// </summary>
         /// <remarks>This field should be initialized before use. It enables multi-threaded processing of
         /// physics simulations, which can improve performance in scenarios with complex interactions or large numbers
         /// of objects.</remarks>
         public static DiscreteDynamicsWorldMultiThreaded DynamicsWorld = null!;
+
         /// <summary>
         /// Indicates whether simulation mode is enabled.
         /// </summary>
@@ -72,12 +87,15 @@ namespace RE.Core.World.Physics
 
             _dispatcher = new CollisionDispatcherMultiThreaded(_collisionConfiguration);
             _broadphase = new DbvtBroadphase();
-            _solverPool = new ConstraintSolverPoolMultiThreaded(8);
+            _solverPool = new ConstraintSolverPoolMultiThreaded(MaxThreadSolver);
+            Log.Debug("Solver pool thread set to {Threads}", MaxThreadSolver);
             _parallelSolver = new SequentialImpulseConstraintSolverMultiThreaded();
 
             DynamicsWorld = new DiscreteDynamicsWorldMultiThreaded(_dispatcher, _broadphase, _solverPool,
                 _parallelSolver, _collisionConfiguration);
             DynamicsWorld.SolverInfo.SolverMode = SolverModes.Simd | SolverModes.UseWarmStarting;
+            DynamicsWorld.SolverInfo.NumIterations = 10;
+            DynamicsWorld.SolverInfo.TimeStep = 1 / 60f;
             DynamicsWorld.Gravity = new BulletSharp.Math.Vector3(0, -9.81f, 0);
             DynamicsWorld.DebugDrawer = new BulletDebugDrawer();
 
@@ -171,9 +189,124 @@ namespace RE.Core.World.Physics
             if (!SceneEditor.Enabled)
             {
                 FrameProfiler.Begin("bullet");
-                DynamicsWorld.StepSimulation(deltaTime, EnableSimulation ? 5 : 0, deltaTime);
+
+                FrameProfiler.Begin("step");
+                DynamicsWorld.StepSimulation(deltaTime, EnableSimulation ? 10 : 0, deltaTime);
+                FrameProfiler.End();
+
+                FrameProfiler.Begin("collision");
+                ProcessCollisions(DynamicsWorld);
+                FrameProfiler.End();
+
                 FrameProfiler.End();
             }
+        }
+
+        static void ProcessCollisions(DiscreteDynamicsWorld world)
+        {
+            var dispatcher = world.Dispatcher;
+
+            // пары, которые реально имеют контакт в этом кадре
+            var activePairs = new HashSet<(CollisionObject, CollisionObject)>();
+
+            int numManifolds = dispatcher.NumManifolds;
+
+            for (int i = 0; i < numManifolds; i++)
+            {
+                var manifold = dispatcher.GetManifoldByIndexInternal(i);
+
+                var a = manifold.Body0;
+                var b = manifold.Body1;
+
+                if (a == null || b == null)
+                    continue;
+
+                // стабильная проверка: есть ли хотя бы один контакт
+                bool hasContact = manifold.NumContacts > 0;
+
+                if (!hasContact)
+                    continue;
+
+                var pair = a.GetHashCode() < b.GetHashCode() ? (a, b) : (b, a);
+                activePairs.Add(pair);
+
+                var compA = a.UserObject as Component
+                            ?? throw new InvalidOperationException($"Collision object {a} is not a Component");
+
+                var compB = b.UserObject as Component
+                            ?? throw new InvalidOperationException($"Collision object {b} is not a Component");
+
+                if (!_states.TryGetValue(pair, out var state))
+                {
+                    state = new ContactState();
+                    _states[pair] = state;
+                }
+
+                // ENTER / STAY
+                if (state.isInside)
+                {
+                    compA.Owner.Components.ForEach(c => c.OnCollide(compB.Owner));
+                    compB.Owner.Components.ForEach(c => c.OnCollide(compA.Owner));
+                }
+                else
+                {
+                    state.Counter++;
+
+                    if (state.Counter >= EnterDelay)
+                    {
+                        state.isInside = true;
+                        state.Counter = 0;
+
+                        compA.Owner.Components.ForEach(c => c.OnCollisionEnter(compB.Owner));
+                        compB.Owner.Components.ForEach(c => c.OnCollisionEnter(compA.Owner));
+                    }
+                }
+            }
+
+            // EXIT логика
+            foreach (var kv in _states)
+            {
+                var pair = kv.Key;
+                var state = kv.Value;
+
+                if (activePairs.Contains(pair))
+                    continue;
+
+                if (!state.isInside)
+                    continue;
+
+                state.Counter--;
+
+                if (state.Counter <= -ExitDelay)
+                {
+                    var a = pair.Item1;
+                    var b = pair.Item2;
+
+                    var compA = a.UserObject as Component
+                                ?? throw new InvalidOperationException($"Collision object {a} is not a Component");
+
+                    var compB = b.UserObject as Component
+                                ?? throw new InvalidOperationException($"Collision object {b} is not a Component");
+
+                    compA.Owner.Components.ForEach(c => c.OnCollisionExit(compB.Owner));
+                    compB.Owner.Components.ForEach(c => c.OnCollisionExit(compA.Owner));
+
+                    state.isInside = false;
+                    state.Counter = 0;
+                }
+            }
+
+            // очистка мусора
+            var toRemove = new List<(CollisionObject, CollisionObject)>();
+
+            foreach (var kv in _states)
+            {
+                if (!kv.Value.isInside && kv.Value.Counter == 0)
+                    toRemove.Add(kv.Key);
+            }
+
+            foreach (var key in toRemove)
+                _states.Remove(key);
         }
 
         public override void OnUnload()
@@ -201,6 +334,7 @@ namespace RE.Core.World.Physics
             {
                 _currentScheduler = 0;
             }
+
             var scheduler = Schedulers[_currentScheduler];
             scheduler.NumThreads = scheduler.MaxNumThreads;
             Threads.TaskScheduler = scheduler;
@@ -225,6 +359,7 @@ namespace RE.Core.World.Physics
                 Log.Information("Using TBB Task Scheduler");
                 AddScheduler(Threads.GetTbbTaskScheduler());
             }
+
             if (Game.CommandParseResult.GetValue<bool>("--phys-ppl"))
             {
                 Log.Information("Using PPL Task Scheduler");

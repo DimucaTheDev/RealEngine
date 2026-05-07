@@ -2,6 +2,7 @@
 using BulletSharp.Math;
 using Hexa.NET.ImGui;
 using Hexa.NET.ImGuizmo;
+using OpenTK.Graphics.OpenGL;
 using OpenTK.Mathematics;
 using RE.Core;
 using RE.Core.Input;
@@ -120,7 +121,7 @@ namespace RE.Editor.Panels.Viewport
         }
 
         public void Draw()
-        {
+        { 
             _cameraSprite.Position = Camera.Main.Position;
             _cameraSprite.Render(new(Time.DeltaTime));
             RenderManager.DrawCameraFrustum();
@@ -210,8 +211,7 @@ namespace RE.Editor.Panels.Viewport
 
                 DrawHudBoundaries();
             }
-            End();
-
+            End(); 
             //CollisionWorld.DebugDrawWorld();
         }
 

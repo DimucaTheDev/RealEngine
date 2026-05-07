@@ -78,7 +78,7 @@ namespace RE.Core.World.Components.Physics
 
                 if (Mass > 0f)
                     collider?.CollisionShape?.CalculateLocalInertia(Mass, out localInertia);
-
+                
                 var motionState = new DefaultMotionState(startTransform);
                 var rbInfo = new RigidBodyConstructionInfo(Mass, motionState,
                     collider?.CollisionShape ?? new BoxShape(0.5f), localInertia);

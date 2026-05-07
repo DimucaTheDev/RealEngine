@@ -8,6 +8,7 @@ using Hexa.NET.ImPlot;
 using OpenTK.Windowing.Common;
 using RE.Core.Audio;
 using RE.Core.World;
+using RE.Core.World.Physics;
 using RE.Editor.NodeEditor;
 using RE.Rendering;
 using RE.Utils;
@@ -47,6 +48,8 @@ internal class DebugOverlay : Renderable
     {
         Begin(">:(");
         Text(SceneManager.CurrentScene.Name);
+        Separator(); 
+        
         End();
     }
 

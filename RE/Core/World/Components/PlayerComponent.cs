@@ -76,13 +76,14 @@ namespace RE.Core.World.Components
                 new(0, 5, 0.0f),
                 new(0, 5, 0.0f));
 
-            im = new ImageControl(new ImageRenderer(StaticTexture.CreateMonoColorTexture((.1f, 0.1f, 0.1f, 1)), new Vector2(0, 0), (3000, 3000)));
+            im = new ImageControl(new ImageRenderer(StaticTexture.CreateMonoColorTexture((.1f, 0.1f, 0.1f, 1)),
+                new Vector2(0, 0), (3000, 3000)));
             Hud.Root.Children.AddRange(im);
             return;
             Hud.Root.Children.AddRange(im, new ImageControl("assets/testing/alpha.png")
             {
                 ZIndex = 1
-            }, new LabelControl { ZIndex = 2, Text = "hud test", Position = (0,200)});
+            }, new LabelControl { ZIndex = 2, Text = "hud test", Position = (0, 200) });
         }
 
         private ImageControl im;
@@ -156,9 +157,11 @@ namespace RE.Core.World.Components
             cam.Pitch = MathHelper.Clamp(cam.Pitch, -89f, 89f);
 
             Vector3 front;
-            front.X = MathF.Cos(MathHelper.DegreesToRadians(cam.Yaw)) * MathF.Cos(MathHelper.DegreesToRadians(cam.Pitch));
+            front.X = MathF.Cos(MathHelper.DegreesToRadians(cam.Yaw)) *
+                      MathF.Cos(MathHelper.DegreesToRadians(cam.Pitch));
             front.Y = MathF.Sin(MathHelper.DegreesToRadians(cam.Pitch));
-            front.Z = MathF.Sin(MathHelper.DegreesToRadians(cam.Yaw)) * MathF.Cos(MathHelper.DegreesToRadians(cam.Pitch));
+            front.Z = MathF.Sin(MathHelper.DegreesToRadians(cam.Yaw)) *
+                      MathF.Cos(MathHelper.DegreesToRadians(cam.Pitch));
             cam.Front = Vector3.Normalize(front);
         }
 
@@ -178,6 +181,7 @@ namespace RE.Core.World.Components
                 Camera.Main.LookAt((0, 5.75f, -4));
                 return true;
             }
+
             return false;
         }
 
@@ -186,7 +190,8 @@ namespace RE.Core.World.Components
             CameraControl();
 
             if (BadassTransition())
-            { }
+            {
+            }
 
             #region HL2-like Movement
 
@@ -212,7 +217,6 @@ namespace RE.Core.World.Components
             if ((Keyboard.IsKeyDown(Keys.W) || Keyboard.IsKeyDown(Keys.S) || Keyboard.IsKeyDown(Keys.D) ||
                  Keyboard.IsKeyDown(Keys.A)) && !_isCrouching && _wasGrounded && moveDir.Length > 0.75f)
             {
-
                 if ((_soundCooldown >= 0.45f && !Keyboard.Shift) || (_soundCooldown >= 0.3f && Keyboard.Shift))
                 {
                     SoundManager.PlayOneShotEvent("event:/Step");
@@ -272,7 +276,6 @@ namespace RE.Core.World.Components
                 var lv = rb.LinearVelocity;
                 rb.LinearVelocity = new BulletSharp.Math.Vector3(currentVel.X, 0, currentVel.Z);
                 SoundManager.PlayOneShotEvent("event:/Step");
-
             }
             else
             {
@@ -377,9 +380,15 @@ namespace RE.Core.World.Components
                     }
                     else
                     {
-                        if (!string.IsNullOrWhiteSpace(InteractDenySound))
-                            //   SoundManager.PlayOneShotEvent(InteractDenySound);
+                        if (callback.CollisionObject.UserObject is not Component)
+                        {
+                            if (!string.IsNullOrWhiteSpace(InteractDenySound))
+                            {
+                                SoundManager.PlayOneShotEvent(InteractDenySound);
+                            }
+
                             Log.Debug("Ray hit an object, but its UserObject is not a Controller.");
+                        }
                     }
                 }
                 else if (!wasHolding)
@@ -445,7 +454,7 @@ namespace RE.Core.World.Components
 
             var basePosition = PlayerGameObject.Transform.Position;
             _camera.Position = new Vector3(basePosition.X, basePosition.Y + _currentCameraYOffset, basePosition.Z)
-                + CameraBob(currentVel, (float)args.Time, grounded);
+                               + CameraBob(currentVel, (float)args.Time, grounded);
 
             if (rb.LinearVelocity.Y < -5 && !_falling)
             {
@@ -510,12 +519,12 @@ namespace RE.Core.World.Components
         }
 
 
-
         int curveIndex;
         float t;
         float speed = 0.25f;
         bool loop = false;
         private bool ended = false;
+
         Vector3 Bezier(Vector3 p0, Vector3 p1, Vector3 p2, Vector3 p3, float t)
         {
             float u = 1f - t;
@@ -528,6 +537,7 @@ namespace RE.Core.World.Components
                 3f * u * tt * p2 +
                 tt * t * p3;
         }
+
         void UpdateCamera(float deltaTime)
         {
             if (path == null || path.Count < 4)
@@ -572,6 +582,7 @@ namespace RE.Core.World.Components
         {
             GameObject obj = new GameObject();
             obj.Components.Add(new MeshComponent("assets/models/crate.fbx"));
+            obj.Components.Add(new CollisionTestComponent());
             Vector3 front = Camera.Main.Front;
 
             obj.Components.Add(new BoxColliderComponent());
@@ -634,6 +645,7 @@ namespace RE.Core.World.Components
 
             return !callback.HasHit;
         }
+
         bool CanStandUp()
         {
             var offset = 0.3f;
@@ -641,16 +653,47 @@ namespace RE.Core.World.Components
                    CanStandUp((0, 0, -offset)) && CanStandUp((offset, 0, offset)) && CanStandUp((-offset, 0, offset)) &&
                    CanStandUp((-offset, 0, -offset)) && CanStandUp((offset, 0, -offset));
         }
+
         public void EditorRender(FrameEventArgs args)
         {
             _spriteSpawnpoint.Position = Owner.Transform.Position;
 
             _spriteSpawnpoint.Render(args);
         }
+
         public override JsonNode GetSaveData()
         {
             JsonObject root = new();
             return root;
+        }
+    }
+
+    internal class CollisionTestComponent : Component
+    {
+        /// <inheritdoc />
+        public override void OnCollisionEnter(GameObject collide)
+        {
+            Log.Information("OnCollisionEnter: {A} and {B}", Owner.Id, collide.Id);
+            Owner.GetComponent<MeshComponent>().ModelRenderer.SetTexture(StaticTexture.CreateMonoColorTexture((0,1,0)));
+        }
+
+        /// <inheritdoc />
+        public override void OnCollide(GameObject collide)
+        {
+            Owner.GetComponent<MeshComponent>().ModelRenderer.SetTexture(StaticTexture.CreateMonoColorTexture((1,1,0)));
+        }
+
+        /// <inheritdoc />
+        public override void OnCollisionExit(GameObject collide)
+        {
+            Log.Information("OnCollisionExit: {A} and {B}", Owner.Id, collide.Id);
+            Owner.GetComponent<MeshComponent>().ModelRenderer.SetTexture(StaticTexture.CreateMonoColorTexture((1,0,0)));
+        }
+
+        /// <inheritdoc />
+        public override JsonNode GetSaveData()
+        {
+            return new JsonObject();
         }
     }
 }

@@ -7,6 +7,7 @@ using OpenTK.Graphics.OpenGL;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using OpenTK.Windowing.Desktop;
+using OpenTK.Windowing.GraphicsLibraryFramework;
 using RE.Core;
 using RE.Core.Assets;
 using RE.Core.Assets.Providers;
@@ -47,13 +48,14 @@ internal partial class Game : GameWindow
 
         Console.OutputEncoding = Encoding.UTF8;
         Console.InputEncoding = Encoding.UTF8;
-        var stdout = new StreamWriter(Console.OpenStandardOutput(), Encoding.Default) { AutoFlush = true }; 
+        var stdout = new StreamWriter(Console.OpenStandardOutput(), Encoding.Default) { AutoFlush = true };
         Console.SetOut(stdout);
 
         ParseArguments(args);
         SetupLogger();
 
-        Log.Information("{ProductName}; version {Version}; build {BuildDate:dd.MM.yyyy HH:mm:ss}; commit {CommitHash}", ProductName, Version, BuildDate, CommitHash[..7]);
+        Log.Information("{ProductName}; version {Version}; build {BuildDate:dd.MM.yyyy HH:mm:ss}; commit {CommitHash}",
+            ProductName, Version, BuildDate, CommitHash[..7]);
         Log.Information("Startup args: {@Args}", args);
 
         Directory.CreateDirectory("Engine/Config");
@@ -75,7 +77,8 @@ internal partial class Game : GameWindow
             if (errCode == 0)
                 Log.Debug("Loaded DLL {FileName,-15}: 0x{Handle,-16:x} Code: {ErrorCode}", fName, handle, errCode);
             else
-                Log.Debug("Error loading DLL {FileName,-15}: {ErrorCode}, {ErrorMessage}", fName, errCode, Marshal.GetLastPInvokeErrorMessage());
+                Log.Debug("Error loading DLL {FileName,-15}: {ErrorCode}, {ErrorMessage}", fName, errCode,
+                    Marshal.GetLastPInvokeErrorMessage());
         }
 
         PluginManager.ResolvePlugins();
@@ -83,28 +86,36 @@ internal partial class Game : GameWindow
         var width = CommandParseResult.GetValue<int>("--width");
         var height = CommandParseResult.GetValue<int>("--height");
 
+
         using var game = new Game(
             new GameWindowSettings { UpdateFrequency = FpsLock },
             new NativeWindowSettings
             {
                 Title = $"{ProductName} {Version}",
                 ClientSize = new Vector2i(width, height),
-                Location = new Vector2i(Screen.PrimaryScreen!.Bounds.Width / 2 - width / 2, Screen.PrimaryScreen.Bounds.Height / 2 - height / 2),
+                Location = new Vector2i(Screen.PrimaryScreen!.Bounds.Width / 2 - width / 2,
+                    Screen.PrimaryScreen.Bounds.Height / 2 - height / 2),
                 StartVisible = false,
-                Vsync = VSyncMode.Off
+                Vsync = VSyncMode.Off,
+                NumberOfSamples = CommandParseResult.GetValue<int>("--msaa")
             });
-        Instance = game;
 
+        GL.GetInteger(GetPName.Samples, out int samples);
+        Log.Debug("MSAA set to {Samples} samples", samples);
+
+        Instance = game;
         Instance.JoystickConnected += static e =>
         {
             if (e.IsConnected)
             {
-                Log.Information("Joystick connected: {Name} ({JoystickId})", Instance.JoystickStates[e.JoystickId].Name, e.JoystickId);
+                Log.Information("Joystick connected: {Name} ({JoystickId})", Instance.JoystickStates[e.JoystickId].Name,
+                    e.JoystickId);
                 JoystickNames[e.JoystickId] = Instance.JoystickStates[e.JoystickId].Name;
             }
             else
             {
-                Log.Information("Joystick disconnected: {Name} ({JoystickId})", JoystickNames[e.JoystickId], e.JoystickId);
+                Log.Information("Joystick disconnected: {Name} ({JoystickId})", JoystickNames[e.JoystickId],
+                    e.JoystickId);
                 JoystickNames.Remove(e.JoystickId);
             }
         };
@@ -124,8 +135,10 @@ internal partial class Game : GameWindow
         GL.Enable(EnableCap.DebugOutputSynchronous);
 
         GL.DebugMessageCallback(GlLogCallback, 0);
-        GL.DebugMessageControl(DebugSourceControl.DontCare, DebugTypeControl.DontCare, DebugSeverityControl.DontCare, 0, (int[]?)null, false);
-        GL.DebugMessageControl(DebugSourceControl.DontCare, DebugTypeControl.DebugTypeError, DebugSeverityControl.DebugSeverityHigh, 0, (int[]?)null, true);
+        GL.DebugMessageControl(DebugSourceControl.DontCare, DebugTypeControl.DontCare, DebugSeverityControl.DontCare, 0,
+            (int[]?)null, false);
+        GL.DebugMessageControl(DebugSourceControl.DontCare, DebugTypeControl.DebugTypeError,
+            DebugSeverityControl.DebugSeverityHigh, 0, (int[]?)null, true);
         //GL.DebugMessageControl(DebugSourceControl.DontCare, DebugTypeControl.DontCare, DebugSeverityControl.DebugSeverityMedium, 0, (int[]?)null, true);
 
         ContentManager.Register(new FileContentProvider());
@@ -146,10 +159,7 @@ internal partial class Game : GameWindow
         {
             Type = InitializingTask.TaskType.Asynchronized,
             Label = "Long async action in Game.cs",
-            Action = () =>
-            {
-                Thread.Sleep(2000);
-            }
+            Action = () => { Thread.Sleep(2000); }
         });
         SceneEditor.Instance = new();
         CommandHandler.RegisterAllCommands();
@@ -183,13 +193,13 @@ internal partial class Game : GameWindow
 
     protected override void OnUpdateFrame(FrameEventArgs args)
     {
-
         FrameProfiler.BeginFrame();
 
         Time.Update(args);
         SoundManager.Update(args);
 
-        if (_initialized && (!SceneEditor.Enabled || (SceneEditor.Enabled && SceneEditor.SimulationRunning)) && SceneManager.CurrentScene != null!)
+        if (_initialized && (!SceneEditor.Enabled || (SceneEditor.Enabled && SceneEditor.SimulationRunning)) &&
+            SceneManager.CurrentScene != null!)
         {
             FrameProfiler.Begin("update");
 
@@ -203,6 +213,7 @@ internal partial class Game : GameWindow
                     c.Update(args);
                 }
             }
+
             SceneManager.ApplyObjectModification();
             FrameProfiler.End();
 
@@ -234,13 +245,16 @@ internal partial class Game : GameWindow
         }
 
         #region GL
+
         GL.Viewport(0, 0, ClientSize.X, ClientSize.Y);
         GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
         GL.DepthFunc(DepthFunction.Lequal);
         GL.Enable(EnableCap.DepthTest);
         GL.Enable(EnableCap.Blend);
+        GL.Enable(EnableCap.Multisample);
         GL.ClearColor(Color.CadetBlue);
         GL.PolygonMode(TriangleFace.FrontAndBack, Wireframe ? PolygonMode.Line : PolygonMode.Fill);
+
         #endregion
 
         pb("imgui_update");
@@ -283,8 +297,10 @@ internal partial class Game : GameWindow
                 GL.Viewport(0, 0, ClientSize.X, ClientSize.Y);
             }
 
+            GL.Disable(EnableCap.Multisample);
             ToastManager.RenderNotifications();
             ImGuiController.Render();
+            GL.Enable(EnableCap.Multisample);
         }
         pe();
 
@@ -333,19 +349,23 @@ internal partial class Game : GameWindow
             {
                 return;
             }
+
             RenderManager.CreateCameraFrustum();
         }
+
         if (Keyboard.IsKeyPressed(Keys.F2, true))
         {
             var p = TakeScreenshot();
             if (p != null!)
                 Log.Information("Screenshot saved to {Path}", p);
         }
+
         #endregion
 
         FrameProfiler.End();
         FrameProfiler.EndFrame();
     }
+
     protected override void OnClosing(CancelEventArgs e)
     {
         if (SceneEditor.Enabled)
@@ -357,6 +377,7 @@ internal partial class Game : GameWindow
             {
                 WinApi.StartFlashing((IntPtr)WindowPtr);
             }
+
             e.Cancel = true;
         }
     }

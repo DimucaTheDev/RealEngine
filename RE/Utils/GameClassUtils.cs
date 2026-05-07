@@ -555,6 +555,12 @@ namespace RE.Utils
                 DefaultValueFactory = _ => null
             };
 
+            Option<int> msaaOption = new Option<int>("--msaa")
+            {
+                Description = "Level of MSAA. 0 Means no anti-aliasing.",
+                DefaultValueFactory = _ => 2
+            };
+            
             RootCommand rootCommand = new($"{ProductName} command line options")
             {
                 widthOption,
@@ -568,7 +574,8 @@ namespace RE.Utils
                 logLevelOption,
                 attachDebugger,
                 consoleOption,
-                editorOption
+                editorOption,
+                msaaOption
             };
             rootCommand.TreatUnmatchedTokensAsErrors = true;
 

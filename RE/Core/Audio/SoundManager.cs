@@ -50,7 +50,7 @@ namespace RE.Core.Audio
         public static void Init()
         {
             Assert(Fmod.Debug.Initialize(
-                 DEBUG_FLAGS.ERROR | DEBUG_FLAGS.WARNING,
+                DEBUG_FLAGS.ERROR | DEBUG_FLAGS.WARNING,
                 DEBUG_MODE.CALLBACK,
                 _fmodDebugCallback
             ));
@@ -62,11 +62,11 @@ namespace RE.Core.Audio
             Assert(_studioSystem.getCoreSystem(out _fmodSystem));
             Assert(_fmodSystem.getVersion(out uint version));
 
-            uint major = version >> 16;
-            uint minor = (version >> 8) & 0xFF;
-            uint patch = version & 0xFF;
+            int major = (int)(version >> 16);
+            int minor = (int)((version >> 8) & 0xFF);
+            int patch = (int)(version & 0xFF);
 
-            Log.Information("[FMOD] Version: {Mj}.{Mn}.{Dv}", major, minor, patch);
+            Log.Information("[FMOD] Version: {Version}", new Version(major, minor, patch));
             Log.Debug("[FMOD] Live Update is {State}.",
                 studioFlags.HasFlag(INITFLAGS.LIVEUPDATE) ? "Enabled" : "Disabled");
 
@@ -86,7 +86,8 @@ namespace RE.Core.Audio
             var pos = cam.Position.ToFmodVector3();
             var forward = cam.Front.Normalized().ToFmodVector3();
             var right = (-(Vector3.Cross(forward.ToOpenTkVector3(), cam.Up).Normalized())).ToFmodVector3();
-            var up = System.Numerics.Vector3.Cross(right.ToSystemVector3(), forward.ToSystemVector3()).ToOpenTkVector3().ToFmodVector3();
+            var up = System.Numerics.Vector3.Cross(right.ToSystemVector3(), forward.ToSystemVector3()).ToOpenTkVector3()
+                .ToFmodVector3();
             var vel = Vector3.Zero.ToFmodVector3();
 
             Assert(_studioSystem.update());
@@ -105,10 +106,10 @@ namespace RE.Core.Audio
                 resourcePath,
                 eventArray
                     .Select(s =>
-            {
-                s.getPath(out var path);
-                return path;
-            }));
+                    {
+                        s.getPath(out var path);
+                        return path;
+                    }));
 
             return bank;
         }
