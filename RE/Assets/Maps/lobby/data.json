@@ -8,7 +8,7 @@
           -4,
           3,
           0
-        ], 
+        ],
         "scale": [
           0.5,
           0.5,
@@ -168,9 +168,9 @@
           0
         ],
         "scale": [
-          10,
+          100,
           0.1,
-          10
+          100
         ]
       },
       "components": {
@@ -179,13 +179,38 @@
             "assets/models/cub.smdl"
           ]
         },
-        "BoxColliderComponent": {
-          "Multiplier": [
-            1,
-            1,
-            1
+        "BoxColliderComponent": {}
+      }
+    },
+    {
+      "name": "Kinematic",
+      "tag": null,
+      "transform": {
+        "position": [
+          15,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          5,
+          0.3,
+          5
+        ]
+      },
+      "components": {
+        "MeshComponent": {
+          "args": [
+            "assets/models/cub.fbx"
           ]
-        }
+        },
+        "RigidBody": {},
+        "BoxColliderComponent": {},
+        "KinematicTest": {}
       }
     },
     {
@@ -252,13 +277,7 @@
             "assets/models/button.smdl"
           ]
         },
-        "BoxColliderComponent": {
-          "Multiplier": [
-            1,
-            1,
-            1
-          ]
-        },
+        "BoxColliderComponent": {},
         "UsableComponent": {
           "args": [
             "level test"
@@ -325,13 +344,7 @@
             "assets/models/button.smdl"
           ]
         },
-        "BoxColliderComponent": {
-          "Multiplier": [
-            1,
-            1,
-            1
-          ]
-        },
+        "BoxColliderComponent": {},
         "UsableComponent": {
           "args": [
             "level test2"
@@ -375,13 +388,7 @@
             "assets/models/button.smdl"
           ]
         },
-        "BoxColliderComponent": {
-          "Multiplier": [
-            1,
-            1,
-            1
-          ]
-        },
+        "BoxColliderComponent": {},
         "UsableComponent": {
           "args": [
             "level test123"
@@ -425,13 +432,7 @@
             0
           ]
         },
-        "BoxColliderComponent": {
-          "Multiplier": [
-            1,
-            1,
-            1
-          ]
-        },
+        "BoxColliderComponent": {},
         "UsableComponent": {
           "args": [
             "level sound_test"

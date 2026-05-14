@@ -49,6 +49,7 @@ namespace RE.Rendering.Texturing
             }
             private set => _imageData = value;
         }
+
         /// <summary>
         /// Get width of an image in pixels
         /// </summary>
@@ -61,17 +62,21 @@ namespace RE.Rendering.Texturing
 
         public ImageColorType ColorType { get; set; }
 
-        private StaticTexture() { }
+        private StaticTexture()
+        {
+        }
 
         /// <summary>
         /// Create new StaticTexture object and load image from <paramref name="resourceLocation"/>.
         /// </summary>
         /// <param name="resourceLocation">Location of a file to load image from.</param>
         /// <param name="keepTextureData">Whether keep image data in <see cref="ImageData"/> or not.</param>
-        public StaticTexture(string resourceLocation, ImageColorType type = ImageColorType.Rgba, bool keepTextureData = false)
+        public StaticTexture(string resourceLocation, ImageColorType type = ImageColorType.Rgba,
+            bool keepTextureData = false)
         {
             using var stream = ContentManager.Open(resourceLocation);
-            var image = ImageResult.FromStream(stream, type == ImageColorType.Rgba ? ColorComponents.RedGreenBlueAlpha : ColorComponents.RedGreenBlue);
+            var image = ImageResult.FromStream(stream,
+                type == ImageColorType.Rgba ? ColorComponents.RedGreenBlueAlpha : ColorComponents.RedGreenBlue);
 
             ImageData = image.Data;
 
@@ -92,6 +97,7 @@ namespace RE.Rendering.Texturing
             ColorType = type;
             _keepTextureData = keepTextureData;
         }
+
         /// <summary>
         /// Create new StaticTexture object and set <see cref="ImageData"/> to <paramref name="data"/>.
         /// </summary>
@@ -100,7 +106,8 @@ namespace RE.Rendering.Texturing
         /// <param name="height">Height of an image</param>
         /// <param name="keepTextureData">Whether keep image data in <see cref="ImageData"/> or not.</param>
         /// <exception cref="InvalidOperationException">Image data is not in RGBA format.</exception>
-        public StaticTexture(byte[] data, int width, int height, ImageColorType type = ImageColorType.Rgba, bool keepTextureData = false)
+        public StaticTexture(byte[] data, int width, int height, ImageColorType type = ImageColorType.Rgba,
+            bool keepTextureData = false)
         {
             if (type == ImageColorType.Rgba && data.Length % 4 != 0)
                 throw new InvalidOperationException("Specified image data is not in RGBA format.");
@@ -124,6 +131,7 @@ namespace RE.Rendering.Texturing
             Height = height;
             ColorType = type;
             _keepTextureData = keepTextureData;
+            CreateGlTexture();
         }
 
         /// <summary>
@@ -134,32 +142,7 @@ namespace RE.Rendering.Texturing
         {
             ThrowIfDeleted();
             if (_glHandle == 0)
-            {
-                uint texId = (uint)GL.GenTexture();
-                GL.BindTexture(TextureTarget.Texture2D, texId);
-
-                GL.TexImage2D(TextureTarget.Texture2D, 0,
-                    ColorType == ImageColorType.Rgba ? PixelInternalFormat.Rgba : PixelInternalFormat.Rgb,
-                    Width, Height, 0, PixelFormat.Rgba, PixelType.UnsignedByte, _imageData);
-                GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
-                GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
-
-                GL.BindTexture(TextureTarget.Texture2D, 0);
-
-                if (!_keepTextureData)
-                    ImageData = null;
-
-                var error = GL.GetError();
-                if (error != ErrorCode.NoError)
-                {
-                    Delete();
-                    throw new GlException("Unable to create texture.");
-                }
-
-                Log.Verbose("New texture {Id}", texId);
-
-                _glHandle = texId;
-            }
+                CreateGlTexture();
 
             return _glHandle;
         }
@@ -180,6 +163,7 @@ namespace RE.Rendering.Texturing
                 //Debugger.Break();
                 return;
             }
+
             GL.DeleteTexture(_glHandle);
             Log.Verbose("Delete texture {Id}", _glHandle);
             _glHandle = 0;
@@ -192,8 +176,8 @@ namespace RE.Rendering.Texturing
         {
             byte[] data = new byte[size * size * 4];
 
-            byte[] purple = color1 ?? [110, 110, 110, 255];//[255, 0, 255, 255];
-            byte[] black = color2 ?? [35, 35, 35, 255];//[0, 0, 0, 255];
+            byte[] purple = color1 ?? [110, 110, 110, 255]; //[255, 0, 255, 255];
+            byte[] black = color2 ?? [35, 35, 35, 255]; //[0, 0, 0, 255];
 
             for (int y = 0; y < size; y++)
             {
@@ -210,7 +194,10 @@ namespace RE.Rendering.Texturing
             var t = new StaticTexture(data, size, size);
             return t;
         }
-        public static StaticTexture CreateMonoColorTexture(Vector3 color) => CreateMonoColorTexture(new Vector4(color, 1));
+
+        public static StaticTexture CreateMonoColorTexture(Vector3 color) =>
+            CreateMonoColorTexture(new Vector4(color, 1));
+
         public static StaticTexture CreateMonoColorTexture(Vector4 color)
         {
             byte[] data =
@@ -228,6 +215,36 @@ namespace RE.Rendering.Texturing
         {
             if (_deleted)
                 throw new InvalidOperationException("Tried to use a deleted texture.");
+        }
+
+        private uint CreateGlTexture()
+        {
+            uint texId = (uint)GL.GenTexture();
+            GL.BindTexture(TextureTarget.Texture2D, texId);
+
+            GL.TexImage2D(TextureTarget.Texture2D, 0,
+                ColorType == ImageColorType.Rgba ? PixelInternalFormat.Rgba : PixelInternalFormat.Rgb,
+                Width, Height, 0, PixelFormat.Rgba, PixelType.UnsignedByte, _imageData);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter,
+                (int)TextureMinFilter.Nearest);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter,
+                (int)TextureMagFilter.Nearest);
+
+            GL.BindTexture(TextureTarget.Texture2D, 0);
+
+            if (!_keepTextureData)
+                ImageData = null;
+
+            var error = GL.GetError();
+            if (error != ErrorCode.NoError)
+            {
+                Delete();
+                throw new GlException("Unable to create texture.");
+            }
+
+            Log.Verbose("New texture {Id}", texId);
+
+            return _glHandle = texId;
         }
 
         //public static implicit operator uint(StaticTexture texture) => texture.AsOpenGl();

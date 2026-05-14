@@ -47,7 +47,7 @@ internal class DebugOverlay : Renderable
     private void TestWindow()
     {
         Begin(">:(");
-        Text(SceneManager.CurrentScene.Name);
+        //Text(SceneManager.CurrentScene.Name);
         Separator(); 
         
         End();

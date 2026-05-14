@@ -2,6 +2,8 @@
 using System.ComponentModel;
 using System.Runtime.InteropServices;
 using System.Text;
+using BulletSharp;
+using BulletSharp.Math;
 using Hexa.NET.ImGui;
 using OpenTK.Graphics.OpenGL;
 using OpenTK.Mathematics;
@@ -19,6 +21,8 @@ using RE.Core.Scripting;
 using RE.Core.Ui;
 using RE.Core.Ui.Debug;
 using RE.Core.World;
+using RE.Core.World.Components;
+using RE.Core.World.Components.Physics;
 using RE.Core.World.Physics;
 using RE.Editor.Notification;
 using RE.Editor.Panels.Viewport;
@@ -31,6 +35,7 @@ using Color = System.Drawing.Color;
 using GL = OpenTK.Graphics.OpenGL.GL;
 using Keys = OpenTK.Windowing.GraphicsLibraryFramework.Keys;
 using SceneEditor = RE.Editor.SceneEditor;
+using Vector3 = BulletSharp.Math.Vector3;
 
 namespace RE.Utils;
 
@@ -285,7 +290,6 @@ internal partial class Game : GameWindow
         RenderManager.RenderAll(args);
         SceneManager.ApplyObjectModification();
 
-
         // damn check how these brackets look!!! sad there are no macros :(
         pb("imgui_render");
         {
@@ -303,7 +307,7 @@ internal partial class Game : GameWindow
             GL.Enable(EnableCap.Multisample);
         }
         pe();
-
+        
         SwapBuffers();
 
         #region Keybinds
@@ -360,6 +364,20 @@ internal partial class Game : GameWindow
                 Log.Information("Screenshot saved to {Path}", p);
         }
 
+        if (Keyboard.IsKeyPressed(Keys.KeyPadEnter))
+        {
+            for (int i = 0; i < 100; i++)
+            {
+                var a = new GameObject();
+                a.Transform.Position = new OpenTK.Mathematics.Vector3(0, 10, 0);
+                a.Tag = "prop";
+                a.Components.Add(new MeshComponent("assets/models/cub.fbx"));
+                a.Components.Add(new RigidBodyComponent(20));
+                a.Components.Add(new BoxColliderComponent());
+                SceneManager.CurrentScene.GameObjects.Add(a);
+            }
+        }
+        
         #endregion
 
         FrameProfiler.End();

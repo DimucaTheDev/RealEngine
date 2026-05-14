@@ -9,6 +9,6 @@
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = true)]
     internal class RequiresComponentAttribute(Type type) : Attribute
     {
-        public Type RequiredComponent { get; init; } = type;
+        public Type RequiredComponent { get; } = type;
     }
 }

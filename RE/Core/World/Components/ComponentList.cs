@@ -1,4 +1,7 @@
 ﻿using System.Collections;
+using System.ComponentModel.DataAnnotations;
+using System.Reflection;
+using RE.Core.Scripting.Attributes;
 using RE.Editor;
 using RE.Rendering;
 
@@ -32,6 +35,7 @@ namespace RE.Core.World.Components
 
             return true;
         }
+
         /// <summary>
         /// Adds a component to the list, assigning its owner and registering it for updates and rendering.
         /// </summary>
@@ -51,6 +55,27 @@ namespace RE.Core.World.Components
 
             if (_components.Any(s => s.GetType() == c.GetType()))
                 throw new InvalidOperationException("Component is already in this list");
+
+
+            var required = c.GetType()
+                .GetCustomAttributes<RequiresComponentAttribute>()
+                .Select(a => a.RequiredComponent)
+                .ToList();
+
+            var existing = _components
+                .Select(x => x.GetType())
+                .ToHashSet();
+
+            var missing = required
+                .Where(r => !existing.Contains(r))
+                .ToList();
+
+            if (missing.Count > 0)
+            {
+                throw new InvalidOperationException(
+                    $"Missing required components for {c.GetType().Name}: " +
+                    string.Join(", ", missing.Select(m => m.Name)));
+            }
 
             c.Owner = _owner;
 
@@ -90,16 +115,18 @@ namespace RE.Core.World.Components
 
             c.Owner = null!;
             GameObjectList.CreateVpObject(_owner);
-
         }
+
         public void Clear()
         {
             foreach (var component in _components)
             {
                 Remove(component);
             }
+
             _components.Clear();
         }
+
         public Component this[int index] => _components[index];
         public int Count => _components.Count;
 

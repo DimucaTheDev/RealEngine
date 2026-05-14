@@ -13,10 +13,7 @@ namespace RE.Core.World.Components.Physics
             CollisionShape shape = new CapsuleShape(MathF.Max(scale.X, scale.Z), scale.Y);
             return shape;
         }
-        public override JsonNode GetSaveData()
-        {
-            JsonObject root = new() { { nameof(Multiplier), new JsonArray { Multiplier } } };
-            return root;
-        }
+
+        public override JsonNode GetSaveData() => new JsonObject();
     }
 }

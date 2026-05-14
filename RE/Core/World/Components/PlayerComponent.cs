@@ -59,9 +59,9 @@ namespace RE.Core.World.Components
                 }
             };
             PlayerGameObject.SetPosition(Owner.Transform.Position);
-            var rigidBodyComponent = new RigidBodyComponent();
-            PlayerGameObject.Components.Add(new CapsuleColliderComponent());
+            var rigidBodyComponent = new RigidBodyComponent(1);
             PlayerGameObject.Components.Add(rigidBodyComponent);
+            PlayerGameObject.Components.Add(new CapsuleColliderComponent());
 
             SceneManager.CurrentScene.GameObjects.Add(PlayerGameObject);
             rigidBodyComponent.RigidBody.AngularFactor = BulletSharp.Math.Vector3.Zero;
@@ -338,10 +338,15 @@ namespace RE.Core.World.Components
 
                 if (_holdingObject != null!)
                 {
-                    var rigidBody = _holdingObject.GetComponent<RigidBodyComponent>()?.RigidBody
-                                    ?? _holdingObject.GetComponent<ColliderComponent>()?.RigidBody;
-                    if (_holdingObject.GetComponent<RigidBodyComponent>() != null)
-                        _holdingObject.GetComponent<RigidBodyComponent>()!.Mass = _objMass;
+                    var rigidBody = _holdingObject.GetComponent<RigidBodyComponent>()?.RigidBody;
+                    var hrb = _holdingObject.GetComponent<RigidBodyComponent>();
+                    if (hrb != null)
+                    {
+                        var v = hrb.RigidBody.LinearVelocity;
+                        hrb.Mass = _objMass;
+                        hrb.RigidBody.LinearVelocity = v;
+                    }
+
                     if (rigidBody != null)
                         rigidBody.Activate(true);
                     _holdingObject = null;
@@ -356,7 +361,7 @@ namespace RE.Core.World.Components
                             controller.GetComponent<UsableComponent>()!.OnUsed?.Invoke();
                             SoundManager.PlayOneShotEvent("event:/Blip");
                         }
-                        else if (controller.GetComponent<RigidBodyComponent>() != null)
+                        else if (controller.GetComponent<RigidBodyComponent>() != null && controller.Owner.Tag == "prop")
                         {
                             _holdingObject = controller.Owner;
                             SoundManager.PlayOneShotEvent("event:/Select");
@@ -367,8 +372,7 @@ namespace RE.Core.World.Components
                                 rigidBodyComponent.Mass = 1;
                             }
 
-                            var rigidBody = _holdingObject!.GetComponent<RigidBodyComponent>()?.RigidBody
-                                            ?? _holdingObject.GetComponent<ColliderComponent>()?.RigidBody;
+                            var rigidBody = _holdingObject!.GetComponent<RigidBodyComponent>()?.RigidBody;
                             if (rigidBody != null)
                                 rigidBody.ActivationState = ActivationState.DisableDeactivation;
                         }
@@ -380,15 +384,16 @@ namespace RE.Core.World.Components
                     }
                     else
                     {
-                        if (callback.CollisionObject.UserObject is not Component)
-                        {
-                            if (!string.IsNullOrWhiteSpace(InteractDenySound))
+                        if (callback.CollisionObject != null)
+                            if (callback.CollisionObject.UserObject is not Component)
                             {
-                                SoundManager.PlayOneShotEvent(InteractDenySound);
-                            }
+                                if (!string.IsNullOrWhiteSpace(InteractDenySound))
+                                {
+                                    SoundManager.PlayOneShotEvent(InteractDenySound);
+                                }
 
-                            Log.Debug("Ray hit an object, but its UserObject is not a Controller.");
-                        }
+                                Log.Debug("Ray hit an object, but its UserObject is not a Controller.");
+                            }
                     }
                 }
                 else if (!wasHolding)
@@ -581,23 +586,25 @@ namespace RE.Core.World.Components
         private static void AddDummyCube()
         {
             GameObject obj = new GameObject();
+            obj.Tag = "prop";
             obj.Components.Add(new MeshComponent("assets/models/crate.fbx"));
             obj.Components.Add(new CollisionTestComponent());
             Vector3 front = Camera.Main.Front;
 
-            obj.Components.Add(new BoxColliderComponent());
             var rb = new RigidBodyComponent(20);
             obj.Components.Add(rb);
+            obj.Components.Add(new BoxColliderComponent());
 
             SceneManager.CurrentScene.GameObjects.Add(obj);
 
             BulletSharp.Math.Vector3 cameraFrontBullet = new BulletSharp.Math.Vector3(front.X, front.Y, front.Z);
-            rb.RigidBody.Restitution = 0.2f;
-            rb.RigidBody.Friction = 1;
+            rb.RigidBody.Restitution = 0f;
+            rb.RigidBody.ActivationState = ActivationState.DisableDeactivation;
+            
             float impulseStrength = 5.0f;
             BulletSharp.Math.Vector3 impulseVector = cameraFrontBullet * impulseStrength;
-            rb.RigidBody.ApplyImpulse(impulseVector, BulletSharp.Math.Vector3.Zero);
 
+            rb.RigidBody.ApplyImpulse(impulseVector, BulletSharp.Math.Vector3.Zero);
             obj.SetPosition(2 * front + Camera.Main.Position);
         }
 
@@ -670,24 +677,9 @@ namespace RE.Core.World.Components
 
     internal class CollisionTestComponent : Component
     {
-        /// <inheritdoc />
         public override void OnCollisionEnter(GameObject collide)
         {
-            Log.Information("OnCollisionEnter: {A} and {B}", Owner.Id, collide.Id);
-            Owner.GetComponent<MeshComponent>().ModelRenderer.SetTexture(StaticTexture.CreateMonoColorTexture((0,1,0)));
-        }
-
-        /// <inheritdoc />
-        public override void OnCollide(GameObject collide)
-        {
-            Owner.GetComponent<MeshComponent>().ModelRenderer.SetTexture(StaticTexture.CreateMonoColorTexture((1,1,0)));
-        }
-
-        /// <inheritdoc />
-        public override void OnCollisionExit(GameObject collide)
-        {
-            Log.Information("OnCollisionExit: {A} and {B}", Owner.Id, collide.Id);
-            Owner.GetComponent<MeshComponent>().ModelRenderer.SetTexture(StaticTexture.CreateMonoColorTexture((1,0,0)));
+            SoundManager.PlayOneShotEvent("event:/CrateImpact");
         }
 
         /// <inheritdoc />

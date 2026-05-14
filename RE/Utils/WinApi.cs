@@ -94,6 +94,7 @@ namespace RE.Utils
 
         public static void HideFromTaskbar(IntPtr hwnd, IntPtr owner)
         {
+            return;
             SetWindowLongPtr(hwnd, GWLP_HWNDPARENT, owner);
 
             int exStyle = GetWindowLong(hwnd, GWL_EXSTYLE);

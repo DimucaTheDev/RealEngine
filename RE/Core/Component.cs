@@ -15,7 +15,8 @@ namespace RE.Core
     /// </summary>
     /// <remarks>All classes that inherit this class must have parameterless constructor</remarks>
     public abstract class Component
-    {
+    { 
+        
         /// <summary>
         /// <see cref="GameObject"/> that this component is attached to.
         /// </summary>
@@ -125,6 +126,11 @@ namespace RE.Core
         /// <remarks>Method is only called if <see cref="Owner"/> has any <see cref="ColliderComponent"/></remarks>
         public virtual void OnCollisionExit(GameObject collide)
         {
+        }
+
+        public virtual void PhysicsSync()
+        {
+            
         }
     }
 }

@@ -14,10 +14,7 @@ namespace RE.Core.World.Components.Physics
             CollisionShape sphereShape = new SphereShape(max);
             return sphereShape;
         }
-        public override JsonNode GetSaveData()
-        {
-            JsonObject root = new() { { nameof(Multiplier), new JsonArray { Multiplier } } };
-            return root;
-        }
+
+        public override JsonNode GetSaveData() => new JsonObject();
     }
 }

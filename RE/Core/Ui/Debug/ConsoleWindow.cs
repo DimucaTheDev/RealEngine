@@ -86,11 +86,19 @@ namespace RE.Core.Ui.Debug
                             _shouldScrollToBottom = true;
 
                         ImGui.PushStyleVar(ImGuiStyleVar.ItemSpacing, new Vector2(4, 1));
-                        if (ImGui.BeginTable("##console", 3))
+                        ImGuiTableFlags tableFlags = ImGuiTableFlags.RowBg ;
+                        if (!w)
                         {
-                            ImGui.TableSetupColumn("##icon", ImGuiTableColumnFlags.WidthFixed, 10); // минимальная ширина
-                            ImGui.TableSetupColumn("##code", ImGuiTableColumnFlags.WidthFixed, 50); // минимальная ширина
-                            ImGui.TableSetupColumn("##message", ImGuiTableColumnFlags.WidthStretch);
+                            tableFlags |= ImGuiTableFlags.ScrollX;
+                        }
+
+                        if (ImGui.BeginTable("##console", 3, tableFlags))
+                        {
+                            ImGui.TableSetupColumn("##icon", ImGuiTableColumnFlags.WidthFixed, 10);
+                            ImGui.TableSetupColumn("##code", ImGuiTableColumnFlags.WidthFixed, 50);
+                            ImGui.TableSetupColumn("##message",
+                                w ? ImGuiTableColumnFlags.WidthStretch : ImGuiTableColumnFlags.WidthFixed);
+    
                             ImGui.TableHeadersRow();
 
                             foreach (LogEntry entry in log)
@@ -106,7 +114,7 @@ namespace RE.Core.Ui.Debug
                             }
 
                             ImGui.EndTable();
-                            ImGui.Dummy(new Vector2(0, 0)); // фикс для предупреждения
+                            ImGui.Dummy(new Vector2(0, 0));
                         }
                         ImGui.PopStyleVar();
 
@@ -271,22 +279,18 @@ namespace RE.Core.Ui.Debug
 
             ImGui.PushID(entry.GetHashCode());
 
-            // Вставляем новую строку таблицы
             ImGui.TableNextRow();
 
-            // Иконка
             ImGui.TableSetColumnIndex(0);
             ImGui.PushStyleColor(ImGuiCol.Text, color);
             ImGui.TextUnformatted(icon);
             ImGui.PopStyleColor();
 
-            // Код/уровень
             ImGui.TableSetColumnIndex(1);
             ImGui.PushStyleColor(ImGuiCol.Text, color);
             ImGui.TextUnformatted(level);
             ImGui.PopStyleColor();
 
-            // Сообщение
             ImGui.TableSetColumnIndex(2);
             ImGui.PushStyleColor(ImGuiCol.Text, _colorDefault);
             if (wrap)

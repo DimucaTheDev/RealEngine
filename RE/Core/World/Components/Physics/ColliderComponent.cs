@@ -1,84 +1,18 @@
-﻿using BulletSharp;
+﻿using System.Diagnostics;
+using BulletSharp;
 using BulletSharp.Math;
+using OpenTK.Windowing.Common;
 using RE.Core.Scripting.Attributes;
 using RE.Core.World.Physics;
+using RE.Core.World.Testing;
 using RE.Utils;
 using Vector3 = OpenTK.Mathematics.Vector3;
 
 namespace RE.Core.World.Components.Physics
 {
-    internal abstract class ColliderComponent : Component, IPhysicsComponent
+    [RequiresComponent(typeof(RigidBodyComponent))]
+    internal abstract class ColliderComponent : Component
     {
-#pragma warning disable 8618
-        private CollisionShape _collisionShape;
-        private RigidBody _rigidBody;
-#pragma warning restore
-        public CollisionShape CollisionShape => _collisionShape;
-        public RigidBody RigidBody => _rigidBody;
-        public bool IsPhysicsObjectInitialized => _collisionShape != null!;
-
-        [EditorProperty]
-        public Vector3 Multiplier
-        {
-            get;
-            set
-            {
-                field = value;
-                TryInitializePhysics();
-            }
-        } = Vector3.One;
-
-        public override void Start()
-        {
-            if (IsPhysicsObjectInitialized)
-                return;
-            TryInitializePhysics();
-        }
-
-        public void TryInitializePhysics()
-        {
-            _collisionShape = CreateCollisionShape();
-
-            var rigid = GetComponent<RigidBodyComponent>();
-            if (rigid?.IsPhysicsObjectInitialized ?? false)
-            {
-                _rigidBody = rigid.RigidBody;
-                _rigidBody.CollisionShape = _collisionShape;
-                rigid.Mass = rigid.Mass;
-            }
-            else if (!_rigidBody?.IsInWorld ?? true)
-            {
-
-                var transform = Owner.Transform;
-                var startTransform = Matrix.Identity;
-                startTransform.Origin = transform.Position.ToBulletVector3();
-                startTransform.Basis =
-                    Matrix.RotationQuaternion(transform.Rotation.ToBulletQuaternion());
-
-                var motionState = new DefaultMotionState(startTransform);
-                var rbInfo = new RigidBodyConstructionInfo(0f, motionState, _collisionShape, BulletSharp.Math.Vector3.Zero);
-                _rigidBody = new RigidBody(rbInfo)
-                {
-                    UserObject = this
-                };
-                PhysicsManager.DynamicsWorld.AddRigidBody(_rigidBody);
-            } 
-            _rigidBody?.Friction = 1;
-        }
-
         public abstract CollisionShape CreateCollisionShape();
-
-        public override void OnDestroy()
-        {
-            if (_rigidBody != null!)
-            {
-                PhysicsManager.DynamicsWorld.RemoveRigidBody(_rigidBody);
-                _rigidBody.Dispose();
-                _collisionShape = null!;
-                _rigidBody = null!;
-            }
-
-            base.OnDestroy();
-        } 
     }
 }

@@ -1,4 +1,6 @@
-﻿using System.Reflection;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.IO.Compression;
+using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization.Metadata;
@@ -6,6 +8,7 @@ using OpenTK.Mathematics;
 using RE.Core.Assets;
 using RE.Core.Initializing;
 using RE.Core.PluginSystem;
+using RE.Core.Scripting.Attributes;
 using RE.Editor.Panels.Viewport;
 using Serilog;
 
@@ -115,12 +118,15 @@ namespace RE.Core.World
                 var directoryName = Path.GetDirectoryName(path);
                 if (!Directory.Exists(directoryName))
                     Directory.CreateDirectory(directoryName!);
+                //todo: deflate compression
                 File.WriteAllText(savedTo = path, jsonString);
             }
             else
             {
                 if (!Directory.Exists(path))
                     Directory.CreateDirectory(path);
+
+                //todo: deflate compression
                 File.WriteAllText(savedTo = Path.Combine(path, "data.json"), jsonString);
             }
 
@@ -178,6 +184,7 @@ namespace RE.Core.World
         {
             string dataPath = Path.Combine("Assets", "Maps", name, "data.json");
 
+            //todo: deflate decompression
             return DeserializeScene(ContentManager.GetString(dataPath), name);
         }
 
@@ -250,83 +257,79 @@ namespace RE.Core.World
 
                     if (obj.TryGetProperty("components", out var components))
                     {
-                        foreach (var component in components.EnumerateObject())
+                        var componentList = components.EnumerateObject().ToList();
+
+                        HashSet<string> existingComponents = componentList
+                            .Select(c => c.Name.ToLower().Replace("component", ""))
+                            .ToHashSet();
+
+                        List<Type> additionalComponents = [];
+
+                        foreach (var component in componentList)
                         {
-                            var type = assemblyTypes
-                                .FirstOrDefault(s => s.Name.ToLower().Replace("component", "") ==
-                                                     component.Name.ToLower().Replace("component", ""));
+                            var type = assemblyTypes.FirstOrDefault(s =>
+                                s.Name.ToLower().Replace("component", "") ==
+                                component.Name.ToLower().Replace("component", ""));
+
+                            if (type == null)
+                                continue;
+
+                            foreach (var requiredType in GetRequiredComponents(type, gameObject))
+                            {
+                                var normalizedName = requiredType.Name
+                                    .ToLower()
+                                    .Replace("component", "");
+
+                                if (existingComponents.Add(normalizedName))
+                                {
+                                    additionalComponents.Add(requiredType);
+                                }
+                            }
+                        }
+
+                        foreach (var type in additionalComponents)
+                        {
+                            try
+                            {
+                                Component c = (Component)Activator.CreateInstance(
+                                    type,
+                                    BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public,
+                                    binder: null,
+                                    args: [],
+                                    culture: null)!;
+                                
+                                gameObject.Components.Add(c, true);
+                                Log.Verbose("Added {Name} to {Object}", type.Name, gameObject.Name);
+                            }
+                            catch (Exception e)
+                            {
+                                Log.Error(
+                                    e,
+                                    "Failed to create required component {ComponentName} on object {ObjectName}",
+                                    type.Name,
+                                    gameObject.Name);
+                                throw;
+                            }
+                        }
+
+                        foreach (var component in componentList)
+                        {
+                            var type = assemblyTypes.FirstOrDefault(s =>
+                                s.Name.ToLower().Replace("component", "") ==
+                                component.Name.ToLower().Replace("component", ""));
 
                             if (type == null)
                             {
-                                Log.Error("Unknown component {ComponentName} on object {ObjectName} in {SceneName}",
-                                    component.Name, gameObject.Name, scene.Name);
+                                Log.Error(
+                                    "Unknown component {ComponentName} on object {ObjectName} in {SceneName}",
+                                    component.Name,
+                                    gameObject.Name,
+                                    scene.Name);
+
                                 continue;
                             }
 
-                            object instance;
-
-                            if (component.Value.TryGetProperty("args", out var argsElement) &&
-                                argsElement.ValueKind == JsonValueKind.Array)
-                            {
-                                var ctors = type.GetConstructors();
-                                ConstructorInfo? matchingCtor = ctors.FirstOrDefault(c =>
-                                    c.GetParameters().Length == argsElement.GetArrayLength());
-
-                                if (matchingCtor == null)
-                                    throw new InvalidOperationException(
-                                        $"No constructor with {argsElement.GetArrayLength()} arguments found for {type.Name}");
-
-                                var paramInfos = matchingCtor.GetParameters();
-                                var parsedArgs = new object?[paramInfos.Length];
-
-                                for (int i = 0; i < paramInfos.Length; i++)
-                                {
-                                    var paramType = paramInfos[i].ParameterType;
-                                    var argElement = argsElement[i];
-
-                                    parsedArgs[i] = JsonSerializer.Deserialize(argElement.GetRawText(), paramType)
-                                                    ?? throw new InvalidOperationException(
-                                                        $"Failed to deserialize argument {i} to {paramType}");
-                                }
-
-                                instance = Activator.CreateInstance(type, parsedArgs)!;
-                            }
-                            else
-                                instance = Activator.CreateInstance(type)!;
-
-                            Component c = (Component)instance;
-                            gameObject.Components.Add(c, true);
-
-                            foreach (var prop in component.Value.EnumerateObject())
-                            {
-                                if (prop.Name.ToLower() == "args")
-                                    continue;
-
-                                var propertyName = prop.Name;
-                                var propertyInfo = type.GetProperty(propertyName,
-                                    BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
-
-                                if (propertyInfo == null)
-                                {
-                                    Log.Error("Property '{PropertyName}' not found on type '{TypeName}'", propertyName,
-                                        type.Name);
-                                    continue;
-                                }
-
-                                object? propertyValue = null!;
-                                if (propertyInfo!.PropertyType == typeof(Vector3)) //float[] -> Vec3(xyz)
-                                {
-                                    var arr = prop.Value.EnumerateArray().Select(s => s.GetSingle()).ToList();
-                                    propertyValue = new Vector3(arr[0], arr[1], arr[2]);
-                                }
-                                else
-                                    propertyValue = prop.Value.Deserialize(propertyInfo!.PropertyType);
-
-                                if (propertyInfo != null! && propertyInfo.CanWrite)
-                                {
-                                    propertyInfo.SetValue(instance, propertyValue);
-                                }
-                            }
+                            ConstructComponent(component, type, gameObject);
                         }
                     }
 
@@ -355,6 +358,134 @@ namespace RE.Core.World
                 CurrentScene = temp;
             }
         }
+
+        private static void ConstructComponent(JsonProperty component, Type type, GameObject o)
+        {
+            object instance;
+
+            if (component.Value.TryGetProperty("args", out var argsElement) &&
+                argsElement.ValueKind == JsonValueKind.Array)
+            {
+                var ctors = type.GetConstructors();
+
+                ConstructorInfo? matchingCtor = ctors.FirstOrDefault(c =>
+                    c.GetParameters().Length == argsElement.GetArrayLength());
+
+                if (matchingCtor == null)
+                {
+                    throw new InvalidOperationException(
+                        $"No constructor with {argsElement.GetArrayLength()} arguments found for {type.Name}");
+                }
+
+                var paramInfos = matchingCtor.GetParameters();
+                var parsedArgs = new object?[paramInfos.Length];
+
+                for (int i = 0; i < paramInfos.Length; i++)
+                {
+                    var paramType = paramInfos[i].ParameterType;
+                    var argElement = argsElement[i];
+
+                    parsedArgs[i] = JsonSerializer.Deserialize(
+                                        argElement.GetRawText(),
+                                        paramType)
+                                    ?? throw new InvalidOperationException(
+                                        $"Failed to deserialize argument {i} to {paramType}");
+                }
+
+                instance = Activator.CreateInstance(
+                    type,
+                    BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public,
+                    binder: null,
+                    args: parsedArgs,
+                    culture: null)!;
+            }
+            else
+            {
+                instance = Activator.CreateInstance(
+                    type,
+                    BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public,
+                    binder: null,
+                    args: [],
+                    culture: null)!;
+            }
+
+            Component c = (Component)instance;
+
+            o.Components.Add(c, true);
+
+            foreach (var prop in component.Value.EnumerateObject())
+            {
+                if (prop.Name.Equals("args", StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                var propertyName = prop.Name;
+
+                var propertyInfo = type.GetProperty(
+                    propertyName,
+                    BindingFlags.Public |
+                    BindingFlags.Instance |
+                    BindingFlags.IgnoreCase);
+
+                if (propertyInfo == null)
+                {
+                    Log.Error(
+                        "Property {PropertyName} was not found on type {TypeName}",
+                        propertyName,
+                        type.Name);
+
+                    continue;
+                }
+
+                object? propertyValue;
+
+                if (propertyInfo.PropertyType == typeof(Vector3))
+                {
+                    var arr = prop.Value
+                        .EnumerateArray()
+                        .Select(s => s.GetSingle())
+                        .ToList();
+
+                    propertyValue = new Vector3(arr[0], arr[1], arr[2]);
+                }
+                else
+                {
+                    propertyValue = prop.Value.Deserialize(propertyInfo.PropertyType);
+                }
+
+                if (propertyInfo.CanWrite)
+                {
+                    propertyInfo.SetValue(instance, propertyValue);
+                }
+            }
+        }
+
+        private static IEnumerable<Type> GetRequiredComponents(Type type, GameObject o)
+        {
+            HashSet<Type> result = [];
+
+            while (type != null &&
+                   type != typeof(object) &&
+                   type != typeof(Component))
+            {
+                var attrs = type.GetCustomAttributes<RequiresComponentAttribute>(true)
+                    .DistinctBy(s => s.RequiredComponent.Name);
+
+                foreach (var attr in attrs)
+                {
+                    if (result.Add(attr.RequiredComponent))
+                    {
+                        Log.Warning(
+                            "Added component {RequiredComponentName} because {ComponentName} on {ObjectName}({ObjectId}) requires it",
+                            attr.RequiredComponent.Name, type.Name, o.Name, o.Id);
+                    }
+                }
+
+                type = type.BaseType!;
+            }
+
+            return result;
+        }
+
 
         public static Scene Reload(Scene scene)
         {

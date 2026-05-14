@@ -17,11 +17,13 @@ namespace RE.Core.World
         internal CollisionObject ViewportObject;
 
         private static int _next;
-         
+
         /// <summary>
         /// Initializes a new instance of <see cref="GameObject"/> with no parent.
         /// </summary>
-        public GameObject() : this(null) { }
+        public GameObject() : this(null)
+        {
+        }
 
         /// <summary>
         /// Initializes a new instance of <see cref="GameObject"/> with the specified parent.
@@ -79,7 +81,8 @@ namespace RE.Core.World
         /// <summary>
         /// Gets a read-only list of child <see cref="GameObject"/> instances under this object.
         /// </summary>
-        public IReadOnlyList<GameObject> Children => Scene?.GameObjects.Where(s => s.Parent == this).ToList().AsReadOnly() ?? [];
+        public IReadOnlyList<GameObject> Children =>
+            Scene?.GameObjects.Where(s => s.Parent == this).ToList().AsReadOnly() ?? [];
 
         /// <summary>
         /// Sets the position of the game object and updates the associated physics rigid body if present.
@@ -88,10 +91,9 @@ namespace RE.Core.World
         public void SetPosition(Vector3 position, bool zeroVelocity = false)
         {
             //todo: move all children [ childPos + (newPos - oldPos) ]
-            Transform.Position = position; 
+            Transform.Position = position;
 
-            var rigidBody = GetComponent<RigidBodyComponent>()?.RigidBody
-                            ?? GetComponent<ColliderComponent>()?.RigidBody;
+            var rigidBody = GetComponent<RigidBodyComponent>()?.RigidBody;
 
             if (rigidBody == null)
                 return;
@@ -113,7 +115,7 @@ namespace RE.Core.World
         /// <param name="q">The new rotation quaternion to set.</param>
         public void SetRotation(Quaternion q)
         {
-            Transform.Rotation = q; 
+            Transform.Rotation = q;
             // удали метод пж
             var rigidBodyComponent = GetComponent<RigidBodyComponent>();
             if (rigidBodyComponent != null!)
@@ -137,5 +139,13 @@ namespace RE.Core.World
         {
             return Components.OfType<T>().FirstOrDefault();
         }
+
+        public List<T> GetComponents<T>() where T : Component
+        {
+            return Components.OfType<T?>().ToList()!;
+        }
+
+        /// <inheritdoc />
+        public override string ToString() => $"{Name ?? "<empty>"} ({Id}, {Tag ?? "null"})";
     }
 }

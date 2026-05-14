@@ -1,6 +1,8 @@
 ﻿using System.Reflection;
 using BulletSharp;
 using DotRecast.Core.Collections.Extensions;
+using Hexa.NET.OpenGL;
+using OpenTK.Graphics.OpenGL;
 using OpenTK.Mathematics;
 using RE.Core.Assets;
 using RE.Core.Initializing;
@@ -9,11 +11,12 @@ using RE.Core.Ui.Debug;
 using RE.Core.World.Components;
 using RE.Core.World.Components.Physics;
 using RE.Utils;
+using GL = OpenTK.Graphics.OpenGL.GL;
 using Log = Serilog.Log;
 using SceneEditor = RE.Editor.SceneEditor;
 using TaskScheduler = BulletSharp.TaskScheduler;
 
-#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
+#pragma warning disable CS8618
 
 namespace RE.Core.World.Physics
 {
@@ -34,7 +37,7 @@ namespace RE.Core.World.Physics
             public bool isInside;
             public int Counter;
         }
-        
+
         private static readonly List<TaskScheduler> Schedulers = [];
         private static bool _init;
         private static int _currentScheduler;
@@ -48,7 +51,7 @@ namespace RE.Core.World.Physics
 
         const int EnterDelay = 3;
         const int ExitDelay = 10;
- 
+
         /// <summary>
         /// Provides access to the multithreaded discrete dynamics world instance used for physics simulation.
         /// </summary>
@@ -62,6 +65,9 @@ namespace RE.Core.World.Physics
         /// </summary>
         /// <remarks>If set to <see langword="false"/>, <see cref="Update"/> method will do nothing.</remarks>
         public static bool EnableSimulation = true;
+
+        public static float Accumulator;
+        public const float FixedTimeStep = 1 / 120f;
 
         internal static void Init() => new PhysicsManager().OnLoad();
 
@@ -80,7 +86,7 @@ namespace RE.Core.World.Physics
 
             using (var collisionConfigurationInfo = new DefaultCollisionConstructionInfo())
             {
-                collisionConfigurationInfo.DefaultMaxPersistentManifoldPoolSize = 80000; // magic number?
+                collisionConfigurationInfo.DefaultMaxPersistentManifoldPoolSize = 80000;
                 collisionConfigurationInfo.DefaultMaxCollisionAlgorithmPoolSize = 80000;
                 _collisionConfiguration = new DefaultCollisionConfiguration(collisionConfigurationInfo);
             }
@@ -95,7 +101,7 @@ namespace RE.Core.World.Physics
                 _parallelSolver, _collisionConfiguration);
             DynamicsWorld.SolverInfo.SolverMode = SolverModes.Simd | SolverModes.UseWarmStarting;
             DynamicsWorld.SolverInfo.NumIterations = 10;
-            DynamicsWorld.SolverInfo.TimeStep = 1 / 60f;
+            //DynamicsWorld.SolverInfo.TimeStep = FixedTimeStep;
             DynamicsWorld.Gravity = new BulletSharp.Math.Vector3(0, -9.81f, 0);
             DynamicsWorld.DebugDrawer = new BulletDebugDrawer();
 
@@ -159,7 +165,7 @@ namespace RE.Core.World.Physics
                                 if (hitObj is RigidBody { IsStaticObject: true })
                                 {
                                     blocked = true;
-                                    break; // static object
+                                    break;
                                 }
                             }
                         }
@@ -186,13 +192,30 @@ namespace RE.Core.World.Physics
         {
             if (!_init || Initializer.HasJob)
                 return;
+
             if (!SceneEditor.Enabled)
             {
                 FrameProfiler.Begin("bullet");
 
-                FrameProfiler.Begin("step");
-                DynamicsWorld.StepSimulation(deltaTime, EnableSimulation ? 10 : 0, deltaTime);
-                FrameProfiler.End();
+                Accumulator += deltaTime;
+                while (Accumulator >= FixedTimeStep)
+                {
+                    FrameProfiler.Begin("step");
+                    DynamicsWorld.StepSimulation(FixedTimeStep, 0);
+                    foreach (var obj in DynamicsWorld.CollisionObjectArray)
+                    {
+                        foreach (var c in (obj.UserObject as Component)?.Owner.Components!)
+                        {
+                            c.PhysicsSync();
+                        }
+                    }
+                    FrameProfiler.End();
+
+
+                    Accumulator -= FixedTimeStep;
+                }
+
+                Alpha = Accumulator / FixedTimeStep;
 
                 FrameProfiler.Begin("collision");
                 ProcessCollisions(DynamicsWorld);
@@ -200,13 +223,17 @@ namespace RE.Core.World.Physics
 
                 FrameProfiler.End();
             }
+            
+            if (BulletDebugDrawer.Mode != DebugDrawModes.None)
+                DynamicsWorld.DebugDrawWorld();
         }
+
+        public static float Alpha { get; private set; }
 
         static void ProcessCollisions(DiscreteDynamicsWorld world)
         {
             var dispatcher = world.Dispatcher;
 
-            // пары, которые реально имеют контакт в этом кадре
             var activePairs = new HashSet<(CollisionObject, CollisionObject)>();
 
             int numManifolds = dispatcher.NumManifolds;
@@ -221,7 +248,6 @@ namespace RE.Core.World.Physics
                 if (a == null || b == null)
                     continue;
 
-                // стабильная проверка: есть ли хотя бы один контакт
                 bool hasContact = manifold.NumContacts > 0;
 
                 if (!hasContact)
@@ -242,7 +268,6 @@ namespace RE.Core.World.Physics
                     _states[pair] = state;
                 }
 
-                // ENTER / STAY
                 if (state.isInside)
                 {
                     compA.Owner.Components.ForEach(c => c.OnCollide(compB.Owner));
@@ -263,7 +288,6 @@ namespace RE.Core.World.Physics
                 }
             }
 
-            // EXIT логика
             foreach (var kv in _states)
             {
                 var pair = kv.Key;
@@ -296,7 +320,6 @@ namespace RE.Core.World.Physics
                 }
             }
 
-            // очистка мусора
             var toRemove = new List<(CollisionObject, CollisionObject)>();
 
             foreach (var kv in _states)

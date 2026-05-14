@@ -1,18 +1,32 @@
 ﻿using System.Text.Json.Nodes;
 using BulletSharp;
 using BulletSharp.Math;
+using JetBrains.Annotations;
 using OpenTK.Windowing.Common;
 using RE.Core.Scripting.Attributes;
 using RE.Core.World.Physics;
 using RE.Editor;
 using RE.Utils;
+using Serilog;
 
 namespace RE.Core.World.Components.Physics
 {
     [ComponentInfo("Physics", Description = "Represents a dynamic physics body with mass and velocity")]
-    internal class RigidBodyComponent(float mass) : Component, IPhysicsComponent
+    internal class RigidBodyComponent(float mass) : Component
     {
-        public RigidBody RigidBody = null!;
+        [UsedImplicitly]
+        private RigidBodyComponent() : this(0)
+        {
+        }
+
+        public RigidBody RigidBody { get; private set; }
+
+        private CollisionShape _shape;
+        private bool _dirty = true;
+        private Vector3 _previousPosition;
+        private Vector3 _currentPosition;
+        private Quaternion _previousRotation;
+        private Quaternion _currentRotation;
 
         [EditorProperty]
         public float Mass
@@ -20,102 +34,150 @@ namespace RE.Core.World.Components.Physics
             get;
             set
             {
-                if (IsPhysicsObjectInitialized)
-                {
-                    PhysicsManager.DynamicsWorld.RemoveRigidBody(RigidBody);
-
-                    float newMass = value;
-                    Vector3 localInertia = Vector3.Zero;
-
-                    if (newMass != 0.0f)
-                    {
-                        RigidBody.CollisionShape.CalculateLocalInertia(newMass, out localInertia);
-                    }
-
-                    RigidBody.SetMassProps(newMass, localInertia);
-                    //RigidBody.LinearVelocity = Vector3.Zero;
-                    //RigidBody.AngularVelocity = Vector3.Zero;
-
-                    PhysicsManager.DynamicsWorld.AddRigidBody(RigidBody);
-                }
-
                 field = value;
+                RebuildPhysics();
             }
         } = mass;
 
-        public bool IsPhysicsObjectInitialized => RigidBody != null;
-
-        public RigidBodyComponent() : this(mass: 1) { }
+        [EditorProperty]
+        public float Friction
+        {
+            get;
+            set
+            {
+                field = value;
+                RigidBody.Friction = value;
+            }
+        } = 1;
 
         public override void Start()
         {
-            if (IsPhysicsObjectInitialized)
-                return;
-            TryInitializePhysics();
-            RigidBody.Activate();
+            RebuildPhysics();
+            RigidBody?.Activate();
         }
 
-        public void TryInitializePhysics()
+        public override void PhysicsSync()
         {
-            if (RigidBody != null!)
-                return;
+            RigidBody.GetWorldTransform(out var t);
 
-            var collider = GetComponent<ColliderComponent>();
-            if (collider?.IsPhysicsObjectInitialized ?? false)
-            {
-                RigidBody = collider.RigidBody;
-                Mass = Mass;
-            }
-            else if (!RigidBody?.IsInWorld ?? true)
-            {
-                var transform = Owner.Transform;
-                var startTransform = Matrix.Identity;
+            _previousPosition = _currentPosition;
+            _previousRotation = _currentRotation;
 
-                startTransform.Origin = transform.Position.ToBulletVector3();
-                startTransform.Basis =
-                    Matrix.RotationQuaternion(transform.Rotation.ToBulletQuaternion());
-                Vector3 localInertia = Vector3.Zero;
-
-                if (Mass > 0f)
-                    collider?.CollisionShape?.CalculateLocalInertia(Mass, out localInertia);
-                
-                var motionState = new DefaultMotionState(startTransform);
-                var rbInfo = new RigidBodyConstructionInfo(Mass, motionState,
-                    collider?.CollisionShape ?? new BoxShape(0.5f), localInertia);
-                RigidBody = new RigidBody(rbInfo) { UserObject = this };
-
-                PhysicsManager.DynamicsWorld.AddRigidBody(RigidBody);
-            }
+            _currentPosition = t.Origin;
+            _currentRotation = Quaternion.RotationMatrix(t.Basis);
         }
 
         public override void Update(FrameEventArgs args)
         {
-            if (RigidBody == null! || RigidBody.MotionState == null || Mass == 0f || SceneEditor.Enabled)
+            if (RigidBody == null)
                 return;
 
-            RigidBody.GetWorldTransform(out var bulletTransform);
-            Owner.Transform.Position = new OpenTK.Mathematics.Vector3(bulletTransform.Origin.X,
-                bulletTransform.Origin.Y, bulletTransform.Origin.Z);
+            if (_dirty)
+                RebuildPhysics();
 
-            var bulletRotation = Quaternion.RotationMatrix(bulletTransform.Basis);
-            Owner.Transform.Rotation = new OpenTK.Mathematics.Quaternion(bulletRotation.X, bulletRotation.Y,
-                bulletRotation.Z, bulletRotation.W);
+            if ((RigidBody.CollisionFlags & CollisionFlags.KinematicObject) != 0)
+                return;
+
+
+            float alpha = PhysicsManager.Alpha;
+
+            Owner.Transform.Position =
+                Vector3.Lerp(
+                    _previousPosition,
+                    _currentPosition,
+                    alpha).ToOpenTkVector3();
+
+            Owner.Transform.Rotation =
+                Quaternion.Slerp(
+                    _previousRotation,
+                    _currentRotation,
+                    alpha).ToOpenTkQuaternion();
+        }
+
+        public void MarkDirty()
+        {
+            _dirty = true;
+        }
+
+        private CollisionShape BuildShape()
+        {
+            var colliders = Owner.GetComponents<ColliderComponent>();
+
+            if (colliders.Count == 0)
+                return new EmptyShape();
+
+            if (colliders.Count == 1)
+                return colliders[0].CreateCollisionShape();
+
+            var compound = new CompoundShape();
+
+            foreach (var c in colliders)
+            {
+                var shape = c.CreateCollisionShape();
+                compound.AddChildShape(Matrix.Identity, shape);
+            }
+
+            return compound;
+        }
+
+        private void RebuildPhysics()
+        {
+            Log.Information("Rebuild {obj}. {f}", Owner, RigidBody == null);
+            if (RigidBody != null)
+            {
+                PhysicsManager.DynamicsWorld.RemoveRigidBody(RigidBody);
+                RigidBody.Dispose();
+                RigidBody = null;
+            }
+
+            _shape?.Dispose();
+            _shape = BuildShape();
+
+            var transform = Owner.Transform;
+
+            var start = Matrix.Identity;
+            start.Origin = transform.Position.ToBulletVector3();
+            start.Basis = Matrix.RotationQuaternion(transform.Rotation.ToBulletQuaternion());
+
+            Vector3 inertia = Vector3.Zero;
+            if (Mass != 0)
+                _shape.CalculateLocalInertia(Mass, out inertia);
+
+            var motion = new DefaultMotionState(start);
+
+            var info = new RigidBodyConstructionInfo(Mass, motion, _shape, inertia);
+
+            RigidBody = new RigidBody(info)
+            {
+                UserObject = this,
+                Friction = Friction,
+            };
+
+            PhysicsManager.DynamicsWorld.AddRigidBody(RigidBody);
+
+            _dirty = false;
         }
 
         public override void OnDestroy()
         {
-            if (RigidBody != null!)
+            if (RigidBody != null)
             {
                 PhysicsManager.DynamicsWorld.RemoveRigidBody(RigidBody);
                 RigidBody.Dispose();
-                RigidBody = null!;
+                RigidBody = null;
             }
+
+            _shape?.Dispose();
+
             base.OnDestroy();
         }
+
         public override JsonNode GetSaveData()
         {
-            JsonObject root = new() { { nameof(Mass), Mass } };
-            return root;
+            return new JsonObject
+            {
+                { nameof(Mass), Mass }
+            };
         }
     }
 }

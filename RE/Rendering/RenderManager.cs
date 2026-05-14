@@ -1,4 +1,5 @@
-﻿using OpenTK.Graphics.OpenGL;
+﻿using BulletSharp;
+using OpenTK.Graphics.OpenGL;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using RE.Core;
@@ -6,6 +7,8 @@ using RE.Core.Assets;
 using RE.Core.Ui;
 using RE.Core.Ui.Debug;
 using RE.Core.World;
+using RE.Core.World.Components.Physics;
+using RE.Core.World.Physics;
 using RE.Editor;
 using RE.Utils;
 using Plane = System.Numerics.Plane;
@@ -151,9 +154,8 @@ public class RenderManager
         if (!SceneEditor.Enabled && SceneManager.CurrentScene != null!)
         {
             FrameProfiler.Begin("components");
- 
+            
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
-
             GL.Enable(EnableCap.DepthTest);
             GL.DepthMask(true);
             GL.Disable(EnableCap.Blend);

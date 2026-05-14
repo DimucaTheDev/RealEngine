@@ -2,6 +2,7 @@
 using System.Collections.Immutable;
 using System.Globalization;
 using System.Text.RegularExpressions;
+using BulletSharp;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using RE.Core.Assets;
@@ -35,7 +36,6 @@ namespace RE.Core.Scripting
         public static event Action<string, List<string>, string?>? CommandExecuted;
         public static IReadOnlyList<string> RegisteredCommands => CommandDescriptions.Keys.ToList().AsReadOnly();
 
-
         private static int _recursionDepth;
         private static readonly Dictionary<string, string> CommandDescriptions = [];
         private const int MaxRecursionDepth = 100;
@@ -55,6 +55,7 @@ namespace RE.Core.Scripting
                 Log.Error("Max recursion depth exceeded.");
                 return;
             }
+
             try
             {
                 _recursionDepth++;
@@ -65,6 +66,7 @@ namespace RE.Core.Scripting
                 _recursionDepth--;
             }
         }
+
         /// <summary>
         /// Parses and executes the specified command string, invoking the associated command handler if applicable.
         /// </summary>
@@ -87,15 +89,18 @@ namespace RE.Core.Scripting
                     value = value.Substring(1, value.Length - 2);
                 result[i] = value;
             }
+
             try
             {
                 CommandExecuted?.Invoke(result[0], result[1..].ToList(), command);
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error executing command \"{Command} {Args}\"", command, string.Join(' ', result[1..].ToList()));
+                Log.Error(ex, "Error executing command \"{Command} {Args}\"", command,
+                    string.Join(' ', result[1..].ToList()));
             }
         }
+
         /// <summary>
         /// Registers a command handler that is invoked when a command with the specified name is executed.
         /// </summary>
@@ -123,6 +128,7 @@ namespace RE.Core.Scripting
                 }
             };
         }
+
         /// <summary>
         /// Registers a command handler that is invoked when a command with a single string argument is executed.
         /// </summary>
@@ -141,6 +147,7 @@ namespace RE.Core.Scripting
                 Log.Warning("Command {Command} is already registered!", name);
                 return;
             }
+
             CommandExecuted += (cmd, args, full) =>
             {
                 if (cmd.Equals(name, StringComparison.OrdinalIgnoreCase))
@@ -167,7 +174,8 @@ namespace RE.Core.Scripting
                 {
                     string key = list[0];
                     object value = list[1];
-                    if (float.TryParse(list[1].Replace("f", ""), NumberStyles.Float, CultureInfo.InvariantCulture, out float floatValue))
+                    if (float.TryParse(list[1].Replace("f", ""), NumberStyles.Float, CultureInfo.InvariantCulture,
+                            out float floatValue))
                         value = floatValue;
                     else if (bool.TryParse(list[1], out bool boolValue))
                         value = boolValue;
@@ -195,6 +203,7 @@ namespace RE.Core.Scripting
                     Log.Information("Nothing to show");
                     return;
                 }
+
                 int l = Math.Max(15, Variables.GlobalVariables.Keys.Select(s => s.Length).Max());
                 int valueWidth = 15;
                 int totalWidth = l + valueWidth + 1;
@@ -206,20 +215,19 @@ namespace RE.Core.Scripting
 
                 foreach (var variable in Variables.GlobalVariables)
                 {
-                    Log.Information("{Name}|{Value}", variable.Key.PadRight(l), Format(variable.Value).PadLeft(valueWidth));
+                    Log.Information("{Name}|{Value}", variable.Key.PadRight(l),
+                        Format(variable.Value).PadLeft(valueWidth));
                 }
-                Log.Information(horizontalLine);
 
+                Log.Information(horizontalLine);
             }, "Get all variables in formatted table");
-            RegisterHandler("clear", _ =>
-            {
-                GameLogger.Log.Clear();
-            }, "Clear the log");
+            RegisterHandler("clear", _ => { GameLogger.Log.Clear(); }, "Clear the log");
             RegisterHandler("sound", list =>
             {
                 if (list.Count == 0)
                 {
-                    Log.Error("Usage: {Usage}", "sound play <name> [volume] [inWorld] [maxDistance] [referenceDistance]");
+                    Log.Error("Usage: {Usage}",
+                        "sound play <name> [volume] [inWorld] [maxDistance] [referenceDistance]");
                     Log.Error("Usage: {Usage}", "sound stopall");
                     return;
                 }
@@ -231,9 +239,11 @@ namespace RE.Core.Scripting
                     throw new NotImplementedException();
                     if (list.Count < 2)
                     {
-                        Log.Error("Usage: {Usage}", "sound play <name> [volume] [inWorld] [maxDistance] [referenceDistance]");
+                        Log.Error("Usage: {Usage}",
+                            "sound play <name> [volume] [inWorld] [maxDistance] [referenceDistance]");
                         return;
                     }
+
                     string name = list[1];
                     float volume = list.Count > 2 ? float.Parse(list[2]) : 1f;
                     bool inWorld = list.Count > 3 && bool.Parse(list[3]);
@@ -262,16 +272,16 @@ namespace RE.Core.Scripting
                     Log.Error("File not found: {FilePath}", list[0]);
                     return;
                 }
+
                 string src = ContentManager.GetString(list[0]);
                 foreach (var line in src.Split('\n'))
                 {
                     ExecuteCommandSafe(line);
                 }
             }, "Run script in selected path");
-            RegisterSingleArgHandler("echo", c =>
-            {
-                Log.Information(new string(c[c.IndexOf(' ')..].SkipWhile(s => s == ' ').ToArray()));
-            }, "Prints to log with Info level");
+            RegisterSingleArgHandler("echo",
+                c => { Log.Information(new string(c[c.IndexOf(' ')..].SkipWhile(s => s == ' ').ToArray())); },
+                "Prints to log with Info level");
             RegisterHandler("frustum", args =>
             {
                 if (!args.Any())
@@ -306,11 +316,10 @@ namespace RE.Core.Scripting
                         Log.Error("File not found: {FilePath}", $"assets/maps/{name}/data.json");
                         return;
                     }
+
                     Log.Information("Loading {Level}... ", name);
-                    SceneManager.LoadScene(SceneManager.ParseScene(name), true, () =>
-                    {
-                        SoundManager.PlayOneShotEvent("event:/Flash");
-                    });
+                    SceneManager.LoadScene(SceneManager.ParseScene(name), true,
+                        () => { SoundManager.PlayOneShotEvent("event:/Flash"); });
                 }
             }, "Print level name or load a new one");
             RegisterHandler("editor", args =>
@@ -322,14 +331,10 @@ namespace RE.Core.Scripting
                     Log.Error("Editor can be closed only via Editor -> Exit");
                 //   ov.Disable();
             }, "Starts the scene editor for current level");
-            RegisterHandler("credits", _ =>
-            {
-                WinApi.MessageBox(0, "Made with ❤️ by DimucaTheDev", "About", 0x40);
-            });
-            RegisterSingleArgHandler("debug", s =>
-            {
-                DebugOverlay.Instance.IsVisible = !DebugOverlay.Instance.IsVisible;
-            }, "Open or close debug overlay");
+            RegisterHandler("credits", _ => { WinApi.MessageBox(0, "Made with ❤️ by DimucaTheDev", "About", 0x40); });
+            RegisterSingleArgHandler("debug",
+                s => { DebugOverlay.Instance.IsVisible = !DebugOverlay.Instance.IsVisible; },
+                "Open or close debug overlay");
             RegisterSingleArgHandler("init_test", s =>
             {
                 Initializer.AddStep(new InitializingTask
@@ -352,13 +357,12 @@ namespace RE.Core.Scripting
                     Log.Error("Usage: {Usage}", "vsync enable|disable");
                     return;
                 }
+
                 Game.Instance.VSync = args[0] == "enable" ? VSyncMode.On : VSyncMode.Off;
                 Log.Information("V-Sync {State}", Game.Instance.VSync == VSyncMode.Off ? "OFF" : "ON");
-
             }, "Enable or disable V-Sync");
-            RegisterHandler("fps", list => { Game.Instance.UpdateFrequency = int.Parse(list.First()); }, "Set max frame rate");
-
-
+            RegisterHandler("fps", list => { Game.Instance.UpdateFrequency = int.Parse(list.First()); },
+                "Set max frame rate");
             RegisterSingleArgHandler("test_1", _ =>
             {
                 void SpawnCube(Vector3 p)
@@ -391,13 +395,19 @@ namespace RE.Core.Scripting
                             start.Z + xStart + i * step,
                             start.Y + row * step + 0.2f,
                             start.X
-                          //  start.X + zOffset
+                            //  start.X + zOffset
                         );
 
                         Time.Schedule(100 + 150 * (c), () => SpawnCube(pos));
                     }
                 }
             });
+            RegisterHandler("bo", e =>
+                {
+                    var m = Enum.Parse<DebugDrawModes>(e.First(), true);
+                    BulletDebugDrawer.Mode = m;
+                    Log.Information($"{nameof(BulletDebugDrawer.Mode)} = {{Value}}", m);
+                }, $"Set Bullet overlay. Possible values: {string.Join(", ", Enum.GetNames(typeof(DebugDrawModes)))}");
         }
 
         private static string Format(object? obj)

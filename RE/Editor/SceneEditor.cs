@@ -537,6 +537,8 @@ namespace RE.Editor
             bool SatisfiesCondition(Type c, out List<Type> missing)
             {
                 missing = new();
+                
+                //append list with required attributes from base types 
                 var reqAtts = c.GetCustomAttributes<RequiresComponentAttribute>();
                 if (_selectedObject!.Components.Any(s => s.GetType() == c))
                     return false;

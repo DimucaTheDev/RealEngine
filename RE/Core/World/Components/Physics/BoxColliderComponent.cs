@@ -11,18 +11,18 @@ namespace RE.Core.World.Components.Physics
     {
         public override CollisionShape CreateCollisionShape()
         {
-            Vector3 halfExtents = new Vector3(
-                Owner.Transform.Scale.X * 1,// 0.5f,
-                Owner.Transform.Scale.Y * 1,// 0.5f,
-                Owner.Transform.Scale.Z * 1 // 0.5f
-            );
-            CollisionShape boxShape = new BoxShape(halfExtents * Multiplier.ToBulletVector3());
-            return boxShape;
+            var mesh = Owner.GetComponent<MeshComponent>();
+
+            if (mesh is null)
+                return new BoxShape(0.5f);
+
+            var size = mesh.ModelRenderer.MaxBounds - mesh.ModelRenderer.MinBounds;
+
+            var halfExtents = size * 0.5f * Owner.Transform.Scale;
+
+            return new BoxShape(halfExtents.ToBulletVector3());
         }
-        public override JsonNode GetSaveData()
-        {
-            JsonObject root = new() { { nameof(Multiplier), new JsonArray { Multiplier.X, Multiplier.Y, Multiplier.Z } } };
-            return root;
-        }
+
+        public override JsonNode GetSaveData() => new JsonObject();
     }
 }

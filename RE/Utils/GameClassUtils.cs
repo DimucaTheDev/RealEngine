@@ -186,8 +186,9 @@ namespace RE.Utils
         {
             AppDomain.CurrentDomain.UnhandledException += static (s, e) =>
             {
-                static string InternalCheck64Bit() => Environment.Is64BitProcess ? "64-bit" : "32-bit";
-
+                if (Debugger.IsAttached)
+                    return;
+                
                 var ex = (Exception)e.ExceptionObject;
                 var process = Process.GetCurrentProcess();
                 var memInfo = GC.GetGCMemoryInfo();
@@ -195,7 +196,7 @@ namespace RE.Utils
                 StringBuilder report = new StringBuilder();
                 report.AppendLine("--- FATAL ERROR REPORT ---");
                 report.AppendLine($"Time: {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
-                report.AppendLine($"OS: {RuntimeInformation.OSDescription} ({InternalCheck64Bit()})");
+                report.AppendLine($"OS: {RuntimeInformation.OSDescription} ({(Environment.Is64BitProcess ? "64-bit" : "32-bit")})");
                 report.AppendLine($"CPU: {Environment.ProcessorCount} cores, {RuntimeInformation.ProcessArchitecture}");
                 report.AppendLine($"Runtime: {RuntimeInformation.FrameworkDescription}");
                 report.AppendLine($"Process ID: {process.Id}");
@@ -560,7 +561,7 @@ namespace RE.Utils
                 Description = "Level of MSAA. 0 Means no anti-aliasing.",
                 DefaultValueFactory = _ => 2
             };
-            
+
             RootCommand rootCommand = new($"{ProductName} command line options")
             {
                 widthOption,

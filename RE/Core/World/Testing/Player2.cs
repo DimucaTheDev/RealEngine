@@ -25,7 +25,7 @@ namespace RE.Core.World.Testing
                     -forward.Y * recoilForce,
                     -forward.Z * recoilForce
                 );
-                PlayerGameObject.GetComponent<RigidBodyComponent>()!.RigidBody.ApplyCentralImpulse(impulse);
+                //PlayerGameObject.GetComponent<RigidBodyComponent>()!.RigidBody.ApplyCentralImpulse(impulse);
             }
         }
     }
