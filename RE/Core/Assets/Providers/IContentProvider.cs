@@ -8,7 +8,7 @@ namespace RE.Core.Assets.Providers
     public interface IContentProvider
     {
         /// <summary>
-        /// Reads a file from <paramref name="offset"/>  to <paramref name="offset"/>+<paramref name="count"/> and returns its content as a byte array.
+        /// Reads a file from <paramref name="offset"/> to <paramref name="offset"/>+<paramref name="count"/> and returns its content as a byte array.
         /// </summary>
         /// <param name="path">Virtual path to file.</param>
         /// <param name="offset">Start offset.</param>

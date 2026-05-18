@@ -43,7 +43,7 @@ namespace RE.Core
         /// </summary>
         /// <remarks>This method is not called if <see cref="SaveComponent"/> is set to <see langword="false"/></remarks>
         /// <returns><see cref="JsonNode"/> that contains saved data</returns>
-        public abstract JsonNode GetSaveData();
+        public virtual JsonNode GetSaveData() => GetDataForProperties();
 
         protected JsonNode GetDataForProperties()
         {

@@ -2,36 +2,46 @@
 using BulletSharp;
 using BulletSharp.Math;
 using RE.Core.Scripting.Attributes;
+using RE.Utils;
 
 namespace RE.Core.World.Components.Physics
 {
-    [RequiresComponent(typeof(MeshComponent))]
-    [ComponentInfo("Physics/Collision", Description = "Mesh collider intended for static objects only (non-movable collision shape based on triangle mesh)")]
+    [RequiresComponent<MeshComponent>]
+    [ComponentInfo("Physics/Collision",
+        Description =
+            "Mesh collider is intended for static objects only (non-movable collision shape based on triangle mesh)")]
     internal class MeshColliderComponent : ColliderComponent
     {
         public override CollisionShape CreateCollisionShape()
         {
             var meshComponent = Owner.GetComponent<MeshComponent>()!;
             var modelRenderer = meshComponent.GetModelRenderer();
+            var modelMesh = modelRenderer.Model.Mesh;
 
-            if (meshComponent == null! || meshComponent.GetModelRenderer().PhysicsIndices == null)
+            if (!modelMesh.Indices.Any())
                 throw new InvalidOperationException("Model does not have physics data");
 
             Matrix startTransform = Matrix.Identity;
-            startTransform.Origin = new Vector3(modelRenderer.Position.X, modelRenderer.Position.Y, modelRenderer.Position.Z);
-            startTransform.Basis = Matrix.RotationQuaternion(new Quaternion(modelRenderer.Rotation.X, modelRenderer.Rotation.Y, modelRenderer.Rotation.Z, modelRenderer.Rotation.W));
 
-            var bulletVertices = ConvertToBulletVectors(modelRenderer.PhysicsVertices!, modelRenderer.Scale);
-            var bulletIndices = modelRenderer.PhysicsIndices!.ToArray();
+            startTransform.Origin =
+                new Vector3(modelRenderer.Position.X, modelRenderer.Position.Y, modelRenderer.Position.Z);
+            startTransform.Basis =
+                Matrix.RotationQuaternion(new Quaternion(modelRenderer.Rotation.X, modelRenderer.Rotation.Y,
+                    modelRenderer.Rotation.Z, modelRenderer.Rotation.W));
 
-            var meshInterface = new TriangleIndexVertexArray(
-                bulletIndices,
-                bulletVertices);
+            var vertices = 
+                ConvertToBulletVectors(modelMesh.Vertices
+                    .SelectMany(s => new[] { s.X, s.Y, s.Z })
+                    .ToArray()!, modelRenderer.Scale);
+            
+            var indices = modelMesh.Indices!.ToArray();
 
+            var meshInterface = new TriangleIndexVertexArray(indices.ToInt(), vertices);
+            
             var aabbMin = new Vector3(float.PositiveInfinity, float.PositiveInfinity, float.PositiveInfinity);
             var aabbMax = new Vector3(float.NegativeInfinity, float.NegativeInfinity, float.NegativeInfinity);
 
-            foreach (var v in bulletVertices)
+            foreach (var v in vertices)
             {
                 aabbMin.X = Math.Min(aabbMin.X, v.X);
                 aabbMin.Y = Math.Min(aabbMin.Y, v.Y);
@@ -45,10 +55,11 @@ namespace RE.Core.World.Components.Physics
             CollisionShape meshShape = new BvhTriangleMeshShape(meshInterface, true);
             return meshShape;
         }
+
         private static Vector3[] ConvertToBulletVectors(float[] data, OpenTK.Mathematics.Vector3 scale)
         {
             if (data.Length % 3 != 0)
-                throw new ArgumentException("PhysicsVertices should be multiple of 3");
+                throw new ArgumentException("PhysicsVertices must be multiple of 3");
 
             var result = new Vector3[data.Length / 3];
             for (int i = 0; i < result.Length; i++)
@@ -59,8 +70,10 @@ namespace RE.Core.World.Components.Physics
                     data[i * 3 + 2] * scale.Z
                 );
             }
+
             return result;
         }
+
         public override JsonNode GetSaveData()
         {
             return GetDataForProperties();

@@ -19,8 +19,7 @@ namespace RE.Rendering.Renderables
 
         private static readonly Dictionary<string, (Texture texture, int width, int height)> TextureCache = new();
 
-        public Vector3 Position { get; set; }
-        public override RenderLayer RenderLayer => RenderLayer.World;
+        public Vector3 Position { get; set; } 
         public override bool IsVisible { get; set; } = true;
         public string Path { get; set; }
         public float Scale { get; set; }

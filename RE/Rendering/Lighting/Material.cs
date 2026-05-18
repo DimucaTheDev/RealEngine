@@ -1,18 +1,21 @@
-﻿using RE.Utils;
+﻿using RE.Core.Assets;
+using RE.Rendering.Texturing;
+using RE.Utils;
 using sampler2D = int;
 
 namespace RE.Rendering.Lighting
 {
-    [GlStructName("Material")]
-    public struct Material()
+    public class Material
     {
-        [GlPropertyName("diffuse")] 
-        public sampler2D DiffuseTexture { get; set; } // sampler2D
-
-        [GlPropertyName("specular")]
-        public sampler2D SpecularTexture { get; set; }
-
-        [GlPropertyName("shininess")]
-        public float Shininess { get; set; } = 32;
+        public Material()
+        {
+            ShaderProgram = new ShaderProgram();
+            ShaderProgram.AttachShader("assets/shaders/assimp.vert");
+            ShaderProgram.AttachShader("assets/shaders/assimp.frag");
+        }
+        
+        public ShaderProgram ShaderProgram { get; set; }
+        public Texture Texture;
+        public MaterialData Data = new();
     }
 }

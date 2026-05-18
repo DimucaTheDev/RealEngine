@@ -2,10 +2,7 @@
 using RE.Utils;
 
 namespace RE.Editor.Notification
-{
-    /// <summary>
-    /// Основной класс уведомления
-    /// </summary>
+{ 
     public class Toast
     {
         public ToastType Type { get; set; }

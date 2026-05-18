@@ -5,6 +5,7 @@ namespace RE.Rendering.Texturing
 {
     public class AnimatedTexture(List<StaticTexture> frames, float frameRate) : Texture
     {
+        
         public List<StaticTexture> Frames = frames;
         public float FrameRate { get; set; } = frameRate;
 

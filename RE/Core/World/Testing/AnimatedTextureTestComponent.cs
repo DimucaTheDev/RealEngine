@@ -1,11 +1,14 @@
 ﻿using System.Text.Json.Nodes;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
+using RE.Core.Scripting.Attributes;
 using RE.Core.World.Components;
 using RE.Rendering.Texturing;
+using RE.Utils;
 
 namespace RE.Core.World.Testing
 {
+    [RequiresComponent<MeshComponent>]
     internal class AnimatedTextureTestComponent : Component
     {
         public override void Start()
@@ -23,7 +26,7 @@ namespace RE.Core.World.Testing
                 new("assets/testing/9.png"),
             ], 1);
             //var a = new StaticTexture("assets/testing/1.png");
-            GetComponent<MeshComponent>()!.ModelRenderer.SetTexture(a);
+            GetComponent<MeshComponent>()!.ModelRenderer.Model.SetTexture(a);
         }
 
         /// <inheritdoc />

@@ -67,12 +67,8 @@ namespace RE.Editor.Panels.Viewport
         private bool _rotating;
         private CollisionDispatcher _dispatcher;
         private DbvtBroadphase _broadphase;
-        private SpriteRenderer _cameraSprite;
-        private float mouseX;
-        private float mouseY;
-        private Vector2 _lastMousePos;
-        private Vector2 _lastClickPosition;
-        private Vector2 _lockedMousePos;
+        private SpriteRenderer _cameraSprite; 
+        private Vector2 _lastClickPosition; 
         private Vector2 _lockedGlobalPos;
         private TkVector3 _cameraVelocity = TkVector3.Zero;
         private Vector4 _viewportRect;
@@ -100,8 +96,10 @@ namespace RE.Editor.Panels.Viewport
             _gridOffIcon = new StaticTexture("assets/editor/sprites/gridOff.png");
             _gridOnIcon = new StaticTexture("assets/editor/sprites/gridOn.png");
             _physOptionsIcon = new AnimatedTexture(
-            [StaticTexture.CreateMissingTexture(4),
-                StaticTexture.CreateMissingTexture(4, [0, 255, 0, 255])], 2);
+            [
+                StaticTexture.CreateMissingTexture(4),
+                StaticTexture.CreateMissingTexture(4, [0, 255, 0, 255])
+            ], 2);
             _particlesOn = new StaticTexture("assets/editor/sprites/previewParticlesOn.png");
             _particlesOff = new StaticTexture("assets/editor/sprites/previewParticlesOff.png");
             _startSimulation = new StaticTexture("assets/editor/sprites/run.png");
@@ -121,7 +119,7 @@ namespace RE.Editor.Panels.Viewport
         }
 
         public void Draw()
-        { 
+        {
             _cameraSprite.Position = Camera.Main.Position;
             _cameraSprite.Render(new(Time.DeltaTime));
             RenderManager.DrawCameraFrustum();
@@ -146,7 +144,8 @@ namespace RE.Editor.Panels.Viewport
 
 
                 MouseDown = (IsWindowFocused() && IsWindowHovered());
-                bool hovered = IsWindowHovered(ImGuiHoveredFlags.RootWindow | ImGuiHoveredFlags.AllowWhenBlockedByPopup);
+                bool hovered =
+                    IsWindowHovered(ImGuiHoveredFlags.RootWindow | ImGuiHoveredFlags.AllowWhenBlockedByPopup);
                 bool gizmoActive = ImGuizmo.IsUsingAny() || ImGuizmo.IsOver();
                 var io = GetIO();
                 bool guiWantsMouse = io.WantCaptureMouse || IsAnyItemActive();
@@ -155,13 +154,15 @@ namespace RE.Editor.Panels.Viewport
                 {
                     CameraRotate = hovered && IsMouseDown(ImGuiMouseButton.Right);
                 }
+
                 bool guiWantsKeyboard = io.WantCaptureKeyboard || IsAnyItemActive();
                 if (IsWindowFocused())
                     MoveCamera();
 
                 var contentSize = GetContentRegionAvail();
 
-                if (contentSize is { X: > 0, Y: > 0 } && (ViewportSize.X != contentSize.X || ViewportSize.Y != contentSize.Y))
+                if (contentSize is { X: > 0, Y: > 0 } &&
+                    (ViewportSize.X != contentSize.X || ViewportSize.Y != contentSize.Y))
                 {
                     ViewportSize = contentSize;
                     Game.Instance.SetupSceneFbo((int)ViewportSize.X, (int)ViewportSize.Y);
@@ -195,28 +196,19 @@ namespace RE.Editor.Panels.Viewport
                 DrawGrid();
                 DrawGizmos();
 
-                foreach (var go in SceneManager.CurrentScene.GameObjects)
-                {
-                    foreach (var comp in go.Components)
-                    {
-                        if (comp is IViewportRenderer vr)
-                        {
-                            vr.ViewportRender(new OpenTK.Mathematics.Vector2(size.X, size.Y), new OpenTK.Mathematics.Vector2(size.Z, size.W));
-                        }
-                    }
-                }
                 if (IsMouseDown(ImGuiMouseButton.Middle) && hovered && !gizmoActive)
                     PanoramicCameraMove();
                 LeftMouseButtonHandler();
 
                 DrawHudBoundaries();
             }
-            End(); 
+
+            End();
             //CollisionWorld.DebugDrawWorld();
         }
 
         private void DrawHudBoundaries()
-        { 
+        {
             foreach (var child in Hud.Root.Children)
             {
                 var b = child.GetBoundary();
@@ -255,6 +247,7 @@ namespace RE.Editor.Panels.Viewport
                     _rotating = false;
                     WinApi.SetCursorPos((int)_lockedGlobalPos.X, (int)_lockedGlobalPos.Y);
                 }
+
                 return;
             }
 
@@ -275,6 +268,7 @@ namespace RE.Editor.Panels.Viewport
                 }
             }
         }
+
         private static Vector4 SetImGuizmoRect()
         {
             var contentRegionSize = GetContentRegionAvail();
@@ -287,6 +281,7 @@ namespace RE.Editor.Panels.Viewport
 
             return new(x, y, w, h);
         }
+
         private void DrawGizmos()
         {
             if (SceneEditor.SelectedObject != null)
@@ -372,9 +367,9 @@ namespace RE.Editor.Panels.Viewport
                 if (callback.HasHit)
                 {
                     var hits = callback.CollisionObjects.Zip(
-                            callback.HitFractions,
-                            (obj, fraction) => new { Object = obj, Fraction = fraction }
-                        ).OrderBy(hit => hit.Fraction).ToList();
+                        callback.HitFractions,
+                        (obj, fraction) => new { Object = obj, Fraction = fraction }
+                    ).OrderBy(hit => hit.Fraction).ToList();
 
                     var currentClickPosition = GetMousePos();
                     var cursorMoved = (currentClickPosition - _lastClickPosition).LengthSquared() > 16 /* 4x4 pixels */;
@@ -385,10 +380,12 @@ namespace RE.Editor.Panels.Viewport
                             {
                                 return component.Owner;
                             }
+
                             if (h.Object.UserObject is GameObject g)
                             {
                                 return g;
                             }
+
                             return null;
                         })
                         .Where(g => g != null)
@@ -426,6 +423,7 @@ namespace RE.Editor.Panels.Viewport
                 }
             }
         }
+
         private void UpdateBulletObjects()
         {
             foreach (var g in SceneManager.CurrentScene.GameObjects)
@@ -448,10 +446,11 @@ namespace RE.Editor.Panels.Viewport
                 {
                     g.ViewportObject.CollisionShape.LocalScaling = bulletScale;
                 }
-                CollisionWorld.UpdateSingleAabb(g.ViewportObject);
 
+                CollisionWorld.UpdateSingleAabb(g.ViewportObject);
             }
         }
+
         private void PanoramicCameraMove()
         {
             var mouseDelta = GetIO().MouseDelta;
@@ -470,6 +469,7 @@ namespace RE.Editor.Panels.Viewport
 
             Camera.Editor.Position += offset;
         }
+
         private void DrawGrid()
         {
             //var color = new OpenTK.Mathematics.Vector4(0.25f, 0.25f, 0.25f, 0.1f);
@@ -504,15 +504,17 @@ namespace RE.Editor.Panels.Viewport
                     LineRenderer.DrawLine(new(0, -size, 0), new(0, size, 0), new(0, 1, 0, 1), new(0, 1, 0, 1));
             }
         }
+
         private void DrawDebugText()
         {
-            string[] data = [
+            string[] data =
+            [
                 $"Viewport size: {ViewportSize.X}x{ViewportSize.Y}",
                 $"Fov: {Camera.Editor.Fov}°",
                 $"Scene: {SceneManager.CurrentScene.Name}",
-                $"FPS: {1/Time.DeltaTime:F0}",
+                $"FPS: {1 / Time.DeltaTime:F0}",
                 $"Camera pos: {Camera.Editor.Position.X:F2} | {Camera.Editor.Position.Y:F2} | {Camera.Editor.Position.Z:F2}",
-                $"Selected Obj: {(SceneEditor.SelectedObject == null ? "<None>" : $"{SceneEditor.SelectedObject.Name??"<unnamed>"} ({SceneEditor.SelectedObject.Id})")}"
+                $"Selected Obj: {(SceneEditor.SelectedObject == null ? "<None>" : $"{SceneEditor.SelectedObject.Name ?? "<unnamed>"} ({SceneEditor.SelectedObject.Id})")}"
             ];
             foreach (var line in data.Index())
             {
@@ -520,6 +522,7 @@ namespace RE.Editor.Panels.Viewport
                 Text(line.Item);
             }
         }
+
         private void DrawToolbar()
         {
             void TextTooltip(string text)
@@ -571,6 +574,7 @@ namespace RE.Editor.Panels.Viewport
                     _ => Mode
                 };
             }
+
             TextTooltip("Should be object moved, rotated, or scaled relatively to itself or world.");
 
             SameLine(350);
@@ -590,16 +594,20 @@ namespace RE.Editor.Panels.Viewport
                     SceneEditor.SimulationRunning = false;
                 }
             }
-            TextTooltip($"{(!SceneEditor.SimulationRunning ? "Start" : "Stop")} world simulation.\nScene will return to its original state after simulation stops.");
+
+            TextTooltip(
+                $"{(!SceneEditor.SimulationRunning ? "Start" : "Stop")} world simulation.\nScene will return to its original state after simulation stops.");
 
             SameLine(400);
 
-            if (ImageButton("##light", SceneEditor.PreviewLight ? _lightOnIcon : _lightOffIcon, new Vector2(size, size)))
+            if (ImageButton("##light", SceneEditor.PreviewLight ? _lightOnIcon : _lightOffIcon,
+                    new Vector2(size, size)))
                 SceneEditor.PreviewLight = !SceneEditor.PreviewLight;
             TextTooltip("Preview light on objects");
 
             SameLine();
-            if (ImageButton("##skybox", SceneEditor.PreviewSkybox ? _skyboxOnIcon : _skyboxOffIcon, new Vector2(size, size)))
+            if (ImageButton("##skybox", SceneEditor.PreviewSkybox ? _skyboxOnIcon : _skyboxOffIcon,
+                    new Vector2(size, size)))
                 SceneEditor.PreviewSkybox = !SceneEditor.PreviewSkybox;
             TextTooltip("Show skybox in background");
 
@@ -621,7 +629,8 @@ namespace RE.Editor.Panels.Viewport
                 ShowPhysTooltip();
 
             SameLine();
-            if (ImageButton("##particles", SceneEditor.PreviewParticles ? _particlesOn : _particlesOff, new Vector2(size, size)))
+            if (ImageButton("##particles", SceneEditor.PreviewParticles ? _particlesOn : _particlesOff,
+                    new Vector2(size, size)))
                 SceneEditor.PreviewParticles = !SceneEditor.PreviewParticles;
             TextTooltip("Update and render particles in editor.");
 
@@ -629,7 +638,6 @@ namespace RE.Editor.Panels.Viewport
             if (ImageButton("##hud", _hud, new Vector2(size, size)))
                 SceneEditor.ShowHud = !SceneEditor.ShowHud;
             TextTooltip("Show HUD");
-
         }
 
         private void ShowPhysTooltip()
@@ -678,6 +686,7 @@ namespace RE.Editor.Panels.Viewport
                     _physHasHovered = false;
                 }
             }
+
             End();
 
             PopStyleColor();
@@ -718,11 +727,13 @@ namespace RE.Editor.Panels.Viewport
                 cam.Position += cam.Front.Normalized() * Mouse.ScrollDelta * 2.0f;
             }
         }
+
         private TkVector3 GetRightVector()
         {
             var right = TkVector3.Cross(WorldUp, Camera.Editor.Front);
             return TkVector3.Normalize(right);
         }
+
         private TkVector3 GetUpVector()
         {
             var right = GetRightVector();

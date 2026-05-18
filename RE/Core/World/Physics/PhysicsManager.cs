@@ -26,11 +26,11 @@ namespace RE.Core.World.Physics
     /// </summary>
     /// <remarks>The PhysicsManager provides static methods and properties to control the physics simulation
     /// lifecycle and perform global physics actions, such as applying explosion forces. It is responsible for setting
-    /// up the multi-threaded physics world and managing simulation state. Only one instance should be initialized per
+    /// up the multithreaded physics world and managing simulation state. Only one instance should be initialized per
     /// application. Thread safety is not guaranteed for all operations; ensure that physics methods are called from the
     /// appropriate context.
     /// </remarks>
-    public class PhysicsManager : DynamicAsset
+    public static class PhysicsManager
     {
         private class ContactState
         {
@@ -47,7 +47,7 @@ namespace RE.Core.World.Physics
         private static CollisionDispatcherMultiThreaded _dispatcher;
         private static CollisionConfiguration _collisionConfiguration;
         private static readonly int MaxThreadSolver = Environment.ProcessorCount;
-        static readonly Dictionary<(CollisionObject, CollisionObject), ContactState> _states = new();
+        private static readonly Dictionary<(CollisionObject, CollisionObject), ContactState> _states = new();
 
         const int EnterDelay = 3;
         const int ExitDelay = 10;
@@ -69,12 +69,8 @@ namespace RE.Core.World.Physics
         public static float Accumulator;
         public const float FixedTimeStep = 1 / 120f;
 
-        internal static void Init() => new PhysicsManager().OnLoad();
-
-        public override void OnLoad()
+        internal static void Init()
         {
-            base.OnLoad();
-
             if (_init)
             {
                 Log.Error("Physics Manager is already initialized!");
@@ -94,7 +90,7 @@ namespace RE.Core.World.Physics
             _dispatcher = new CollisionDispatcherMultiThreaded(_collisionConfiguration);
             _broadphase = new DbvtBroadphase();
             _solverPool = new ConstraintSolverPoolMultiThreaded(MaxThreadSolver);
-            Log.Debug("Solver pool thread set to {Threads}", MaxThreadSolver);
+            Log.Debug("Solver pool thread count set to {Threads}", MaxThreadSolver);
             _parallelSolver = new SequentialImpulseConstraintSolverMultiThreaded();
 
             DynamicsWorld = new DiscreteDynamicsWorldMultiThreaded(_dispatcher, _broadphase, _solverPool,
@@ -105,26 +101,6 @@ namespace RE.Core.World.Physics
             DynamicsWorld.Gravity = new BulletSharp.Math.Vector3(0, -9.81f, 0);
             DynamicsWorld.DebugDrawer = new BulletDebugDrawer();
 
-            Variables.VariableChanged += (s, e) =>
-            {
-                if (s == "gravity")
-                {
-                    DynamicsWorld.Gravity = new(0, (float)e!, 0);
-                    foreach (var obj in DynamicsWorld.CollisionObjectArray)
-                    {
-                        if (obj is RigidBody rb)
-                        {
-                            if (obj.UserObject is RigidBodyComponent or ColliderComponent)
-                            {
-                                if (((Component)obj.UserObject).Owner.Parent?.GetComponent<PlayerComponent>() != null!)
-                                    rb.Gravity = new(0, (float)e / -9.81f * -25f, 0);
-                            }
-                            else
-                                rb.Gravity = new(0, (float)e, 0);
-                        }
-                    }
-                }
-            };
             Log.Debug("Physics Manager initialized");
             _init = true;
         }
@@ -209,6 +185,7 @@ namespace RE.Core.World.Physics
                             c.PhysicsSync();
                         }
                     }
+
                     FrameProfiler.End();
 
 
@@ -223,14 +200,14 @@ namespace RE.Core.World.Physics
 
                 FrameProfiler.End();
             }
-            
+
             if (BulletDebugDrawer.Mode != DebugDrawModes.None)
                 DynamicsWorld.DebugDrawWorld();
         }
 
         public static float Alpha { get; private set; }
 
-        static void ProcessCollisions(DiscreteDynamicsWorld world)
+        private static void ProcessCollisions(DiscreteDynamicsWorld world)
         {
             var dispatcher = world.Dispatcher;
 
@@ -332,10 +309,8 @@ namespace RE.Core.World.Physics
                 _states.Remove(key);
         }
 
-        public override void OnUnload()
-        {
-            base.OnUnload();
-
+        internal static void Unload()
+        { 
             DynamicsWorld.Dispose();
             _broadphase.Dispose();
             _dispatcher.Dispose();

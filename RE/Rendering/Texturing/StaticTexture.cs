@@ -26,6 +26,8 @@ namespace RE.Rendering.Texturing
             Rgba
         }
 
+        public static readonly Func<string, StaticTexture> DefaultCacheFactory = s => new StaticTexture(s);
+
         private uint _glHandle;
         private ImTextureRef? _imHandle;
         private bool _deleted;
@@ -160,7 +162,6 @@ namespace RE.Rendering.Texturing
             if (_glHandle == 0)
             {
                 Log.Error("Redundant texture {Id} deletion.", _glHandle);
-                //Debugger.Break();
                 return;
             }
 

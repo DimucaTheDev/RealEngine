@@ -1,6 +1,6 @@
 ﻿namespace RE.Core.Scripting
 {
-    // todo: add XML docs
+    // why the hell does this exist 😿
     public interface IEditorPopup
     {
         bool ShouldRenderPopup();

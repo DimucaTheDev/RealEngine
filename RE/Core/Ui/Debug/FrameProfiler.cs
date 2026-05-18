@@ -10,7 +10,6 @@ namespace RE.Core.Ui.Debug
             public string Name = "";
             public double Start;
             public double End;
-            public ProfilerNode? Parent;
             public List<ProfilerNode> Children = new();
         }
 
@@ -51,8 +50,7 @@ namespace RE.Core.Ui.Debug
             var node = new ProfilerNode
             {
                 Name = name,
-                Start = _sw.Elapsed.TotalMilliseconds,
-                Parent = parent
+                Start = _sw.Elapsed.TotalMilliseconds
             };
 
             parent.Children.Add(node);

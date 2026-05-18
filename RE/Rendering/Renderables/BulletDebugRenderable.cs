@@ -4,8 +4,7 @@ using RE.Core.World.Physics;
 namespace RE.Rendering.Renderables
 {
     internal class BulletDebugRenderable : Renderable
-    {
-        public override RenderLayer RenderLayer { get; }
+    { 
         public override bool IsVisible { get; set; }
         public override void Render(FrameEventArgs args)
         {

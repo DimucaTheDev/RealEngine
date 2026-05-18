@@ -14,18 +14,13 @@ namespace RE.Editor.Panels
     {
         public void Draw()
         {
-            ImGuiViewportPtr viewport = GetMainViewport(); 
-            float sidebarWidth = 400;
-
-          
+            ImGuiViewportPtr viewport = GetMainViewport();  
+ 
             SetNextWindowPos(new Vector2(8, 27), ImGuiCond.FirstUseEver);
             SetNextWindowSize(new Vector2(310, 665), ImGuiCond.FirstUseEver);
-
-
+ 
             ImGuiWindowFlags flags = /*ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoCollapse |*/ ImGuiWindowFlags.MenuBar;
-
-            bool renderAbout = false;
-            bool renderQuit = false;
+ 
 
             Begin("UI Hierarchy", flags);
 

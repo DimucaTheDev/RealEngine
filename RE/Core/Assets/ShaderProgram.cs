@@ -179,7 +179,7 @@ namespace RE.Core.Assets
                     break;
 
                 default:
-                    throw new NotSupportedException($"Uniform doesn't support {typeof(T)}");
+                    throw new NotSupportedException($"Uniform doesn't support {typeof(T).FullName}");
             }
         }
 

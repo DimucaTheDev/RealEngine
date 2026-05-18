@@ -12,8 +12,7 @@ public class SphereLineRenderer : Renderable
     private readonly int _vbo;
     private readonly ShaderProgram _shaderProgram;
     private Vector3[] _vertices;
-
-    public override RenderLayer RenderLayer => RenderLayer.World;
+ 
     public override bool IsVisible { get; set; } = true;
     public Vector3 Center { get; set; }
     public float Radius { get; set; }

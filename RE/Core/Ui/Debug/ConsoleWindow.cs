@@ -16,7 +16,6 @@ namespace RE.Core.Ui.Debug
     {
         public static ConsoleWindow? Instance;
 
-        public override RenderLayer RenderLayer => RenderLayer.ImGui;
         public override bool IsVisible { get; set; }
 
         private static bool _shouldScrollToBottom = true;
@@ -35,7 +34,6 @@ namespace RE.Core.Ui.Debug
         private bool _showError = true;
         private int _historyIndex = -1;
         private string _savedInput = string.Empty;
-        private int _infoCount, _warnCount, _errorCount;
 
         public required string Id;
 

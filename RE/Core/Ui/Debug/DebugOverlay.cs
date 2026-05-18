@@ -28,7 +28,6 @@ internal class DebugOverlay : Renderable
     }
 
     public static DebugOverlay? Instance { get; private set; }
-    public override RenderLayer RenderLayer => RenderLayer.ImGui;
     public override bool IsVisible { get; set; } = true;
 
     private static readonly RingBuffer<int> Fps = new(1000);
@@ -41,16 +40,6 @@ internal class DebugOverlay : Renderable
     {
         //RenderProfilersWindow(args);
         RenderTimingsWindowWhatTheHellIsThisHelpMe();
-        TestWindow();
-    }
-
-    private void TestWindow()
-    {
-        Begin(">:(");
-        //Text(SceneManager.CurrentScene.Name);
-        Separator(); 
-        
-        End();
     }
 
     private void RenderTimingsWindowWhatTheHellIsThisHelpMe()

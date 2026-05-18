@@ -90,9 +90,10 @@ namespace RE.Core.Audio
                 .ToFmodVector3();
             var vel = Vector3.Zero.ToFmodVector3();
 
+            Assert(_fmodSystem.set3DListenerAttributes(0, ref pos, ref vel, ref forward, ref up));
+            Assert(_studioSystem.setListenerAttributes(0, new ATTRIBUTES_3D() { position = pos, forward = forward, up = up }));
             Assert(_studioSystem.update());
             Assert(_fmodSystem.update());
-            Assert(_fmodSystem.set3DListenerAttributes(0, ref pos, ref vel, ref forward, ref up));
         }
 
         private static FmodBank LoadBank(string resourcePath)
@@ -114,6 +115,13 @@ namespace RE.Core.Audio
             return bank;
         }
 
+        public static Sound GetEvent(string eventName)
+        {
+            Assert(_studioSystem.getEvent(eventName, out var eventDescription));
+            Assert(eventDescription.createInstance(out var instance));
+            return new Sound(instance);
+        }
+
         public static Sound PlayEvent(string eventName)
         {
             Assert(_studioSystem.getEvent(eventName, out var eventDescription));
@@ -122,7 +130,7 @@ namespace RE.Core.Audio
             return new Sound(instance);
         }
 
-        public static void PlayOneShotEvent(string eventName)
+        public static void PlayOneShotEvent(string eventName, Vector3? pos = null)
         {
             Assert(_studioSystem.getEvent(eventName, out var eventDescription));
             Assert(eventDescription.createInstance(out var instance));
@@ -172,7 +180,8 @@ namespace RE.Core.Audio
 
         public static bool Exists(string audioEvent)
         {
-            return _studioSystem.getEvent(audioEvent, out _) != Result.ERR_FILE_NOTFOUND;
+            return _studioSystem.getEvent(audioEvent, out _)
+                is not (Result.ERR_FILE_NOTFOUND or Result.ERR_EVENT_NOTFOUND);
         }
     }
 }

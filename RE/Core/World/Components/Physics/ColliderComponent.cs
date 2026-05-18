@@ -10,7 +10,7 @@ using Vector3 = OpenTK.Mathematics.Vector3;
 
 namespace RE.Core.World.Components.Physics
 {
-    [RequiresComponent(typeof(RigidBodyComponent))]
+    [RequiresComponent<RigidBodyComponent>]
     internal abstract class ColliderComponent : Component
     {
         public abstract CollisionShape CreateCollisionShape();

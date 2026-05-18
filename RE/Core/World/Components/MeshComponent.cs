@@ -1,37 +1,40 @@
-﻿using System.Text.Json.Nodes;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Text.Json.Nodes;
 using OpenTK.Windowing.Common;
+using RE.Core.Assets;
 using RE.Core.Scripting.Attributes;
 using RE.Editor;
+using RE.Rendering.Model;
 using RE.Rendering.Renderables;
+using RE.Utils;
 
 namespace RE.Core.World.Components
 {
-    [ComponentInfo("World", Description = $"MeshComponent renders object's model, specified by the '{nameof(Path)}' property")]
+    [ComponentInfo("World",
+        Description = $"MeshComponent renders object's model, specified by the '{nameof(Path)}' property")]
     public class MeshComponent : Component, IEditorUpdate, IEditorRender
     {
         public readonly ModelRenderer ModelRenderer;
 
         public MeshComponent()
         {
-            ModelRenderer = new ModelRenderer();
+            ModelRenderer = ModelRenderer.Create("");
         }
+
         public MeshComponent(string modelPath)
         {
-            ModelRenderer = new ModelRenderer(modelPath);
+            ModelRenderer = ModelRenderer.Create(modelPath);
         }
 
         public ModelRenderer GetModelRenderer() => ModelRenderer;
 
         [EditorProperty("Model Path")]
-        public string Path
+        public string? Path
         {
-            get => ModelRenderer.Path;
-            set => ModelRenderer.Path = value;
-        }
-
-        public override void Start()
-        {
-            ModelRenderer.AddedToRenderList();
+            get => ModelRenderer.Model.AssetPath;
+            set => ModelRenderer.Model =
+                AssetCache.Get(value ?? throw new ArgumentNullException(nameof(value)),
+                    ModelLoader.DefaultCacheFactory);
         }
 
         public override void Render(FrameEventArgs args)
@@ -39,27 +42,12 @@ namespace RE.Core.World.Components
             ModelRenderer.Position = Owner.Transform.Position;
             ModelRenderer.Rotation = Owner.Transform.Rotation;
             ModelRenderer.Scale = Owner.Transform.Scale;
-            if (!string.IsNullOrWhiteSpace(Path))
-                ModelRenderer.Render(args);
-        }
 
-        public override void OnDestroy()
-        {
-            ModelRenderer.RemovedFromRenderList();
-        }
-
-        public override JsonNode GetSaveData()
-        {
-            JsonObject root = new();
-            var args = new JsonArray { Path };
-            root.Add("args", args);
-            return root;
-        }
-
-        /// <inheritdoc />
+            ModelRenderer.Render(args);
+        } 
+         
         public void EditorUpdate(FrameEventArgs args) => Update(args);
-
-        /// <inheritdoc />
+         
         public void EditorRender(FrameEventArgs args) => Render(args);
     }
 }

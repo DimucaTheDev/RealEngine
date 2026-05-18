@@ -18,7 +18,7 @@
       "components": {
         "MeshComponent": {
           "args": [
-            "assets/models/button.smdl"
+            "assets/models/button.fbx"
           ]
         },
         "AnimatedTextureTestComponent": {},
@@ -105,7 +105,7 @@
       "components": {
         "PlayerComponent": {},
         "AudioSourceComponent": {
-          "AudioEvent": "event:/CreepyMusic"
+          "AudioEvent": "event:/CreepyMusic_not"
         }
       }
     },
@@ -616,7 +616,7 @@
       "components": {
         "SkyboxComponent": {
           "args": [
-            "assets/skybox/white"
+            "assets/skybox/black"
           ]
         }
       }

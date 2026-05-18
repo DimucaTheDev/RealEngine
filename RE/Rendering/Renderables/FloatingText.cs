@@ -23,15 +23,18 @@ public class FloatingText : Renderable
 
     public Color4 BackgroundColor { get; set; }
     public Color4 ForegroundColor { get; set; }
-    public override RenderLayer RenderLayer => RenderLayer.World;
     public override bool IsVisible { get; set; } = true;
     public Vector3 Position { get; set; }
     public float Scale { get; set; }
     public string Text { get; set; }
 
     public FloatingText(string content, Vector3 pos, FreeTypeFont font, bool bottomToTop = false)
-        : this(content, pos, font, 1, Color4.White, new(0.3f, 0.3f, 0.3f, .5f), bottomToTop) { }
-    public FloatingText(string content, Vector3 pos, FreeTypeFont font, float scale, Color4 foregroundColor, Color4 backgroundColor, bool bottomToTop)
+        : this(content, pos, font, 1, Color4.White, new(0.3f, 0.3f, 0.3f, .5f), bottomToTop)
+    {
+    }
+
+    public FloatingText(string content, Vector3 pos, FreeTypeFont font, float scale, Color4 foregroundColor,
+        Color4 backgroundColor, bool bottomToTop)
     {
         Position = pos;
         Text = content;
@@ -47,14 +50,15 @@ public class FloatingText : Renderable
         _shaderProgram.AttachShader("Assets/shaders/text_3d.frag");
 
 
-        float[] vertices = {
+        float[] vertices =
+        {
             //  x,     y,   u, v
             0.0f, -1.0f, 0.0f, 1.0f,
-            0.0f,  0.0f, 0.0f, 0.0f,
-            1.0f,  0.0f, 1.0f, 0.0f,
+            0.0f, 0.0f, 0.0f, 0.0f,
+            1.0f, 0.0f, 1.0f, 0.0f,
 
             0.0f, -1.0f, 0.0f, 1.0f,
-            1.0f,  0.0f, 1.0f, 0.0f,
+            1.0f, 0.0f, 1.0f, 0.0f,
             1.0f, -1.0f, 1.0f, 1.0f
         };
 
@@ -80,6 +84,7 @@ public class FloatingText : Renderable
         {
             _instance = new FloatingText("", Vector3.Zero, new FreeTypeFont(Fonts.Default));
         }
+
         _instance.Text = text;
         _instance.Position = pos;
         _instance.Render(new FrameEventArgs(Time.DeltaTime));
@@ -111,6 +116,7 @@ public class FloatingText : Renderable
                 if (_characters.TryGetValue(c, out var ch))
                     lineWidth += (ch.Advance >> 6) * _scale;
             }
+
             lineWidths.Add(lineWidth);
             maxLineWidth = Math.Max(maxLineWidth, lineWidth);
         }
@@ -171,10 +177,10 @@ public class FloatingText : Renderable
                 float yoff = yrel + ch.Bearing.Y * _scale;
 
                 var modelCh = Matrix4.CreateScale(w, h, 1f)
-                                * Matrix4.CreateTranslation(xrel, yoff, 0f)
-                                * Camera.GetActiveCamera().GetBillboard(Position)
-                                * Matrix4.CreateTranslation(Position)
-                                * Matrix4.CreateTranslation(0, _bottomToTop ? bgHeight / 2 : 0, 0);
+                              * Matrix4.CreateTranslation(xrel, yoff, 0f)
+                              * Camera.GetActiveCamera().GetBillboard(Position)
+                              * Matrix4.CreateTranslation(Position)
+                              * Matrix4.CreateTranslation(0, _bottomToTop ? bgHeight / 2 : 0, 0);
 
                 _shaderProgram.SetValue("uModel", modelCh);
 

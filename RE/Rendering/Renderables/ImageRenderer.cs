@@ -16,8 +16,7 @@ namespace RE.Rendering.Renderables
         private Texture _texture;
         private int _vao, _vbo, _ebo;
         private ShaderProgram _shaderProgram;
-
-        public override RenderLayer RenderLayer => RenderLayer.UI;
+ 
         public override bool IsVisible { get; set; } = true;
         public Vector2 Position { get; set; }
         public Vector2 Scale { get; set; }

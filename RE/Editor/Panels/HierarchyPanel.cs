@@ -23,7 +23,8 @@ namespace RE.Editor.Panels
             Begin("Scene Hierarchy", flags);
 
             var gameObjects = SceneManager.CurrentScene.GameObjects;
-            foreach (var obj in gameObjects.Where(s => s is { DoNotShowInEditor: false, Parent: null }).ToList())
+            foreach (var obj in 
+                     gameObjects.Where(s => s is { DoNotShowInEditor: false, Parent: null }).ToList())
             {
                 DrawObjectTree(obj);
             }

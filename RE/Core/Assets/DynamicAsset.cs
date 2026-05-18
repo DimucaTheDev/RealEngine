@@ -18,27 +18,31 @@ namespace RE.Core.Assets
         /// </remarks>
         public string? AssetPath { get; }
 
-        protected DynamicAsset() : this(null!) { }
+        protected DynamicAsset() : this(null!)
+        {
+        }
+
         protected DynamicAsset(string path)
         {
             AssetPath = path;
-            LoadedAssets.Add(this);
             if (string.IsNullOrWhiteSpace(AssetPath))
                 Log.Verbose("  new dyn.asset:  {Name}<{HashCode}>", GetType().Name, GetHashCode());
             else
-                Log.Verbose("  new dyn.asset:  {Name}<{HashCode}> ///\t{Path}", GetType().Name, GetHashCode(), AssetPath);
+                Log.Verbose("  new dyn.asset:  {Name}<{HashCode}> ///\t{Path}", GetType().Name, GetHashCode(),
+                    AssetPath);
         }
 
-        public virtual void OnLoad() { }
+        public virtual void OnLoad()
+        {
+        }
+
         public virtual void OnUnload()
         {
             if (string.IsNullOrWhiteSpace(AssetPath))
                 Log.Verbose("  dyn.asset unload:  {Name}<{HashCode}>", GetType().Name, GetHashCode());
             else
-                Log.Verbose("  dyn.asset unload:  {Name}<{HashCode}> ///\t{Path}", GetType().Name, GetHashCode(), AssetPath);
-            LoadedAssets.Remove(this);
+                Log.Verbose("  dyn.asset unload:  {Name}<{HashCode}> ///\t{Path}", GetType().Name, GetHashCode(),
+                    AssetPath);
         }
-
-        public static List<DynamicAsset> LoadedAssets = [];
     }
 }

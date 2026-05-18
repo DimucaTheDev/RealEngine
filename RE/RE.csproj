@@ -43,6 +43,7 @@
 		<Compile Remove="Assets\GenerateStaticModel.cs" />
 		<Folder Include="Core\World\Ai\" />
 		<Folder Include="Core\Ui\Localization\" />
+		<Folder Include="Editor\Panels\MaterialPreview\" />
 
 		<Resource Include="Assets\RealEngine.ico" />
 

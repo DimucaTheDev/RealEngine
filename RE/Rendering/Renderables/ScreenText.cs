@@ -50,8 +50,7 @@ internal class ScreenText : Renderable
     public Vector4 Color { get; set; } = new(0, 0, 0, 1);
     public FreeTypeFont Font { get; }
     public Vector2 Direction { get; set; } = new(1, 0);
-    public override bool IsVisible { get; set; } = true;
-    public override RenderLayer RenderLayer => RenderLayer.UI;
+    public override bool IsVisible { get; set; } = true; 
 
     private static ShaderProgram _shaderProgram = null!;
 

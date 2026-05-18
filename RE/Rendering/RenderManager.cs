@@ -18,143 +18,45 @@ using Vector4 = OpenTK.Mathematics.Vector4;
 
 namespace RE.Rendering;
 
-//todo: move
-public enum RenderLayer
-{
-    //make layers be able to be added from code
-    Back,
-    Skybox,
-    World,
-    UI,
-    Overlay,
-    ImGui
-}
-
 //todo перепиши весь класс 🙏😭
 
 public class RenderManager
 {
-    public static SortedDictionary<RenderLayer, Dictionary<Type, List<Renderable>>> Renderables = new();
-    public static Plane[] FrustumPlanes = new Plane[6];
-    public static LineRenderer FrustumRenderer = new();
-    public static List<Component> RenderingComponents = [];
-
-    private static bool _hasCameraFrustum;
-    private static Matrix4 _cachedViewMatrix, _cachedProjMatrix;
+    public static readonly List<Component> RenderingComponents = [];
+    
     internal static ShaderProgram OitShaderProgram;
     internal static int FullscreenVao;
+    
+    private static readonly List<Renderable> Renderables = new();
+    private static readonly Plane[] FrustumPlanes = new Plane[6];
+    private static readonly LineRenderer FrustumRenderer = new();
+    private static bool _hasCameraFrustum;
+    private static Matrix4 _cachedViewMatrix, _cachedProjMatrix;
 
     public static void Init()
     {
-        foreach (RenderLayer layer in Enum.GetValues(typeof(RenderLayer)))
-            Renderables[layer] = new Dictionary<Type, List<Renderable>>();
         FrustumRenderer.StartRender();
         OitShaderProgram = new ShaderProgram();
         OitShaderProgram.AttachShader("Assets/Shaders/oit.frag");
         OitShaderProgram.AttachShader("Assets/Shaders/oit.vert");
         GL.GenVertexArrays(1, out FullscreenVao);
     }
-    public static void AddRenderable<T>(T renderable) where T : Renderable
-    {
-        var types = Renderables[renderable.RenderLayer];
-        if (!types.ContainsKey(typeof(T)))
-            types[typeof(T)] = new List<Renderable>();
-        if (!types[typeof(T)].Contains(renderable))
-        {
-            types[typeof(T)].Add(renderable);
-            renderable.AddedToRenderList();
-        }
-    }
+
+    public static void AddRenderable<T>(T renderable) where T : Renderable => Renderables.Add(renderable);
+
     public static void RemoveRenderable<T>(T renderable) where T : Renderable
     {
-        if (Renderables.TryGetValue(renderable.RenderLayer, out var types) && types.TryGetValue(typeof(T), out var list))
-        {
-            list.Remove(renderable);
-            if (list.Count == 0)
-            {
-                types.Remove(typeof(T));
-                renderable.RemovedFromRenderList();
-            }
-        }
-    }
-    public static void RenderType<T>(T renderable, FrameEventArgs args) where T : Renderable
-    {
-        //todo: GenerateFrustum() should be called before this method
-        if (Renderables.TryGetValue(renderable.RenderLayer, out var types) && types.TryGetValue(typeof(T), out var list))
-        {
-            foreach (var r in list)
-            {
-                if (r.IsVisible)
-                {
-                    if (r is ICullable { ShouldCull: true } cull)
-                    {
-                        if (!IsObbInFrustum(cull.Position, cull.Scale, cull.Rotation))
-                        {
-                            continue;
-                        }
-                    }
-                    r.Render(args);
-                }
-            }
-        }
-    }
-
-
-    //todo: fixme
-    public static bool IsObbInFrustum(Vector3 position, Vector3 scale, Quaternion rotation)
-    {
-        return true; // doesnt work
-#pragma warning disable CS0162 
-        var localCorners = new Vector3[]
-        {
-            new(-0.5f, -0.5f, -0.5f),
-            new(-0.5f, -0.5f,  0.5f),
-            new(-0.5f,  0.5f, -0.5f),
-            new(-0.5f,  0.5f,  0.5f),
-            new( 0.5f, -0.5f, -0.5f),
-            new( 0.5f, -0.5f,  0.5f),
-            new( 0.5f,  0.5f, -0.5f),
-            new( 0.5f,  0.5f,  0.5f),
-        };
-
-        Matrix4 model = Matrix4.CreateScale(scale) *
-                        Matrix4.CreateFromQuaternion(rotation) *
-                        Matrix4.CreateTranslation(position);
-
-        Matrix4 mvp;
-        if (_hasCameraFrustum)
-            mvp = model * _cachedViewMatrix * _cachedProjMatrix;
-        else
-            mvp = model * Camera.GetActiveCamera().GetViewMatrix() * Camera.GetActiveCamera().GetProjectionMatrix(120);
-
-        foreach (var corner in localCorners)
-        {
-            Vector4 clip = Vector4.TransformRow(new Vector4(corner, 1.0f), mvp);
-
-            if (clip.W <= 0)
-                continue;
-
-            Vector3 ndc = new Vector3(clip.X, clip.Y, clip.Z) / clip.W;
-
-            if (ndc.X >= -1 && ndc.X <= 1 &&
-                ndc.Y >= -1 && ndc.Y <= 1 &&
-                ndc.Z >= 0 && ndc.Z <= 1)
-            {
-                return true;
-            }
-        }
-        return false;
+        Renderables.Remove(renderable);
     }
 
     public static void RenderAll(FrameEventArgs args)
     {
-
         GenerateFrustum();
 
         if (!SceneEditor.Enabled && SceneManager.CurrentScene != null!)
         {
             FrameProfiler.Begin("components");
-            
+
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
             GL.Enable(EnableCap.DepthTest);
             GL.DepthMask(true);
@@ -168,6 +70,7 @@ public class RenderManager
                     //uncomment line below if components crash after switching scenes.
                     //return;
                 }
+
                 FrameProfiler.Begin(s.GetType().Name);
                 s.Render(args);
                 FrameProfiler.End();
@@ -209,11 +112,12 @@ public class RenderManager
                     SceneManager.SceneChanged = false;
                     return;
                 }
+
                 FrameProfiler.Begin(s.GetType().Name);
                 s.Render(args);
                 FrameProfiler.End();
             }
-             
+
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
 
             GL.DepthMask(true);
@@ -223,10 +127,9 @@ public class RenderManager
             GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
 
             OitShaderProgram.Use();
-
-            GL.Uniform1(OitShaderProgram.GetLocation("accumColorTex"), 0);
-            GL.Uniform1(OitShaderProgram.GetLocation("accumWeightTex"), 1);
-
+            OitShaderProgram.SetValue("accumColorTex", false);
+            OitShaderProgram.SetValue("accumWeightTex", true);
+            
             GL.ActiveTexture(TextureUnit.Texture0);
             GL.BindTexture(TextureTarget.Texture2D, Game.Instance.AccumColorTex);
 
@@ -248,38 +151,25 @@ public class RenderManager
             FrameProfiler.Begin("hud");
             Hud.Render();
             FrameProfiler.End();
-
         }
 
-        foreach (var kvp in Renderables)
-        {
-            foreach (var pair in kvp.Value)
-            {
-                List<Renderable> list = pair.Value;
 
-                foreach (var renderable in list.ToList())
+        foreach (var renderable in Renderables)
+        {
+            if (renderable.IsVisible)
+            {
+                if (SceneManager.SceneChanged)
                 {
-                    if (renderable.IsVisible)
-                    {
-                        if (renderable is ICullable { ShouldCull: true } cull)
-                        {
-                            if (!IsObbInFrustum(cull.Position, cull.Scale, cull.Rotation))
-                            {
-                                continue;
-                            }
-                        }
-                        if (SceneManager.SceneChanged)
-                        {
-                            SceneManager.SceneChanged = false;
-                            return;
-                        }
-                        renderable.Render(args);
-                    }
+                    SceneManager.SceneChanged = false;
+                    return;
                 }
+
+                renderable.Render(args);
             }
         }
     }
 
+ 
     private static void GenerateFrustum()
     {
         Matrix4 view = Camera.GetActiveCamera().GetViewMatrix();
@@ -326,7 +216,6 @@ public class RenderManager
     }
 
     //todo: move somewhere...
-    //Debug
     public static void CreateCameraFrustum()
     {
         _hasCameraFrustum = true;
@@ -348,7 +237,9 @@ public class RenderManager
 
         for (int i = 0; i < 4; i++)
         {
-            FrustumRenderer.AddLine(corners[i], corners[i + 4], new Vector4(r, 0, 0, 1), new Vector4(r, 0, 0, 1), false, 0);
+            FrustumRenderer.AddLine(corners[i], corners[i + 4], new Vector4(r, 0, 0, 1), new Vector4(r, 0, 0, 1),
+                false,
+                0);
         }
     }
 
@@ -380,10 +271,8 @@ public class RenderManager
         FrustumRenderer.Clear();
         _hasCameraFrustum = false;
     }
-    private static Vector3[] GetFrustumCorners(
-        Matrix4 proj,
-        Matrix4 view,
-        float maxDistance = 1000f)
+
+    private static Vector3[] GetFrustumCorners(Matrix4 proj, Matrix4 view, float maxDistance = 1000f)
     {
         Matrix4 inv = Matrix4.Invert(view * proj);
         Vector3 camPos = Camera.Main.Position;
@@ -391,14 +280,14 @@ public class RenderManager
         Vector3[] ndc =
         {
             new(-1, -1, -1),
-            new( 1, -1, -1),
-            new( 1,  1, -1),
-            new(-1,  1, -1),
+            new(1, -1, -1),
+            new(1, 1, -1),
+            new(-1, 1, -1),
 
-            new(-1, -1,  1),
-            new( 1, -1,  1),
-            new( 1,  1,  1),
-            new(-1,  1,  1),
+            new(-1, -1, 1),
+            new(1, -1, 1),
+            new(1, 1, 1),
+            new(-1, 1, 1),
         };
 
         Vector3[] corners = new Vector3[8];
@@ -424,5 +313,4 @@ public class RenderManager
 
         return corners;
     }
-
 }

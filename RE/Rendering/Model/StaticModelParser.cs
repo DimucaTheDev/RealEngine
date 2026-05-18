@@ -2,6 +2,8 @@
 using System.Text;
 using OpenTK.Mathematics;
 using RE.Core.Assets;
+using RE.Utils;
+using Serilog;
 
 namespace RE.Rendering.Renderables.ModelFormat
 {
@@ -73,19 +75,20 @@ namespace RE.Rendering.Renderables.ModelFormat
             var uvs = new Vector2[uvCount];
             for (var i = 0; i < uvCount; i++)
             {
-                uvs[i] = new Vector2(reader.ReadSingle(), reader.ReadSingle());
+                var x = reader.ReadSingle();
+                var y = reader.ReadSingle();
+                uvs[i] = new Vector2(y, 1 - x); //rotate 90deg clockwise
             }
 
             var indexCount = reader.ReadInt32();
             var faces = new int[indexCount];
             for (var i = 0; i < indexCount; i++)
                 faces[i] = reader.ReadInt32();
-
-
+ 
             data.Vertices = vertices;
             data.Normals = normals;
             data.UVs = uvs;
-            data.Indices = faces;
+            data.Indices = faces.ToUint();
             return data;
         }
     }
@@ -96,6 +99,6 @@ namespace RE.Rendering.Renderables.ModelFormat
         public Vector3[] Vertices { get; set; }
         public Vector3[] Normals { get; set; }
         public Vector2[] UVs { get; set; }
-        public int[] Indices { get; set; }
+        public uint[] Indices { get; set; }
     }
 }

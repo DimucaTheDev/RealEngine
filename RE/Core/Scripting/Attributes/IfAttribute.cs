@@ -7,13 +7,13 @@
     /// <remarks>Multiple instances of this attribute can be applied to a property to define complex
     /// conditional logic. This attribute is typically used in validation or UI scenarios to control property visibility
     /// or requirement based on other property values.</remarks>
-    /// <param name="v">The name of the property whose value determines whether the attributed property is applicable.</param>
-    /// <param name="val">The value to compare against the specified property. The attributed property is considered relevant when the
+    /// <param name="propertyName">The name of the property whose value determines whether the attributed property is applicable.</param>
+    /// <param name="propertyValue">The value to compare against the specified property. The attributed property is considered relevant when the
     /// named property's value equals this value.</param>
     [AttributeUsage(AttributeTargets.Property, AllowMultiple = true)]
-    public sealed class IfAttribute(string v, object? val) : Attribute
+    public sealed class IfAttribute(string propertyName, object? propertyValue) : Attribute
     {
-        public string Name { get; } = v;
-        public object? Value { get; } = val;
+        public string Name { get; } = propertyName;
+        public object? Value { get; } = propertyValue;
     }
 }

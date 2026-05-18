@@ -22,8 +22,7 @@ public class LineRenderer : Renderable
     private int _vao, _vbo;
     private ShaderProgram _shaderProgram;
     private Vertex[] _vertexBatch = new Vertex[MaxVertices];
-
-    public override RenderLayer RenderLayer => RenderLayer.World;
+ 
     public override bool IsVisible { get; set; } = true;
 
     public LineRenderer()

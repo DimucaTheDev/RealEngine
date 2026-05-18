@@ -39,7 +39,7 @@ namespace RE.Core.World.Components
         private bool _wasGrounded;
         private GameObject? _holdingObject;
         private float _objMass;
-
+        private AudioSourceComponent audio;
 
         private SpriteRenderer _spriteSpawnpoint = new(Vector3.Zero, "assets/editor/sprites/spawn.png", scale: 1);
 
@@ -62,6 +62,13 @@ namespace RE.Core.World.Components
             var rigidBodyComponent = new RigidBodyComponent(1);
             PlayerGameObject.Components.Add(rigidBodyComponent);
             PlayerGameObject.Components.Add(new CapsuleColliderComponent());
+            audio = new AudioSourceComponent
+            {
+                IsInWorld = true,
+                PlayOnStart = false,
+                AudioEvent = "event:/Step"
+            };
+            PlayerGameObject.Components.Add(audio);
 
             SceneManager.CurrentScene.GameObjects.Add(PlayerGameObject);
             rigidBodyComponent.RigidBody.AngularFactor = BulletSharp.Math.Vector3.Zero;
@@ -219,7 +226,8 @@ namespace RE.Core.World.Components
             {
                 if ((_soundCooldown >= 0.45f && !Keyboard.Shift) || (_soundCooldown >= 0.3f && Keyboard.Shift))
                 {
-                    SoundManager.PlayOneShotEvent("event:/Step");
+                    audio.Position = PlayerGameObject.Transform.Position;
+                    audio.Play();
                     _soundCooldown = 0f;
                 }
             }
@@ -275,7 +283,8 @@ namespace RE.Core.World.Components
             {
                 var lv = rb.LinearVelocity;
                 rb.LinearVelocity = new BulletSharp.Math.Vector3(currentVel.X, 0, currentVel.Z);
-                SoundManager.PlayOneShotEvent("event:/Step");
+                audio.Position = PlayerGameObject.Transform.Position;
+                audio.Play();
             }
             else
             {
@@ -287,7 +296,8 @@ namespace RE.Core.World.Components
             if (Keyboard.IsKeyDown(Keys.Space) && grounded && _jumpCd <= 0)
             {
                 rb.ApplyCentralImpulse(9f * BulletSharp.Math.Vector3.UnitY);
-                SoundManager.PlayOneShotEvent("event:/Step");
+                audio.Position = PlayerGameObject.Transform.Position;
+                audio.Play();
 
                 _jumpCd = 0.3f;
             }
@@ -361,7 +371,8 @@ namespace RE.Core.World.Components
                             controller.GetComponent<UsableComponent>()!.OnUsed?.Invoke();
                             SoundManager.PlayOneShotEvent("event:/Blip");
                         }
-                        else if (controller.GetComponent<RigidBodyComponent>() != null && controller.Owner.Tag == "prop")
+                        else if (controller.GetComponent<RigidBodyComponent>() != null &&
+                                 controller.Owner.Tag == "prop")
                         {
                             _holdingObject = controller.Owner;
                             SoundManager.PlayOneShotEvent("event:/Select");
@@ -588,6 +599,12 @@ namespace RE.Core.World.Components
             GameObject obj = new GameObject();
             obj.Tag = "prop";
             obj.Components.Add(new MeshComponent("assets/models/crate.fbx"));
+            obj.Components.Add(new AudioSourceComponent()
+            {
+                IsInWorld = true,
+                PlayOnStart = false,
+                AudioEvent = "event:/CrateImpact"
+            });
             obj.Components.Add(new CollisionTestComponent());
             Vector3 front = Camera.Main.Front;
 
@@ -600,7 +617,7 @@ namespace RE.Core.World.Components
             BulletSharp.Math.Vector3 cameraFrontBullet = new BulletSharp.Math.Vector3(front.X, front.Y, front.Z);
             rb.RigidBody.Restitution = 0f;
             rb.RigidBody.ActivationState = ActivationState.DisableDeactivation;
-            
+
             float impulseStrength = 5.0f;
             BulletSharp.Math.Vector3 impulseVector = cameraFrontBullet * impulseStrength;
 
@@ -675,14 +692,26 @@ namespace RE.Core.World.Components
         }
     }
 
+    [RequiresComponent<AudioSourceComponent>]
     internal class CollisionTestComponent : Component
     {
-        public override void OnCollisionEnter(GameObject collide)
+        private AudioSourceComponent audio;
+
+        public override void Start()
         {
-            SoundManager.PlayOneShotEvent("event:/CrateImpact");
+            audio = GetComponent<AudioSourceComponent>()!;
         }
 
-        /// <inheritdoc />
+        public override void Update(FrameEventArgs args)
+        {
+            audio.Position = Owner.Transform.Position;
+        }
+
+        public override void OnCollisionEnter(GameObject collide)
+        {
+            audio.Play();
+        }
+
         public override JsonNode GetSaveData()
         {
             return new JsonObject();

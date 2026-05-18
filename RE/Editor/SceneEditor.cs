@@ -40,8 +40,7 @@ namespace RE.Editor
         }
 
         public SceneEditor() => this.StartRender();
-
-        public override RenderLayer RenderLayer => RenderLayer.ImGui;
+        
         public override bool IsVisible { get; set; }
 
         public static SceneEditor Instance;
@@ -57,7 +56,6 @@ namespace RE.Editor
         private static bool _isDockspaceOpen;
 
         private Scene _scene = null!;
-        private GameObject? _selectedObject;
         private Dictionary<string, List<Type>> _componentDict = new();
         private Node _rootNode = new();
         private string _oldTitle;
@@ -528,131 +526,5 @@ namespace RE.Editor
 
             End();
         }
-
-        #region Code bellow never gets called. legacy :)
-        private PropertyInfo _p = null!;
-        private string _searchComponent = null!;
-        void DrawButton(Type type)
-        {
-            bool SatisfiesCondition(Type c, out List<Type> missing)
-            {
-                missing = new();
-                
-                //append list with required attributes from base types 
-                var reqAtts = c.GetCustomAttributes<RequiresComponentAttribute>();
-                if (_selectedObject!.Components.Any(s => s.GetType() == c))
-                    return false;
-                foreach (var att in reqAtts)
-                {
-                    if (_selectedObject!.Components.All(comp => comp.GetType() != att.RequiredComponent))
-                        missing.Add(att.RequiredComponent);
-                }
-                return missing.Count == 0;
-            }
-
-            bool alreadyContains = _selectedObject!.Components.Any(s => s.GetType() == type);
-            bool disabled = !SatisfiesCondition(type, out var missingComponents);
-
-            BeginDisabled(disabled);
-            if (Button(AddSpacesToCamelCase(type.Name.Replace("Component", ""))))
-            {
-                var c = Activator.CreateInstance(type);
-                _selectedObject!.Components.Add((Component)c!);
-                CloseCurrentPopup();
-            }
-            EndDisabled();
-
-            if (IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
-            {
-                if (BeginTooltip())
-                {
-                    if (disabled)
-                    {
-                        if (alreadyContains)
-                        {
-                            Text($"This object already contains {type.Name}.");
-                            Separator();
-                        }
-                        else if (missingComponents.Count > 0)
-                        {
-                            Text("Cannot add this component because the following required components are missing:");
-                            foreach (var req in missingComponents)
-                                Text($"- {AddSpacesToCamelCase(req.Name.Replace("Component", ""))} ({req.FullName} in {Path.GetFileName(req.Assembly.Location)})");
-                            Separator();
-                            Text("Please add the required components first.");
-                            NewLine();
-                        }
-                    }
-                    var a = type.GetCustomAttribute<ComponentInfoAttribute>();
-                    if (a is { Description: not null })
-                    {
-                        Text($"{a.Description}");
-                        Separator();
-                    }
-                    Text($"Full Name: {type.FullName}");
-                    Text($"Assembly:  {type.Assembly.FullName}");
-                    EndTooltip();
-                }
-            }
-        }
-        void RenderGroupRecursive(string[] path, int depth, List<Type> types)
-        {
-            if (depth >= path.Length)
-            {
-                foreach (var type in types.OrderBy(t => t.Name))
-                {
-                    if (Button(AddSpacesToCamelCase(type.Name.Replace("Component", ""))))
-                    {
-                        var c = Activator.CreateInstance(type);
-                        _selectedObject!.Components.Add((Component)c!);
-                        CloseCurrentPopup();
-                    }
-
-                    if (IsItemHovered())
-                    {
-                        if (BeginTooltip())
-                        {
-                            var a = type.GetCustomAttribute<ComponentInfoAttribute>();
-                            if (a is { Description: not null })
-                            {
-                                Text($"{a.Description}");
-                                Separator();
-                            }
-                            Text($"Full Name: {type.FullName}");
-                            Text($"Assembly:  {type.Assembly.FullName}");
-                            EndTooltip();
-                        }
-                    }
-                }
-                return;
-            }
-
-            if (TreeNode(path[depth]))
-            {
-                RenderGroupRecursive(path, depth + 1, types);
-                TreePop();
-            }
-        }
-
-        private static int _valI = 0, _valEnum = 0;
-        private static bool _valB = false, _valBTemp;
-        private static float _valX = 0, _valY = 0, _valZ = 0, _valF = 0;
-        private static string _valStr = "";
-        private static int _hash;
-
-        private bool _popupOpened;
-
-        #endregion
-
-        private string AddSpacesToCamelCase(string text)
-        {
-            if (string.IsNullOrEmpty(text))
-            {
-                return text;
-            }
-            return CamelSpaceRegex().Replace(text, " $1");
-        }
-        [GeneratedRegex("(?<!^)([A-Z])")]
-        private static partial Regex CamelSpaceRegex();
     }
 }

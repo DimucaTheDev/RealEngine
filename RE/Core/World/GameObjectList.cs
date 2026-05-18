@@ -3,6 +3,7 @@ using BulletSharp;
 using BulletSharp.Math;
 using RE.Core.World.Components;
 using RE.Editor.Panels.Viewport;
+using RE.Utils;
 using Serilog;
 
 namespace RE.Core.World
@@ -16,6 +17,7 @@ namespace RE.Core.World
 
         public GameObject FindByTag(string tag) =>
             _objects.First(g => g.Tag!.Equals(tag, StringComparison.InvariantCultureIgnoreCase));
+
         public GameObject FindByName(string name) =>
             _objects.First(g => g.Name!.Equals(name, StringComparison.InvariantCultureIgnoreCase));
 
@@ -50,6 +52,7 @@ namespace RE.Core.World
             {
                 Remove(child);
             }
+
             SceneManager._objectsToRemove.Add(g);
         }
 
@@ -58,14 +61,19 @@ namespace RE.Core.World
             CollisionShape shape;
             g.ViewportObject = new CollisionObject();
 
-            if (g.GetComponent<MeshComponent>() is { } meshComponent &&
-                meshComponent.GetModelRenderer() is { PhysicsIndices: not null } modelRenderer)
+            if (g.GetComponent<MeshComponent>() is { ModelRenderer.Model.Mesh.Indices.Count: > 0 } meshComponent)
             {
-                var bulletVertices = ConvertToBulletVectors(modelRenderer.PhysicsVertices!, modelRenderer.Scale);
-                var bulletIndices = modelRenderer.PhysicsIndices!.ToArray();
+                var meshRenderer = meshComponent.ModelRenderer;
+                var model = meshRenderer.Model;
+                var bulletVertices = ConvertToBulletVectors(
+                    model.Mesh.Vertices
+                        .SelectMany(s => new[] { s.X, s.Y, s.Z })
+                        .ToArray()!, meshRenderer.Scale);
+
+                var bulletIndices = model.Mesh.Indices!.ToArray();
 
                 var meshInterface = new TriangleIndexVertexArray(
-                    bulletIndices,
+                    bulletIndices.ToInt(),
                     bulletVertices);
 
                 shape = new BvhTriangleMeshShape(meshInterface, true);
@@ -108,6 +116,7 @@ namespace RE.Core.World
                     data[i * 3 + 2] * scale.Z
                 );
             }
+
             return result;
         }
     }

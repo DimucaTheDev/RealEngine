@@ -151,8 +151,7 @@ internal partial class Game : GameWindow
 
         Icon = LoadIcon();
 
-        RenderManager.Init();
-        Time.Init();
+        RenderManager.Init(); 
         Camera.Init();
         ImGuiController.Init();
         DebugOverlay.Init();

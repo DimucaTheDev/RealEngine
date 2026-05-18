@@ -34,6 +34,9 @@ namespace RE.Editor.Panels
             if (Begin("Asset browser"
                     /*, ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize*/))
             {
+                Text("todo: project workspace");
+                End();
+                return;
                 float treePaneWidth = 200f;
 
                 BeginChild("##AssetTreePane", new Vector2(treePaneWidth, 0), ImGuiChildFlags.ResizeX);

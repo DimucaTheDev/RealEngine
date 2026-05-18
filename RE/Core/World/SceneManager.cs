@@ -10,6 +10,7 @@ using RE.Core.Initializing;
 using RE.Core.PluginSystem;
 using RE.Core.Scripting.Attributes;
 using RE.Editor.Panels.Viewport;
+using RE.Utils;
 using Serilog;
 
 namespace RE.Core.World
@@ -297,7 +298,7 @@ namespace RE.Core.World
                                     binder: null,
                                     args: [],
                                     culture: null)!;
-                                
+
                                 gameObject.Components.Add(c, true);
                                 Log.Verbose("Added {Name} to {Object}", type.Name, gameObject.Name);
                             }
@@ -467,16 +468,15 @@ namespace RE.Core.World
                    type != typeof(object) &&
                    type != typeof(Component))
             {
-                var attrs = type.GetCustomAttributes<RequiresComponentAttribute>(true)
-                    .DistinctBy(s => s.RequiredComponent.Name);
+                var attrs = type.GetRequiredComponents();
 
                 foreach (var attr in attrs)
                 {
-                    if (result.Add(attr.RequiredComponent))
+                    if (result.Add(attr))
                     {
                         Log.Warning(
                             "Added component {RequiredComponentName} because {ComponentName} on {ObjectName}({ObjectId}) requires it",
-                            attr.RequiredComponent.Name, type.Name, o.Name, o.Id);
+                            attr.Name, type.Name, o.Name, o.Id);
                     }
                 }
 

@@ -16,7 +16,7 @@ namespace RE.Core.World.Components.Physics
             if (mesh is null)
                 return new BoxShape(0.5f);
 
-            var size = mesh.ModelRenderer.MaxBounds - mesh.ModelRenderer.MinBounds;
+            var size = mesh.ModelRenderer.Model.Mesh.MaxBounds - mesh.ModelRenderer.Model.Mesh.MinBounds;
 
             var halfExtents = size * 0.5f * Owner.Transform.Scale;
 

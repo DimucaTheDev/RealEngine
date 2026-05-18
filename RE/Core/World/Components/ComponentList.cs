@@ -2,6 +2,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.Reflection;
 using RE.Core.Scripting.Attributes;
+using RE.Core.World.Components.Physics;
 using RE.Editor;
 using RE.Rendering;
 
@@ -58,8 +59,13 @@ namespace RE.Core.World.Components
 
 
             var required = c.GetType()
-                .GetCustomAttributes<RequiresComponentAttribute>()
-                .Select(a => a.RequiredComponent)
+                .GetCustomAttributes(false)
+                .Where(a =>
+                {
+                    var t = a.GetType();
+                    return t.IsGenericType && t.GetGenericTypeDefinition() == typeof(RequiresComponentAttribute<>);
+                })
+                .Select(a => a.GetType().GetGenericArguments()[0])
                 .ToList();
 
             var existing = _components
