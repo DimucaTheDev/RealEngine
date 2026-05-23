@@ -96,6 +96,9 @@ namespace RE.Core.Assets
                 _linked = true;
             }
             GL.UseProgram(this);
+            
+            //todo: set common uniform params like delta time or total running time
+            //  or maybe thats a bad idea and we should not set what we do not want
         }
 
         /// <inheritdoc cref="GL.DeleteProgram(int)"/>>

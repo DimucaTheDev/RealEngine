@@ -28,7 +28,7 @@ namespace RE.Core.World.Components
             Sprite.Render(args);
         }
 
-        public override void OnDestroy()
+        public override void Destroy()
         {
             Sprite.Dispose();
         }

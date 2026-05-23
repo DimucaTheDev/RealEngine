@@ -30,7 +30,7 @@ namespace RE.Core.World.Components
             _text.Render(args);
         }
 
-        public override void OnDestroy()
+        public override void Destroy()
         {
             _text.Dispose();
         }

@@ -188,7 +188,7 @@ namespace RE.Utils
             {
                 if (Debugger.IsAttached)
                     return;
-                
+
                 var ex = (Exception)e.ExceptionObject;
                 var process = Process.GetCurrentProcess();
                 var memInfo = GC.GetGCMemoryInfo();
@@ -196,7 +196,8 @@ namespace RE.Utils
                 StringBuilder report = new StringBuilder();
                 report.AppendLine("--- FATAL ERROR REPORT ---");
                 report.AppendLine($"Time: {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
-                report.AppendLine($"OS: {RuntimeInformation.OSDescription} ({(Environment.Is64BitProcess ? "64-bit" : "32-bit")})");
+                report.AppendLine(
+                    $"OS: {RuntimeInformation.OSDescription} ({(Environment.Is64BitProcess ? "64-bit" : "32-bit")})");
                 report.AppendLine($"CPU: {Environment.ProcessorCount} cores, {RuntimeInformation.ProcessArchitecture}");
                 report.AppendLine($"Runtime: {RuntimeInformation.FrameworkDescription}");
                 report.AppendLine($"Process ID: {process.Id}");
@@ -268,7 +269,7 @@ namespace RE.Utils
 
         internal static WindowIcon? LoadIcon()
         {
-            var path = "Assets/RealEngine.ico";
+            var path = "Assets/AppIcon.ico";
             if (!ContentManager.Exists(path))
             {
                 Log.Error("Icon file not found: {IconPath}", path);
@@ -335,6 +336,14 @@ namespace RE.Utils
         {
             if (width <= 0 || height <= 0) return;
 
+            if (OitFbo != 0)
+            {
+                GL.DeleteFramebuffer(OitFbo);
+                GL.DeleteTexture(AccumColorTex);
+                GL.DeleteTexture(AccumWeightTex);
+                GL.DeleteTexture(OitDepthTexture);
+            }
+            
             GL.GenFramebuffers(1, out OitFbo);
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, OitFbo);
 
@@ -608,6 +617,30 @@ namespace RE.Utils
                 Console.SetOut(writer);
                 Console.SetError(writer);
             }
+        }
+
+        internal static bool HasMSVCRuntime(out List<string> failedToLoad)
+        {
+            List<string> f = [];
+            string[] dlls =
+            {
+                "vcruntime140.dll",
+                "vcruntime140_1.dll",
+                "msvcp140.dll",
+                "msvcp140_1.dll",
+                "msvcp140_2.dll"
+            };
+
+            foreach (var dll in dlls)
+            {
+                nint p = 0;
+                if ((p = WinApi.LoadLibrary(dll)) == IntPtr.Zero)
+                    f.Add(dll);
+                else WinApi.FreeLibrary(p);
+            }
+
+            failedToLoad = f;
+            return !failedToLoad.Any();
         }
 
         private class AttachDebuggerAction : SynchronousCommandLineAction

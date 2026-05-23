@@ -22,7 +22,9 @@ namespace RE.Utils
         private const uint SWP_FRAMECHANGED = 0x0020;
         private const int SW_HIDE = 0;
         private const int SW_SHOW = 5;
-
+        private const uint LOAD_LIBRARY_SEARCH_DEFAULT_DIRS = 0x00001000;
+        private const uint LOAD_LIBRARY_SEARCH_USER_DIRS = 0x00000400;
+        
         [DllImport("user32.dll")]
         public static extern bool SetCursorPos(int x, int y);
 
@@ -33,6 +35,12 @@ namespace RE.Utils
         [DllImport("kernel32.dll", SetLastError = true)]
         public static extern IntPtr GetStdHandle(int nStdHandle);
 
+        [DllImport("kernel32.dll", SetLastError = true)]
+        public static extern bool SetDefaultDllDirectories(uint DirectoryFlags);
+
+        [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+        public static extern IntPtr AddDllDirectory(string NewDirectory);
+        
         [DllImport("kernel32.dll", SetLastError = true)]
         public static extern IntPtr LoadLibrary(string lpFileName);
 

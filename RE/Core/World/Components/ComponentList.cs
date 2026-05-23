@@ -115,7 +115,7 @@ namespace RE.Core.World.Components
                 return;
 
             RenderManager.RenderingComponents.Remove(c);
-            c.OnDestroy();
+            c.Destroy();
 
             _components.Remove(c);
 

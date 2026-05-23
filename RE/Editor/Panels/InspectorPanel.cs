@@ -6,8 +6,8 @@ using OpenTK.Graphics.OpenGL;
 using OpenTK.Mathematics;
 using RE.Core;
 using RE.Core.Assets;
-using RE.Core.Scripting.Attributes; 
-using RE.Core.World.Components; 
+using RE.Core.Scripting.Attributes;
+using RE.Core.World.Components;
 using RE.Editor.PropertyDrawers;
 using RE.Rendering;
 using RE.Rendering.Renderables;
@@ -250,22 +250,29 @@ namespace RE.Editor.Panels
             const string boxModelPath = "assets/models/cub.smdl";
             const string sphereModelPath = "assets/models/krug.fbx";
 
+            if (SceneEditor.SelectedObject!.GetComponent<MeshComponent>() == null) return;
+
             SetNextWindowSize(new Vector2(0, 0), ImGuiCond.Always);
             BeginChild("materialSettings", ImGuiChildFlags.Borders);
             Text("Material Settings");
+
 
             if (_materialPreviewModel == null)
             {
                 _materialPreviewModel = ModelRenderer.Create(boxModelPath);
                 _materialPreviewModel.Model.SetTexture(StaticTexture.CreateMonoColorTexture(_baseColor));
+                _materialPreviewModel.IgnoreLight = true;
             }
+
+            _materialPreviewModel.Model.Material =
+                SceneEditor.SelectedObject!.GetComponent<MeshComponent>()!.ModelRenderer.Model.Material;
 
             if (_materialPreviewFloor == null)
             {
                 _materialPreviewFloor = ModelRenderer.Create(boxModelPath);
                 _materialPreviewFloor.Model.SetTexture(
                     StaticTexture.CreateMissingTexture(48, [110, 110, 110, 255], [35, 35, 35, 255]));
-                //_materialPreviewFloor.IgnoreLight = true;
+                _materialPreviewFloor.IgnoreLight = true;
             }
 
             var treeFlags = ImGuiTreeNodeFlags.OpenOnArrow | ImGuiTreeNodeFlags.OpenOnArrow;
@@ -322,13 +329,22 @@ namespace RE.Editor.Panels
                     SetCursorPosX(cursor.X + _materialPreviewSize.X + 7);
                     if (ImageButton(path, texture, new Vector2(24, 24)))
                     {
-                        _materialPreviewModel.Model = AssetCache.Get(path, ModelLoader.DefaultCacheFactory);
-                        _materialPreviewModel.Model.SetTexture(StaticTexture.CreateMonoColorTexture(_baseColor));
+                        _materialPreviewModel.Model = AssetCache.Get(path, ModelLoader.DefaultModelCacheFactory);
+                        _materialPreviewModel.Model.Material = SceneEditor.SelectedObject!.GetComponent<MeshComponent>()!
+                            .ModelRenderer.Model.Material;
                     }
                 }
 
                 SetCursorPos(cursor with { X = cursor.X + _materialPreviewSize.X + 7 });
 
+                {
+                    SetCursorPosX(cursor.X + _materialPreviewSize.X + 7);
+                    if (ImageButton("##same", _cubeModelButtonStaticTexture, new Vector2(24, 24)))
+                    {
+                        _materialPreviewModel.Model = SceneEditor.SelectedObject.GetComponent<MeshComponent>()!
+                            .ModelRenderer.Model;
+                    }
+                }
                 ModelButton(_cubeModelButtonStaticTexture, boxModelPath);
                 ModelButton(_sphereModelButtonStaticTexture, sphereModelPath);
 

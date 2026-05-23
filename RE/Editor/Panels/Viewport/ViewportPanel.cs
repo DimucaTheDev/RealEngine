@@ -4,6 +4,7 @@ using Hexa.NET.ImGui;
 using Hexa.NET.ImGuizmo;
 using OpenTK.Graphics.OpenGL;
 using OpenTK.Mathematics;
+using OpenTK.Windowing.GraphicsLibraryFramework;
 using RE.Core;
 using RE.Core.Input;
 using RE.Core.Ui;
@@ -67,8 +68,8 @@ namespace RE.Editor.Panels.Viewport
         private bool _rotating;
         private CollisionDispatcher _dispatcher;
         private DbvtBroadphase _broadphase;
-        private SpriteRenderer _cameraSprite; 
-        private Vector2 _lastClickPosition; 
+        private SpriteRenderer _cameraSprite;
+        private Vector2 _lastClickPosition;
         private Vector2 _lockedGlobalPos;
         private TkVector3 _cameraVelocity = TkVector3.Zero;
         private Vector4 _viewportRect;
@@ -124,7 +125,7 @@ namespace RE.Editor.Panels.Viewport
             _cameraSprite.Render(new(Time.DeltaTime));
             RenderManager.DrawCameraFrustum();
 
-            UpdateBulletObjects();
+            UpdateBulletObjects(); 
             PhysicsManager.DynamicsWorld.DebugDrawWorld();
 
             SetNextWindowPos(new Vector2(318, 27), ImGuiCond.FirstUseEver);
@@ -282,13 +283,17 @@ namespace RE.Editor.Panels.Viewport
             return new(x, y, w, h);
         }
 
+        private bool _wasManipulating, _objRbEnabled, _objTrigger;
+        (TkVector3 p, OpenTK.Mathematics.Quaternion r, TkVector3 s)? old = null;
+
         private void DrawGizmos()
         {
-            if (SceneEditor.SelectedObject != null)
+            var selected = SceneEditor.SelectedObject;
+            if (selected != null)
             {
                 var v = Camera.Editor.GetViewMatrix().ToBulletMatrix();
                 var p = Camera.Editor.GetProjectionMatrix().ToBulletMatrix();
-                var transform = SceneEditor.SelectedObject.Transform;
+                var transform = selected.Transform;
                 var pos = transform.Position;
                 var rot = transform.Rotation;
                 var sc = transform.Scale;
@@ -298,12 +303,51 @@ namespace RE.Editor.Panels.Viewport
                 var openTkWorldMatrix = (scaleMatrix * rotationMatrix * translationMatrix).ToBulletMatrix();
                 ImGuizmo.SetDrawlist();
                 ImGuizmo.SetID(0);
-                if (ImGuizmo.Manipulate(ref v.M11, ref p.M11, Operation, Mode, ref openTkWorldMatrix.M11))
+
+                var rigidBodyComponent = selected.GetComponent<RigidBodyComponent>();
+
+                bool manipulating = ImGuizmo.Manipulate(
+                    ref v.M11,
+                    ref p.M11,
+                    Operation,
+                    Mode,
+                    ref openTkWorldMatrix.M11);
+
+
+                if (manipulating)
                 {
+                    if (!_wasManipulating && rigidBodyComponent != null)
+                    {
+                        _objRbEnabled = rigidBodyComponent!.IsEnabled;
+                        rigidBodyComponent.RigidBody.Disable();
+                        rigidBodyComponent!.IsEnabled = false;
+                        _wasManipulating = true;
+                    }
+
                     openTkWorldMatrix.Decompose(out var scale, out var rotation, out var translation);
-                    SceneEditor.SelectedObject.Transform.Position = translation.ToOpenTkVector3();
-                    SceneEditor.SelectedObject.Transform.Rotation = rotation.ToOpenTkQuaternion();
-                    SceneEditor.SelectedObject.Transform.Scale = scale.ToOpenTkVector3();
+
+                    selected.Transform.Position = translation.ToOpenTkVector3();
+                    selected.Transform.Rotation = rotation.ToOpenTkQuaternion();
+                    selected.Transform.Scale = scale.ToOpenTkVector3();
+
+                    old = (selected.Transform.Position, selected.Transform.Rotation, selected.Transform.Scale);
+                }
+
+
+                if (!Mouse.IsButtonDown(MouseButton.Left, true) && _wasManipulating && rigidBodyComponent != null)
+                {
+                    //todo: for some odd reason object teleports to where it has been for 1 frame randomly, and then teleports back.
+                    //    dont think this does much but we should fix this some time later.
+                    
+                    rigidBodyComponent.IsEnabled = _objRbEnabled;
+                    rigidBodyComponent.RebuildPhysics();
+                    if (old != null)
+                    {
+                        selected.SetPosition(old.Value.p);
+                        selected.SetRotation(old.Value.r);
+                        selected.Transform.Scale = old.Value.s;
+                    }
+                    _wasManipulating = false;
                 }
             }
         }

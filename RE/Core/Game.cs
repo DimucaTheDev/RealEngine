@@ -71,6 +71,7 @@ internal partial class Game : GameWindow
         }
 
         var nativesPath = CommandParseResult.GetValue<string>("--natives-path")!;
+        nativesPath = Path.GetFullPath(nativesPath);
 
         foreach (var lib in Directory.GetFiles(nativesPath, "*.dll"))
         {
@@ -84,6 +85,16 @@ internal partial class Game : GameWindow
             else
                 Log.Debug("Error loading DLL {FileName,-15}: {ErrorCode}, {ErrorMessage}", fName, errCode,
                     Marshal.GetLastPInvokeErrorMessage());
+        }
+
+        if (!HasMSVCRuntime(out var list))
+        {
+            WinApi.MessageBox(0,
+                "Microsoft Visual C++ Runtime is required, but is not installed!\n" +
+                "\n" +
+                $"Could not load these libs: {string.Join(" ", list)}",
+                "MSVC not found",
+                16);
         }
 
         PluginManager.ResolvePlugins();
@@ -151,7 +162,7 @@ internal partial class Game : GameWindow
 
         Icon = LoadIcon();
 
-        RenderManager.Init(); 
+        RenderManager.Init();
         Camera.Init();
         ImGuiController.Init();
         DebugOverlay.Init();
@@ -159,12 +170,6 @@ internal partial class Game : GameWindow
         ConsoleWindow.Init();
         SoundManager.Init();
         PhysicsManager.Init();
-        Initializer.AddStep(new InitializingTask
-        {
-            Type = InitializingTask.TaskType.Asynchronized,
-            Label = "Long async action in Game.cs",
-            Action = () => { Thread.Sleep(2000); }
-        });
         SceneEditor.Instance = new();
         CommandHandler.RegisterAllCommands();
         Initializer.AddStep(new InitializingTask
@@ -210,13 +215,15 @@ internal partial class Game : GameWindow
             PhysicsManager.Update((float)args.Time);
 
             FrameProfiler.Begin("components");
+            Keyboard.IsInputEnabled = !(SceneEditor.Enabled && SceneEditor.SimulationRunning);
             foreach (var scene in SceneManager.CurrentScene.GameObjects)
             {
-                foreach (var c in scene.Components)
+                foreach (var c in scene.Components.Where(s => s.IsEnabled))
                 {
                     c.Update(args);
                 }
             }
+            Keyboard.IsInputEnabled = true;
 
             SceneManager.ApplyObjectModification();
             FrameProfiler.End();
@@ -306,7 +313,7 @@ internal partial class Game : GameWindow
             GL.Enable(EnableCap.Multisample);
         }
         pe();
-        
+
         SwapBuffers();
 
         #region Keybinds
@@ -376,7 +383,7 @@ internal partial class Game : GameWindow
                 SceneManager.CurrentScene.GameObjects.Add(a);
             }
         }
-        
+
         #endregion
 
         FrameProfiler.End();

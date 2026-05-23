@@ -2,6 +2,7 @@
     "Default": "main.pak",
     "Cases": {
         "editor.pak": ["Editor"],
-        "world.pak": ["Maps", "Skybox"]
+        "world.pak": ["Maps", "Skybox"],
+        "testing.pak": ["Testing"]
     }
 }

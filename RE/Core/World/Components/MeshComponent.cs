@@ -7,6 +7,7 @@ using RE.Editor;
 using RE.Rendering.Model;
 using RE.Rendering.Renderables;
 using RE.Utils;
+using Serilog;
 
 namespace RE.Core.World.Components
 {
@@ -18,7 +19,7 @@ namespace RE.Core.World.Components
 
         public MeshComponent()
         {
-            ModelRenderer = ModelRenderer.Create("");
+            ModelRenderer = ModelRenderer.Create();
         }
 
         public MeshComponent(string modelPath)
@@ -32,9 +33,16 @@ namespace RE.Core.World.Components
         public string? Path
         {
             get => ModelRenderer.Model.AssetPath;
-            set => ModelRenderer.Model =
-                AssetCache.Get(value ?? throw new ArgumentNullException(nameof(value)),
-                    ModelLoader.DefaultCacheFactory);
+            set
+            {
+                if (value.IsNullOrEmpty())
+                {
+                    Log.Error("The {Name} property must be specified.", nameof(Path));
+                    return;
+                }
+
+                ModelRenderer.Model = AssetCache.Get(value, ModelLoader.DefaultModelCacheFactory);
+            }
         }
 
         public override void Render(FrameEventArgs args)
@@ -44,10 +52,10 @@ namespace RE.Core.World.Components
             ModelRenderer.Scale = Owner.Transform.Scale;
 
             ModelRenderer.Render(args);
-        } 
-         
+        }
+
         public void EditorUpdate(FrameEventArgs args) => Update(args);
-         
+
         public void EditorRender(FrameEventArgs args) => Render(args);
     }
 }

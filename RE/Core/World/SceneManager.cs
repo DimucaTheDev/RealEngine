@@ -42,7 +42,7 @@ namespace RE.Core.World
         /// Transitions to a new scene, disposing of the current one.
         /// </summary>
         /// <param name="scene">New scene to be loaded</param>
-        public static void LoadScene(Scene scene) => LoadScene(scene, true, null);
+        public static void LoadScene(Scene scene) => LoadScene(scene, true);
 
         /// <summary>
         /// Transitions to a new scene, optionally disposing of the current one.
@@ -59,37 +59,22 @@ namespace RE.Core.World
         /// <param name="afterLoaded">Invoke action when scene finishes loading</param>
         public static void LoadScene(Scene scene, bool disposeCurrent, Action? afterLoaded)
         {
-            /*Initializer.AddStep(new InitializingTask
-            {
-                Label = $"Loading level \"{scene.Name ?? "<unnamed>"}\"",
-                Action = () =>
-                {*/
             SceneChanged = true;
 
             //Hud.Root.Children.Clear();
             //Log.Debug("Scene changed, HUD canvas cleared");
 
-            if (scene == CurrentScene)
+            if (CurrentScene != null! && disposeCurrent)
             {
-                CurrentScene = Reload(scene);
-                scene.Dispose();
+                CurrentScene.Dispose();
             }
-            else
-            {
-                if (CurrentScene != null! && disposeCurrent)
-                {
-                    CurrentScene.Dispose();
-                }
 
-                CurrentScene = scene;
+            CurrentScene = scene;
 
-                if (!CurrentScene.LightSources.Any())
-                    Log.Warning("No light sources in {SceneName}", CurrentScene.Name);
-            }
+            if (!CurrentScene.LightSources.Any())
+                Log.Warning("No light sources in {SceneName}", CurrentScene.Name);
 
             afterLoaded?.Invoke();
-            /*}
-        });*/
         }
 
         /// <summary>
@@ -181,7 +166,7 @@ namespace RE.Core.World
         /// </summary>
         /// <param name="name">Scene name in <c>Assets/Maps</c></param>
         /// <returns>A new scene instance</returns>
-        public static Scene ParseScene(string name)
+        public static Scene LoadFromMapFile(string name)
         {
             string dataPath = Path.Combine("Assets", "Maps", name, "data.json");
 

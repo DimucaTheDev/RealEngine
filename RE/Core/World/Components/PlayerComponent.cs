@@ -11,6 +11,7 @@ using RE.Core.Ui.Controls;
 using RE.Core.World.Components.Physics;
 using RE.Core.World.Physics;
 using RE.Editor;
+using RE.Fmod;
 using RE.Rendering.Renderables;
 using RE.Rendering.Texturing;
 using RE.Utils;
@@ -18,16 +19,21 @@ using Serilog;
 using Camera = RE.Rendering.Camera;
 using Keys = OpenTK.Windowing.GraphicsLibraryFramework.Keys;
 using Quaternion = BulletSharp.Math.Quaternion;
+using Sound = RE.Core.Audio.Sound;
+using Thread = RE.Fmod.Thread;
 
 namespace RE.Core.World.Components
 {
     [ComponentInfo("World/Player", Description = "Handles player logic")]
     internal class PlayerComponent : Component, IEditorRender
     {
-        private const float MouseSensitivity = 0.2f;
-        private Camera _camera = Camera.Main;
         protected GameObject PlayerGameObject = null!;
-        private bool _isCrouching;
+        private Camera _camera = Camera.Main;
+        private GameObject? _holdingObject;
+        private AudioSourceComponent audio;
+        private Vector3 _smoothedTargetPos = Vector3.Zero;
+        private SpriteRenderer _spriteSpawnpoint = new(Vector3.Zero, "assets/editor/sprites/spawn.png", scale: 1);
+        private const float MouseSensitivity = 0.2f;
         private const float StandHeight = 1.75f;
         private const float CrouchHeight = 0.4f;
         private const float CrouchCameraOffset = 0.7f;
@@ -36,12 +42,10 @@ namespace RE.Core.World.Components
         private float _jumpCd;
         private float _currentCameraYOffset = 1.45f;
         private float _targetCameraYOffset = 1.45f;
-        private bool _wasGrounded;
-        private GameObject? _holdingObject;
         private float _objMass;
-        private AudioSourceComponent audio;
-
-        private SpriteRenderer _spriteSpawnpoint = new(Vector3.Zero, "assets/editor/sprites/spawn.png", scale: 1);
+        private bool _wasGrounded;
+        private bool _isCrouching;
+        private bool _firstMove = true;
 
         private float _soundCooldown;
 
@@ -62,13 +66,21 @@ namespace RE.Core.World.Components
             var rigidBodyComponent = new RigidBodyComponent(1);
             PlayerGameObject.Components.Add(rigidBodyComponent);
             PlayerGameObject.Components.Add(new CapsuleColliderComponent());
-            audio = new AudioSourceComponent
-            {
-                IsInWorld = true,
-                PlayOnStart = false,
-                AudioEvent = "event:/Step"
-            };
+            audio = new AudioSourceComponent();
+            audio.AddClip("Step", "event:/Step");
             PlayerGameObject.Components.Add(audio);
+
+
+            GameObject g = new GameObject();
+            g.Tag = "prop";
+            g.Transform.Position = (0, 50, 0);
+            //g.Components.Add(new MeshComponent("assets/models/cub.fbx"));
+            g.Components.Add(new RigidBodyComponent(3));
+            g.Components.Add(new BoxColliderComponent());
+            g.Components.Add(new SpriteComponent("assets/testing/12478987327864358753.png") { Scale = 1.5f });
+            g.Components.Add(new RadioYay(), true);
+            SceneManager.CurrentScene.GameObjects.Add(g);
+
 
             SceneManager.CurrentScene.GameObjects.Add(PlayerGameObject);
             rigidBodyComponent.RigidBody.AngularFactor = BulletSharp.Math.Vector3.Zero;
@@ -76,7 +88,7 @@ namespace RE.Core.World.Components
             rigidBodyComponent.RigidBody.Gravity = new BulletSharp.Math.Vector3(0, -25f, 0);
 
             Mouse.CursorState = CursorState.Grabbed;
-            FirstMove = true;
+            _firstMove = true;
 
             path.AddRange(
                 new(0, 5, 0.0f),
@@ -86,6 +98,7 @@ namespace RE.Core.World.Components
             im = new ImageControl(new ImageRenderer(StaticTexture.CreateMonoColorTexture((.1f, 0.1f, 0.1f, 1)),
                 new Vector2(0, 0), (3000, 3000)));
             Hud.Root.Children.AddRange(im);
+
             return;
             Hud.Root.Children.AddRange(im, new ImageControl("assets/testing/alpha.png")
             {
@@ -139,7 +152,7 @@ namespace RE.Core.World.Components
             if (Keyboard.IsKeyPressed(Keys.Escape))
             {
                 Mouse.CursorState = CursorState.Normal;
-                FirstMove = true;
+                _firstMove = true;
                 return;
             }
 
@@ -149,9 +162,9 @@ namespace RE.Core.World.Components
             var deltaX = Mouse.Delta.X;
             var deltaY = -Mouse.Delta.Y;
 
-            if (FirstMove)
+            if (_firstMove)
             {
-                FirstMove = false;
+                _firstMove = false;
                 return;
             }
 
@@ -227,7 +240,7 @@ namespace RE.Core.World.Components
                 if ((_soundCooldown >= 0.45f && !Keyboard.Shift) || (_soundCooldown >= 0.3f && Keyboard.Shift))
                 {
                     audio.Position = PlayerGameObject.Transform.Position;
-                    audio.Play();
+                    audio.PlayOneShot("Step");
                     _soundCooldown = 0f;
                 }
             }
@@ -284,7 +297,7 @@ namespace RE.Core.World.Components
                 var lv = rb.LinearVelocity;
                 rb.LinearVelocity = new BulletSharp.Math.Vector3(currentVel.X, 0, currentVel.Z);
                 audio.Position = PlayerGameObject.Transform.Position;
-                audio.Play();
+                audio.PlayOneShot("Step");
             }
             else
             {
@@ -297,7 +310,7 @@ namespace RE.Core.World.Components
             {
                 rb.ApplyCentralImpulse(9f * BulletSharp.Math.Vector3.UnitY);
                 audio.Position = PlayerGameObject.Transform.Position;
-                audio.Play();
+                audio.PlayOneShot("Step");
 
                 _jumpCd = 0.3f;
             }
@@ -599,18 +612,15 @@ namespace RE.Core.World.Components
             GameObject obj = new GameObject();
             obj.Tag = "prop";
             obj.Components.Add(new MeshComponent("assets/models/crate.fbx"));
-            obj.Components.Add(new AudioSourceComponent()
-            {
-                IsInWorld = true,
-                PlayOnStart = false,
-                AudioEvent = "event:/CrateImpact"
-            });
-            obj.Components.Add(new CollisionTestComponent());
+            var audioSourceComponent = new AudioSourceComponent();
+            audioSourceComponent.AddClip("Impact", "event:/CrateImpact");
+            obj.Components.Add(audioSourceComponent);
             Vector3 front = Camera.Main.Front;
 
             var rb = new RigidBodyComponent(20);
             obj.Components.Add(rb);
             obj.Components.Add(new BoxColliderComponent());
+            obj.Components.Add(new CollisionTestComponent());
 
             SceneManager.CurrentScene.GameObjects.Add(obj);
 
@@ -625,10 +635,6 @@ namespace RE.Core.World.Components
             obj.SetPosition(2 * front + Camera.Main.Position);
         }
 
-        private Vector3 _smoothedTargetPos = Vector3.Zero;
-        private bool FirstMove = true;
-        private float mouseX;
-        private float mouseY;
 
         bool IsGrounded(Vector3 rel)
         {
@@ -692,6 +698,41 @@ namespace RE.Core.World.Components
         }
     }
 
+    internal class RadioYay : Component
+    {
+        private (Fmod.Sound, ChannelGroup) c;
+        private Channel? cc;
+
+        public override void Start()
+        {
+            //c = SoundManager.TestStream();
+        }
+
+        /// <inheritdoc />
+        public override void Update(FrameEventArgs args)
+        {
+            return;
+            VECTOR v = new()
+            {
+                x = Owner.Transform.Position.X,
+                y = Owner.Transform.Position.Y,
+                z = Owner.Transform.Position.Z
+            };
+            VECTOR z = Vector3.Zero.ToFmodVector3();
+
+            var sound = c.Item1;
+            var channel = c.Item2;
+            sound.getOpenState(out var state, out _, out _, out _);
+
+            if (state == OPENSTATE.READY && cc == null)
+            {
+                cc = SoundManager.TestPlay(sound, channel);
+            }
+
+            cc?.set3DAttributes(ref v, ref z);
+        }
+    }
+
     [RequiresComponent<AudioSourceComponent>]
     internal class CollisionTestComponent : Component
     {
@@ -700,16 +741,25 @@ namespace RE.Core.World.Components
         public override void Start()
         {
             audio = GetComponent<AudioSourceComponent>()!;
+            var rigidBodyComponent = GetComponent<RigidBodyComponent>()!;
+            //rigidBodyComponent.IsTrigger = true;
         }
 
         public override void Update(FrameEventArgs args)
         {
             audio.Position = Owner.Transform.Position;
+            if (Keyboard.IsKeyPressed(Keys.LeftAlt))
+            {
+                var rigidBodyComponent = GetComponent<RigidBodyComponent>()!;
+                rigidBodyComponent.IsTrigger = !rigidBodyComponent.IsTrigger;
+            }
         }
 
         public override void OnCollisionEnter(GameObject collide)
         {
-            audio.Play();
+            if (GetComponent<RigidBodyComponent>()!.RigidBody.LinearVelocity.Length > 0.5f &&
+                !collide.GetComponent<RigidBodyComponent>()!.IsTrigger)
+                audio.PlayOneShot("Impact");
         }
 
         public override JsonNode GetSaveData()

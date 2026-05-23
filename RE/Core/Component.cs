@@ -4,9 +4,12 @@ using System.Text.Json.Serialization;
 using BulletSharp;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
+using RE.Core.Scripting.Attributes;
 using RE.Core.World;
 using RE.Core.World.Components.Physics;
 using RE.Utils;
+using Serilog;
+using Serilog.Core;
 
 namespace RE.Core
 {
@@ -15,13 +18,26 @@ namespace RE.Core
     /// </summary>
     /// <remarks>All classes that inherit this class must have parameterless constructor</remarks>
     public abstract class Component
-    { 
-        
+    {
         /// <summary>
         /// <see cref="GameObject"/> that this component is attached to.
         /// </summary>
         [JsonIgnore]
         public GameObject Owner { get; internal set; } = null!;
+
+        [EditorProperty]
+        public bool IsEnabled
+        {
+            get;
+            set
+            {
+                field = value;
+                if (value)
+                    Enabled();
+                else
+                    Disabled();
+            }
+        } = true;
 
         /// <summary>
         /// Whether this component should be stored when the scene is being saved (see <see cref="SceneManager.SaveSceneToFile"/>).
@@ -29,6 +45,7 @@ namespace RE.Core
         [JsonIgnore]
         public bool SaveComponent { get; set; } = true;
 
+        // false if should component be rendered to oit texture
         public virtual bool IsOpaque { get; } = true;
 
         /// <typeparam name="T">Component type</typeparam>
@@ -89,13 +106,21 @@ namespace RE.Core
         {
         }
 
+        protected virtual void Enabled()
+        {
+        }
+
+        protected virtual void Disabled()
+        {
+        }
+
         /// <summary>
         /// Performs cleanup operations when the object is being destroyed. Override this method to release resources or
         /// unsubscribe from events as needed.
         /// </summary>
         /// <remarks>This method is intended to be overridden in derived classes to implement custom
         /// destruction logic. The base implementation does not perform any actions.</remarks>
-        public virtual void OnDestroy()
+        public virtual void Destroy()
         {
         }
 
@@ -130,7 +155,6 @@ namespace RE.Core
 
         public virtual void PhysicsSync()
         {
-            
         }
     }
 }

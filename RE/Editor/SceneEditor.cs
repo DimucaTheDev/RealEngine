@@ -16,6 +16,7 @@ using RE.Core.Scripting.Attributes;
 using RE.Core.Ui;
 using RE.Core.Ui.Debug;
 using RE.Core.World;
+using RE.Core.World.Components.Physics;
 using RE.Editor.Notification;
 using RE.Editor.Panels;
 using RE.Editor.Panels.Viewport;
@@ -40,7 +41,7 @@ namespace RE.Editor
         }
 
         public SceneEditor() => this.StartRender();
-        
+
         public override bool IsVisible { get; set; }
 
         public static SceneEditor Instance;
@@ -59,7 +60,8 @@ namespace RE.Editor
         private Dictionary<string, List<Type>> _componentDict = new();
         private Node _rootNode = new();
         private string _oldTitle;
-
+        private string _preSimulationSceneJson;
+        
         private readonly List<Type> _customPopups = new();
         private readonly HierarchyPanel _hierarchyPanel = new();
         private readonly HudHierarchyPanel _hudHierarchyPanel = new();
@@ -70,7 +72,7 @@ namespace RE.Editor
 
         static SceneEditor()
         {
-            var iconPath = ("Assets/RealEngine.ico");
+            var iconPath = ("Assets/AppIcon.ico");
 
             if (ContentManager.Exists(iconPath))
             {
@@ -104,8 +106,7 @@ namespace RE.Editor
             else
             {
                 LogoImage = StaticTexture.CreateMissingTexture(6);
-            }
-            GL.BindTexture(TextureTarget.Texture2D, 0);
+            } 
         }
 
         public void Enable()
@@ -120,6 +121,7 @@ namespace RE.Editor
                 Log.Error("Editor can not be opened if no scene is loaded.");
                 return;
             }
+
             Enabled = true;
             SoundManager.StopAll();
             ToastManager.RemoveAllNotifications();
@@ -133,10 +135,12 @@ namespace RE.Editor
             _scene = SceneManager.CurrentScene;
             IsVisible = true;
 
-            foreach (var type in Assembly.GetExecutingAssembly().GetTypes().Where(t => typeof(IEditorPopup).IsAssignableFrom(t)))
+            foreach (var type in Assembly.GetExecutingAssembly().GetTypes()
+                         .Where(t => typeof(IEditorPopup).IsAssignableFrom(t)))
             {
                 _customPopups.Add(type);
             }
+
             _componentDict = new[] { Assembly.GetExecutingAssembly() }
                 .Concat(PluginManager.LoadedPlugins.Select(s => s.PluginInformation.Assembly))
                 .SelectMany(assembly => assembly.GetTypes())
@@ -160,12 +164,12 @@ namespace RE.Editor
                         nextNode = new Node { Name = segment };
                         currentNode.Children.Add(segment, nextNode);
                     }
+
                     currentNode = nextNode;
                 }
 
                 currentNode.Types.AddRange(entry.Value);
             }
-
         }
 
         public void Disable()
@@ -184,7 +188,7 @@ namespace RE.Editor
         }
 
         public override void Render(FrameEventArgs args)
-        {  
+        {
             FrameProfiler.Begin("editor");
             FrameProfiler.Begin("update");
             foreach (var obj in _scene.GameObjects)
@@ -203,8 +207,10 @@ namespace RE.Editor
                         FrameProfiler.End();
                     }
                 }
+
                 FrameProfiler.End();
             }
+
             FrameProfiler.End();
 
             FrameProfiler.Begin("render");
@@ -215,18 +221,21 @@ namespace RE.Editor
                 GL.DepthMask(true);
                 GL.Disable(EnableCap.Blend);
 
-                foreach (var s in RenderManager.RenderingComponents.Where(s => s.IsOpaque))
+                foreach (var s in RenderManager.RenderingComponents.Where(s =>
+                             s is { IsOpaque: true, IsEnabled: true }))
                 {
                     if (SceneManager.SceneChanged)
                     {
                         SceneManager.SceneChanged = false;
                         return;
                     }
+
                     FrameProfiler.Begin(s.GetType().Name);
                     if (s is IEditorRender r)
                     {
                         r.EditorRender(args);
                     }
+
                     FrameProfiler.End();
                 }
 
@@ -258,15 +267,22 @@ namespace RE.Editor
                 GL.BlendFunc(1, BlendingFactorSrc.One, BlendingFactorDest.One);
 
 
-                foreach (var s in RenderManager.RenderingComponents.Where(s => !s.IsOpaque))
+                foreach (var s in RenderManager.RenderingComponents.Where(s =>
+                             s is { IsOpaque: false, IsEnabled: true } or RigidBodyComponent))
                 {
                     if (SceneManager.SceneChanged)
                     {
                         SceneManager.SceneChanged = false;
                         return;
                     }
+
                     FrameProfiler.Begin(s.GetType().Name);
                     s.Render(args);
+                    if (s is IEditorRender r)
+                    {
+                        r.EditorRender(args);
+                    }
+
                     FrameProfiler.End();
                 }
 
@@ -299,8 +315,8 @@ namespace RE.Editor
                 GL.ActiveTexture(TextureUnit.Texture0);
                 GL.BindTexture(TextureTarget.Texture2D, 0);
             }
-            FrameProfiler.End();  
-            
+            FrameProfiler.End();
+
             if (ShowHud)
             {
                 FrameProfiler.Begin("hud");
@@ -325,6 +341,7 @@ namespace RE.Editor
         }
 
         private double _exitButtonWait;
+
         private void ShowExitModalWindow()
         {
             if (ShowExitConfirmationModal)
@@ -346,6 +363,7 @@ namespace RE.Editor
                         CloseCurrentPopup();
                         Game.Instance.Close();
                     }
+
                     EndDisabled();
 
                     SameLine(90);
@@ -366,6 +384,7 @@ namespace RE.Editor
         }
 
         private bool _isFirstTime = true;
+
         private unsafe void SetupDockSpace()
         {
             var io = GetIO();
@@ -393,30 +412,40 @@ namespace RE.Editor
                 if (BeginMenu("Editor"))
                 {
                     if (MenuItem("Create new scene"))
-                    { }
+                    {
+                    }
+
                     if (MenuItem("Open scene"))
-                    { }
+                    {
+                    }
 
                     if (MenuItem("Save scene"))
                     {
                         SceneManager.SaveSceneToFile(_scene, "assets/maps/demo");
                     }
+
                     if (MenuItem("Save scene as"))
-                    { }
+                    {
+                    }
+
                     if (BeginMenu("Preferences"))
                     {
                         Selectable("Render Skybox", ref PreviewSkybox);
                         Selectable("Preview Light", ref PreviewLight);
                         EndMenu();
                     }
+
                     if (MenuItem("Settings"))
-                    { }
+                    {
+                    }
+
                     Separator();
                     if (MenuItem("Exit"))
                     {
                         ShowExitConfirmationModal = true;
                         WinApi.StartFlashing((IntPtr)Game.Instance.WindowPtr);
                     }
+
                     EndMenu();
                 }
 
@@ -427,6 +456,7 @@ namespace RE.Editor
                         var newObject = new GameObject();
                         SceneManager.CurrentScene.GameObjects.Add(newObject);
                     }
+
                     if (MenuItem("New Blank 2"))
                     {
                         var newObject = new GameObject();
@@ -448,19 +478,30 @@ namespace RE.Editor
                         consoleWindow.StartRender();
                         consoleWindow.IsVisible = true;
                     }
-                    if (MenuItem("Skybox Editor"))
-                    { }
-                    if (MenuItem("Particle Editor"))
-                    { }
-                    if (MenuItem("Model Browser"))
-                    { }
-                    if (MenuItem("Model Converter"))
-                    { }
-                    if (MenuItem("Var Editor"))
-                    { }
-                    EndMenu();
 
+                    if (MenuItem("Skybox Editor"))
+                    {
+                    }
+
+                    if (MenuItem("Particle Editor"))
+                    {
+                    }
+
+                    if (MenuItem("Model Browser"))
+                    {
+                    }
+
+                    if (MenuItem("Model Converter"))
+                    {
+                    }
+
+                    if (MenuItem("Var Editor"))
+                    {
+                    }
+
+                    EndMenu();
                 }
+
                 if (BeginMenu("Help"))
                 {
                     if (MenuItem("Open Docs"))
@@ -480,6 +521,7 @@ namespace RE.Editor
 
                     EndMenu();
                 }
+
                 EndMenuBar();
             }
 

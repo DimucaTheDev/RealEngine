@@ -16,6 +16,7 @@ using FmodBank = RE.Fmod.Studio.Bank;
 using INITFLAGS = RE.Fmod.Studio.INITFLAGS;
 using LOAD_BANK_FLAGS = RE.Fmod.Studio.LOAD_BANK_FLAGS;
 using STOP_MODE = RE.Fmod.Studio.STOP_MODE;
+using Thread = System.Threading.Thread;
 
 namespace RE.Core.Audio
 {
@@ -35,11 +36,17 @@ namespace RE.Core.Audio
                 return Result.OK;
 
             if (flags.HasFlag(DEBUG_FLAGS.ERROR))
-                Log.Error("[FMOD] {Message} (0x{Func:x} at {File}:{Line})", message, funcPtr, file, line);
+                Log.ForContext("SourceContext", "fmodL.dll")
+                    .ForContext("ThreadName", "FMOD Audio Thread")
+                    .Error("[FMOD] {Message} (0x{Func:x} at {File}:{Line})", message, funcPtr, file, line);
             else if (flags.HasFlag(DEBUG_FLAGS.WARNING))
-                Log.Warning("[FMOD] {Message}", message);
+                Log.ForContext("SourceContext", "fmodL.dll")
+                    .ForContext("ThreadName", "FMOD Audio Thread")
+                    .Warning("[FMOD] {Message}", message);
             else
-                Log.Information("[FMOD] {Message}", message);
+                Log.ForContext("SourceContext", "fmodL.dll")
+                    .ForContext("ThreadName", "FMOD Audio Thread")
+                    .Information("[FMOD] {Message}", message);
 
             return Result.OK;
         };
@@ -91,7 +98,8 @@ namespace RE.Core.Audio
             var vel = Vector3.Zero.ToFmodVector3();
 
             Assert(_fmodSystem.set3DListenerAttributes(0, ref pos, ref vel, ref forward, ref up));
-            Assert(_studioSystem.setListenerAttributes(0, new ATTRIBUTES_3D() { position = pos, forward = forward, up = up }));
+            Assert(_studioSystem.setListenerAttributes(0,
+                new ATTRIBUTES_3D() { position = pos, forward = forward, up = up }));
             Assert(_studioSystem.update());
             Assert(_fmodSystem.update());
         }
@@ -103,7 +111,7 @@ namespace RE.Core.Audio
             Assert(_studioSystem.loadBankMemory(buffer, LOAD_BANK_FLAGS.NORMAL, out var bank));
             Assert(bank.getEventList(out var eventArray));
 
-            Log.Debug("[FMOD] Events in {Bank}: {@List}",
+            Log.Verbose("[FMOD] Events in {Bank}: {@List}",
                 resourcePath,
                 eventArray
                     .Select(s =>
@@ -111,6 +119,8 @@ namespace RE.Core.Audio
                         s.getPath(out var path);
                         return path;
                     }));
+
+            Log.Debug("[FMOD] {Count} events in {Bank}", eventArray.Length, resourcePath);
 
             return bank;
         }
@@ -130,12 +140,40 @@ namespace RE.Core.Audio
             return new Sound(instance);
         }
 
-        public static void PlayOneShotEvent(string eventName, Vector3? pos = null)
+        public static void PlayOneShotEvent(string eventName)
         {
             Assert(_studioSystem.getEvent(eventName, out var eventDescription));
             Assert(eventDescription.createInstance(out var instance));
             Assert(instance.start());
             Assert(instance.release());
+        }
+
+        public static void PlayOneShotEvent(string eventName, Vector3 position)
+        {
+            Assert(_studioSystem.getEvent(eventName, out var eventDescription));
+            Assert(eventDescription.createInstance(out var instance));
+            Assert(instance.set3DAttributes(new ATTRIBUTES_3D
+            {
+                forward = Vector3.UnitZ.ToFmodVector3(),
+                up = Vector3.UnitY.ToFmodVector3(),
+                velocity = Vector3.Zero.ToFmodVector3(),
+                position = position.ToFmodVector3()
+            }));
+            Assert(instance.start());
+            Assert(instance.release());
+        }
+
+        public static Channel TestPlay(Fmod.Sound s, ChannelGroup g)
+        {
+            _fmodSystem.playSound(s, g, false, out var channel);
+            return channel;
+        }
+        public static (Fmod.Sound, ChannelGroup) TestStream()
+        {
+            Assert(_fmodSystem.createStream("https://radio.weatherusa.net/NWR/KHB40.mp3",
+                MODE.NONBLOCKING | MODE.CREATESTREAM | MODE._3D, out var sound));
+            Assert(_fmodSystem.createChannelGroup("test", out var group));
+            return (sound, group);
         }
 
         public static void StopAll(bool immediate = true)

@@ -318,7 +318,7 @@ namespace RE.Core.Scripting
                     }
 
                     Log.Information("Loading {Level}... ", name);
-                    SceneManager.LoadScene(SceneManager.ParseScene(name), true,
+                    SceneManager.LoadScene(SceneManager.LoadFromMapFile(name), true,
                         () => { SoundManager.PlayOneShotEvent("event:/Flash"); });
                 }
             }, "Print level name or load a new one");

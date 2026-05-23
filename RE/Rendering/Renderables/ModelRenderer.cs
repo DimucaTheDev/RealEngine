@@ -33,10 +33,22 @@ namespace RE.Rendering.Renderables
         public Quaternion Rotation { get; set; } = Quaternion.Identity;
         public Vector3 Scale { get; set; } = Vector3.One;
         public bool ConstantSize { get; set; }
+        public bool IgnoreLight { get; set; } = false;
 
+
+        public static ModelRenderer Create() => new()
+        {
+            Model = new ModelData
+            {
+                Material = new Material(), Mesh = new()
+            }
+        };
 
         public static ModelRenderer Create(string path) =>
-            new() { Model = AssetCache.Get(path, ModelLoader.DefaultCacheFactory) };
+            new()
+            {
+                Model = (ModelData)AssetCache.Get(path, ModelLoader.DefaultModelCacheFactory).Clone()
+            };
 
 
         public override void Render(FrameEventArgs args)
@@ -71,12 +83,13 @@ namespace RE.Rendering.Renderables
             program.SetValue("view", view);
             program.SetValue("projection", proj);
 
-            // lighting.glsl
+            // material.glsl
             program.SetStruct("material", Model.Material.Data);
 
             var lights = SceneManager.CurrentScene.LightSources;
 
-            program.SetValue("ignoreLight", false);
+            //lighting.glsl
+            program.SetValue("ignoreLight", IgnoreLight);
             program.SetValue("hasSpotLight", lights.Any(s => s is SpotLight));
             program.SetValue("hasDirLight", lights.Any(s => s is DirectionalLight));
             program.SetValue("viewPos", Camera.GetActiveCamera().Position);

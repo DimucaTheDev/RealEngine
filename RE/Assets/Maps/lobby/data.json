@@ -179,6 +179,9 @@
             "assets/models/cub.smdl"
           ]
         },
+        "RigidBody": {
+          "IsKinematic": true
+        },
         "BoxColliderComponent": {}
       }
     },
@@ -619,6 +622,30 @@
             "assets/skybox/black"
           ]
         }
+      }
+    },
+    {
+      "name": "trigger",
+      "tag": null,
+      "transform": {
+        "position": [
+          5,
+          3,
+          -3
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          0.5,
+          3,
+          3
+        ]
+      },
+      "components": {
+        "TriggerTest": {}
       }
     }
   ]

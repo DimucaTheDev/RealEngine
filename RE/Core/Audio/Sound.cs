@@ -1,7 +1,9 @@
 ﻿using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using JetBrains.Annotations;
 using OpenTK.Mathematics;
 using RE.Fmod;
+using RE.Fmod.Studio;
 using RE.Utils;
 using Serilog;
 using EventInstance = RE.Fmod.Studio.EventInstance;
@@ -13,6 +15,16 @@ namespace RE.Core.Audio
     public class Sound : IDisposable
     {
         private EventInstance _sound;
+        private EventDescription _description;
+
+        public string Path
+        {
+            get
+            {
+                Assert(_description.getPath(out var path));
+                return path;
+            }
+        }
 
         public Vector3 Position
         {
@@ -28,9 +40,19 @@ namespace RE.Core.Audio
             }
         }
 
+        public bool Is3D
+        {
+            get
+            {
+                Assert(_description.is3D(out var value));
+                return value;
+            }
+        } 
+        
         internal Sound(EventInstance sound)
         {
             _sound = sound;
+            Assert(_sound.getDescription(out _description));
         }
 
         public void Play()

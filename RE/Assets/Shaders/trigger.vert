@@ -1,0 +1,28 @@
+#version 460 core
+layout(location = 0) in vec3 aPos;
+layout(location = 1) in vec2 aUV;
+layout(location = 2) in vec3 aNormal;
+
+uniform int outline;
+uniform vec4 outlineColor;
+uniform mat4 model;
+uniform mat4 view;
+uniform mat4 projection;
+
+out vec2 TexCoords;
+out vec3 FragPos;
+out vec3 Normal;
+out vec3 WorldPos;
+
+void main()
+{
+    TexCoords = aUV; 
+
+    FragPos = vec3(model * vec4(aPos, 1.0));
+    Normal  = mat3(transpose(inverse(model))) * aNormal;
+    
+    vec4 worldPos = model * vec4(aPos, 1.0);
+    WorldPos = worldPos.xyz;
+    
+    gl_Position = projection * view * model * vec4(aPos, 1.0);
+}

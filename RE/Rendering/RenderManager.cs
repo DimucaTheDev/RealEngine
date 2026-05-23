@@ -62,7 +62,7 @@ public class RenderManager
             GL.DepthMask(true);
             GL.Disable(EnableCap.Blend);
 
-            foreach (var s in RenderingComponents.Where(s => s.IsOpaque))
+            foreach (var s in RenderingComponents.Where(s => s is { IsOpaque: true, IsEnabled: true }))
             {
                 if (SceneManager.SceneChanged)
                 {
@@ -105,7 +105,7 @@ public class RenderManager
             GL.BlendFunc(1, BlendingFactorSrc.One, BlendingFactorDest.One);
 
 
-            foreach (var s in RenderingComponents.Where(s => !s.IsOpaque))
+            foreach (var s in RenderingComponents.Where(s => s is { IsOpaque: false, IsEnabled: true }))
             {
                 if (SceneManager.SceneChanged)
                 {

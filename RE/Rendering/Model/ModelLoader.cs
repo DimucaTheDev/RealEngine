@@ -18,7 +18,7 @@ namespace RE.Utils;
 
 public static class ModelLoader
 {
-    public static readonly Func<string, ModelData> DefaultCacheFactory = LoadFromFile;
+    public static readonly Func<string, ModelData> DefaultModelCacheFactory = LoadFromFile;
 
     public static ModelData LoadFromFile(string path)
     {
@@ -26,11 +26,24 @@ public static class ModelLoader
         {
             var model = StaticModelParser.LoadModel(path);
             var m = ProcessSmdlModel(model, path);
-
+            Log.Verbose("{FileName}: verts={Vertices} ind={Indices} size={Size}",
+                Path.GetFileName(path),
+                m.Mesh.Vertices.Count,
+                m.Mesh.Indices.Count,
+                80L + m.Mesh.Vertices.Capacity * 12L + m.Mesh.Indices.Capacity * 4L);
+            
             return m;
         }
 
-        return ProcessAssimpModel(path);
+        var assimp = ProcessAssimpModel(path);
+
+        Log.Verbose("{FileName}: verts={Vertices} ind={Indices} size={Size}",
+            Path.GetFileName(path),
+            assimp.Mesh.Vertices.Count,
+            assimp.Mesh.Indices.Count,
+            80L + assimp.Mesh.Vertices.Capacity * 12L + assimp.Mesh.Indices.Capacity * 4L);
+
+        return assimp;
     }
 
     private static ModelData ProcessAssimpModel(string path)
@@ -143,12 +156,9 @@ public static class ModelLoader
                 Indices = indices,
                 Vertices = vertices
             },
-            Material = material
+            Material = material,
+            AssetPath = path
         };
-
-        Log.Debug("{FileName} mesh size is {Size} bytes",
-            Path.GetFileName(path),
-            80L + data.Mesh.Vertices.Capacity * 12L + data.Mesh.Indices.Capacity * 4L);
 
         return data;
     }
@@ -235,7 +245,8 @@ public static class ModelLoader
         ModelData data = new()
         {
             Mesh = mesh,
-            Material = material
+            Material = material,
+            AssetPath = path
         };
 
         return data;

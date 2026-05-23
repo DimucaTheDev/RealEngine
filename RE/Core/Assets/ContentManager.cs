@@ -50,13 +50,22 @@ namespace RE.Core.Assets
             lock (_lock)
             {
                 if (_providers.Exists(p => p.Prefix.Equals(provider.Prefix, StringComparison.OrdinalIgnoreCase)))
-                    throw new ArgumentException($"A provider with the prefix '{provider.Prefix}' is already registered.", nameof(provider));
+                    throw new ArgumentException(
+                        $"A provider with the prefix '{provider.Prefix}' is already registered.", nameof(provider));
 
                 try
                 {
                     provider.Register();
                     _providers.Add(provider);
-                    Log.Information("Registered content provider {Name} ('{Prefix}').", provider.GetType().Name, provider.Prefix);
+                    Log.Information("Registered content provider {Name} ('{Prefix}').", provider.GetType().Name,
+                        provider.Prefix);
+
+                    if (Default == null!)
+                    {
+                        Default = provider;
+                        Log.Debug("Default content provider is {Name} ('{Prefix}').", provider.GetType().Name,
+                            provider.Prefix);
+                    }
                 }
                 catch (Exception e)
                 {
@@ -88,6 +97,7 @@ namespace RE.Core.Assets
         /// <returns><c>true</c> if the asset exists; otherwise <c>false</c>.</returns>
         public static bool Exists(string path)
         {
+            path = RemovePrefix(path);
             var provider = FindProvider(path);
             return provider != null && provider.Exists(path);
         }
@@ -103,12 +113,17 @@ namespace RE.Core.Assets
         public static string GetString(string path)
         {
             var provider = FindProvider(path)
-                           ?? throw new InvalidOperationException($"No matching content provider found for {path} and Default is not set.");
+                           ?? throw new InvalidOperationException(
+                               $"No matching content provider found for {path} and Default is not set.");
+            
+            Log.Verbose("Provider for {Path} is {Provider}",  path, provider.GetType().Name);
+            
+            path = RemovePrefix(path);
 
             if (!provider.Exists(path))
                 throw new FileNotFoundException($"Asset not found: {path}");
 
-            return Encoding.UTF8.GetString(provider.GetBytes(path));
+            return provider.GetString(path);
         }
 
         /// <summary>
@@ -122,12 +137,20 @@ namespace RE.Core.Assets
         public static byte[] GetBytes(string path)
         {
             var provider = FindProvider(path)
-                ?? throw new InvalidOperationException($"No matching content provider found for {path} and Default is not set.");
+                           ?? throw new InvalidOperationException(
+                               $"No matching content provider found for {path} and Default is not set.");
+
+            path = RemovePrefix(path);
 
             if (!provider.Exists(path))
                 throw new FileNotFoundException($"Asset not found: {path}");
 
             return provider.GetBytes(path);
+        }
+
+        private static string RemovePrefix(string path)
+        {
+            return HasPrefix(path) ? path.Substring(path.IndexOf(':') + 1) : path;
         }
 
         /// <summary>
@@ -143,7 +166,10 @@ namespace RE.Core.Assets
         public static byte[] GetBytes(string path, int offset, int count)
         {
             var provider = FindProvider(path)
-                ?? throw new InvalidOperationException($"No matching content provider found for {path} and Default is not set.");
+                           ?? throw new InvalidOperationException(
+                               $"No matching content provider found for {path} and Default is not set.");
+
+            path = RemovePrefix(path);
 
             if (!provider.Exists(path))
                 throw new FileNotFoundException($"Asset not found: {path}");
@@ -162,7 +188,10 @@ namespace RE.Core.Assets
         public static Stream Open(string path)
         {
             var provider = FindProvider(path)
-                ?? throw new InvalidOperationException($"No matching content provider found for {path} and Default is not set.");
+                           ?? throw new InvalidOperationException(
+                               $"No matching content provider found for {path} and Default is not set.");
+
+            path = RemovePrefix(path);
 
             if (!provider.Exists(path))
                 throw new FileNotFoundException($"Asset not found: {path}");
@@ -181,14 +210,16 @@ namespace RE.Core.Assets
         public static string[] GetFiles(string path, bool recursive = false)
         {
             var provider = FindProvider(path)
-                ?? throw new InvalidOperationException($"No matching content provider found for {path} and Default is not set.");
-            var f = provider.GetFiles(path, recursive);
+                           ?? throw new InvalidOperationException(
+                               $"No matching content provider found for {path} and Default is not set.");
+            var f = provider.GetFiles(path, recursive).Select(p => NormalizePath(p)).ToArray();
             return f;
         }
 
         public static string[] GetFiles(string path, string extension, bool recursive = false)
         {
-            return GetFiles(path, recursive).Where(s => s.EndsWith(extension, StringComparison.InvariantCultureIgnoreCase)).ToArray();
+            return GetFiles(path, recursive)
+                .Where(s => s.EndsWith(extension, StringComparison.InvariantCultureIgnoreCase)).ToArray();
         }
 
         /// <summary>
@@ -202,19 +233,45 @@ namespace RE.Core.Assets
         public static string[] GetDirectories(string path, bool recursive = false)
         {
             var provider = FindProvider(path)
-                           ?? throw new InvalidOperationException($"No matching content provider found for {path} and Default is not set.");
+                           ?? throw new InvalidOperationException(
+                               $"No matching content provider found for {path} and Default is not set.");
+            path = RemovePrefix(path);
             return provider.GetDirectories(path, recursive);
+        }
+
+        public static string NormalizePath(string path, IContentProvider? provider = null)
+        {
+            path = path.Replace('\\', '/').Trim('/');
+
+            // Уже содержит префикс
+            int colonIndex = path.IndexOf(':');
+
+            if (colonIndex > 0)
+            {
+                string prefix = path[..(colonIndex + 1)];
+
+                if (_providers.Any(x =>
+                        x.Prefix.Equals(prefix, StringComparison.OrdinalIgnoreCase)))
+                {
+                    return path;
+                }
+            }
+
+            provider ??= FindProvider(path);
+
+            return $"{provider.Prefix.ToLowerInvariant()}{path}";
         }
 
         private static IContentProvider? FindProvider(string path)
         {
             if (!HasPrefix(path) && ResolveAssetsInAllContentProviders)
-            { 
+            {
                 return _providers.FirstOrDefault(s => s.Exists(path) || s.DirectoryExists(path)) ?? Default;
             }
 
             return ResolveProvider(ref path);
         }
+
         private static bool HasPrefix(string path)
         {
             foreach (var p in _providers)

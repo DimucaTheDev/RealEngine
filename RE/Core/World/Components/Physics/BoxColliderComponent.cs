@@ -14,7 +14,7 @@ namespace RE.Core.World.Components.Physics
             var mesh = Owner.GetComponent<MeshComponent>();
 
             if (mesh is null)
-                return new BoxShape(0.5f);
+                return new BoxShape(Owner.Transform.Scale.ToBulletVector3());
 
             var size = mesh.ModelRenderer.Model.Mesh.MaxBounds - mesh.ModelRenderer.Model.Mesh.MinBounds;
 

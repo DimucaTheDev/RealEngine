@@ -110,10 +110,10 @@ namespace RE.Core.Assets
             if (status != (int)All.True)
             {
                 var shaderInfoLog = GL.GetShaderInfoLog(Handle);
-                throw new GlException($"Cant compile shader id:{Handle} src:{AssetPath}. {shaderInfoLog}");
+                throw new GlException($"Cant compile shader({Handle}) {AssetPath}. {shaderInfoLog}");
             }
 
-            Log.Debug("Compiled shader id:{Handle} src:{AssetPath}", Handle, AssetPath); 
+            Log.Debug("Compiled shader({Handle}) {AssetPath}", Handle, AssetPath); 
             CompiledShaders.Add(this);
         }
 
@@ -165,7 +165,7 @@ namespace RE.Core.Assets
                     {
                         if (!_seenDecl.Add(line.Trim()))
                         {
-                            Log.Warning("Duplicate shader declaration skipped: {Line}", line.Trim());
+                            Log.Debug("Duplicate shader declaration skipped: {Line}", line.Trim());
                             continue;
                         }
                     }

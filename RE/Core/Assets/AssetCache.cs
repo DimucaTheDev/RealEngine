@@ -6,7 +6,7 @@ public static class AssetCache
 
     public static T Get<T>(string path, Func<string, T> factory) where T : DynamicAsset
     {
-        var normalizePath = NormalizePath(path);
+        var normalizePath = ContentManager.NormalizePath(path);
         if (Cache.TryGetValue(normalizePath, out var result))
         {
             return result as T ??
@@ -17,6 +17,4 @@ public static class AssetCache
         Cache.Add(normalizePath, asset);
         return asset;
     }
-
-    private static string NormalizePath(string path) => path.ToLower().Replace(@"\", "/");
 }

@@ -177,7 +177,7 @@ namespace RE.Core.World.Components.Lighting
             UpdateLight();
         }
 
-        public override void OnDestroy()
+        public override void Destroy()
         {
             Owner.Scene.LightSources.Remove(_lightSource);
         }

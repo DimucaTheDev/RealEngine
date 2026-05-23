@@ -1,4 +1,5 @@
-﻿using Serilog;
+﻿using RE.Utils;
+using Serilog;
 
 namespace RE.Core.Assets
 {
@@ -16,7 +17,11 @@ namespace RE.Core.Assets
         /// <remarks>
         /// This property may be null or empty for assets that are created entirely in memory and do not correspond to a file.
         /// </remarks>
-        public string? AssetPath { get; }
+        public string? AssetPath
+        {
+            get;
+            init => field = value.IsNullOrEmpty() ? value : ContentManager.NormalizePath(value);
+        }
 
         protected DynamicAsset() : this(null!)
         {
@@ -24,7 +29,7 @@ namespace RE.Core.Assets
 
         protected DynamicAsset(string path)
         {
-            AssetPath = path;
+            AssetPath = path == null ? null : ContentManager.NormalizePath(path);
             if (string.IsNullOrWhiteSpace(AssetPath))
                 Log.Verbose("  new dyn.asset:  {Name}<{HashCode}>", GetType().Name, GetHashCode());
             else

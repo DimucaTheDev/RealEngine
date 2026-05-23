@@ -169,7 +169,7 @@ namespace RE.Core.World.Physics
             if (!_init || Initializer.HasJob)
                 return;
 
-            if (!SceneEditor.Enabled)
+            if (!SceneEditor.Enabled || (SceneEditor.SimulationRunning))
             {
                 FrameProfiler.Begin("bullet");
 
@@ -182,6 +182,7 @@ namespace RE.Core.World.Physics
                     {
                         foreach (var c in (obj.UserObject as Component)?.Owner.Components!)
                         {
+                            if (!c.IsEnabled) continue;
                             c.PhysicsSync();
                         }
                     }
@@ -310,7 +311,7 @@ namespace RE.Core.World.Physics
         }
 
         internal static void Unload()
-        { 
+        {
             DynamicsWorld.Dispose();
             _broadphase.Dispose();
             _dispatcher.Dispose();

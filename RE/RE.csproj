@@ -45,7 +45,7 @@
 		<Folder Include="Core\Ui\Localization\" />
 		<Folder Include="Editor\Panels\MaterialPreview\" />
 
-		<Resource Include="Assets\RealEngine.ico" />
+		<Resource Include="Assets\AppIcon.ico" />
 
 		<PackageReference Include="AssimpNet" Version="4.1.0" />
 		<PackageReference Include="BulletSharp" Version="0.11.1" />
@@ -80,6 +80,18 @@
 
 		<None Include="Assets\**; Engine\**;">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+
+		<None Update="Assets\Shaders\trigger.frag">
+		  <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+
+		<None Update="Assets\Shaders\trigger.vert">
+		  <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+
+		<None Update="Assets\Shaders\trigger.frag">
+		  <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</None>
 	</ItemGroup>
 

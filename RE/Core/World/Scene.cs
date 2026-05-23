@@ -16,7 +16,7 @@ namespace RE.Core.World
         public Scene() => GameObjects = new GameObjectList(this);
 
         /// <summary>
-        /// Calls <see cref="Component.OnDestroy"/> on all components of all game objects in the scene and unsubscribes them
+        /// Calls <see cref="Component.Destroy"/> on all components of all game objects in the scene and unsubscribes them
         /// from the <c>Update</c> and <c>Render</c> loop.
         /// </summary>
         public void Dispose()
@@ -26,7 +26,7 @@ namespace RE.Core.World
                 ViewportPanel.CollisionWorld.RemoveCollisionObject(obj.ViewportObject);
                 foreach (var component in obj.Components)
                 {
-                    component.OnDestroy(); 
+                    component.Destroy(); 
                     RenderManager.RenderingComponents.Remove(component);
                 }
             }

@@ -1,8 +1,6 @@
-struct Material {
-    sampler2D diffuse;
-    sampler2D specular;
-    float     shininess;
-};
+
+#include "material.glsl"
+
 struct DirLight {
     vec3 direction;
 
@@ -36,7 +34,6 @@ struct SpotLight{
     float quadratic;
 };
 
-uniform Material material;
 uniform vec3 viewPos;
 uniform DirLight dirLight;
 uniform SpotLight spotLight;

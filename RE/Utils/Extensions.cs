@@ -1,6 +1,8 @@
-﻿using System.Text.Json.Nodes;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Text.Json.Nodes;
 using BulletSharp;
 using Hexa.NET.ImGui;
+using JetBrains.Annotations;
 using OpenTK.Mathematics;
 using RE.Core;
 using RE.Core.Scripting.Attributes;
@@ -107,6 +109,7 @@ namespace RE.Utils
 
 
         public static JsonArray ToJsonArray(this Vector3 v) => new(v.X, v.Y, v.Z);
-        public static bool IsNullOrEmpty(this string str) => string.IsNullOrEmpty(str);
+        
+        public static bool IsNullOrEmpty([NotNullWhen(false)] this string? str) => string.IsNullOrEmpty(str);
     }
 }

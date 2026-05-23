@@ -159,7 +159,7 @@ namespace RE.Core.World.Components
             return (float)(_rand.NextDouble() * (max - min) + min);
         }
 
-        public override void OnDestroy()
+        public override void Destroy()
         {
             foreach (var particle in _particles.ToList())
             {
