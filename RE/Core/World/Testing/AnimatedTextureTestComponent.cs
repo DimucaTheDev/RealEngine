@@ -38,12 +38,6 @@ namespace RE.Core.World.Testing
                     MathF.Sin(Time.ElapsedTime),
                     MathF.Cos(Time.ElapsedTime))
                 * Time.DeltaTime * 75;
-        }
-
-        /// <inheritdoc />
-        public override JsonNode GetSaveData()
-        {
-            return GetDataForProperties();
-        }
+        } 
     }
 }

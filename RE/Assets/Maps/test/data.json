@@ -31,7 +31,7 @@
         },
         "UsableComponent": {
           "args": [
-            "level lobby"
+            "scene lobby"
           ]
         },
         "BoxColliderComponent": {

@@ -70,8 +70,8 @@ namespace RE.Rendering.Renderables
             GL.BindVertexArray(0);
 
             _shaderProgram = new ShaderProgram();
-            _shaderProgram.AttachShader("Assets/shaders/sprite.vert");
-            _shaderProgram.AttachShader("Assets/Shaders/sprite.frag");
+            _shaderProgram.AttachShader("Assets/shaders/ui/sprite.vert");
+            _shaderProgram.AttachShader("Assets/Shaders/ui/sprite.frag");
 
             _texture = LoadTexture(spritePath);
         }

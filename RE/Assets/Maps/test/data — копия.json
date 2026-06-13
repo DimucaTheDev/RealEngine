@@ -13,7 +13,7 @@
         "RigidBody": {
           "Mass": 0
         },
-        "Usable": { "args": ["level lobby"] },
+        "Usable": { "args": ["scene lobby"] },
         "BoxCollider": {}
       }
     },

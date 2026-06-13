@@ -1,5 +1,6 @@
 ﻿using System.CommandLine;
 using System.ComponentModel;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
 using BulletSharp;
@@ -97,6 +98,8 @@ internal partial class Game : GameWindow
                 16);
         }
 
+        CommandHandler.RegisterCommandsInAssembly(Assembly.GetExecutingAssembly());
+        
         PluginManager.ResolvePlugins();
 
         var width = CommandParseResult.GetValue<int>("--width");
@@ -225,7 +228,7 @@ internal partial class Game : GameWindow
             }
             Keyboard.IsInputEnabled = true;
 
-            SceneManager.ApplyObjectModification();
+            SceneSerializer.ApplyObjectModification();
             FrameProfiler.End();
 
             FrameProfiler.Begin("ui");
@@ -294,7 +297,7 @@ internal partial class Game : GameWindow
         GL.PolygonMode(TriangleFace.FrontAndBack, Wireframe ? PolygonMode.Line : PolygonMode.Fill);
 
         RenderManager.RenderAll(args);
-        SceneManager.ApplyObjectModification();
+        SceneSerializer.ApplyObjectModification();
 
         // damn check how these brackets look!!! sad there are no macros :(
         pb("imgui_render");

@@ -1,172 +1,145 @@
 ﻿using System.Collections;
-using System.Collections.Immutable;
 using System.Globalization;
+using System.Reflection;
 using System.Text.RegularExpressions;
-using BulletSharp;
-using OpenTK.Mathematics;
-using OpenTK.Windowing.Common;
-using RE.Core.Assets;
-using RE.Core.Audio;
-using RE.Core.Initializing;
-using RE.Core.Logging;
-using RE.Core.Ui.Debug;
-using RE.Core.World;
-using RE.Core.World.Components;
-using RE.Core.World.Components.Physics;
-using RE.Rendering;
-using RE.Utils;
+using RE.Core.Scripting.Attributes;
 using Serilog;
-using SceneEditor = RE.Editor.SceneEditor;
 
 namespace RE.Core.Scripting
 {
-    /// <summary>
-    /// Provides static methods and events for registering, executing, and managing text-based commands within the
-    /// application.
-    /// </summary>
-    /// <remarks>The CommandHandler class enables dynamic registration of command handlers and supports
-    /// command execution with argument parsing. It is designed for use in scenarios such as developer consoles or
-    /// scripting interfaces, where commands are entered as strings and dispatched to registered handlers. All members
-    /// are static, and the class is not intended to be instantiated. Thread safety is not guaranteed; ensure
-    /// appropriate synchronization if accessing from multiple threads.</remarks>
-    public static class CommandHandler
+    public static partial class CommandHandler
     {
-        //mb i should make a Command class with description, args, etc
-
-        public static event Action<string, List<string>, string?>? CommandExecuted;
-        public static IReadOnlyList<string> RegisteredCommands => CommandDescriptions.Keys.ToList().AsReadOnly();
-
-        private static int _recursionDepth;
-        private static readonly Dictionary<string, string> CommandDescriptions = [];
-        private const int MaxRecursionDepth = 100;
-
-        /// <summary>
-        /// Executes the specified command line string, ensuring that the maximum allowed recursion depth is not
-        /// exceeded.
-        /// </summary>
-        /// <remarks>If the maximum recursion depth is exceeded, the command is not executed and an error
-        /// is logged. This method is intended to prevent stack overflows or infinite recursion when executing nested
-        /// commands.</remarks>
-        /// <param name="line">The command line to execute. Cannot be null.</param>
-        public static void ExecuteCommandSafe(string line)
+        public class ConsoleCommand
         {
-            if (_recursionDepth > MaxRecursionDepth)
-            {
-                Log.Error("Max recursion depth exceeded.");
-                return;
-            }
+            public required string Name { get; init; }
+            public required MethodInfo Method { get; init; }
+            public string? Description { get; init; }
+        }
 
-            try
+        public static readonly Dictionary<string, List<ConsoleCommand>> RegisteredCommands = new();
+
+        public static void RegisterCommandsInAssembly(Assembly assembly)
+        {
+            foreach (var method in assembly.DefinedTypes
+                         .SelectMany(type =>
+                             type.GetMethods(BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Public))
+                         .Where(method => method.GetCustomAttribute<ConsoleCommandAttribute>() is not null))
             {
-                _recursionDepth++;
-                ExecuteCommand(line);
-            }
-            finally
-            {
-                _recursionDepth--;
+                var attribute = method.GetCustomAttribute<ConsoleCommandAttribute>()!;
+                var name = attribute.Name;
+
+                var command = new ConsoleCommand
+                {
+                    Name = name,
+                    Description = attribute.Description,
+                    Method = method,
+                };
+
+                if (!RegisteredCommands.TryGetValue(name, out var list))
+                {
+                    list = new List<ConsoleCommand>();
+                    RegisteredCommands[name] = list;
+                }
+
+                list.Add(command);
+
+                Log.Debug("Registered command {Command}. Method: {Method}",
+                    name,
+                    $"{method.DeclaringType!.Namespace}.{method.Name}");
             }
         }
 
-        /// <summary>
-        /// Parses and executes the specified command string, invoking the associated command handler if applicable.
-        /// </summary>
-        /// <remarks>The command string is split into arguments, supporting quoted substrings as single
-        /// arguments. If a command handler is registered, it is invoked with the parsed command and arguments. Lines
-        /// starting with '#' are treated as comments and ignored.</remarks>
-        /// <param name="command">The command line to execute. Leading whitespace is ignored. If the command is null, empty, consists only of
-        /// whitespace, or starts with a '#', the method does nothing.</param>
-        public static void ExecuteCommand(string command)
+        public static void ExecuteCommand(string fullCommand)
         {
-            if (string.IsNullOrWhiteSpace(command) || command.TrimStart(' ').StartsWith("#"))
+            if (string.IsNullOrWhiteSpace(fullCommand))
                 return;
 
-            var matches = Regex.Matches(command, @"[\""].+?[\""]|\S+");
-            var result = new string[matches.Count];
+            fullCommand = fullCommand.Trim();
+
+            if (fullCommand.StartsWith("#"))
+                return;
+
+            var splitIndex = fullCommand.IndexOf(' ');
+            var commandName = splitIndex == -1 ? fullCommand : fullCommand[..splitIndex];
+
+            var commandArgsRaw = splitIndex == -1 ? "" : fullCommand[(splitIndex + 1)..];
+
+            var matches = DqmArgsRegex().Matches(commandArgsRaw);
+
+            var args = new object?[matches.Count];
+
             for (int i = 0; i < matches.Count; i++)
             {
-                string value = matches[i].Value;
-                if (value.StartsWith("\"") && value.EndsWith("\""))
-                    value = value.Substring(1, value.Length - 2);
-                result[i] = value;
+                string valueRaw = matches[i].Value;
+
+                if (valueRaw.StartsWith("\"") && valueRaw.EndsWith("\""))
+                    valueRaw = valueRaw[1..^1];
+
+                args[i] = valueRaw; // todo: add converter string->type 
             }
 
-            try
-            {
-                CommandExecuted?.Invoke(result[0], result[1..].ToList(), command);
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error executing command \"{Command} {Args}\"", command,
-                    string.Join(' ', result[1..].ToList()));
-            }
-        }
+            var command = ResolveOverload(commandName, args);
 
-        /// <summary>
-        /// Registers a command handler that is invoked when a command with the specified name is executed.
-        /// </summary>
-        /// <remarks>If a handler is already registered for the specified command name, this method does
-        /// not overwrite the existing handler and logs a warning instead. Each command name can only have one
-        /// associated handler.</remarks>
-        /// <param name="name">The name of the command to associate with the handler. Command names are compared using case-insensitive
-        /// ordinal comparison. Cannot be null or empty.</param>
-        /// <param name="handler">The action to execute when the command is triggered. Receives the list of command arguments as its
-        /// parameter. Cannot be null.</param>
-        /// <param name="description">An optional description of the command. If not specified, the description is set to an empty string.</param>
-        public static void RegisterHandler(string name, Action<List<string>> handler, string description = "")
-        {
-            if (!CommandDescriptions.TryAdd(name, description))
+            if (command == null)
             {
-                Log.Warning("Command {Command} is already registered!", name);
+                Log.Error("No matching overload for {Command} with {ArgCount} args", commandName, args.Length);
                 return;
             }
 
-            CommandExecuted += (cmd, args, _) =>
-            {
-                if (cmd.Equals(name, StringComparison.OrdinalIgnoreCase))
-                {
-                    handler(args);
-                }
-            };
-        }
+            var parameters = command.Method.GetParameters();
+            var typedArgs = new object?[args.Length];
 
-        /// <summary>
-        /// Registers a command handler that is invoked when a command with a single string argument is executed.
-        /// </summary>
-        /// <remarks>If a command with the specified name is already registered, this method does not
-        /// overwrite the existing handler and logs a warning instead. Only one handler can be registered per command
-        /// name.</remarks>
-        /// <param name="name">The name of the command to register. Command names are compared using case-insensitive ordinal comparison.</param>
-        /// <param name="handler">The action to execute when the command is invoked. The handler receives the full argument string passed to
-        /// the command.</param>
-        /// <param name="description">An optional description of the command. The description can be used for help text or documentation purposes.
-        /// The default is an empty string.</param>
-        public static void RegisterSingleArgHandler(string name, Action<string> handler, string description = "")
-        {
-            if (!CommandDescriptions.TryAdd(name, description))
+            for (int i = 0; i < args.Length; i++)
             {
-                Log.Warning("Command {Command} is already registered!", name);
-                return;
+                typedArgs[i] = ConvertFromString((string)args[i]!, parameters[i].ParameterType);
             }
 
-            CommandExecuted += (cmd, args, full) =>
+            command.Method.Invoke(null, typedArgs);
+        }
+
+        public static void ExecuteCommand(string commandName, params object?[]? args)
+        {
+            var command = ResolveOverload(commandName, args);
+            command.Method.Invoke(null, args);
+        }
+
+        private static ConsoleCommand ResolveOverload(string name, object?[]? args)
+        {
+            if (!RegisteredCommands.TryGetValue(name, out var overloads))
+                throw new CommandNotFoundException(name);
+
+            foreach (var cmd in overloads)
             {
-                if (cmd.Equals(name, StringComparison.OrdinalIgnoreCase))
+                var parameters = cmd.Method.GetParameters();
+
+                if (parameters.Length != (args?.Length ?? 0))
+                    continue;
+
+                bool match = true;
+
+                for (int i = 0; i < parameters.Length; i++)
                 {
-                    handler(full!);
+                    if (args![i] == null)
+                        continue;
+
+                    if (!parameters[i].ParameterType.IsInstanceOfType(args[i]))
+                    {
+                        match = false;
+                        break;
+                    }
                 }
-            };
+
+                if (match)
+                    return cmd;
+            }
+
+            throw new CommandNotFoundException(name);
         }
 
         internal static void RegisterAllCommands()
         {
-            RegisterHandler("help", _ =>
-            {
-                Log.Information("Available commands:");
-                foreach (var command in CommandDescriptions.ToImmutableSortedDictionary())
-                {
-                    Log.Information(" - {Command}: {Description}", command.Key, command.Value);
-                }
-            }, "Get all commands");
+            return;
+            /*
             RegisterHandler("var", list =>
             {
                 //todo: list support for args > 2
@@ -221,7 +194,6 @@ namespace RE.Core.Scripting
 
                 Log.Information(horizontalLine);
             }, "Get all variables in formatted table");
-            RegisterHandler("clear", _ => { GameLogger.Log.Clear(); }, "Clear the log");
             RegisterHandler("sound", list =>
             {
                 if (list.Count == 0)
@@ -255,30 +227,10 @@ namespace RE.Core.Scripting
                         InWorld = inWorld,
                         MaxDistance = maxDistance,
                         ReferenceDistance = referenceDistance
-                    });*/
+                    });* /
                 }
             }, "Play or stop sound. Enter command with no arguments to see more info");
-            RegisterHandler("exit", _ => Game.Instance.Close(), "Close the game");
-            RegisterHandler("source", list =>
-            {
-                if (list.Count == 0)
-                {
-                    Log.Error("No script specified!");
-                    return;
-                }
 
-                if (!ContentManager.Exists(list[0]))
-                {
-                    Log.Error("File not found: {FilePath}", list[0]);
-                    return;
-                }
-
-                string src = ContentManager.GetString(list[0]);
-                foreach (var line in src.Split('\n'))
-                {
-                    ExecuteCommandSafe(line);
-                }
-            }, "Run script in selected path");
             RegisterSingleArgHandler("echo",
                 c => { Log.Information(new string(c[c.IndexOf(' ')..].SkipWhile(s => s == ' ').ToArray())); },
                 "Prints to log with Info level");
@@ -408,6 +360,7 @@ namespace RE.Core.Scripting
                     BulletDebugDrawer.Mode = m;
                     Log.Information($"{nameof(BulletDebugDrawer.Mode)} = {{Value}}", m);
                 }, $"Set Bullet overlay. Possible values: {string.Join(", ", Enum.GetNames(typeof(DebugDrawModes)))}");
+    */
         }
 
         private static string Format(object? obj)
@@ -422,5 +375,29 @@ namespace RE.Core.Scripting
                 return $"<list,{enumerable.Cast<object>().Count()}>";
             return obj.ToString() ?? "<object>";
         }
+
+        //remove or rewrite or extend or whatever 🙏🙏🙏🙏🙏🙏🙏🙏
+        private static object ConvertFromString(string value, Type type)
+        {
+            if (type == typeof(string))
+                return value;
+
+            if (type == typeof(int))
+                return int.Parse(value);
+
+            if (type == typeof(float))
+                return float.Parse(value, CultureInfo.InvariantCulture);
+
+            if (type == typeof(bool))
+                return bool.Parse(value);
+
+            if(type == typeof(object))
+                return value;
+                
+            throw new NotSupportedException($"Converting to {type} from string is not supported");
+        }
+
+        [GeneratedRegex("""[\"].+?[\"]|\S+""")]
+        private static partial Regex DqmArgsRegex();
     }
 }

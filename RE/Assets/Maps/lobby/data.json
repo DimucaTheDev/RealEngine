@@ -283,7 +283,7 @@
         "BoxColliderComponent": {},
         "UsableComponent": {
           "args": [
-            "level test"
+            "scene test"
           ]
         }
       }
@@ -350,7 +350,7 @@
         "BoxColliderComponent": {},
         "UsableComponent": {
           "args": [
-            "level test2"
+            "scene test2"
           ]
         },
         "BillboardTextComponent": {
@@ -394,7 +394,7 @@
         "BoxColliderComponent": {},
         "UsableComponent": {
           "args": [
-            "level test123"
+            "scene test123"
           ]
         }
       }
@@ -438,7 +438,7 @@
         "BoxColliderComponent": {},
         "UsableComponent": {
           "args": [
-            "level sound_test"
+            "scene sound_test"
           ]
         }
       }
@@ -597,7 +597,7 @@
       }
     },
     {
-      "name": null,
+      "name": "the real skybox",
       "tag": null,
       "transform": {
         "position": [
@@ -622,31 +622,33 @@
             "assets/skybox/black"
           ]
         }
-      }
-    },
-    {
-      "name": "trigger",
-      "tag": null,
-      "transform": {
-        "position": [
-          5,
-          3,
-          -3
-        ],
-        "rotation": [
-          0,
-          0,
-          0
-        ],
-        "scale": [
-          0.5,
-          3,
-          3
-        ]
       },
-      "components": {
-        "TriggerTest": {}
-      }
+      "children": [
+        {
+          "name": "trigger",
+          "tag": null,
+          "transform": {
+            "position": [
+              5,
+              3,
+              -3
+            ],
+            "rotation": [
+              0,
+              0,
+              0
+            ],
+            "scale": [
+              0.5,
+              3,
+              3
+            ]
+          },
+          "components": {
+            "TriggerTest": {}
+          }
+        }
+      ]
     }
   ]
 }

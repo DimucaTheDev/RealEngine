@@ -1,8 +1,8 @@
-﻿using System.Reflection;
+﻿using System.Numerics;
+using System.Reflection;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using BulletSharp;
-using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using RE.Core.Scripting.Attributes;
 using RE.Core.World;
@@ -10,6 +10,7 @@ using RE.Core.World.Components.Physics;
 using RE.Utils;
 using Serilog;
 using Serilog.Core;
+using Vector3 = OpenTK.Mathematics.Vector3;
 
 namespace RE.Core
 {
@@ -60,21 +61,37 @@ namespace RE.Core
         /// </summary>
         /// <remarks>This method is not called if <see cref="SaveComponent"/> is set to <see langword="false"/></remarks>
         /// <returns><see cref="JsonNode"/> that contains saved data</returns>
-        public virtual JsonNode GetSaveData() => GetDataForProperties();
+        public virtual JsonNode GetSaveData() => GetDataForProperties(this);
 
-        protected JsonNode GetDataForProperties()
+        private JsonNode GetDataForProperties(object instance)
         {
             JsonObject obj = new();
-            var properties = GetType().GetProperties().Where(p => p is { CanRead: true, CanWrite: true });
-            foreach (var property in properties.Where(s => s.GetCustomAttribute<JsonIgnoreAttribute>() == null))
+            var properties
+                = GetType()
+                    .GetProperties()
+                    .Where(p =>
+                        p is { CanRead: true, CanWrite: true }
+                        && p.GetCustomAttribute<JsonIgnoreAttribute>() == null
+                        && (p.GetCustomAttribute<JsonIncludeAttribute>() != null ||
+                            p.GetCustomAttribute<EditorPropertyAttribute>() != null))
+                    .Select(p => (Name: p.Name, Value: p.GetValue(this)));
+            var fields
+                = GetType()
+                    .GetFields(BindingFlags.Instance | BindingFlags.NonPublic)
+                    .Where(p => p.GetCustomAttribute<JsonIncludeAttribute>() != null)
+                    .Select(p =>
+                        (Name: p.GetCustomAttribute<JsonPropertyNameAttribute>() is { } a ? a.Name : p.Name,
+                            Value: p.GetValue(this)));
+
+
+            foreach ((string name, object? value) in properties.Concat(fields))
             {
-                var value = property.GetValue(this);
                 if (value is null)
-                    obj.Add(property.Name, null);
+                    obj.Add(name, null);
                 else if (value is Vector3 v)
-                    obj.Add(property.Name, v.ToJsonArray());
+                    obj.Add(name, v.ToJsonArray());
                 else
-                    obj.Add(property.Name, JsonValue.Create(value));
+                    obj.Add(name, JsonValue.Create(value));
             }
 
             return obj;

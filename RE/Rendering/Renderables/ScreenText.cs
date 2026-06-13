@@ -62,8 +62,8 @@ internal class ScreenText : Renderable
         if (_shaderProgram == null!)
         {
             _shaderProgram = new();
-            _shaderProgram.AttachShader("assets/shaders/text.frag");
-            _shaderProgram.AttachShader("assets/shaders/text.vert");
+            _shaderProgram.AttachShader("assets/shaders/ui/text.frag");
+            _shaderProgram.AttachShader("assets/shaders/ui/text.vert");
         }
 
         var projectionM = Matrix4.CreateOrthographicOffCenter(0.0f, Game.Instance.ClientSize.X,

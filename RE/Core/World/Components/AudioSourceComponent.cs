@@ -1,5 +1,6 @@
 ﻿using System.Runtime.InteropServices;
 using System.Text.Json.Nodes;
+using System.Text.Json.Serialization;
 using DotRecast.Core.Collections.Extensions;
 using OpenCvSharp.Internal.Vectors;
 using OpenTK.Mathematics;
@@ -7,12 +8,14 @@ using OpenTK.Windowing.Common;
 using RE.Core.Audio;
 using RE.Core.Scripting.Attributes;
 using RE.Rendering;
+using RE.Utils;
 using Log = Serilog.Log;
 
 namespace RE.Core.World.Components
 {
     public class AudioSourceComponent : Component
     {
+        [SerializerCallsConstructor]
         public class AudioClip
         {
             public AudioClip(string name, string audioEvent)
@@ -46,13 +49,13 @@ namespace RE.Core.World.Components
             [EditorProperty, If(nameof(Is3D), true)]
             public Vector3 LocalOffset { get; set; } = Vector3.Zero;
 
-            public Sound? Instance { get; }
+            [JsonIgnore] public Sound? Instance { get; }
         }
 
         [EditorProperty] public bool PlayOnStart { get; set; } = false;
 
         [EditorProperty, If(nameof(LockPositionToOwner), false)]
-        public Vector3 Position { get; set; }
+        public Vector3 Position { get; set; } //todo: remove this and make it locked to owner pos
 
         [EditorProperty] public bool LockPositionToOwner { get; set; } = false;
 
@@ -127,5 +130,28 @@ namespace RE.Core.World.Components
         public void StopAll() => _clips.ForEach(audio => audio.Value.Instance?.Stop());
 
         public override void Destroy() => _clips.ForEach(audio => audio.Value.Instance?.Dispose());
+
+        /// <inheritdoc />
+        public override JsonNode GetSaveData()
+        {
+            var obj = (base.GetSaveData() as JsonObject)!;
+
+            var clips = new JsonArray();
+            foreach (var clip in _clips)
+                clips.Add(SerializeClip(clip.Value));
+
+            obj.Add("Clips", clips);
+            return obj;
+        }
+
+        private JsonObject SerializeClip(AudioClip clip)
+        {
+            var o = new JsonObject();
+            o.Add("args", new JsonArray { clip.Name, clip.AudioEvent });
+            o.Add(nameof(clip.Is3D), clip.Is3D);
+            o.Add(nameof(clip.LocalOffset), clip.LocalOffset.ToJsonArray());
+
+            return o;
+        }
     }
 }

@@ -102,8 +102,8 @@ namespace RE.Rendering.Renderables
         private ShaderProgram CompileShaders()
         {
             ShaderProgram program = new();
-            program.AttachShader("assets/shaders/ui_image.vert");
-            program.AttachShader("assets/shaders/ui_image.frag");
+            program.AttachShader("assets/shaders/ui/ui_image.vert");
+            program.AttachShader("assets/shaders/ui/ui_image.frag");
 
             return program;
         }

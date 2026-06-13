@@ -59,13 +59,13 @@ namespace RE.Editor.Panels.Viewport
 
         private int _selectedIndex;
         private int _lastSelectedIndex = -1;
-        private List<GameObject> _lastHitObjects = new();
         private bool _showPhysOptions;
         private bool _physHasHovered;
         private bool _showOverlay;
         private bool _showAabb, _showWireframe, _xray;
         private bool _isOverViewport;
         private bool _rotating;
+        private string _sceneBeforeSimulation;
         private CollisionDispatcher _dispatcher;
         private DbvtBroadphase _broadphase;
         private SpriteRenderer _cameraSprite;
@@ -73,7 +73,7 @@ namespace RE.Editor.Panels.Viewport
         private Vector2 _lockedGlobalPos;
         private TkVector3 _cameraVelocity = TkVector3.Zero;
         private Vector4 _viewportRect;
-        private string _sceneBeforeSimulation;
+        private List<GameObject> _lastHitObjects = new();
 
         public static bool CameraRotate;
 
@@ -628,13 +628,12 @@ namespace RE.Editor.Panels.Viewport
             {
                 if (!SceneEditor.SimulationRunning)
                 {
-                    _sceneBeforeSimulation = SceneManager.SerializeScene(SceneManager.CurrentScene);
+                    _sceneBeforeSimulation = SceneSerializer.SerializeScene(SceneManager.CurrentScene);
                     SceneEditor.SimulationRunning = true;
                 }
                 else
                 {
-                    SceneManager.CurrentScene.Dispose();
-                    SceneManager.CurrentScene = SceneManager.DeserializeScene(_sceneBeforeSimulation);
+                    SceneManager.LoadScene(SceneSerializer.DeserializeScene(_sceneBeforeSimulation));
                     SceneEditor.SimulationRunning = false;
                 }
             }
@@ -757,7 +756,7 @@ namespace RE.Editor.Panels.Viewport
                 inputDir += TkVector3.UnitY;
             if (Keyboard.IsKeyDown(Keys.LeftShift))
                 inputDir -= TkVector3.UnitY;
-
+            
             if (inputDir.LengthSquared > 0)
                 inputDir = inputDir.Normalized();
 

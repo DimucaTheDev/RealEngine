@@ -2,6 +2,7 @@
 using BulletSharp;
 using BulletSharp.Math;
 using JetBrains.Annotations;
+using Newtonsoft.Json;
 using OpenTK.Graphics.OpenGL;
 using OpenTK.Windowing.Common;
 using RE.Core.Assets;
@@ -16,7 +17,7 @@ using Serilog;
 namespace RE.Core.World.Components.Physics
 {
     [ComponentInfo("Physics", Description = "Represents a dynamic physics body with mass and velocity")]
-    internal class RigidBodyComponent(float mass) : Component, IEditorRender, IEditorUpdate
+    public class RigidBodyComponent(float mass) : Component, IEditorRender, IEditorUpdate
     {
         [UsedImplicitly]
         private RigidBodyComponent() : this(0)
@@ -32,7 +33,7 @@ namespace RE.Core.World.Components.Physics
         private ModelRenderer _triggerBoxRenderer;
 
         public override bool IsOpaque => false;
-
+        
         public RigidBody RigidBody { get; private set; }
 
         [EditorProperty]
@@ -249,15 +250,7 @@ namespace RE.Core.World.Components.Physics
 
             base.Destroy();
         }
-
-        public override JsonNode GetSaveData()
-        {
-            return new JsonObject
-            {
-                { nameof(Mass), Mass }
-            };
-        }
-
+  
         public void EditorRender(FrameEventArgs args)
         {
             if (IsTrigger)

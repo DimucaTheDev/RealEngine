@@ -181,11 +181,7 @@ namespace RE.Core.World.Components.Lighting
         {
             Owner.Scene.LightSources.Remove(_lightSource);
         }
-
-        public override JsonNode GetSaveData()
-        {
-            return GetDataForProperties();
-        }
+ 
         public void EditorRender(FrameEventArgs args)
         {
             UpdateLight();

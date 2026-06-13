@@ -37,8 +37,8 @@ public class RenderManager
     {
         FrustumRenderer.StartRender();
         OitShaderProgram = new ShaderProgram();
-        OitShaderProgram.AttachShader("Assets/Shaders/oit.frag");
-        OitShaderProgram.AttachShader("Assets/Shaders/oit.vert");
+        OitShaderProgram.AttachShader("Assets/Shaders/ui/oit.frag");
+        OitShaderProgram.AttachShader("Assets/Shaders/ui/oit.vert");
         GL.GenVertexArrays(1, out FullscreenVao);
     }
 

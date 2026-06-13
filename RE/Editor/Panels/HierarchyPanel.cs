@@ -104,8 +104,8 @@ namespace RE.Editor.Panels
         {
             bool hasVisibleChildren = obj.Children.Any(s => !s.DoNotShowInEditor);
 
-            ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags.OpenOnArrow | ImGuiTreeNodeFlags.OpenOnDoubleClick |
-                                       ImGuiTreeNodeFlags.DrawLinesFull;
+            ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags.OpenOnArrow | ImGuiTreeNodeFlags.DefaultOpen |
+                                       ImGuiTreeNodeFlags.OpenOnDoubleClick | ImGuiTreeNodeFlags.DrawLinesFull;
 
             if (!hasVisibleChildren)
                 flags |= ImGuiTreeNodeFlags.Leaf | ImGuiTreeNodeFlags.NoTreePushOnOpen;

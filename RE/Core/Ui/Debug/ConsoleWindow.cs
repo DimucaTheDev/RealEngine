@@ -62,7 +62,8 @@ namespace RE.Core.Ui.Debug
                     ImGui.SameLine();
                     ImGui.Checkbox($"Warning ({log.Count(s => s.Level is LogEventLevel.Warning)})", ref _showWarn);
                     ImGui.SameLine();
-                    ImGui.Checkbox($"Error ({log.Count(s => s.Level is LogEventLevel.Error or LogEventLevel.Fatal)})", ref _showError);
+                    ImGui.Checkbox($"Error ({log.Count(s => s.Level is LogEventLevel.Error or LogEventLevel.Fatal)})",
+                        ref _showError);
 
                     ImGui.Separator();
 
@@ -84,7 +85,7 @@ namespace RE.Core.Ui.Debug
                             _shouldScrollToBottom = true;
 
                         ImGui.PushStyleVar(ImGuiStyleVar.ItemSpacing, new Vector2(4, 1));
-                        ImGuiTableFlags tableFlags = ImGuiTableFlags.RowBg ;
+                        ImGuiTableFlags tableFlags = ImGuiTableFlags.RowBg;
                         if (!w)
                         {
                             tableFlags |= ImGuiTableFlags.ScrollX;
@@ -96,7 +97,7 @@ namespace RE.Core.Ui.Debug
                             ImGui.TableSetupColumn("##code", ImGuiTableColumnFlags.WidthFixed, 50);
                             ImGui.TableSetupColumn("##message",
                                 w ? ImGuiTableColumnFlags.WidthStretch : ImGuiTableColumnFlags.WidthFixed);
-    
+
                             ImGui.TableHeadersRow();
 
                             foreach (LogEntry entry in log)
@@ -114,6 +115,7 @@ namespace RE.Core.Ui.Debug
                             ImGui.EndTable();
                             ImGui.Dummy(new Vector2(0, 0));
                         }
+
                         ImGui.PopStyleVar();
 
                         if (_shouldScrollToBottom)
@@ -121,6 +123,7 @@ namespace RE.Core.Ui.Debug
                             ImGui.SetScrollHereY(1.0f);
                         }
                     }
+
                     ImGui.EndChild();
 
                     ImGui.PushItemWidth(-1);
@@ -138,7 +141,19 @@ namespace RE.Core.Ui.Debug
                         if (!string.IsNullOrWhiteSpace(_inputBuffer))
                         {
                             Log.Information(">>> {Input}", _inputBuffer);
-                            CommandHandler.ExecuteCommand(_inputBuffer);
+                            try
+                            {
+                                CommandHandler.ExecuteCommand(_inputBuffer);
+                            }
+                            catch (CommandNotFoundException)
+                            {
+                                Log.Error("Unknown found");
+                            }
+                            catch (Exception e)
+                            {
+                                Log.Error(e, "An error occured");
+                            }
+
                             if (_commandHistory.LastOrDefault() != _inputBuffer)
                                 _commandHistory.Add(_inputBuffer);
 
@@ -149,11 +164,14 @@ namespace RE.Core.Ui.Debug
                             _focusNextFrame = true;
                         }
                     }
+
                     ImGui.PopItemWidth();
                 }
             }
+
             ImGui.End();
         }
+
         private unsafe int ConsoleCallback(ImGuiInputTextCallbackData* data)
         {
             switch (data->EventFlag)
@@ -169,6 +187,7 @@ namespace RE.Core.Ui.Debug
                         MoveHistory(-1, data);
                     break;
             }
+
             return 0;
         }
 
@@ -177,13 +196,15 @@ namespace RE.Core.Ui.Debug
             string input = Encoding.UTF8.GetString(data->Buf, data->BufTextLen);
 
             var matches = CommandHandler.RegisteredCommands
+                .SelectMany(s => s.Value)
+                .Select(s => s.Name)
+                .Distinct()
                 .Where(c => c.StartsWith(input, StringComparison.OrdinalIgnoreCase))
                 .ToList();
 
             if (matches.Count == 0)
             {
                 Log.Information("No matches for input: {Input}", input);
-
             }
             else if (matches.Count == 1)
             {
@@ -218,8 +239,10 @@ namespace RE.Core.Ui.Debug
                         return string.Empty;
                 }
             }
+
             return prefix;
         }
+
         private unsafe void MoveHistory(int direction, ImGuiInputTextCallbackData* data)
         {
             if (_commandHistory.Count == 0)
@@ -241,6 +264,7 @@ namespace RE.Core.Ui.Debug
                 data->InsertChars(0, newText);
             }
         }
+
         private void DrawLogLine(LogEntry entry, bool wrap)
         {
             Vector4 color;
@@ -299,6 +323,7 @@ namespace RE.Core.Ui.Debug
 
             ImGui.PopID();
         }
+
         public static void Init()
         {
             Instance ??= new ConsoleWindow { Id = "Main" };

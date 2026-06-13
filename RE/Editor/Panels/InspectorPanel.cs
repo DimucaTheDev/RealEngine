@@ -630,7 +630,14 @@ namespace RE.Editor.Panels
                         {
                             if (drawer.Draw($"##{prop.Name}", ref val, prop))
                             {
-                                prop.SetValue(component, val);
+                                try
+                                {
+                                    prop.SetValue(component, val);
+                                }
+                                catch (Exception e)
+                                {
+                                    Log.Error(e, "Unable to update property({Name}) value({Value})", prop.Name, val);
+                                }
                             }
                         }
                         else

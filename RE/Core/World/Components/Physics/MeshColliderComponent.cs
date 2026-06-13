@@ -72,11 +72,6 @@ namespace RE.Core.World.Components.Physics
             }
 
             return result;
-        }
-
-        public override JsonNode GetSaveData()
-        {
-            return GetDataForProperties();
-        }
+        } 
     }
 }

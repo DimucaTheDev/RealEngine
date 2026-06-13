@@ -1,4 +1,5 @@
 ﻿using System.Reflection;
+using RE.Core.Scripting;
 using Serilog;
 
 namespace RE.Core.PluginSystem
@@ -52,6 +53,7 @@ namespace RE.Core.PluginSystem
                     {
                         var pluginInstance = (Plugin)Activator.CreateInstance(type)!;
                         plugins.Add(pluginInstance);
+                        CommandHandler.RegisterCommandsInAssembly(assembly);
                     }
                 }
                 catch (Exception e)
