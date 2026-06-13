@@ -1,5 +1,8 @@
-﻿using OpenTK.Mathematics;
+﻿using System.Diagnostics.CodeAnalysis;
+using JetBrains.Annotations;
+using OpenTK.Mathematics;
 using RE.Core.Scripting;
+using RE.Rendering.Texturing;
 using RE.Utils;
 using SceneEditor = RE.Editor.SceneEditor;
 
@@ -7,57 +10,66 @@ namespace RE.Rendering;
 
 public class Camera(Vector3 position, Vector3 up, int width, int height)
 {
-    public float AspectRatio => (float)RenderWidth / RenderHeight;
-    public Vector3 Front = -Vector3.UnitZ;
+    public static Camera Main { get; private set; }
+    public static Camera Editor { get; private set; }
 
     public float Pitch
     {
-        get => field;
+        get;
         set
         {
             field = value;
             UpdateVectors();
         }
     }
+
     public float Yaw
     {
-        get => field;
+        get;
         set
         {
             field = value;
             UpdateVectors();
         }
-    } = -90f;
+    }
 
     public float Roll
     {
-        get => field;
+        get;
         set
         {
             field = value;
             UpdateVectors();
         }
-    } = 45;
+    }
 
     public float Fov
     {
-        get => field;
+        get;
         set
         {
             field = value;
             UpdateVectors();
         }
-    } = 75;
-    public Vector3 Position = position;
-    public Vector3 Up = up;
-    public int RenderWidth = width, RenderHeight = height;
+    } = 80;
 
-    public static Camera Main { get; private set; }
-    public static Camera Editor { get; private set; }
+    public StaticTextureSource? RenderTexture { get; set; }
+
+    public Vector3 Position = position;
+    
+    public Vector3 Up = up;
+    public Vector3 Front = Vector3.UnitX;
+    
+    // Автоматически пересчитывается при вызове на основе актуальных Front и Up
+    public Vector3 Right => Vector3.Normalize(Vector3.Cross(Front, Up));
+    
+    public int RenderWidth = width;
+    public int RenderHeight = height;
+    public float AspectRatio => (float)RenderWidth / RenderHeight;
 
     public static void Init()
     {
-        Main = new Camera(new(15, 3, 8), Vector3.UnitY, Game.Instance.ClientSize.X, Game.Instance.ClientSize.Y);
+        Main = new Camera(Vector3.Zero, Vector3.UnitY, Game.Instance.ClientSize.X, Game.Instance.ClientSize.Y);
         Editor = new Camera(new(10, 10, 10), Vector3.UnitY, Game.Instance.ClientSize.X, Game.Instance.ClientSize.Y);
         Editor.LookAt((0, 0, 0));
         Variables.VariableChanged += (s, e) =>
@@ -81,8 +93,11 @@ public class Camera(Vector3 position, Vector3 up, int width, int height)
 
     public Matrix4 GetViewMatrix() => Matrix4.LookAt(Position, Position + Front, Up);
     public Matrix4 GetProjectionMatrix() => GetProjectionMatrix(Fov);
-    public Matrix4 GetProjectionMatrix(float fov) => Matrix4.CreatePerspectiveFieldOfView(MathHelper.DegreesToRadians(fov), AspectRatio, 0.1f, 10000f);
-    public Matrix4 GetBillboard(Vector3 objectPosition, bool lockX = false, bool lockY = false)
+
+    public Matrix4 GetProjectionMatrix(float fov) =>
+        Matrix4.CreatePerspectiveFieldOfView(MathHelper.DegreesToRadians(fov), AspectRatio, 0.1f, 10000f);
+
+    public Matrix4 GetBillboard(bool lockX = false, bool lockY = false)
     {
         Matrix4 view = GetViewMatrix();
 
@@ -101,7 +116,8 @@ public class Camera(Vector3 position, Vector3 up, int width, int height)
         }
 
         if (lockY)
-        { } // huh
+        {
+        } 
 
         billboard.Column0 = new Vector4(right, billboard.Column0.W);
         billboard.Column1 = new Vector4(up, billboard.Column1.W);
@@ -112,13 +128,29 @@ public class Camera(Vector3 position, Vector3 up, int width, int height)
 
     private void UpdateVectors()
     {
-        Vector3 front;
-        front.X = MathF.Cos(MathHelper.DegreesToRadians(Yaw)) *
-                  MathF.Cos(MathHelper.DegreesToRadians(Pitch));
-        front.Y = MathF.Sin(MathHelper.DegreesToRadians(Pitch));
-        front.Z = MathF.Sin(MathHelper.DegreesToRadians(Yaw)) *
-                  MathF.Cos(MathHelper.DegreesToRadians(Pitch));
+        float pitchRad = MathHelper.DegreesToRadians(Pitch);
+        float yawRad = MathHelper.DegreesToRadians(Yaw);
+        float rollRad = MathHelper.DegreesToRadians(Roll);
 
+        Vector3 front;
+        front.X = MathF.Cos(yawRad) * MathF.Cos(pitchRad);
+        front.Y = MathF.Sin(pitchRad);
+        front.Z = MathF.Sin(yawRad) * MathF.Cos(pitchRad);
         Front = Vector3.Normalize(front);
+
+        Vector3 worldUp = Vector3.UnitY;
+
+        if (MathF.Abs(Front.Y) > 0.999f)
+        {
+            worldUp = Front.Y > 0 ? -Vector3.UnitZ : Vector3.UnitZ;
+        }
+
+        Vector3 baseRight = Vector3.Normalize(Vector3.Cross(Front, worldUp));
+        Vector3 baseUp = Vector3.Normalize(Vector3.Cross(baseRight, Front));
+
+        float cosRoll = MathF.Cos(rollRad);
+        float sinRoll = MathF.Sin(rollRad);
+
+        Up = Vector3.Normalize(baseUp * cosRoll - baseRight * sinRoll);
     }
 }
