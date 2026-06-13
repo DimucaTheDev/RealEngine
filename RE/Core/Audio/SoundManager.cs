@@ -161,21 +161,8 @@ namespace RE.Core.Audio
             }));
             Assert(instance.start());
             Assert(instance.release());
-        }
-
-        public static Channel TestPlay(Fmod.Sound s, ChannelGroup g)
-        {
-            _fmodSystem.playSound(s, g, false, out var channel);
-            return channel;
-        }
-        public static (Fmod.Sound, ChannelGroup) TestStream()
-        {
-            Assert(_fmodSystem.createStream("https://radio.weatherusa.net/NWR/KHB40.mp3",
-                MODE.NONBLOCKING | MODE.CREATESTREAM | MODE._3D, out var sound));
-            Assert(_fmodSystem.createChannelGroup("test", out var group));
-            return (sound, group);
-        }
-
+        } 
+        
         public static void StopAll(bool immediate = true)
         {
             Assert(_studioSystem.getBus("bus:/", out var bus));

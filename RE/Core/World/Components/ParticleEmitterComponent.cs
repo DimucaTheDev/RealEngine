@@ -168,7 +168,7 @@ namespace RE.Core.World.Components
             _particles.Clear();
         }
 
-        public override JsonNode GetSaveData()
+        public override JsonObject GetSaveData()
         {
             var json = new JsonObject();
             json[nameof(_settings)] = _settings.ToJson();

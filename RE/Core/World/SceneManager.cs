@@ -9,6 +9,7 @@ using RE.Core.Assets;
 using RE.Core.Initializing;
 using RE.Core.PluginSystem;
 using RE.Core.Scripting.Attributes;
+using RE.Core.Ui;
 using RE.Editor.Panels.Viewport;
 using RE.Utils;
 using Serilog;
@@ -61,7 +62,7 @@ namespace RE.Core.World
         {
             SceneChanged = true;
 
-            //Hud.Root.Children.Clear();
+            Hud.Root.Children.Clear();
             //Log.Debug("Scene changed, HUD canvas cleared");
 
             if (CurrentScene != null! && disposeCurrent)
@@ -70,6 +71,11 @@ namespace RE.Core.World
             }
 
             CurrentScene = scene;
+
+            foreach (var com in CurrentScene.GameObjects.SelectMany(s => s.Components).ToList())    
+            {
+                com.Start();
+            }
 
             if (!CurrentScene.LightSources.Any())
                 Log.Warning("No light sources in {SceneName}", CurrentScene.Name);
@@ -119,25 +125,11 @@ namespace RE.Core.World
             Log.Information("Saved level to '{Path}'", savedTo);
         }
 
-
-        //todo: parse at PATH, not just name
-        /// <summary>
-        /// Loads and deserializes a scene from JSON file located at <c>Assets/Maps/{name}/data.json</c>.
-        /// </summary>
-        /// <param name="name">Scene name in <c>Assets/Maps</c></param>
-        /// <returns>A new scene instance</returns>
-        public static Scene LoadFromMapFile(string name)
-        {
-            string dataPath = Path.Combine("Assets", "Maps", name, "data.json");
-
-            //todo: deflate decompression
-            return SceneSerializer.DeserializeScene(ContentManager.GetString(dataPath), name);
-        }
-
-
+        public static Scene Reload() => Reload(CurrentScene);
         public static Scene Reload(Scene scene)
         {
             var newScene = SceneSerializer.DeserializeScene(SceneSerializer.SerializeScene(scene), scene.Name);
+            LoadScene(scene);
             return newScene;
         }
     }

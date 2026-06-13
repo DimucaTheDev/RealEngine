@@ -35,6 +35,8 @@ namespace RE.Core.World
             SceneManager._objectsToAdd.Add(g);
             g.Scene = scene;
 
+            scene.RenderingComponents.AddRange(g.Components.Where(c => scene.RenderingComponents.Contains(c)));
+
             if (!doNotCallStart)
             {
                 foreach (var component in g.Components)

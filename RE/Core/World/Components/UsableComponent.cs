@@ -22,7 +22,7 @@ namespace RE.Core.World.Components
 
         private void ExecuteCommandOnUse() { CommandHandler.ExecuteCommand(Command); }
          
-        public override JsonNode GetSaveData()
+        public override JsonObject GetSaveData()
         {
             JsonObject root = new();
             if (Command != null!)

@@ -14,6 +14,9 @@ namespace RE.Core.World
         public List<ILightSource> LightSources { get; set; } = [];
 
         public Scene() => GameObjects = new GameObjectList(this);
+        
+        internal readonly List<Component> RenderingComponents = [];
+
 
         /// <summary>
         /// Calls <see cref="Component.Destroy"/> on all components of all game objects in the scene and unsubscribes them
@@ -27,7 +30,7 @@ namespace RE.Core.World
                 foreach (var component in obj.Components)
                 {
                     component.Destroy(); 
-                    RenderManager.RenderingComponents.Remove(component);
+                    RenderingComponents.Remove(component);
                 }
             }
         }

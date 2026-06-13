@@ -231,11 +231,11 @@ namespace RE.Core.World.Components.Physics
 
         protected override void Enabled()
         {
-            RigidBody.Enable();
+            RebuildPhysics();
             RigidBody.Activate();
         }
 
-        protected override void Disabled() => RigidBody.Disable();
+        protected override void Disabled() => RigidBody?.Disable();
 
         public override void Destroy()
         {

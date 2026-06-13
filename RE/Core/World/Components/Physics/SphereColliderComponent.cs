@@ -15,6 +15,6 @@ namespace RE.Core.World.Components.Physics
             return sphereShape;
         }
 
-        public override JsonNode GetSaveData() => new JsonObject();
+        public override JsonObject GetSaveData() => new JsonObject();
     }
 }

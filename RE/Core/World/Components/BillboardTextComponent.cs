@@ -1,4 +1,5 @@
 ﻿using System.Text.Json.Nodes;
+using JetBrains.Annotations;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using RE.Core.Scripting.Attributes;
@@ -13,10 +14,18 @@ namespace RE.Core.World.Components
     {
         private readonly FloatingText _text = new(text, Vector3.Zero, new FreeTypeFont(Fonts.Consolas, 64));
 
-        public BillboardTextComponent() : this("Billboard Text") { }
+        public BillboardTextComponent() : this("Billboard Text")
+        {
+        }
 
         [EditorProperty] public Vector3 PositionOffset { get; set; }
-        [EditorProperty] public string Text { get => _text.Text; set => _text.Text = value; }
+
+        [EditorProperty]
+        public string Text
+        {
+            get => _text.Text;
+            set => _text.Text = value;
+        }
 
         public override bool IsOpaque => false;
 
@@ -35,7 +44,7 @@ namespace RE.Core.World.Components
             _text.Dispose();
         }
 
-        public override JsonNode GetSaveData()
+        public override JsonObject GetSaveData()
         {
             JsonObject root = new();
             var posOffset = new JsonArray { PositionOffset.X, PositionOffset.Y, PositionOffset.Z };

@@ -1,26 +1,15 @@
-﻿using System.Diagnostics;
-using System.Globalization;
-using Assimp;
-using OpenTK.Graphics.OpenGL4;
+﻿using OpenTK.Graphics.OpenGL4;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using RE.Core.Assets;
-using RE.Core.Input;
 using RE.Core.World;
+using RE.Editor;
 using RE.Rendering.Lighting;
 using RE.Rendering.Model;
-using RE.Rendering.Renderables.ModelFormat;
-using RE.Rendering.Text;
-using RE.Rendering.Texturing;
 using RE.Utils;
-using Serilog;
-using StbImageSharp;
-using Keys = OpenTK.Windowing.GraphicsLibraryFramework.Keys;
 using Material = RE.Rendering.Lighting.Material;
 using PrimitiveType = OpenTK.Graphics.OpenGL4.PrimitiveType;
 using Quaternion = OpenTK.Mathematics.Quaternion;
-using Scene = Assimp.Scene;
-using SceneEditor = RE.Editor.SceneEditor;
 
 namespace RE.Rendering.Renderables
 {
@@ -89,10 +78,10 @@ namespace RE.Rendering.Renderables
             var lights = SceneManager.CurrentScene.LightSources;
 
             //lighting.glsl
-            program.SetValue("ignoreLight", IgnoreLight);
+            program.SetValue("ignoreLight",
+                !SceneEditor.Enabled ? IgnoreLight : (IgnoreLight || !SceneEditor.PreviewLight));
             program.SetValue("hasSpotLight", lights.Any(s => s is SpotLight));
             program.SetValue("hasDirLight", lights.Any(s => s is DirectionalLight));
-            program.SetValue("viewPos", Camera.GetActiveCamera().Position);
 
             foreach (var light in lights)
             {

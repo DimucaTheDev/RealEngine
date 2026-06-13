@@ -1,5 +1,7 @@
-﻿using System.Text.Json.Nodes;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Text.Json.Nodes;
 using BulletSharp;
+using JetBrains.Annotations;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using OpenTK.Windowing.GraphicsLibraryFramework;
@@ -8,6 +10,7 @@ using RE.Core.Input;
 using RE.Core.Scripting.Attributes;
 using RE.Core.Ui;
 using RE.Core.Ui.Controls;
+using RE.Core.Ui.Debug;
 using RE.Core.World.Components.Physics;
 using RE.Core.World.Physics;
 using RE.Editor;
@@ -53,6 +56,15 @@ namespace RE.Core.World.Components
 
         public override void Start()
         {
+            LineRenderer.Main.AddLine(Vector3.Zero, Vector3.One * 4, Vector4.One, Vector4.One, false);
+            
+            var a = GetComponent<AudioSourceComponent>() ?? new AudioSourceComponent();
+            //a.AddClip("Test", "event:/Blip");
+            //Owner.Components.TryAdd(a);
+            //var a = GetComponent<AudioSourceComponent>();
+            a.PlayOneShot("Test");
+
+
             PlayerGameObject = new GameObject(Owner)
             {
                 DoNotShowInEditor = true,
@@ -73,12 +85,12 @@ namespace RE.Core.World.Components
 
             GameObject g = new GameObject();
             g.Tag = "prop";
+            g.DoNotSave = true;
             g.Transform.Position = (0, 50, 0);
             //g.Components.Add(new MeshComponent("assets/models/cub.fbx"));
             g.Components.Add(new RigidBodyComponent(3));
             g.Components.Add(new BoxColliderComponent());
             g.Components.Add(new SpriteComponent("assets/testing/12478987327864358753.png") { Scale = 1.5f });
-            g.Components.Add(new RadioYay(), true);
             SceneManager.CurrentScene.GameObjects.Add(g);
 
 
@@ -110,7 +122,7 @@ namespace RE.Core.World.Components
         private float d;
 
         /// <inheritdoc />
-        public override bool IsOpaque => false;
+        public override bool IsOpaque => true;
 
         /// <inheritdoc />
         public override void Render(FrameEventArgs args)
@@ -691,45 +703,10 @@ namespace RE.Core.World.Components
             _spriteSpawnpoint.Render(args);
         }
 
-        public override JsonNode GetSaveData()
+        public override JsonObject GetSaveData()
         {
             JsonObject root = new();
             return root;
-        }
-    }
-
-    internal class RadioYay : Component
-    {
-        private (Fmod.Sound, ChannelGroup) c;
-        private Channel? cc;
-
-        public override void Start()
-        {
-            //c = SoundManager.TestStream();
-        }
-
-        /// <inheritdoc />
-        public override void Update(FrameEventArgs args)
-        {
-            return;
-            VECTOR v = new()
-            {
-                x = Owner.Transform.Position.X,
-                y = Owner.Transform.Position.Y,
-                z = Owner.Transform.Position.Z
-            };
-            VECTOR z = Vector3.Zero.ToFmodVector3();
-
-            var sound = c.Item1;
-            var channel = c.Item2;
-            sound.getOpenState(out var state, out _, out _, out _);
-
-            if (state == OPENSTATE.READY && cc == null)
-            {
-                cc = SoundManager.TestPlay(sound, channel);
-            }
-
-            cc?.set3DAttributes(ref v, ref z);
         }
     }
 
@@ -741,8 +718,6 @@ namespace RE.Core.World.Components
         public override void Start()
         {
             audio = GetComponent<AudioSourceComponent>()!;
-            var rigidBodyComponent = GetComponent<RigidBodyComponent>()!;
-            //rigidBodyComponent.IsTrigger = true;
         }
 
         public override void Update(FrameEventArgs args)
@@ -762,7 +737,7 @@ namespace RE.Core.World.Components
                 audio.PlayOneShot("Impact");
         }
 
-        public override JsonNode GetSaveData()
+        public override JsonObject GetSaveData()
         {
             return new JsonObject();
         }

@@ -1,16 +1,15 @@
 ﻿using System.CommandLine;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
-using BulletSharp;
-using BulletSharp.Math;
 using Hexa.NET.ImGui;
 using OpenTK.Graphics.OpenGL;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
+using OpenTK.Windowing.Common.Input;
 using OpenTK.Windowing.Desktop;
-using OpenTK.Windowing.GraphicsLibraryFramework;
 using RE.Core;
 using RE.Core.Assets;
 using RE.Core.Assets.Providers;
@@ -29,6 +28,7 @@ using RE.Editor.Notification;
 using RE.Editor.Panels.Viewport;
 using RE.Launchers;
 using RE.Rendering;
+using RE.Rendering.Renderables;
 using RenderdocSharp;
 using Serilog;
 using Camera = RE.Rendering.Camera;
@@ -36,7 +36,6 @@ using Color = System.Drawing.Color;
 using GL = OpenTK.Graphics.OpenGL.GL;
 using Keys = OpenTK.Windowing.GraphicsLibraryFramework.Keys;
 using SceneEditor = RE.Editor.SceneEditor;
-using Vector3 = BulletSharp.Math.Vector3;
 
 namespace RE.Utils;
 
@@ -76,8 +75,7 @@ internal partial class Game : GameWindow
 
         foreach (var lib in Directory.GetFiles(nativesPath, "*.dll"))
         {
-            nint handle;
-            LoadedLibs.TryAdd(handle = WinApi.LoadLibrary(lib), lib);
+            var handle = WinApi.LoadLibrary(lib);
             var fName = Path.GetFileName(lib);
             var errCode = Marshal.GetLastWin32Error();
 
@@ -99,7 +97,7 @@ internal partial class Game : GameWindow
         }
 
         CommandHandler.RegisterCommandsInAssembly(Assembly.GetExecutingAssembly());
-        
+
         PluginManager.ResolvePlugins();
 
         var width = CommandParseResult.GetValue<int>("--width");
@@ -112,32 +110,20 @@ internal partial class Game : GameWindow
             {
                 Title = $"{ProductName} {Version}",
                 ClientSize = new Vector2i(width, height),
-                Location = new Vector2i(Screen.PrimaryScreen!.Bounds.Width / 2 - width / 2,
-                    Screen.PrimaryScreen.Bounds.Height / 2 - height / 2),
+                /*Location = new Vector2i(Screen.PrimaryScreen!.Bounds.Width / 2 - width / 2,
+                    Screen.PrimaryScreen.Bounds.Height / 2 - height / 2),*/
                 StartVisible = false,
                 Vsync = VSyncMode.Off,
-                NumberOfSamples = CommandParseResult.GetValue<int>("--msaa")
+                NumberOfSamples = CommandParseResult.GetValue<int>("--msaa"),
+                Flags = (Debugger.IsAttached || CommandParseResult.GetValue<bool>("--gl-debug"))
+                    ? ContextFlags.Debug
+                    : ContextFlags.Default
             });
 
         GL.GetInteger(GetPName.Samples, out int samples);
         Log.Debug("MSAA set to {Samples} samples", samples);
 
         Instance = game;
-        Instance.JoystickConnected += static e =>
-        {
-            if (e.IsConnected)
-            {
-                Log.Information("Joystick connected: {Name} ({JoystickId})", Instance.JoystickStates[e.JoystickId].Name,
-                    e.JoystickId);
-                JoystickNames[e.JoystickId] = Instance.JoystickStates[e.JoystickId].Name;
-            }
-            else
-            {
-                Log.Information("Joystick disconnected: {Name} ({JoystickId})", JoystickNames[e.JoystickId],
-                    e.JoystickId);
-                JoystickNames.Remove(e.JoystickId);
-            }
-        };
 
         if (Renderdoc.IsAvailable)
             Log.Information("RenderDoc available: {Version}", Renderdoc.Version);
@@ -163,7 +149,8 @@ internal partial class Game : GameWindow
         ContentManager.Register(new FileContentProvider());
         ContentManager.Register(new ZipContentProvider());
 
-        Icon = LoadIcon();
+        if (TryLoadIcon(out var icon))
+            Icon = icon;
 
         RenderManager.Init();
         Camera.Init();
@@ -197,17 +184,17 @@ internal partial class Game : GameWindow
 
         var w = Camera.Main.RenderWidth;
         var h = Camera.Main.RenderHeight;
-        
+
         GL.Viewport(0, 0, w, h);
-        
+
         ResizeFramebuffers(w, h);
         ResizeOitFramebuffer(w, h);
-        
+
         base.OnResize(e);
     }
 
     protected override void OnUpdateFrame(FrameEventArgs args)
-    {
+    { 
         FrameProfiler.BeginFrame();
 
         Time.Update(args);
@@ -216,31 +203,35 @@ internal partial class Game : GameWindow
         if (_initialized && (!SceneEditor.Enabled || (SceneEditor.Enabled && SceneEditor.SimulationRunning)) &&
             SceneManager.CurrentScene != null!)
         {
-            FrameProfiler.Begin("update");
-
-            PhysicsManager.Update((float)args.Time);
-
-            FrameProfiler.Begin("components");
-            Keyboard.IsInputEnabled = !(SceneEditor.Enabled && SceneEditor.SimulationRunning);
-            foreach (var scene in SceneManager.CurrentScene.GameObjects)
+            using (FrameProfiler.Scope("update"))
             {
-                foreach (var c in scene.Components.Where(s => s.IsEnabled))
+                PhysicsManager.Update((float)args.Time);
+
+                using (FrameProfiler.Scope("components"))
                 {
-                    c.Update(args);
+                    Keyboard.IsInputEnabled = !(SceneEditor.Enabled /*&& SceneEditor.SimulationRunning*/);
+                    Mouse.IsInputEnabled = !(SceneEditor.Enabled /*&& SceneEditor.SimulationRunning*/);
+                    foreach (var scene in SceneManager.CurrentScene.GameObjects)
+                    {
+                        foreach (var c in scene.Components.Where(s => s.IsEnabled))
+                        {
+                            c.Update(args);
+                        }
+                    }
+
+                    Keyboard.IsInputEnabled = true;
+
+                    SceneSerializer.ApplyObjectModification();
+                }
+
+                using (FrameProfiler.Scope("ui"))
+                {
+                    Hud.Update(args);
                 }
             }
-            Keyboard.IsInputEnabled = true;
-
-            SceneSerializer.ApplyObjectModification();
-            FrameProfiler.End();
-
-            FrameProfiler.Begin("ui");
-            Hud.Update(args);
-            FrameProfiler.End();
-
-            FrameProfiler.End();
         }
     }
+
 
     protected override void OnRenderFrame(FrameEventArgs args)
     {
@@ -249,79 +240,77 @@ internal partial class Game : GameWindow
             return;
         }
 
-        var pb = FrameProfiler.Begin;
-        var pe = FrameProfiler.End;
 
-        pb("render");
-
-        Context.MakeCurrent();
-
-        if (!(_initialized = !Initializer.Render(args)))
+        using (FrameProfiler.Scope("render"))
         {
-            return;
-        }
+            Context.MakeCurrent();
 
-        #region GL
-
-        GL.Viewport(0, 0, ClientSize.X, ClientSize.Y);
-        GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
-        GL.DepthFunc(DepthFunction.Lequal);
-        GL.Enable(EnableCap.DepthTest);
-        GL.Enable(EnableCap.Blend);
-        GL.Enable(EnableCap.Multisample);
-        GL.ClearColor(Color.CadetBlue);
-        GL.PolygonMode(TriangleFace.FrontAndBack, Wireframe ? PolygonMode.Line : PolygonMode.Fill);
-
-        #endregion
-
-        pb("imgui_update");
-        {
-            ImGuiController.Update();
-        }
-        pe();
-
-        if (ToastManager.MainWindowViewport == (ImGuiViewportPtr)null)
-            ToastManager.MainWindowViewport = ImGui.GetMainViewport();
-
-        if (SceneEditor.Enabled)
-            SceneFramebuffer.Bind();
-
-        var w = Camera.GetActiveCamera().RenderWidth;
-        var h = Camera.GetActiveCamera().RenderHeight;
-        GL.Viewport(0, 0, w, h);
-
-        GL.ClearColor(Color.Black);
-        GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
-
-        GL.Enable(EnableCap.DepthTest);
-        GL.Enable(EnableCap.Blend);
-        GL.DepthFunc(DepthFunction.Lequal);
-        GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
-        GL.PolygonMode(TriangleFace.FrontAndBack, Wireframe ? PolygonMode.Line : PolygonMode.Fill);
-
-        RenderManager.RenderAll(args);
-        SceneSerializer.ApplyObjectModification();
-
-        // damn check how these brackets look!!! sad there are no macros :(
-        pb("imgui_render");
-        {
-            if (SceneEditor.Enabled)
+            if (!(_initialized = !Initializer.Render(args)))
             {
-                SceneFramebuffer.Unbind();
-                GL.ClearColor(Color4.Black);
-                GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
-                GL.Viewport(0, 0, ClientSize.X, ClientSize.Y);
+                return;
             }
 
-            GL.Disable(EnableCap.Multisample);
-            ToastManager.RenderNotifications();
-            ImGuiController.Render();
+            #region GL
+
+            GL.Viewport(0, 0, ClientSize.X, ClientSize.Y);
+            GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
+            GL.DepthFunc(DepthFunction.Lequal);
+            GL.Enable(EnableCap.DepthTest);
+            GL.Enable(EnableCap.Blend);
             GL.Enable(EnableCap.Multisample);
+            GL.ClearColor(Color.CadetBlue);
+            GL.PolygonMode(TriangleFace.FrontAndBack, Wireframe ? PolygonMode.Line : PolygonMode.Fill);
+
+            #endregion
+
+            using (FrameProfiler.Scope("imgui_update"))
+            {
+                ImGuiController.Update();
+            }
+
+            if (ToastManager.MainWindowViewport == (ImGuiViewportPtr)null)
+                ToastManager.MainWindowViewport = ImGui.GetMainViewport();
+
+            if (SceneEditor.Enabled)
+                SceneFramebuffer.Bind();
+
+            var w = Camera.GetActiveCamera().RenderWidth;
+            var h = Camera.GetActiveCamera().RenderHeight;
+            GL.Viewport(0, 0, w, h);
+
+            GL.ClearColor(Color.Black);
+            GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
+
+            GL.Enable(EnableCap.DepthTest);
+            GL.Enable(EnableCap.Blend);
+            GL.DepthFunc(DepthFunction.Lequal);
+            GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
+            GL.PolygonMode(TriangleFace.FrontAndBack, Wireframe ? PolygonMode.Line : PolygonMode.Fill);
+
+            RenderManager.RenderAll(args);
+            SceneSerializer.ApplyObjectModification();
+
+            using (FrameProfiler.Scope("imgui_render"))
+            {
+                if (SceneEditor.Enabled)
+                {
+                    SceneFramebuffer.Unbind();
+                    GL.ClearColor(Color4.Black);
+                    GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
+                    GL.Viewport(0, 0, ClientSize.X, ClientSize.Y);
+                }
+
+                GL.Disable(EnableCap.Multisample);
+                ToastManager.RenderNotifications();
+                ImGuiController.Render();
+                GL.Enable(EnableCap.Multisample);
+            }
+
+            SwapBuffers();
         }
-        pe();
 
-        SwapBuffers();
-
+        FrameProfiler.EndFrame();
+        
         #region Keybinds
 
         if (Keyboard.IsKeyPressed(Keys.F7, true))
@@ -357,7 +346,7 @@ internal partial class Game : GameWindow
         if (Keyboard.IsKeyPressed(Keys.F4, true))
             CommandHandler.ExecuteCommand("editor");
         if (Keyboard.IsKeyPressed(Keys.F5, true))
-            CommandHandler.ExecuteCommand("debug"); 
+            CommandHandler.ExecuteCommand("debug");
 
         if (Keyboard.IsKeyPressed(Keys.F2, true))
         {
@@ -381,9 +370,6 @@ internal partial class Game : GameWindow
         }
 
         #endregion
-
-        FrameProfiler.End();
-        FrameProfiler.EndFrame();
     }
 
     protected override void OnClosing(CancelEventArgs e)
@@ -405,7 +391,7 @@ internal partial class Game : GameWindow
     public override void Close()
     {
         _closing = true;
-    } 
+    }
 
     protected override void OnUnload()
     {

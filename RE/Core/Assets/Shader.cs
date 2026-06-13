@@ -10,6 +10,8 @@ namespace RE.Core.Assets
 {
     public partial class Shader : DynamicAsset
     {
+        internal readonly List<string> DeclaredUniforms = [];
+        
         private static readonly List<Shader> CompiledShaders = [];
         private const string CommonShaderPath = "Assets/Shaders/Core/Common.glsl";
 
@@ -47,6 +49,8 @@ namespace RE.Core.Assets
                 _ => throw new NotSupportedException("Unknown shader type!")
             });
 
+            GL.ObjectLabel(ObjectLabelIdentifier.Shader, Handle, -1, AssetPath);
+
             if (!ContentManager.Exists(AssetPath))
             {
                 GL.DeleteShader(Handle);
@@ -54,8 +58,8 @@ namespace RE.Core.Assets
             }
 
             var source = ContentManager.GetString(AssetPath!);
-            
-            
+
+
             var context = new ShaderCompileContext();
             source = PreprocessShader(source, AssetPath, context);
 
@@ -65,6 +69,7 @@ namespace RE.Core.Assets
             GL.CompileShader(Handle);
 
             GL.GetShader(Handle, ShaderParameter.CompileStatus, out var status);
+
 
             if (status != (int)All.True)
             {
@@ -85,7 +90,7 @@ namespace RE.Core.Assets
 
         private string PreprocessShader(string content, string shaderPath, ShaderCompileContext context)
         {
-            var regex = DirectiveRegex();
+            var dirRegex = DirectiveRegex();
             var sb = new StringBuilder();
 
             string? versionLine = null;
@@ -95,17 +100,19 @@ namespace RE.Core.Assets
             {
                 var trimmed = line.TrimEnd('\r');
 
-                var match = regex.Match(trimmed);
-                if (match.Success)
+                var directiveMath = dirRegex.Match(trimmed);
+                if (directiveMath.Success)
                 {
-                    var directive = match.Groups[1].Value;
+                    var directive = directiveMath.Groups[1].Value;
 
                     switch (directive)
                     {
                         case "include":
                         {
-                            var includeRel = match.Groups[2].Value;
-                            var includePath = includeRel.StartsWith('/') ? includeRel : Path.Combine(Path.GetDirectoryName(shaderPath)!, includeRel);
+                            var includeRel = directiveMath.Groups[2].Value;
+                            var includePath = includeRel.StartsWith('/')
+                                ? includeRel
+                                : Path.Combine(Path.GetDirectoryName(shaderPath)!, includeRel);
                             if (includePath.Contains(".."))
                                 Log.Warning("Path contains '..', errors may occur in path resolving.");
                             IncludeShader(includePath, context, sb);
@@ -118,6 +125,14 @@ namespace RE.Core.Assets
                     }
 
                     continue;
+                }
+ 
+
+                var uniformMath = UniformRegex().Match(trimmed);
+                if (uniformMath.Success)
+                {
+                    var name = uniformMath.Groups[1].Value;
+                    DeclaredUniforms.Add(name);
                 }
 
                 if (trimmed.StartsWith("#version"))
@@ -137,7 +152,7 @@ namespace RE.Core.Assets
 
             if (versionLine != null)
             {
-                return versionLine + "\n" + sb.ToString();
+                return versionLine + "\n" + sb;
             }
 
             return sb.ToString();
@@ -149,7 +164,7 @@ namespace RE.Core.Assets
                 throw new Exception($"Include cycle detected: {includePath}");
 
             includePath = ContentManager.NormalizePath(includePath);
-            
+
             if (!ContentManager.Exists(includePath))
                 throw new FileNotFoundException($"Include not found: {includePath}");
 
@@ -199,5 +214,8 @@ namespace RE.Core.Assets
 
         [GeneratedRegex(@"#([A-Za-z0-9_]{2,})\s+""([^""]+)""")]
         private static partial Regex DirectiveRegex();
+        
+        [GeneratedRegex(@"\buniform\s+\w+\s+(?<name>\w+)\s*;")]
+        private static partial Regex UniformRegex();
     }
 }

@@ -4,6 +4,7 @@ using System.CommandLine;
 using System.CommandLine.Help;
 using System.CommandLine.Invocation;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Drawing.Imaging;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -28,7 +29,6 @@ using FramebufferAttachment = OpenTK.Graphics.OpenGL.FramebufferAttachment;
 using FramebufferErrorCode = OpenTK.Graphics.OpenGL.FramebufferErrorCode;
 using FramebufferTarget = OpenTK.Graphics.OpenGL.FramebufferTarget;
 using Image = OpenTK.Windowing.Common.Input.Image;
-using PixelFormat = System.Drawing.Imaging.PixelFormat;
 using PixelInternalFormat = OpenTK.Graphics.OpenGL.PixelInternalFormat;
 using Rectangle = System.Drawing.Rectangle;
 using RenderbufferStorage = OpenTK.Graphics.OpenGL.RenderbufferStorage;
@@ -62,9 +62,6 @@ namespace RE.Utils
                 ?.InformationalVersion ?? "unknown";
 
         public const string ProductName = "Real Engine";
-
-        internal static readonly Dictionary<nint, string> LoadedLibs = new();
-        internal static readonly Dictionary<int, string> JoystickNames = [];
 
         private static bool Wireframe { get; set; }
 
@@ -107,7 +104,8 @@ namespace RE.Utils
                         (IntPtr)ptr);
                 }
 
-                var image = SixLabors.ImageSharp.Image.LoadPixelData<Rgb24>(a, Instance.ClientSize.X, Instance.ClientSize.Y);
+                var image = SixLabors.ImageSharp.Image.LoadPixelData<Rgb24>(a, Instance.ClientSize.X,
+                    Instance.ClientSize.Y);
 
                 image.Mutate(s => s.Flip(FlipMode.Vertical));
 
@@ -208,6 +206,7 @@ namespace RE.Utils
                 var memInfo = GC.GetGCMemoryInfo();
 
                 StringBuilder report = new StringBuilder();
+                report.AppendLine();
                 report.AppendLine("--- FATAL ERROR REPORT ---");
                 report.AppendLine($"Time: {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
                 report.AppendLine(
@@ -248,9 +247,6 @@ namespace RE.Utils
                 e.SetObserved();
             };
 
-            Application.ThreadException += (s, e) =>
-                Log.Fatal(e.Exception, "UI/WinForms Thread Exception");
-
             AppDomain.CurrentDomain.ProcessExit += (s, e) =>
             {
                 Log.Information("Engine shutdown initiated (ProcessExit)");
@@ -281,44 +277,44 @@ namespace RE.Utils
 #endif
         }
 
-        internal static WindowIcon? LoadIcon()
+        internal static bool TryLoadIcon([NotNullWhen(true)] out WindowIcon? icon)
         {
             var path = "Assets/AppIcon.ico";
             if (!ContentManager.Exists(path))
             {
                 Log.Error("Icon file not found: {IconPath}", path);
-                return null;
+                icon = null;
+                return false;
             }
 
             try
             {
-                using var icon = new Icon(ContentManager.Open(path));
-                using var bitmap = icon.ToBitmap();
+                using var mem = ContentManager.Open(path);
+                using var image = SixLabors.ImageSharp.Image.Load<Bgra32>(mem);
 
-                var data = new byte[bitmap.Width * bitmap.Height * 4];
-                var bitmapData = bitmap.LockBits(
-                    new Rectangle(0, 0, bitmap.Width, bitmap.Height),
-                    ImageLockMode.ReadOnly,
-                    PixelFormat.Format32bppArgb);
+                ImageFrame<Bgra32> bestFrame = image.Frames[0];
+                int maxArea = 0;
 
-                Marshal.Copy(bitmapData.Scan0, data, 0, data.Length);
-                bitmap.UnlockBits(bitmapData);
-
-                for (int i = 0; i < data.Length; i += 4)
+                foreach (var frame in image.Frames)
                 {
-                    byte a = data[i + 3];
-                    byte r = data[i + 2];
-                    byte g = data[i + 1];
-                    byte b = data[i + 0];
-
-                    data[i + 0] = r;
-                    data[i + 1] = g;
-                    data[i + 2] = b;
-                    data[i + 3] = a;
+                    if (frame is { Width: <= 512, Height: <= 512 })
+                    {
+                        int area = frame.Width * frame.Height;
+                        if (area > maxArea)
+                        {
+                            maxArea = area;
+                            bestFrame = frame;
+                        }
+                    }
                 }
 
-                var image = new Image(bitmap.Width, bitmap.Height, data);
-                return new WindowIcon(image);
+                int width = bestFrame.Width;
+                int height = bestFrame.Height;
+                byte[] pixelData = new byte[width * height * 4];
+
+                bestFrame.CopyPixelDataTo(pixelData);
+                icon = new WindowIcon(new Image(width, height, pixelData));
+                return true;
             }
             catch (Exception e)
             {
@@ -413,8 +409,8 @@ namespace RE.Utils
         public void ResizeFramebuffers(int width, int height)
         {
             // ReSharper disable  NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract
-            (SceneFramebuffer ??= new(width, height)).Resize(width, height);
-            (PrePostProcessFramebuffer ??= new(width, height)).Resize(width, height);
+            (SceneFramebuffer ??= new(width, height, "SceneEditor Framebuffer")).Resize(width, height);
+            (PrePostProcessFramebuffer ??= new(width, height, "Pre-postprocessing Framebuffer")).Resize(width, height);
             foreach (var layer in RenderManager.PostProcessLayers)
             {
                 layer.Resize(width, height);
@@ -562,7 +558,14 @@ namespace RE.Utils
                 Description = "Dump shader sources.",
                 DefaultValueFactory = _ => false
             };
-            
+
+            Option<bool> glDebugOption = new Option<bool>("--gl-debug")
+            {
+                Description = "Enable OpenGL Debug flag",
+                DefaultValueFactory = _ => false
+            };
+
+
             RootCommand rootCommand = new($"{ProductName} command line options")
             {
                 widthOption,
@@ -578,7 +581,8 @@ namespace RE.Utils
                 consoleOption,
                 editorOption,
                 msaaOption,
-                dumpShaders
+                dumpShaders,
+                glDebugOption
             };
             rootCommand.TreatUnmatchedTokensAsErrors = true;
 

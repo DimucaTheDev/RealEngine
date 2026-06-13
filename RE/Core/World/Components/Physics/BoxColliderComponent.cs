@@ -23,6 +23,6 @@ namespace RE.Core.World.Components.Physics
             return new BoxShape(halfExtents.ToBulletVector3());
         }
 
-        public override JsonNode GetSaveData() => new JsonObject();
+        public override JsonObject GetSaveData() => new JsonObject();
     }
 }

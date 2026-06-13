@@ -222,7 +222,8 @@ namespace RE.Editor.Panels
 
             return new ImTextureRef
             {
-                TexID = WindowsShell.GetFileIcon(fullPath)
+                //FUCK: 
+                //TexID = WindowsShell.GetFileIcon(fullPath)
             };
         }
 

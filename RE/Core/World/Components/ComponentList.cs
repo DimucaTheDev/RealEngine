@@ -85,7 +85,8 @@ namespace RE.Core.World.Components
 
             c.Owner = _owner;
 
-            RenderManager.RenderingComponents.Add(c);
+            (_owner.Scene ?? SceneManager.CurrentScene).RenderingComponents.Add(c);
+
             _components.Add(c);
             if (!doNotCallStart)
             {
@@ -114,7 +115,7 @@ namespace RE.Core.World.Components
             if (!_components.Contains(c))
                 return;
 
-            RenderManager.RenderingComponents.Remove(c);
+            c.Owner.Scene.RenderingComponents.Remove(c);
             c.Destroy();
 
             _components.Remove(c);

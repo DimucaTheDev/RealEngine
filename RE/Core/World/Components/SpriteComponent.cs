@@ -16,6 +16,8 @@ namespace RE.Core.World.Components
 
         public readonly SpriteRenderer Sprite = new(Vector3.Zero, path, scale: size, constantSize: false);
 
+        public override bool IsOpaque => true;
+
         [EditorProperty] public float Scale { get => Sprite.Scale; set => Sprite.Scale = value; }
 
         public override void Update(FrameEventArgs args)
@@ -33,7 +35,7 @@ namespace RE.Core.World.Components
             Sprite.Dispose();
         }
 
-        public override JsonNode GetSaveData()
+        public override JsonObject GetSaveData()
         {
             JsonObject root = new();
             var args = new JsonArray { path };

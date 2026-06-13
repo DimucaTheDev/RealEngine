@@ -9,6 +9,11 @@
           3,
           0
         ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
         "scale": [
           0.5,
           0.5,
@@ -17,9 +22,7 @@
       },
       "components": {
         "MeshComponent": {
-          "args": [
-            "assets/models/button.fbx"
-          ]
+          "Path": "assets/models/button.fbx"
         },
         "AnimatedTextureTestComponent": {},
         "BillboardTextComponent": {
@@ -32,8 +35,9 @@
             0
           ]
         }
-      }
-    }, 
+      },
+      "children": []
+    },
     {
       "name": "Plugin Components",
       "tag": null,
@@ -56,7 +60,8 @@
       },
       "components": {
         "TestComponent": {}
-      }
+      },
+      "children": []
     },
     {
       "name": "player",
@@ -81,9 +86,17 @@
       "components": {
         "PlayerComponent": {},
         "AudioSourceComponent": {
-          "AudioEvent": "event:/CreepyMusic_not"
+          "PlayOnStart": false,
+          "Position": [
+            0,
+            0,
+            0
+          ],
+          "LockPositionToOwner": false,
+          "Clips": {}
         }
-      }
+      },
+      "children": []
     },
     {
       "name": "Floor",
@@ -107,15 +120,17 @@
       },
       "components": {
         "MeshComponent": {
-          "args": [
-            "assets/models/cub.smdl"
-          ]
+          "Path": "file:assets/models/cub.smdl"
         },
-        "RigidBody": {
+        "RigidBodyComponent": {
+          "Mass": 0,
+          "Friction": 1,
+          "IsTrigger": false,
           "IsKinematic": true
         },
         "BoxColliderComponent": {}
-      }
+      },
+      "children": []
     },
     {
       "name": "Light point",
@@ -161,7 +176,8 @@
           "CutOff": 0.976296,
           "OuterCutOff": 0.95371693
         }
-      }
+      },
+      "children": []
     },
     {
       "name": "Skybox",
@@ -212,8 +228,16 @@
             ]
           },
           "components": {
-            "TriggerTest": {}
-          }
+            "RigidBodyComponent": {
+              "Mass": 0,
+              "Friction": 1,
+              "IsTrigger": true,
+              "IsKinematic": false
+            },
+            "BoxColliderComponent": {},
+            "TriggerTestComponent": {}
+          },
+          "children": []
         }
       ]
     }

@@ -14,6 +14,6 @@ namespace RE.Core.World.Components.Physics
             return shape;
         }
 
-        public override JsonNode GetSaveData() => new JsonObject();
+        public override JsonObject GetSaveData() => new JsonObject();
     }
 }

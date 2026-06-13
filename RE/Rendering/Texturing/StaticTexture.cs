@@ -230,7 +230,10 @@ namespace RE.Rendering.Texturing
                 (int)TextureMinFilter.Nearest);
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter,
                 (int)TextureMagFilter.Nearest);
-            
+
+            if (!AssetPath.IsNullOrEmpty())
+                GL.ObjectLabel(ObjectLabelIdentifier.Texture, texId, -1, AssetPath);
+
             /*
             GL.TexParameter(TextureTarget.Texture2D,
                 TextureParameterName.TextureWrapS,

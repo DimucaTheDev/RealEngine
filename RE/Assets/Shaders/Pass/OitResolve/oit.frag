@@ -9,17 +9,13 @@ out vec4 FragColor;
 
 void main()
 {
-    vec4 accum =
-    texture(accumColorTex, TexCoord);
+    vec4 accum = texture(accumColorTex, TexCoord);
+        
+    float weight = texture(accumWeightTex, TexCoord).r;
 
-    float weight =
-    texture(accumWeightTex, TexCoord).r;
+    vec3 color = accum.rgb / max(weight, 0.00001);
 
-    vec3 color =
-    accum.rgb / max(weight, 0.00001);
-
-    float alpha =
-    clamp(weight, 0.0, 1.0);
+    float alpha = clamp(weight, 0.0, 1.0);
 
     FragColor = vec4(color, alpha);
 }

@@ -207,7 +207,7 @@ namespace RE.Core.World.Components
             }
             return data;
         }
-        public override JsonNode GetSaveData()
+        public override JsonObject GetSaveData()
         {
             JsonObject root = new();
             JsonArray args =

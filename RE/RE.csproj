@@ -5,7 +5,7 @@
 		<OutputType Condition="'$(Configuration)'!='Debug'">Library</OutputType>
 
 		<TargetFramework>net10.0-windows</TargetFramework>
-		<UseWindowsForms>True</UseWindowsForms>
+		<UseWindowsForms>False</UseWindowsForms>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 		<LangVersion>preview</LangVersion>
@@ -72,11 +72,10 @@
 		<PackageReference Include="Serilog.Enrichers.Thread" Version="4.0.0" />
 		<PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
 		<PackageReference Include="Serilog.Sinks.File.GzArchive" Version="1.1.10" />
-		<PackageReference Include="SixLabors.ImageSharp" Version="3.1.11" />
+		<PackageReference Include="SixLabors.ImageSharp" Version="4.0.0" />
 		<PackageReference Include="SpaceWizards.SharpFont" Version="1.0.2" />
 		<PackageReference Include="StbImageSharp" Version="2.30.15" />
 		<PackageReference Include="System.CommandLine" Version="2.0.0" />
-		<PackageReference Include="System.Drawing.Common" Version="10.0.1" />
 
 		<None Include="Assets\**; Engine\**;">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

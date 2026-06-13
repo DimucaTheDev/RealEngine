@@ -288,7 +288,7 @@ namespace RE.Editor.Panels
                 GL.DepthFunc(DepthFunction.Lequal);
                 GL.Enable(EnableCap.DepthTest);
                 GL.Enable(EnableCap.Blend);
-                GL.ClearColor(Color.CadetBlue);
+                GL.ClearColor(Color4.CadetBlue);
 
 
                 var matrixModel = Matrix4.CreateTranslation(0, 0, 0) *

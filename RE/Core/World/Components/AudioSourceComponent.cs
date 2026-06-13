@@ -59,6 +59,7 @@ namespace RE.Core.World.Components
 
         [EditorProperty] public bool LockPositionToOwner { get; set; } = false;
 
+        [JsonPropertyName("Clips"), JsonInclude]
         private Dictionary<string, AudioClip> _clips = [];
 
         public override void Start()
@@ -132,13 +133,17 @@ namespace RE.Core.World.Components
         public override void Destroy() => _clips.ForEach(audio => audio.Value.Instance?.Dispose());
 
         /// <inheritdoc />
-        public override JsonNode GetSaveData()
+        public override JsonObject GetSaveData()
         {
-            var obj = (base.GetSaveData() as JsonObject)!;
-
-            var clips = new JsonArray();
+            var obj = new JsonObject
+            {
+                { nameof(PlayOnStart), PlayOnStart },
+                { nameof(Position), Position.ToJsonArray() },
+                { nameof(LockPositionToOwner), LockPositionToOwner },
+            };
+            var clips = new JsonObject();
             foreach (var clip in _clips)
-                clips.Add(SerializeClip(clip.Value));
+                clips.Add(clip.Key, SerializeClip(clip.Value));
 
             obj.Add("Clips", clips);
             return obj;

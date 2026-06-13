@@ -1,0 +1,2101 @@
+Subject: [PATCH] Changes
+---
+Index: RE/Assets/Maps/lobby/data.json
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/RE/Assets/Maps/lobby/data.json b/RE/Assets/Maps/lobby/data.json
+--- a/RE/Assets/Maps/lobby/data.json	(revision 63b83b10f84502485a8b9bf33a60a4122805a377)
++++ b/RE/Assets/Maps/lobby/data.json	(date 1782081927832)
+@@ -9,6 +9,11 @@
+           3,
+           0
+         ],
++        "rotation": [
++          0,
++          0,
++          0
++        ],
+         "scale": [
+           0.5,
+           0.5,
+@@ -17,9 +22,7 @@
+       },
+       "components": {
+         "MeshComponent": {
+-          "args": [
+-            "assets/models/button.fbx"
+-          ]
++          "Path": "assets/models/button.fbx"
+         },
+         "AnimatedTextureTestComponent": {},
+         "BillboardTextComponent": {
+@@ -32,8 +35,9 @@
+             0
+           ]
+         }
+-      }
+-    }, 
++      },
++      "children": []
++    },
+     {
+       "name": "Plugin Components",
+       "tag": null,
+@@ -56,7 +60,8 @@
+       },
+       "components": {
+         "TestComponent": {}
+-      }
++      },
++      "children": []
+     },
+     {
+       "name": "player",
+@@ -81,9 +86,17 @@
+       "components": {
+         "PlayerComponent": {},
+         "AudioSourceComponent": {
+-          "AudioEvent": "event:/CreepyMusic_not"
++          "PlayOnStart": false,
++          "Position": [
++            0,
++            0,
++            0
++          ],
++          "LockPositionToOwner": false,
++          "Clips": {}
+         }
+-      }
++      },
++      "children": []
+     },
+     {
+       "name": "Floor",
+@@ -107,15 +120,17 @@
+       },
+       "components": {
+         "MeshComponent": {
+-          "args": [
+-            "assets/models/cub.smdl"
+-          ]
++          "Path": "file:assets/models/cub.smdl"
+         },
+-        "RigidBody": {
++        "RigidBodyComponent": {
++          "Mass": 0,
++          "Friction": 1,
++          "IsTrigger": false,
+           "IsKinematic": true
+         },
+         "BoxColliderComponent": {}
+-      }
++      },
++      "children": []
+     },
+     {
+       "name": "Light point",
+@@ -161,7 +176,8 @@
+           "CutOff": 0.976296,
+           "OuterCutOff": 0.95371693
+         }
+-      }
++      },
++      "children": []
+     },
+     {
+       "name": "Skybox",
+@@ -212,8 +228,16 @@
+             ]
+           },
+           "components": {
+-            "TriggerTest": {}
+-          }
++            "RigidBodyComponent": {
++              "Mass": 0,
++              "Friction": 1,
++              "IsTrigger": true,
++              "IsKinematic": false
++            },
++            "BoxColliderComponent": {},
++            "TriggerTestComponent": {}
++          },
++          "children": []
+         }
+       ]
+     }
+Index: RE/Core/Input/Mouse.cs
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/RE/Core/Input/Mouse.cs b/RE/Core/Input/Mouse.cs
+--- a/RE/Core/Input/Mouse.cs	(revision 63b83b10f84502485a8b9bf33a60a4122805a377)
++++ b/RE/Core/Input/Mouse.cs	(date 1782081927842)
+@@ -15,7 +15,11 @@
+         public static CursorState CursorState
+         {
+             get => Game.Instance.CursorState;
+-            set => Game.Instance.CursorState = value;
++            set
++            {
++                if (!SceneEditor.SimulationRunning)
++                    Game.Instance.CursorState = value;
++            }
+         }
+ 
+         public static bool CanCaptureInput => IsInputEnabled && !ImGui.GetIO().WantCaptureMouse;
+Index: RE/Editor/SceneEditor.cs
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/RE/Editor/SceneEditor.cs b/RE/Editor/SceneEditor.cs
+--- a/RE/Editor/SceneEditor.cs	(revision 63b83b10f84502485a8b9bf33a60a4122805a377)
++++ b/RE/Editor/SceneEditor.cs	(date 1782081927867)
+@@ -5,6 +5,7 @@
+ using System.Text.RegularExpressions;
+ using Hexa.NET.ImGui;
+ using OpenTK.Graphics.OpenGL;
++using OpenTK.Mathematics;
+ using OpenTK.Windowing.Common;
+ using RE.Core;
+ using RE.Core.Assets;
+@@ -20,6 +21,7 @@
+ using RE.Editor.Notification;
+ using RE.Editor.Panels;
+ using RE.Editor.Panels.Viewport;
++using RE.Editor.Utils;
+ using RE.Rendering;
+ using RE.Rendering.Texturing;
+ using RE.Utils;
+@@ -46,22 +48,32 @@
+ 
+         public static SceneEditor Instance;
+         public static bool Enabled;
+-        public static bool PreviewLight, PreviewSkybox, ShowAxis = true, ShowGrid = true, PreviewParticles, ShowHud;
++
++        public static bool PreviewLight = true,
++            PreviewSkybox,
++            ShowAxis = true,
++            ShowGrid = true,
++            PreviewParticles,
++            ShowHud;
++
+         public static GameObject? SelectedObject;
+         public static bool ShowExitConfirmationModal;
+         public static bool SimulationRunning;
+ 
++        internal static OutlineFramebuffer OutlineFramebuffer;
++
+         private static readonly ImFontPtr _bigFont;
+         private static readonly Texture LogoImage;
++        private static readonly ShaderProgram OutlineShaderProgram = new();
+ 
++        private static bool _isFirstTime = true;
+         private static bool _isDockspaceOpen;
+ 
+-        private Scene _scene = null!;
++        private Scene Scene => SceneManager.CurrentScene;
+         private Dictionary<string, List<Type>> _componentDict = new();
+         private Node _rootNode = new();
+         private string _oldTitle;
+-        private string _preSimulationSceneJson;
+-        
++
+         private readonly List<Type> _customPopups = new();
+         private readonly HierarchyPanel _hierarchyPanel = new();
+         private readonly HudHierarchyPanel _hudHierarchyPanel = new();
+@@ -106,7 +118,11 @@
+             else
+             {
+                 LogoImage = StaticTexture.CreateMissingTexture(6);
+-            } 
++            }
++
++            OutlineShaderProgram.AttachShader("Assets/Shaders/Pass/Editor/outline.frag");
++            OutlineShaderProgram.AttachShader("Assets/Shaders/Pass/Editor/outline.vert");
++            OutlineFramebuffer = new();
+         }
+ 
+         public void Enable()
+@@ -132,7 +148,6 @@
+ 
+             Log.Information("Starting Scene Editor for \"{SceneName}\"...", SceneManager.CurrentScene.Name);
+ 
+-            _scene = SceneManager.CurrentScene;
+             IsVisible = true;
+ 
+             foreach (var type in Assembly.GetExecutingAssembly().GetTypes()
+@@ -182,16 +197,21 @@
+ 
+             Game.Instance.Title = _oldTitle;
+ 
+-            var reloaded = SceneManager.Reload(_scene);
+-            _scene.Dispose();
++            var reloaded = SceneManager.Reload(Scene);
++            Scene.Dispose();
+             SceneManager.LoadScene(reloaded);
+         }
+ 
++        private float[] _outlineColor = new float[] { 1.0f, 0.5f, 0.0f };
++
+         public override void Render(FrameEventArgs args)
+         {
+             FrameProfiler.Begin("editor");
+             FrameProfiler.Begin("update");
+-            foreach (var obj in _scene.GameObjects)
++
++            //if(Keyboard.CanCaptureInput)
++
++            foreach (var obj in Scene.GameObjects)
+             {
+                 if (!obj.Components.Any())
+                     continue;
+@@ -216,12 +236,13 @@
+             FrameProfiler.Begin("render");
+             {
+                 Game.Instance.SceneFramebuffer.Bind();
+-
++                GL.ClearColor(Color.Black);
++                GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
+                 GL.Enable(EnableCap.DepthTest);
+                 GL.DepthMask(true);
+                 GL.Disable(EnableCap.Blend);
+ 
+-                foreach (var s in RenderManager.RenderingComponents.Where(s =>
++                foreach (var s in SceneManager.CurrentScene.RenderingComponents.Where(s =>
+                              s is { IsOpaque: true, IsEnabled: true }))
+                 {
+                     if (SceneManager.SceneChanged)
+@@ -240,9 +261,9 @@
+                 }
+ 
+                 GL.BindFramebuffer(FramebufferTarget.DrawFramebuffer, Game.Instance.OitFbo);
+-
+-                int width = Game.Instance.ClientSize.X;
+-                int height = Game.Instance.ClientSize.Y;
++                
++                int width = (int)ViewportPanel.ViewportSize.X;
++                int height = (int)ViewportPanel.ViewportSize.Y;
+ 
+                 GL.BlitFramebuffer(
+                     0, 0, width, height,
+@@ -252,7 +273,7 @@
+                 );
+ 
+                 GL.BindFramebuffer(FramebufferTarget.Framebuffer, Game.Instance.OitFbo);
+-
++                
+                 float[] clearZero = { 0.0f, 0.0f, 0.0f, 0.0f };
+ 
+                 GL.ClearBuffer(ClearBuffer.Color, 0, clearZero);
+@@ -267,7 +288,7 @@
+                 GL.BlendFunc(1, BlendingFactorSrc.One, BlendingFactorDest.One);
+ 
+ 
+-                foreach (var s in RenderManager.RenderingComponents.Where(s =>
++                foreach (var s in Scene.RenderingComponents.Where(s =>
+                              s is { IsOpaque: false, IsEnabled: true } or RigidBodyComponent))
+                 {
+                     if (SceneManager.SceneChanged)
+@@ -314,15 +335,70 @@
+                 GL.BindTexture(TextureTarget.Texture2D, 0);
+                 GL.ActiveTexture(TextureUnit.Texture0);
+                 GL.BindTexture(TextureTarget.Texture2D, 0);
++                
++                LineRenderer.Main.Render(args); // ?????
+             }
+             FrameProfiler.End();
+ 
++            if (SelectedObject != null)
++            {
++                FrameProfiler.Begin("outline");
++
++                OutlineFramebuffer.Bind();
++
++                GL.Enable(EnableCap.StencilTest);
++                GL.StencilMask(0xFF);
++
++                GL.Clear(ClearBufferMask.DepthBufferBit | ClearBufferMask.StencilBufferBit);
++
++                GL.StencilFunc(StencilFunction.Always, 1, 0xFF);
++                GL.StencilOp(StencilOp.Replace, StencilOp.Replace, StencilOp.Replace);
++
++                GL.ColorMask(false, false, false, false);
++
++                foreach (var component in SelectedObject.Components.Where(s => s.IsEnabled).OfType<IEditorRender>())
++                {
++                    component.EditorRender(args);
++                }
++
++                GL.ColorMask(true, true, true, true);
++                GL.Disable(EnableCap.StencilTest);
++
++                Game.Instance.SceneFramebuffer.Bind();
++
++                OutlineShaderProgram.Use();
++                OutlineShaderProgram.SetValue("u_StencilTexture", 0);
++                OutlineShaderProgram.SetValue("u_OutlineColor",
++                    new Vector3(_outlineColor[0], _outlineColor[1], _outlineColor[2]));
++
++                GL.Enable(EnableCap.Blend);
++                GL.Disable(EnableCap.DepthTest);
++                GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
++
++                GL.ActiveTexture(TextureUnit.Texture0);
++                GL.BindTexture(TextureTarget.Texture2D, OutlineFramebuffer.DepthStencilTexture);
++
++                GL.BindVertexArray(RenderManager.FullscreenVao);
++                GL.DrawArrays(PrimitiveType.Triangles, 0, 3);
++
++                GL.Enable(EnableCap.DepthTest);
++                GL.Disable(EnableCap.Blend);
++
++                FrameProfiler.End();
++
++                Begin("selection");
++                ColorPicker3("##label", ref _outlineColor[0]);
++                End();
++            }
++
+             if (ShowHud)
+             {
+                 FrameProfiler.Begin("hud");
+                 Hud.Render();
+                 FrameProfiler.End();
+             }
++            
++            LineRenderer.Main.Render(args);
+ 
+             if (SceneManager.CurrentScene == null!)
+                 return;
+@@ -383,8 +459,6 @@
+             }
+         }
+ 
+-        private bool _isFirstTime = true;
+-
+         private unsafe void SetupDockSpace()
+         {
+             var io = GetIO();
+@@ -421,7 +495,7 @@
+ 
+                     if (MenuItem("Save scene"))
+                     {
+-                        SceneManager.SaveSceneToFile(_scene, "assets/maps/demo");
++                        SceneManager.SaveSceneToFile(Scene, "assets/maps/demo");
+                     }
+ 
+                     if (MenuItem("Save scene as"))
+Index: RE/Assets/Shaders/Pass/Assimp/assimp.frag
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/RE/Assets/Shaders/Pass/Assimp/assimp.frag b/RE/Assets/Shaders/Pass/Assimp/assimp.frag
+--- a/RE/Assets/Shaders/Pass/Assimp/assimp.frag	(revision 63b83b10f84502485a8b9bf33a60a4122805a377)
++++ b/RE/Assets/Shaders/Pass/Assimp/assimp.frag	(date 1782081927888)
+@@ -1,4 +1,5 @@
+-#version 330 core
++#version 460 core
++
+ #include "/Assets/Shaders/Engine/lighting.glsl"
+ #include "/Assets/Shaders/Engine/oit_shared.glsl"
+ 
+@@ -9,7 +10,6 @@
+ uniform bool hasDirLight;
+ uniform bool hasSpotLight;
+ 
+-//uniform vec3 viewPos;
+ //in vec3 FragPos;        // These are from lighting.glsl
+ //in vec3 Normal;
+ //in vec2 TexCoords;
+@@ -44,7 +44,7 @@
+     else
+     {
+         vec3 norm = normalize(Normal);
+-        vec3 viewDir = normalize(viewPos - FragPos);
++        vec3 viewDir = normalize(u_CameraPosition - FragPos);
+ 
+         vec3 result = vec3(0.0);
+ 
+Index: RE/Core/World/Components/SkyboxComponent.cs
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/RE/Core/World/Components/SkyboxComponent.cs b/RE/Core/World/Components/SkyboxComponent.cs
+--- a/RE/Core/World/Components/SkyboxComponent.cs	(revision 63b83b10f84502485a8b9bf33a60a4122805a377)
++++ b/RE/Core/World/Components/SkyboxComponent.cs	(date 1782081927900)
+@@ -207,7 +207,7 @@
+             }
+             return data;
+         }
+-        public override JsonNode GetSaveData()
++        public override JsonObject GetSaveData()
+         {
+             JsonObject root = new();
+             JsonArray args =
+Index: RE/Core/World/Components/SpriteComponent.cs
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/RE/Core/World/Components/SpriteComponent.cs b/RE/Core/World/Components/SpriteComponent.cs
+--- a/RE/Core/World/Components/SpriteComponent.cs	(revision 63b83b10f84502485a8b9bf33a60a4122805a377)
++++ b/RE/Core/World/Components/SpriteComponent.cs	(date 1782081927921)
+@@ -16,6 +16,8 @@
+ 
+         public readonly SpriteRenderer Sprite = new(Vector3.Zero, path, scale: size, constantSize: false);
+ 
++        public override bool IsOpaque => false;
++
+         [EditorProperty] public float Scale { get => Sprite.Scale; set => Sprite.Scale = value; }
+ 
+         public override void Update(FrameEventArgs args)
+@@ -33,7 +35,7 @@
+             Sprite.Dispose();
+         }
+ 
+-        public override JsonNode GetSaveData()
++        public override JsonObject GetSaveData()
+         {
+             JsonObject root = new();
+             var args = new JsonArray { path };
+Index: RE/Assets/Shaders/Pass/Postprocess/ca.frag
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/RE/Assets/Shaders/Pass/Postprocess/ca.frag b/RE/Assets/Shaders/Pass/Postprocess/ca.frag
+--- a/RE/Assets/Shaders/Pass/Postprocess/ca.frag	(revision 63b83b10f84502485a8b9bf33a60a4122805a377)
++++ b/RE/Assets/Shaders/Pass/Postprocess/ca.frag	(date 1782081928013)
+@@ -5,7 +5,7 @@
+ 
+ uniform sampler2D u_Texture;
+ 
+-uniform float u_AberrationAmount = 0.01;
++uniform float u_AberrationAmount = 0.005;
+ 
+ void main()
+ {
+Index: RE/Core/World/SceneManager.cs
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/RE/Core/World/SceneManager.cs b/RE/Core/World/SceneManager.cs
+--- a/RE/Core/World/SceneManager.cs	(revision 63b83b10f84502485a8b9bf33a60a4122805a377)
++++ b/RE/Core/World/SceneManager.cs	(date 1782081928026)
+@@ -9,6 +9,7 @@
+ using RE.Core.Initializing;
+ using RE.Core.PluginSystem;
+ using RE.Core.Scripting.Attributes;
++using RE.Core.Ui;
+ using RE.Editor.Panels.Viewport;
+ using RE.Utils;
+ using Serilog;
+@@ -61,7 +62,7 @@
+         {
+             SceneChanged = true;
+ 
+-            //Hud.Root.Children.Clear();
++            Hud.Root.Children.Clear();
+             //Log.Debug("Scene changed, HUD canvas cleared");
+ 
+             if (CurrentScene != null! && disposeCurrent)
+@@ -71,6 +72,11 @@
+ 
+             CurrentScene = scene;
+ 
++            foreach (var com in CurrentScene.GameObjects.SelectMany(s => s.Components).ToList())    
++            {
++                com.Start();
++            }
++
+             if (!CurrentScene.LightSources.Any())
+                 Log.Warning("No light sources in {SceneName}", CurrentScene.Name);
+ 
+@@ -119,24 +125,9 @@
+             Log.Information("Saved level to '{Path}'", savedTo);
+         }
+ 
+-
+-        //todo: parse at PATH, not just name
+-        /// <summary>
+-        /// Loads and deserializes a scene from JSON file located at <c>Assets/Maps/{name}/data.json</c>.
+-        /// </summary>
+-        /// <param name="name">Scene name in <c>Assets/Maps</c></param>
+-        /// <returns>A new scene instance</returns>
+-        public static Scene LoadFromMapFile(string name)
+-        {
+-            string dataPath = Path.Combine("Assets", "Maps", name, "data.json");
+-
+-            //todo: deflate decompression
+-            return SceneSerializer.DeserializeScene(ContentManager.GetString(dataPath), name);
+-        }
+-
+-
+         public static Scene Reload(Scene scene)
+         {
++            throw new NotImplementedException();
+             var newScene = SceneSerializer.DeserializeScene(SceneSerializer.SerializeScene(scene), scene.Name);
+             return newScene;
+         }
+Index: RE/Utils/Internal/GameClassUtils.cs
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/RE/Utils/Internal/GameClassUtils.cs b/RE/Utils/Internal/GameClassUtils.cs
+--- a/RE/Utils/Internal/GameClassUtils.cs	(revision 63b83b10f84502485a8b9bf33a60a4122805a377)
++++ b/RE/Utils/Internal/GameClassUtils.cs	(date 1782081928053)
+@@ -62,10 +62,7 @@
+                 ?.InformationalVersion ?? "unknown";
+ 
+         public const string ProductName = "Real Engine";
+-
+-        internal static readonly Dictionary<nint, string> LoadedLibs = new();
+-        internal static readonly Dictionary<int, string> JoystickNames = [];
+-
++  
+         private static bool Wireframe { get; set; }
+ 
+         public Framebuffer SceneFramebuffer, PrePostProcessFramebuffer;
+@@ -208,6 +205,7 @@
+                 var memInfo = GC.GetGCMemoryInfo();
+ 
+                 StringBuilder report = new StringBuilder();
++                report.AppendLine();
+                 report.AppendLine("--- FATAL ERROR REPORT ---");
+                 report.AppendLine($"Time: {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
+                 report.AppendLine(
+@@ -360,7 +358,7 @@
+ 
+             GL.GenFramebuffers(1, out OitFbo);
+             GL.BindFramebuffer(FramebufferTarget.Framebuffer, OitFbo);
+-
++            
+             GL.GenTextures(1, out AccumColorTex);
+             GL.BindTexture(TextureTarget.Texture2D, AccumColorTex);
+             GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba16f,
+Index: RE/Rendering/RenderManager.cs
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/RE/Rendering/RenderManager.cs b/RE/Rendering/RenderManager.cs
+--- a/RE/Rendering/RenderManager.cs	(revision 63b83b10f84502485a8b9bf33a60a4122805a377)
++++ b/RE/Rendering/RenderManager.cs	(date 1782081928070)
+@@ -1,6 +1,7 @@
+ using System.Diagnostics;
+ using Hexa.NET.ImGui;
+ using OpenTK.Graphics.OpenGL;
++using OpenTK.Mathematics;
+ using OpenTK.Windowing.Common;
+ using RE.Core;
+ using RE.Core.Assets;
+@@ -10,24 +11,22 @@
+ using RE.Editor;
+ using RE.Editor.Notification;
+ using RE.Utils;
++using Serilog;
+ 
+ namespace RE.Rendering
+ {
+     public static class RenderManager
+     {
+         private static string resLoc = "";
+-        public static readonly List<Component> RenderingComponents = [];
+ 
+         public static readonly List<PostProcessLayer> PostProcessLayers =
+         [
+-            new("Assets/Shaders/Pass/Postprocess/ca.frag"),
+-            new("Assets/Shaders/Pass/Postprocess/vhs.frag"),
++            new("Assets/Shaders/Pass/Postprocess/ca.frag")
+         ];
+ 
+         internal static ShaderProgram OitShaderProgram;
+         internal static int FullscreenVao;
+-
+-        private static readonly List<Renderable> Renderables = new();
++        internal static readonly List<Renderable> Renderables = new();
+ 
+         public static void Init()
+         {
+@@ -42,7 +41,6 @@
+ 
+         public static void RemoveRenderable(Renderable renderable) => Renderables.Remove(renderable);
+ 
+-
+         public static void RenderAll(FrameEventArgs args)
+         {
+             if (!SceneEditor.Enabled && SceneManager.CurrentScene != null!)
+@@ -58,7 +56,8 @@
+                 GL.DepthMask(true);
+                 GL.Disable(EnableCap.Blend);
+ 
+-                foreach (var s in RenderingComponents.Where(s => s is { IsOpaque: true, IsEnabled: true }))
++                foreach (var s in SceneManager.CurrentScene.RenderingComponents.Where(s =>
++                             s is { IsOpaque: true, IsEnabled: true }))
+                 {
+                     if (SceneManager.SceneChanged)
+                     {
+@@ -75,6 +74,7 @@
+                 GL.BindFramebuffer(FramebufferTarget.ReadFramebuffer, ppBuffer.Handle);
+                 GL.BindFramebuffer(FramebufferTarget.DrawFramebuffer, Game.Instance.OitFbo);
+ 
++
+                 int width = Game.Instance.ClientSize.X;
+                 int height = Game.Instance.ClientSize.Y;
+ 
+@@ -101,7 +101,8 @@
+                 GL.BlendFunc(1, BlendingFactorSrc.One, BlendingFactorDest.One);
+ 
+ 
+-                foreach (var s in RenderingComponents.Where(s => s is { IsOpaque: false, IsEnabled: true }))
++                foreach (var s in SceneManager.CurrentScene.RenderingComponents.Where(s =>
++                             s is { IsOpaque: false, IsEnabled: true }))
+                 {
+                     if (SceneManager.SceneChanged)
+                     {
+@@ -122,6 +123,13 @@
+                 GL.Enable(EnableCap.Blend);
+                 GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
+ 
++                ImGui.Begin("oit"); //здесь спрайт ок
++                ImGui.Image(new() { TexID = Game.Instance.AccumColorTex },
++                    Game.Instance.ClientSize.ToVector2().ToSystemVector2() / 4, new(0, 1), new(1, 0));
++                ImGui.Image(new() { TexID = Game.Instance.AccumWeightTex },
++                    Game.Instance.ClientSize.ToVector2().ToSystemVector2() / 4, new(0, 1), new(1, 0));
++                ImGui.End();
++                
+                 OitShaderProgram.Use();
+                 OitShaderProgram.SetValue("accumColorTex", 0);
+                 OitShaderProgram.SetValue("accumWeightTex", 1);
+@@ -166,7 +174,7 @@
+ 
+                 ImGui.Image(new ImTextureRef
+                     {
+-                        TexID = new ImTextureID(ppBuffer.ColorTexture)
++                        TexID = new ImTextureID(ppBuffer.ColorTexture) //здесь спрайт уже почти прозрачный на черных цветах
+                     },
+                     Game.Instance.ClientSize.ToVector2().ToSystemVector2() / 4, new(0, 1), new(1, 0));
+ 
+@@ -202,6 +210,8 @@
+                 FrameProfiler.Begin("hud");
+                 Hud.Render();
+                 FrameProfiler.End();
++
++                //LineRenderer.Main.Render(args);
+             }
+ 
+             foreach (var renderable in Renderables.Where(renderable => renderable.IsVisible))
+Index: RE/Rendering/Framebuffer.cs
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/RE/Rendering/Framebuffer.cs b/RE/Rendering/Framebuffer.cs
+--- a/RE/Rendering/Framebuffer.cs	(revision 63b83b10f84502485a8b9bf33a60a4122805a377)
++++ b/RE/Rendering/Framebuffer.cs	(date 1782081928088)
+@@ -1,5 +1,6 @@
+ using OpenTK.Graphics.OpenGL4;
+ using RE.Utils;
++using Serilog;
+ 
+ namespace RE.Rendering
+ {
+Index: RE/Core/Assets/Shader.cs
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/RE/Core/Assets/Shader.cs b/RE/Core/Assets/Shader.cs
+--- a/RE/Core/Assets/Shader.cs	(revision 63b83b10f84502485a8b9bf33a60a4122805a377)
++++ b/RE/Core/Assets/Shader.cs	(date 1782081928105)
+@@ -137,7 +137,7 @@
+ 
+             if (versionLine != null)
+             {
+-                return versionLine + "\n" + sb.ToString();
++                return versionLine + "\n" + sb;
+             }
+ 
+             return sb.ToString();
+Index: RE/Assets/Shaders/Pass/OitResolve/oit.frag
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/RE/Assets/Shaders/Pass/OitResolve/oit.frag b/RE/Assets/Shaders/Pass/OitResolve/oit.frag
+--- a/RE/Assets/Shaders/Pass/OitResolve/oit.frag	(revision 63b83b10f84502485a8b9bf33a60a4122805a377)
++++ b/RE/Assets/Shaders/Pass/OitResolve/oit.frag	(date 1782081928201)
+@@ -9,17 +9,13 @@
+ 
+ void main()
+ {
+-    vec4 accum =
+-    texture(accumColorTex, TexCoord);
+-
+-    float weight =
+-    texture(accumWeightTex, TexCoord).r;
++    vec4 accum = texture(accumColorTex, TexCoord);
++        
++    float weight = texture(accumWeightTex, TexCoord).r;
+ 
+-    vec3 color =
+-    accum.rgb / max(weight, 0.00001);
++    vec3 color = accum.rgb / max(weight, 0.00001);
+ 
+-    float alpha =
+-    clamp(weight, 0.0, 1.0);
++    float alpha = clamp(weight, 0.0, 1.0);
+ 
+     FragColor = vec4(color, alpha);
+ }
+\ No newline at end of file
+Index: RE/Core/Game.cs
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/RE/Core/Game.cs b/RE/Core/Game.cs
+--- a/RE/Core/Game.cs	(revision 63b83b10f84502485a8b9bf33a60a4122805a377)
++++ b/RE/Core/Game.cs	(date 1782081928214)
+@@ -3,14 +3,11 @@
+ using System.Reflection;
+ using System.Runtime.InteropServices;
+ using System.Text;
+-using BulletSharp;
+-using BulletSharp.Math;
+ using Hexa.NET.ImGui;
+ using OpenTK.Graphics.OpenGL;
+ using OpenTK.Mathematics;
+ using OpenTK.Windowing.Common;
+ using OpenTK.Windowing.Desktop;
+-using OpenTK.Windowing.GraphicsLibraryFramework;
+ using RE.Core;
+ using RE.Core.Assets;
+ using RE.Core.Assets.Providers;
+@@ -29,6 +26,7 @@
+ using RE.Editor.Panels.Viewport;
+ using RE.Launchers;
+ using RE.Rendering;
++using RE.Rendering.Renderables;
+ using RenderdocSharp;
+ using Serilog;
+ using Camera = RE.Rendering.Camera;
+@@ -36,7 +34,6 @@
+ using GL = OpenTK.Graphics.OpenGL.GL;
+ using Keys = OpenTK.Windowing.GraphicsLibraryFramework.Keys;
+ using SceneEditor = RE.Editor.SceneEditor;
+-using Vector3 = BulletSharp.Math.Vector3;
+ 
+ namespace RE.Utils;
+ 
+@@ -76,8 +73,7 @@
+ 
+         foreach (var lib in Directory.GetFiles(nativesPath, "*.dll"))
+         {
+-            nint handle;
+-            LoadedLibs.TryAdd(handle = WinApi.LoadLibrary(lib), lib);
++            var handle = WinApi.LoadLibrary(lib);
+             var fName = Path.GetFileName(lib);
+             var errCode = Marshal.GetLastWin32Error();
+ 
+@@ -99,7 +95,7 @@
+         }
+ 
+         CommandHandler.RegisterCommandsInAssembly(Assembly.GetExecutingAssembly());
+-        
++
+         PluginManager.ResolvePlugins();
+ 
+         var width = CommandParseResult.GetValue<int>("--width");
+@@ -123,21 +119,6 @@
+         Log.Debug("MSAA set to {Samples} samples", samples);
+ 
+         Instance = game;
+-        Instance.JoystickConnected += static e =>
+-        {
+-            if (e.IsConnected)
+-            {
+-                Log.Information("Joystick connected: {Name} ({JoystickId})", Instance.JoystickStates[e.JoystickId].Name,
+-                    e.JoystickId);
+-                JoystickNames[e.JoystickId] = Instance.JoystickStates[e.JoystickId].Name;
+-            }
+-            else
+-            {
+-                Log.Information("Joystick disconnected: {Name} ({JoystickId})", JoystickNames[e.JoystickId],
+-                    e.JoystickId);
+-                JoystickNames.Remove(e.JoystickId);
+-            }
+-        };
+ 
+         if (Renderdoc.IsAvailable)
+             Log.Information("RenderDoc available: {Version}", Renderdoc.Version);
+@@ -197,12 +178,12 @@
+ 
+         var w = Camera.Main.RenderWidth;
+         var h = Camera.Main.RenderHeight;
+-        
++
+         GL.Viewport(0, 0, w, h);
+-        
++
+         ResizeFramebuffers(w, h);
+         ResizeOitFramebuffer(w, h);
+-        
++
+         base.OnResize(e);
+     }
+ 
+@@ -221,7 +202,8 @@
+             PhysicsManager.Update((float)args.Time);
+ 
+             FrameProfiler.Begin("components");
+-            Keyboard.IsInputEnabled = !(SceneEditor.Enabled && SceneEditor.SimulationRunning);
++            Keyboard.IsInputEnabled = !(SceneEditor.Enabled /*&& SceneEditor.SimulationRunning*/);
++            Mouse.IsInputEnabled = !(SceneEditor.Enabled /*&& SceneEditor.SimulationRunning*/);
+             foreach (var scene in SceneManager.CurrentScene.GameObjects)
+             {
+                 foreach (var c in scene.Components.Where(s => s.IsEnabled))
+@@ -229,6 +211,7 @@
+                     c.Update(args);
+                 }
+             }
++
+             Keyboard.IsInputEnabled = true;
+ 
+             SceneSerializer.ApplyObjectModification();
+@@ -240,10 +223,74 @@
+ 
+             FrameProfiler.End();
+         }
++
++        #region Keybinds
++
++        if (Keyboard.IsKeyPressed(Keys.F7, true))
++        {
++            var imGuiToast1 = new Toast(ToastType.None, "Hello World!");
++            var imGuiToast125 = new Toast(ToastType.None);
++            var imGuiToast15 = new Toast(ToastType.None, "Hello World!", "title");
++            var imGuiToast2 = new Toast(ToastType.Info, "Hello World!");
++            var imGuiToast25 = new Toast(ToastType.Info, "Hello World!", "title");
++            var imGuiToast3 = new Toast(ToastType.Success, "Hello World!");
++            var imGuiToast35 = new Toast(ToastType.Success);
++            var imGuiToast4 = new Toast(ToastType.Warning, "Hello Woooooooooorld!");
++            var imGuiToast45 = new Toast(ToastType.Warning, "World!", "Helloooooooooo");
++            var imGuiToast5 = new Toast(ToastType.Error, "Hello World!");
++            Time.Schedule(250 * 0, () => { ToastManager.InsertNotification(imGuiToast1); });
++            Time.Schedule(250 * 0, () => { ToastManager.InsertNotification(imGuiToast125); });
++            Time.Schedule(250 * 0, () => { ToastManager.InsertNotification(imGuiToast15); });
++            Time.Schedule(250 * 1, () => { ToastManager.InsertNotification(imGuiToast2); });
++            Time.Schedule(250 * 1, () => { ToastManager.InsertNotification(imGuiToast25); });
++            Time.Schedule(250 * 2, () => { ToastManager.InsertNotification(imGuiToast3); });
++            Time.Schedule(250 * 2, () => { ToastManager.InsertNotification(imGuiToast35); });
++            Time.Schedule(250 * 3, () => { ToastManager.InsertNotification(imGuiToast4); });
++            Time.Schedule(250 * 3, () => { ToastManager.InsertNotification(imGuiToast45); });
++            Time.Schedule(250 * 4, () => { ToastManager.InsertNotification(imGuiToast5); });
++        }
++
++        if (Keyboard.IsKeyPressed(Keys.GraveAccent))
++            ConsoleWindow.Instance!.IsVisible = !ConsoleWindow.Instance.IsVisible;
++        if (Keyboard.IsKeyPressed(Keys.F3, true))
++            Wireframe = !Wireframe;
++        if (Keyboard.IsKeyPressed(Keys.F11, true))
++            Instance.ToggleFullscreen();
++        if (Keyboard.IsKeyPressed(Keys.F4, true))
++            CommandHandler.ExecuteCommand("editor");
++        if (Keyboard.IsKeyPressed(Keys.F5, true))
++            CommandHandler.ExecuteCommand("debug");
++
++        if (Keyboard.IsKeyPressed(Keys.F2, true))
++        {
++            var p = TakeScreenshot();
++            if (p != null!)
++                Log.Information("Screenshot saved to {Path}", p);
++        }
++
++        if (Keyboard.IsKeyPressed(Keys.KeyPadEnter))
++        {
++            for (int i = 0; i < 100; i++)
++            {
++                var a = new GameObject();
++                a.Transform.Position = new OpenTK.Mathematics.Vector3(0, 10, 0);
++                a.Tag = "prop";
++                a.Components.Add(new MeshComponent("assets/models/cub.fbx"));
++                a.Components.Add(new RigidBodyComponent(20));
++                a.Components.Add(new BoxColliderComponent());
++                SceneManager.CurrentScene.GameObjects.Add(a);
++            }
++        }
++
++        #endregion
+     }
++
++    private SpriteRenderer r;
+ 
+     protected override void OnRenderFrame(FrameEventArgs args)
+     {
++        r ??= new SpriteRenderer(Vector3.One);
++        
+         if (_closing)
+         {
+             return;
+@@ -302,6 +349,8 @@
+         RenderManager.RenderAll(args);
+         SceneSerializer.ApplyObjectModification();
+ 
++        r.Render(args);
++
+         // damn check how these brackets look!!! sad there are no macros :(
+         pb("imgui_render");
+         {
+@@ -320,68 +369,9 @@
+         }
+         pe();
+ 
++
+         SwapBuffers();
+ 
+-        #region Keybinds
+-
+-        if (Keyboard.IsKeyPressed(Keys.F7, true))
+-        {
+-            var imGuiToast1 = new Toast(ToastType.None, "Hello World!");
+-            var imGuiToast125 = new Toast(ToastType.None);
+-            var imGuiToast15 = new Toast(ToastType.None, "Hello World!", "title");
+-            var imGuiToast2 = new Toast(ToastType.Info, "Hello World!");
+-            var imGuiToast25 = new Toast(ToastType.Info, "Hello World!", "title");
+-            var imGuiToast3 = new Toast(ToastType.Success, "Hello World!");
+-            var imGuiToast35 = new Toast(ToastType.Success);
+-            var imGuiToast4 = new Toast(ToastType.Warning, "Hello Woooooooooorld!");
+-            var imGuiToast45 = new Toast(ToastType.Warning, "World!", "Helloooooooooo");
+-            var imGuiToast5 = new Toast(ToastType.Error, "Hello World!");
+-            Time.Schedule(250 * 0, () => { ToastManager.InsertNotification(imGuiToast1); });
+-            Time.Schedule(250 * 0, () => { ToastManager.InsertNotification(imGuiToast125); });
+-            Time.Schedule(250 * 0, () => { ToastManager.InsertNotification(imGuiToast15); });
+-            Time.Schedule(250 * 1, () => { ToastManager.InsertNotification(imGuiToast2); });
+-            Time.Schedule(250 * 1, () => { ToastManager.InsertNotification(imGuiToast25); });
+-            Time.Schedule(250 * 2, () => { ToastManager.InsertNotification(imGuiToast3); });
+-            Time.Schedule(250 * 2, () => { ToastManager.InsertNotification(imGuiToast35); });
+-            Time.Schedule(250 * 3, () => { ToastManager.InsertNotification(imGuiToast4); });
+-            Time.Schedule(250 * 3, () => { ToastManager.InsertNotification(imGuiToast45); });
+-            Time.Schedule(250 * 4, () => { ToastManager.InsertNotification(imGuiToast5); });
+-        }
+-
+-        if (Keyboard.IsKeyPressed(Keys.GraveAccent))
+-            ConsoleWindow.Instance!.IsVisible = !ConsoleWindow.Instance.IsVisible;
+-        if (Keyboard.IsKeyPressed(Keys.F3, true))
+-            Wireframe = !Wireframe;
+-        if (Keyboard.IsKeyPressed(Keys.F11, true))
+-            Instance.ToggleFullscreen();
+-        if (Keyboard.IsKeyPressed(Keys.F4, true))
+-            CommandHandler.ExecuteCommand("editor");
+-        if (Keyboard.IsKeyPressed(Keys.F5, true))
+-            CommandHandler.ExecuteCommand("debug"); 
+-
+-        if (Keyboard.IsKeyPressed(Keys.F2, true))
+-        {
+-            var p = TakeScreenshot();
+-            if (p != null!)
+-                Log.Information("Screenshot saved to {Path}", p);
+-        }
+-
+-        if (Keyboard.IsKeyPressed(Keys.KeyPadEnter))
+-        {
+-            for (int i = 0; i < 100; i++)
+-            {
+-                var a = new GameObject();
+-                a.Transform.Position = new OpenTK.Mathematics.Vector3(0, 10, 0);
+-                a.Tag = "prop";
+-                a.Components.Add(new MeshComponent("assets/models/cub.fbx"));
+-                a.Components.Add(new RigidBodyComponent(20));
+-                a.Components.Add(new BoxColliderComponent());
+-                SceneManager.CurrentScene.GameObjects.Add(a);
+-            }
+-        }
+-
+-        #endregion
+-
+         FrameProfiler.End();
+         FrameProfiler.EndFrame();
+     }
+@@ -405,7 +395,7 @@
+     public override void Close()
+     {
+         _closing = true;
+-    } 
++    }
+ 
+     protected override void OnUnload()
+     {
+Index: RE/Core/World/Components/PlayerComponent.cs
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/RE/Core/World/Components/PlayerComponent.cs b/RE/Core/World/Components/PlayerComponent.cs
+--- a/RE/Core/World/Components/PlayerComponent.cs	(revision 63b83b10f84502485a8b9bf33a60a4122805a377)
++++ b/RE/Core/World/Components/PlayerComponent.cs	(date 1782081928237)
+@@ -1,5 +1,7 @@
++using System.Diagnostics.CodeAnalysis;
+ using System.Text.Json.Nodes;
+ using BulletSharp;
++using JetBrains.Annotations;
+ using OpenTK.Mathematics;
+ using OpenTK.Windowing.Common;
+ using OpenTK.Windowing.GraphicsLibraryFramework;
+@@ -8,6 +10,7 @@
+ using RE.Core.Scripting.Attributes;
+ using RE.Core.Ui;
+ using RE.Core.Ui.Controls;
++using RE.Core.Ui.Debug;
+ using RE.Core.World.Components.Physics;
+ using RE.Core.World.Physics;
+ using RE.Editor;
+@@ -53,6 +56,15 @@
+ 
+         public override void Start()
+         {
++            LineRenderer.Main.AddLine(Vector3.Zero, Vector3.One * 4, Vector4.One, Vector4.One, false);
++            
++            var a = GetComponent<AudioSourceComponent>() ?? new AudioSourceComponent();
++            //a.AddClip("Test", "event:/Blip");
++            //Owner.Components.TryAdd(a);
++            //var a = GetComponent<AudioSourceComponent>();
++            a.PlayOneShot("Test");
++
++
+             PlayerGameObject = new GameObject(Owner)
+             {
+                 DoNotShowInEditor = true,
+@@ -73,12 +85,12 @@
+ 
+             GameObject g = new GameObject();
+             g.Tag = "prop";
++            g.DoNotSave = true;
+             g.Transform.Position = (0, 50, 0);
+             //g.Components.Add(new MeshComponent("assets/models/cub.fbx"));
+             g.Components.Add(new RigidBodyComponent(3));
+             g.Components.Add(new BoxColliderComponent());
+             g.Components.Add(new SpriteComponent("assets/testing/12478987327864358753.png") { Scale = 1.5f });
+-            g.Components.Add(new RadioYay(), true);
+             SceneManager.CurrentScene.GameObjects.Add(g);
+ 
+ 
+@@ -691,48 +703,13 @@
+             _spriteSpawnpoint.Render(args);
+         }
+ 
+-        public override JsonNode GetSaveData()
++        public override JsonObject GetSaveData()
+         {
+             JsonObject root = new();
+             return root;
+         }
+     }
+ 
+-    internal class RadioYay : Component
+-    {
+-        private (Fmod.Sound, ChannelGroup) c;
+-        private Channel? cc;
+-
+-        public override void Start()
+-        {
+-            //c = SoundManager.TestStream();
+-        }
+-
+-        /// <inheritdoc />
+-        public override void Update(FrameEventArgs args)
+-        {
+-            return;
+-            VECTOR v = new()
+-            {
+-                x = Owner.Transform.Position.X,
+-                y = Owner.Transform.Position.Y,
+-                z = Owner.Transform.Position.Z
+-            };
+-            VECTOR z = Vector3.Zero.ToFmodVector3();
+-
+-            var sound = c.Item1;
+-            var channel = c.Item2;
+-            sound.getOpenState(out var state, out _, out _, out _);
+-
+-            if (state == OPENSTATE.READY && cc == null)
+-            {
+-                cc = SoundManager.TestPlay(sound, channel);
+-            }
+-
+-            cc?.set3DAttributes(ref v, ref z);
+-        }
+-    }
+-
+     [RequiresComponent<AudioSourceComponent>]
+     internal class CollisionTestComponent : Component
+     {
+@@ -741,8 +718,6 @@
+         public override void Start()
+         {
+             audio = GetComponent<AudioSourceComponent>()!;
+-            var rigidBodyComponent = GetComponent<RigidBodyComponent>()!;
+-            //rigidBodyComponent.IsTrigger = true;
+         }
+ 
+         public override void Update(FrameEventArgs args)
+@@ -762,7 +737,7 @@
+                 audio.PlayOneShot("Impact");
+         }
+ 
+-        public override JsonNode GetSaveData()
++        public override JsonObject GetSaveData()
+         {
+             return new JsonObject();
+         }
+Index: RE/Core/Ui/Debug/LineRenderer.cs
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/RE/Core/Ui/Debug/LineRenderer.cs b/RE/Core/Ui/Debug/LineRenderer.cs
+--- a/RE/Core/Ui/Debug/LineRenderer.cs	(revision 63b83b10f84502485a8b9bf33a60a4122805a377)
++++ b/RE/Core/Ui/Debug/LineRenderer.cs	(date 1782081928250)
+@@ -5,6 +5,7 @@
+ using RE.Core.Assets;
+ using RE.Rendering;
+ using RE.Utils;
++using Serilog;
+ 
+ namespace RE.Core.Ui.Debug;
+ 
+@@ -101,13 +102,14 @@
+                 Position = line.End,
+                 Color = line.ColorEnd
+             };
+-
++            
++            
+             GL.BufferSubData(
+                 BufferTarget.ArrayBuffer,
+                 nint.Zero,
+                 2 * Marshal.SizeOf<Vertex>(),
+                 _vertexBatch);
+-
++            
+             GL.DrawArrays(PrimitiveType.Lines, 0, 2);
+         }
+ 
+Index: RE/Core/World/Components/BillboardTextComponent.cs
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/RE/Core/World/Components/BillboardTextComponent.cs b/RE/Core/World/Components/BillboardTextComponent.cs
+--- a/RE/Core/World/Components/BillboardTextComponent.cs	(revision 63b83b10f84502485a8b9bf33a60a4122805a377)
++++ b/RE/Core/World/Components/BillboardTextComponent.cs	(date 1782081928290)
+@@ -1,4 +1,5 @@
+ using System.Text.Json.Nodes;
++using JetBrains.Annotations;
+ using OpenTK.Mathematics;
+ using OpenTK.Windowing.Common;
+ using RE.Core.Scripting.Attributes;
+@@ -13,10 +14,18 @@
+     {
+         private readonly FloatingText _text = new(text, Vector3.Zero, new FreeTypeFont(Fonts.Consolas, 64));
+ 
+-        public BillboardTextComponent() : this("Billboard Text") { }
++        public BillboardTextComponent() : this("Billboard Text")
++        {
++        }
+ 
+         [EditorProperty] public Vector3 PositionOffset { get; set; }
+-        [EditorProperty] public string Text { get => _text.Text; set => _text.Text = value; }
++
++        [EditorProperty]
++        public string Text
++        {
++            get => _text.Text;
++            set => _text.Text = value;
++        }
+ 
+         public override bool IsOpaque => false;
+ 
+@@ -35,7 +44,7 @@
+             _text.Dispose();
+         }
+ 
+-        public override JsonNode GetSaveData()
++        public override JsonObject GetSaveData()
+         {
+             JsonObject root = new();
+             var posOffset = new JsonArray { PositionOffset.X, PositionOffset.Y, PositionOffset.Z };
+@@ -51,4 +60,4 @@
+         /// <inheritdoc />
+         public void EditorRender(FrameEventArgs args) => Render(args);
+     }
+-}
++}
+\ No newline at end of file
+Index: RE/Core/Ui/Debug/DebugOverlay.cs
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/RE/Core/Ui/Debug/DebugOverlay.cs b/RE/Core/Ui/Debug/DebugOverlay.cs
+--- a/RE/Core/Ui/Debug/DebugOverlay.cs	(revision 63b83b10f84502485a8b9bf33a60a4122805a377)
++++ b/RE/Core/Ui/Debug/DebugOverlay.cs	(date 1782081928269)
+@@ -39,20 +39,29 @@
+         Test();
+     }
+ 
+-    private string? save = null;
++    private string save = "";
+ 
+     private void Test()
+     {
+         Begin("load save test");
++        if (Button("reset bullet"))
++        {
++            PhysicsManager.RecreateWorld();
++        }
++
+         if (Button("save"))
+         {
+             save = SceneSerializer.SerializeScene(SceneManager.CurrentScene);
+         }
+ 
+-        if (save != null && Button("load"))
++        if (!save.IsNullOrEmpty() && Button("load"))
+         {
+             var scene = SceneSerializer.DeserializeScene(save);
++            SceneManager.LoadScene(scene);
+         }
++
++
++        InputTextMultiline("##label", ref save, 1024 * 16, new Vector2(-1, -1));
+ 
+         End();
+     }
+Index: RE/Core/Audio/SoundManager.cs
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/RE/Core/Audio/SoundManager.cs b/RE/Core/Audio/SoundManager.cs
+--- a/RE/Core/Audio/SoundManager.cs	(revision 63b83b10f84502485a8b9bf33a60a4122805a377)
++++ b/RE/Core/Audio/SoundManager.cs	(date 1782081928313)
+@@ -161,21 +161,8 @@
+             }));
+             Assert(instance.start());
+             Assert(instance.release());
+-        }
+-
+-        public static Channel TestPlay(Fmod.Sound s, ChannelGroup g)
+-        {
+-            _fmodSystem.playSound(s, g, false, out var channel);
+-            return channel;
+-        }
+-        public static (Fmod.Sound, ChannelGroup) TestStream()
+-        {
+-            Assert(_fmodSystem.createStream("https://radio.weatherusa.net/NWR/KHB40.mp3",
+-                MODE.NONBLOCKING | MODE.CREATESTREAM | MODE._3D, out var sound));
+-            Assert(_fmodSystem.createChannelGroup("test", out var group));
+-            return (sound, group);
+-        }
+-
++        } 
++        
+         public static void StopAll(bool immediate = true)
+         {
+             Assert(_studioSystem.getBus("bus:/", out var bus));
+Index: RE/Editor/Utils/OutlineFramebuffer.cs
+===================================================================
+diff --git a/RE/Editor/Utils/OutlineFramebuffer.cs b/RE/Editor/Utils/OutlineFramebuffer.cs
+new file mode 100644
+--- /dev/null	(date 1782081928324)
++++ b/RE/Editor/Utils/OutlineFramebuffer.cs	(date 1782081928324)
+@@ -0,0 +1,90 @@
++using OpenTK.Graphics.OpenGL;
++using RE.Rendering;
++using RE.Utils;
++
++namespace RE.Editor.Utils;
++
++internal class OutlineFramebuffer : IDisposable
++{
++    public int Handle { get; private set; }
++    public int DepthStencilTexture { get; private set; }
++
++    public int Width { get; private set; }
++    public int Height { get; private set; }
++
++    public OutlineFramebuffer() : this(Game.Instance.ClientSize.X, Game.Instance.ClientSize.Y)
++    {
++    }
++
++    public OutlineFramebuffer(int width, int height)
++    {
++        Create(width, height);
++    }
++
++    private void Create(int width, int height)
++    {
++        Width = width;
++        Height = height;
++
++        Handle = GL.GenFramebuffer();
++        GL.BindFramebuffer(FramebufferTarget.Framebuffer, Handle);
++
++        DepthStencilTexture = GL.GenTexture();
++        GL.BindTexture(TextureTarget.Texture2D, DepthStencilTexture);
++
++        GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Depth24Stencil8,
++            width, height, 0, PixelFormat.DepthStencil, PixelType.UnsignedInt248, IntPtr.Zero);
++
++        GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
++        GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
++        GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)TextureWrapMode.ClampToEdge);
++        GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)TextureWrapMode.ClampToEdge);
++
++        GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.DepthStencilTextureMode, (int)All.StencilIndex);
++
++        GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.DepthStencilAttachment,
++            TextureTarget.Texture2D, DepthStencilTexture, 0);
++
++        GL.DrawBuffer(DrawBufferMode.None);
++        GL.ReadBuffer(ReadBufferMode.None);
++
++        var status = GL.CheckFramebufferStatus(FramebufferTarget.Framebuffer);
++        if (status != FramebufferErrorCode.FramebufferComplete)
++        {
++            throw new GlException($"Outline Framebuffer is not complete: {status}");
++        }
++
++        GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
++    }
++
++    public void Bind()
++    {
++        GL.BindFramebuffer(FramebufferTarget.Framebuffer, Handle);
++        GL.Viewport(0, 0, Width, Height);
++    }
++
++    public void Unbind()
++    {
++        GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
++    }
++
++    public void Resize(int newWidth, int newHeight)
++    {
++        if (newWidth <= 0 || newHeight <= 0) return;
++        if (newWidth == Width && newHeight == Height) return;
++
++        Dispose();
++        Create(newWidth, newHeight);
++    }
++
++    public void Dispose()
++    {
++        if (Handle != 0) GL.DeleteFramebuffer(Handle);
++        if (DepthStencilTexture != 0) GL.DeleteTexture(DepthStencilTexture);
++
++        Handle = 0;
++        DepthStencilTexture = 0;
++
++        GC.SuppressFinalize(this);
++    }
++}
+\ No newline at end of file
+Index: RE/Core/World/Scene.cs
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/RE/Core/World/Scene.cs b/RE/Core/World/Scene.cs
+--- a/RE/Core/World/Scene.cs	(revision 63b83b10f84502485a8b9bf33a60a4122805a377)
++++ b/RE/Core/World/Scene.cs	(date 1782081928341)
+@@ -14,7 +14,10 @@
+         public List<ILightSource> LightSources { get; set; } = [];
+ 
+         public Scene() => GameObjects = new GameObjectList(this);
++        
++        internal readonly List<Component> RenderingComponents = [];
+ 
++
+         /// <summary>
+         /// Calls <see cref="Component.Destroy"/> on all components of all game objects in the scene and unsubscribes them
+         /// from the <c>Update</c> and <c>Render</c> loop.
+@@ -27,7 +30,7 @@
+                 foreach (var component in obj.Components)
+                 {
+                     component.Destroy(); 
+-                    RenderManager.RenderingComponents.Remove(component);
++                    RenderingComponents.Remove(component);
+                 }
+             }
+         }
+Index: RE/Assets/Shaders/Pass/Editor/outline.vert
+===================================================================
+diff --git a/RE/Assets/Shaders/Pass/Editor/outline.vert b/RE/Assets/Shaders/Pass/Editor/outline.vert
+new file mode 100644
+--- /dev/null	(date 1782081928844)
++++ b/RE/Assets/Shaders/Pass/Editor/outline.vert	(date 1782081928844)
+@@ -0,0 +1,12 @@
++#version 460 core
++
++out vec2 v_TexCoord;
++
++void main()
++{
++    float x = -1.0 + float((gl_VertexID & 1) << 2);
++    float y = -1.0 + float((gl_VertexID & 2) << 1);
++
++    v_TexCoord = vec2((x + 1.0) * 0.5, (y + 1.0) * 0.5);
++    gl_Position = vec4(x, y, 0.0, 1.0);
++}
+\ No newline at end of file
+Index: RE/Assets/Shaders/Pass/Editor/outline.frag
+===================================================================
+diff --git a/RE/Assets/Shaders/Pass/Editor/outline.frag b/RE/Assets/Shaders/Pass/Editor/outline.frag
+new file mode 100644
+--- /dev/null	(date 1782081928765)
++++ b/RE/Assets/Shaders/Pass/Editor/outline.frag	(date 1782081928765)
+@@ -0,0 +1,46 @@
++#version 460 core
++
++out vec4 FragColor;
++in vec2 v_TexCoord;
++
++uniform usampler2D u_StencilTexture;
++uniform vec3 u_OutlineColor = vec3(1.0, 0.5, 0.0);
++uniform int u_OutlineWidth = 3;
++
++void main()
++{
++    uint mask = texture(u_StencilTexture, v_TexCoord).r;
++
++    if (mask > 0u) {
++        discard;
++    }
++
++    vec2 texel = 1.0 / u_ClientSize;
++    bool isBorder = false;
++
++    for (int x = -u_OutlineWidth; x <= u_OutlineWidth; x++)
++    {
++        for (int y = -u_OutlineWidth; y <= u_OutlineWidth; y++)
++        {
++            if (x == 0 && y == 0) continue;
++
++            if (float(x*x + y*y) > float(u_OutlineWidth * u_OutlineWidth)) continue;
++
++            vec2 offset = vec2(float(x), float(y)) * texel;
++            uint neighborMask = texture(u_StencilTexture, v_TexCoord + offset).r;
++
++            if (neighborMask > 0u)
++            {
++                isBorder = true;
++                break;
++            }
++        }
++        if (isBorder) break;
++    }
++
++    if (isBorder) {
++        FragColor = vec4(u_OutlineColor, 1.0);
++    } else {
++        discard;
++    }
++}
+\ No newline at end of file
+Index: RE/Core/World/Components/ComponentList.cs
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/RE/Core/World/Components/ComponentList.cs b/RE/Core/World/Components/ComponentList.cs
+--- a/RE/Core/World/Components/ComponentList.cs	(revision 63b83b10f84502485a8b9bf33a60a4122805a377)
++++ b/RE/Core/World/Components/ComponentList.cs	(date 1782081928358)
+@@ -85,7 +85,8 @@
+ 
+             c.Owner = _owner;
+ 
+-            RenderManager.RenderingComponents.Add(c);
++            (_owner.Scene ?? SceneManager.CurrentScene).RenderingComponents.Add(c);
++
+             _components.Add(c);
+             if (!doNotCallStart)
+             {
+@@ -114,7 +115,7 @@
+             if (!_components.Contains(c))
+                 return;
+ 
+-            RenderManager.RenderingComponents.Remove(c);
++            c.Owner.Scene.RenderingComponents.Remove(c);
+             c.Destroy();
+ 
+             _components.Remove(c);
+Index: RE/Core/World/Components/UsableComponent.cs
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/RE/Core/World/Components/UsableComponent.cs b/RE/Core/World/Components/UsableComponent.cs
+--- a/RE/Core/World/Components/UsableComponent.cs	(revision 63b83b10f84502485a8b9bf33a60a4122805a377)
++++ b/RE/Core/World/Components/UsableComponent.cs	(date 1782081928392)
+@@ -22,7 +22,7 @@
+ 
+         private void ExecuteCommandOnUse() { CommandHandler.ExecuteCommand(Command); }
+          
+-        public override JsonNode GetSaveData()
++        public override JsonObject GetSaveData()
+         {
+             JsonObject root = new();
+             if (Command != null!)
+Index: RE/Core/Component.cs
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/RE/Core/Component.cs b/RE/Core/Component.cs
+--- a/RE/Core/Component.cs	(revision 63b83b10f84502485a8b9bf33a60a4122805a377)
++++ b/RE/Core/Component.cs	(date 1782081928408)
+@@ -19,7 +19,7 @@
+     /// Component is the base class for all components that can be attached to a <see cref="GameObject"/>.
+     /// </summary>
+     /// <remarks>All classes that inherit this class must have parameterless constructor</remarks>
+-    [UsedImplicitly(ImplicitUseTargetFlags.WithInheritors)]
++    [UsedImplicitly(ImplicitUseTargetFlags.WithInheritors | ImplicitUseTargetFlags.WithMembers)]
+     public abstract class Component
+     {
+         /// <summary>
+@@ -28,7 +28,7 @@
+         [JsonIgnore]
+         public GameObject Owner { get; internal set; } = null!;
+ 
+-        [EditorProperty]
++        [EditorProperty, JsonIgnore]
+         public bool IsEnabled
+         {
+             get;
+@@ -63,9 +63,9 @@
+         /// </summary>
+         /// <remarks>This method is not called if <see cref="SaveComponent"/> is set to <see langword="false"/></remarks>
+         /// <returns><see cref="JsonNode"/> that contains saved data</returns>
+-        public virtual JsonNode GetSaveData() => GetDataForProperties(this);
++        public virtual JsonObject GetSaveData() => GetDataForProperties();
+ 
+-        private JsonNode GetDataForProperties(object instance)
++        private JsonObject GetDataForProperties()
+         {
+             JsonObject obj = new();
+             var properties
+Index: RE/Core/World/Components/ParticleEmitterComponent.cs
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/RE/Core/World/Components/ParticleEmitterComponent.cs b/RE/Core/World/Components/ParticleEmitterComponent.cs
+--- a/RE/Core/World/Components/ParticleEmitterComponent.cs	(revision 63b83b10f84502485a8b9bf33a60a4122805a377)
++++ b/RE/Core/World/Components/ParticleEmitterComponent.cs	(date 1782081928425)
+@@ -168,7 +168,7 @@
+             _particles.Clear();
+         }
+ 
+-        public override JsonNode GetSaveData()
++        public override JsonObject GetSaveData()
+         {
+             var json = new JsonObject();
+             json[nameof(_settings)] = _settings.ToJson();
+Index: RE/Core/World/Components/Physics/SphereColliderComponent.cs
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/RE/Core/World/Components/Physics/SphereColliderComponent.cs b/RE/Core/World/Components/Physics/SphereColliderComponent.cs
+--- a/RE/Core/World/Components/Physics/SphereColliderComponent.cs	(revision 63b83b10f84502485a8b9bf33a60a4122805a377)
++++ b/RE/Core/World/Components/Physics/SphereColliderComponent.cs	(date 1782081928510)
+@@ -15,6 +15,6 @@
+             return sphereShape;
+         }
+ 
+-        public override JsonNode GetSaveData() => new JsonObject();
++        public override JsonObject GetSaveData() => new JsonObject();
+     }
+ }
+Index: RE/Core/World/GameObjectList.cs
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/RE/Core/World/GameObjectList.cs b/RE/Core/World/GameObjectList.cs
+--- a/RE/Core/World/GameObjectList.cs	(revision 63b83b10f84502485a8b9bf33a60a4122805a377)
++++ b/RE/Core/World/GameObjectList.cs	(date 1782081928595)
+@@ -35,6 +35,8 @@
+             SceneManager._objectsToAdd.Add(g);
+             g.Scene = scene;
+ 
++            scene.RenderingComponents.AddRange(g.Components.Where(c => scene.RenderingComponents.Contains(c)));
++
+             if (!doNotCallStart)
+             {
+                 foreach (var component in g.Components)
+Index: RE/Rendering/Renderables/ModelRenderer.cs
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/RE/Rendering/Renderables/ModelRenderer.cs b/RE/Rendering/Renderables/ModelRenderer.cs
+--- a/RE/Rendering/Renderables/ModelRenderer.cs	(revision 63b83b10f84502485a8b9bf33a60a4122805a377)
++++ b/RE/Rendering/Renderables/ModelRenderer.cs	(date 1782081928612)
+@@ -1,26 +1,15 @@
+-using System.Diagnostics;
+-using System.Globalization;
+-using Assimp;
+ using OpenTK.Graphics.OpenGL4;
+ using OpenTK.Mathematics;
+ using OpenTK.Windowing.Common;
+ using RE.Core.Assets;
+-using RE.Core.Input;
+ using RE.Core.World;
++using RE.Editor;
+ using RE.Rendering.Lighting;
+ using RE.Rendering.Model;
+-using RE.Rendering.Renderables.ModelFormat;
+-using RE.Rendering.Text;
+-using RE.Rendering.Texturing;
+ using RE.Utils;
+-using Serilog;
+-using StbImageSharp;
+-using Keys = OpenTK.Windowing.GraphicsLibraryFramework.Keys;
+ using Material = RE.Rendering.Lighting.Material;
+ using PrimitiveType = OpenTK.Graphics.OpenGL4.PrimitiveType;
+ using Quaternion = OpenTK.Mathematics.Quaternion;
+-using Scene = Assimp.Scene;
+-using SceneEditor = RE.Editor.SceneEditor;
+ 
+ namespace RE.Rendering.Renderables
+ {
+@@ -89,10 +78,10 @@
+             var lights = SceneManager.CurrentScene.LightSources;
+ 
+             //lighting.glsl
+-            program.SetValue("ignoreLight", IgnoreLight);
++            program.SetValue("ignoreLight",
++                !SceneEditor.Enabled ? IgnoreLight : (IgnoreLight || !SceneEditor.PreviewLight));
+             program.SetValue("hasSpotLight", lights.Any(s => s is SpotLight));
+             program.SetValue("hasDirLight", lights.Any(s => s is DirectionalLight));
+-            program.SetValue("viewPos", Camera.GetActiveCamera().Position);
+ 
+             foreach (var light in lights)
+             {
+Index: RE/Core/World/Components/Physics/CapsuleColliderComponent.cs
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/RE/Core/World/Components/Physics/CapsuleColliderComponent.cs b/RE/Core/World/Components/Physics/CapsuleColliderComponent.cs
+--- a/RE/Core/World/Components/Physics/CapsuleColliderComponent.cs	(revision 63b83b10f84502485a8b9bf33a60a4122805a377)
++++ b/RE/Core/World/Components/Physics/CapsuleColliderComponent.cs	(date 1782081928698)
+@@ -14,6 +14,6 @@
+             return shape;
+         }
+ 
+-        public override JsonNode GetSaveData() => new JsonObject();
++        public override JsonObject GetSaveData() => new JsonObject();
+     }
+ }
+Index: RE/Editor/Panels/Viewport/ViewportPanel.cs
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/RE/Editor/Panels/Viewport/ViewportPanel.cs b/RE/Editor/Panels/Viewport/ViewportPanel.cs
+--- a/RE/Editor/Panels/Viewport/ViewportPanel.cs	(revision 63b83b10f84502485a8b9bf33a60a4122805a377)
++++ b/RE/Editor/Panels/Viewport/ViewportPanel.cs	(date 1782081928711)
+@@ -110,6 +110,10 @@
+ 
+         private void SetupBullet()
+         {
++            CollisionWorld?.Dispose();
++            _dispatcher?.Dispose();
++            _broadphase?.Dispose();
++            
+             var defaultCollisionConfiguration = new DefaultCollisionConfiguration();
+             _dispatcher = new CollisionDispatcher(defaultCollisionConfiguration);
+             _broadphase = new DbvtBroadphase();
+@@ -122,9 +126,9 @@
+         public void Draw()
+         {
+             _cameraSprite.Position = Camera.Main.Position;
+-            _cameraSprite.Render(new(Time.DeltaTime)); 
++            _cameraSprite.Render(new(Time.DeltaTime));
+ 
+-            UpdateBulletObjects(); 
++            UpdateBulletObjects();
+             PhysicsManager.DynamicsWorld.DebugDrawWorld();
+ 
+             SetNextWindowPos(new Vector2(318, 27), ImGuiCond.FirstUseEver);
+@@ -167,6 +171,7 @@
+                     ViewportSize = contentSize;
+                     Game.Instance.ResizeFramebuffers((int)ViewportSize.X, (int)ViewportSize.Y);
+                     Game.Instance.ResizeOitFramebuffer((int)ViewportSize.X, (int)ViewportSize.Y);
++                    SceneEditor.OutlineFramebuffer.Resize((int)ViewportSize.X, (int)ViewportSize.Y);
+                     Camera.Editor.RenderWidth = (int)ViewportSize.X;
+                     Camera.Editor.RenderHeight = (int)ViewportSize.Y;
+                 }
+@@ -337,7 +342,7 @@
+                 {
+                     //todo: for some odd reason object teleports to where it has been for 1 frame randomly, and then teleports back.
+                     //    dont think this does much but we should fix this some time later.
+-                    
++
+                     rigidBodyComponent.IsEnabled = _objRbEnabled;
+                     rigidBodyComponent.RebuildPhysics();
+                     if (old != null)
+@@ -346,6 +351,7 @@
+                         selected.SetRotation(old.Value.r);
+                         selected.Transform.Scale = old.Value.s;
+                     }
++
+                     _wasManipulating = false;
+                 }
+             }
+@@ -627,13 +633,25 @@
+             {
+                 if (!SceneEditor.SimulationRunning)
+                 {
+-                    _sceneBeforeSimulation = SceneSerializer.SerializeScene(SceneManager.CurrentScene);
+                     SceneEditor.SimulationRunning = true;
+-                }
+-                else
+-                {
++                    PhysicsManager.RecreateWorld();
++                    SetupBullet();
++                    _sceneBeforeSimulation = SceneSerializer.SerializeScene(SceneManager.CurrentScene);
+                     SceneManager.LoadScene(SceneSerializer.DeserializeScene(_sceneBeforeSimulation));
++                    SceneEditor.SelectedObject = null;
++                }
++                else
++                {
+                     SceneEditor.SimulationRunning = false;
++                    PhysicsManager.RecreateWorld();
++                    SetupBullet();
++                    SceneManager.CurrentScene = SceneSerializer.DeserializeScene(_sceneBeforeSimulation);
++                    SceneEditor.SelectedObject = null;
++                    foreach (var rb in SceneManager.CurrentScene.GameObjects
++                                 .SelectMany(o => o.Components).OfType<RigidBodyComponent>())
++                    {
++                        //rb.RebuildPhysics();
++                    }
+                 }
+             }
+ 
+@@ -742,20 +760,20 @@
+             var cam = Camera.Editor;
+             TkVector3 inputDir = TkVector3.Zero;
+ 
+-            if (Keyboard.IsKeyDown(Keys.W))
++            if (Keyboard.IsKeyDown(Keys.W, true))
+                 inputDir += (cam.Front with { Y = 0 }).Normalized();
+-            if (Keyboard.IsKeyDown(Keys.S))
++            if (Keyboard.IsKeyDown(Keys.S, true))
+                 inputDir -= (cam.Front with { Y = 0 }).Normalized();
+-            if (Keyboard.IsKeyDown(Keys.A))
++            if (Keyboard.IsKeyDown(Keys.A, true))
+                 inputDir -= TkVector3.Normalize(TkVector3.Cross(cam.Front, cam.Up));
+-            if (Keyboard.IsKeyDown(Keys.D))
++            if (Keyboard.IsKeyDown(Keys.D, true))
+                 inputDir += TkVector3.Normalize(TkVector3.Cross(cam.Front, cam.Up));
+ 
+-            if (Keyboard.IsKeyDown(Keys.Space))
++            if (Keyboard.IsKeyDown(Keys.Space, true))
+                 inputDir += TkVector3.UnitY;
+-            if (Keyboard.IsKeyDown(Keys.LeftShift))
++            if (Keyboard.IsKeyDown(Keys.LeftShift, true))
+                 inputDir -= TkVector3.UnitY;
+-            
++
+             if (inputDir.LengthSquared > 0)
+                 inputDir = inputDir.Normalized();
+ 
+Index: RE/Core/World/Components/Physics/BoxColliderComponent.cs
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/RE/Core/World/Components/Physics/BoxColliderComponent.cs b/RE/Core/World/Components/Physics/BoxColliderComponent.cs
+--- a/RE/Core/World/Components/Physics/BoxColliderComponent.cs	(revision 63b83b10f84502485a8b9bf33a60a4122805a377)
++++ b/RE/Core/World/Components/Physics/BoxColliderComponent.cs	(date 1782081928728)
+@@ -23,6 +23,6 @@
+             return new BoxShape(halfExtents.ToBulletVector3());
+         }
+ 
+-        public override JsonNode GetSaveData() => new JsonObject();
++        public override JsonObject GetSaveData() => new JsonObject();
+     }
+ }
+\ No newline at end of file
+Index: RE/Core/World/SceneSerializer.cs
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/RE/Core/World/SceneSerializer.cs b/RE/Core/World/SceneSerializer.cs
+--- a/RE/Core/World/SceneSerializer.cs	(revision 63b83b10f84502485a8b9bf33a60a4122805a377)
++++ b/RE/Core/World/SceneSerializer.cs	(date 1782081928745)
+@@ -54,11 +54,15 @@
+                 foreach (var com in obj.Components.Where(s => s.SaveComponent))
+                 {
+                     var saveData = com.GetSaveData();
++                    
++                    if (!com.IsEnabled)
++                        saveData.TryAdd(nameof(Component.IsEnabled), com.IsEnabled);
++
+                     componentsObj.Add(com.GetType().Name, saveData);
+                 }
+ 
+                 JsonArray childArray = new JsonArray();
+-                obj.Children.ForEach(child => childArray.Add(ConstructObject(child)));
++                obj.Children.Where(c => !c.DoNotSave).ForEach(child => childArray.Add(ConstructObject(child)));
+                 o.Add("children", childArray);
+ 
+                 return o;
+@@ -185,7 +189,7 @@
+ 
+             return subInstance;
+         }
+- 
++
+         if (targetType.IsGenericType && (targetType.GetGenericTypeDefinition() == typeof(Dictionary<,>) ||
+                                          targetType.GetGenericTypeDefinition() == typeof(IDictionary<,>)))
+         {
+@@ -393,19 +397,11 @@
+ 
+             ApplyObjectModification();
+ 
+-            foreach (var go in scene.GameObjects.ToList())
+-            {
+-                foreach (var c in go.Components.ToList())
+-                {
+-                    c.Start();
+-                }
+-            }
+-
+             return scene;
+         }
+         catch (Exception e)
+         {
+-            Log.Error(e, "Failed to deserialize scene");
++            //Log.Error(e, "Failed to deserialize scene");
+             throw;
+         }
+         finally
+Index: RE/Core/Scripting/CommonEngineCommands.cs
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/RE/Core/Scripting/CommonEngineCommands.cs b/RE/Core/Scripting/CommonEngineCommands.cs
+--- a/RE/Core/Scripting/CommonEngineCommands.cs	(revision 63b83b10f84502485a8b9bf33a60a4122805a377)
++++ b/RE/Core/Scripting/CommonEngineCommands.cs	(date 1782081928868)
+@@ -125,7 +125,8 @@
+         }
+ 
+         Log.Information("Loading {Scene}... ", name);
+-        SceneManager.LoadScene(SceneManager.LoadFromMapFile(name), true,
++        SceneManager.LoadScene(
++            SceneSerializer.DeserializeScene(ContentManager.GetString($"assets/maps/{name}/data.json")), true,
+             () => { SoundManager.PlayOneShotEvent("event:/Flash"); });
+     }
+ 
+@@ -152,7 +153,7 @@
+         Game.Instance.VSync = state == "enable" ? VSyncMode.On : VSyncMode.Off;
+         Log.Information("V-Sync {State}", Game.Instance.VSync == VSyncMode.Off ? "OFF" : "ON");
+     }
+-    
++
+     [ConsoleCommand(Name = "bo", Description = "Set bullet overlay")]
+     static void Bo(string overlay)
+     {
+Index: RE/Core/World/Physics/PhysicsManager.cs
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/RE/Core/World/Physics/PhysicsManager.cs b/RE/Core/World/Physics/PhysicsManager.cs
+--- a/RE/Core/World/Physics/PhysicsManager.cs	(revision 63b83b10f84502485a8b9bf33a60a4122805a377)
++++ b/RE/Core/World/Physics/PhysicsManager.cs	(date 1782081928896)
+@@ -93,13 +93,7 @@
+             Log.Debug("Solver pool thread count set to {Threads}", MaxThreadSolver);
+             _parallelSolver = new SequentialImpulseConstraintSolverMultiThreaded();
+ 
+-            DynamicsWorld = new DiscreteDynamicsWorldMultiThreaded(_dispatcher, _broadphase, _solverPool,
+-                _parallelSolver, _collisionConfiguration);
+-            DynamicsWorld.SolverInfo.SolverMode = SolverModes.Simd | SolverModes.UseWarmStarting;
+-            DynamicsWorld.SolverInfo.NumIterations = 10;
+-            //DynamicsWorld.SolverInfo.TimeStep = FixedTimeStep;
+-            DynamicsWorld.Gravity = new BulletSharp.Math.Vector3(0, -9.81f, 0);
+-            DynamicsWorld.DebugDrawer = new BulletDebugDrawer();
++            RecreateWorld();
+ 
+             Log.Debug("Physics Manager initialized");
+             _init = true;
+@@ -206,7 +200,19 @@
+                 DynamicsWorld.DebugDrawWorld();
+         }
+ 
+-        public static float Alpha { get; private set; }
++        public static float Alpha { get; private set; } //todo: move
++
++        internal static void RecreateWorld()
++        {
++            DynamicsWorld?.Dispose();
++            DynamicsWorld = new DiscreteDynamicsWorldMultiThreaded(_dispatcher, _broadphase, _solverPool,
++                _parallelSolver, _collisionConfiguration);
++            DynamicsWorld.SolverInfo.SolverMode = SolverModes.Simd | SolverModes.UseWarmStarting;
++            DynamicsWorld.SolverInfo.NumIterations = 10;
++            //DynamicsWorld.SolverInfo.TimeStep = FixedTimeStep;
++            DynamicsWorld.Gravity = new BulletSharp.Math.Vector3(0, -9.81f, 0);
++            DynamicsWorld.DebugDrawer = new BulletDebugDrawer();
++        }
+ 
+         private static void ProcessCollisions(DiscreteDynamicsWorld world)
+         {
+Index: RE/Assets/Shaders/Engine/lighting.glsl
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/RE/Assets/Shaders/Engine/lighting.glsl b/RE/Assets/Shaders/Engine/lighting.glsl
+--- a/RE/Assets/Shaders/Engine/lighting.glsl	(revision 63b83b10f84502485a8b9bf33a60a4122805a377)
++++ b/RE/Assets/Shaders/Engine/lighting.glsl	(date 1782081928915)
+@@ -34,7 +34,6 @@
+     float quadratic;
+ };
+ 
+-uniform vec3 viewPos;
+ uniform DirLight dirLight;
+ uniform SpotLight spotLight;
+ 
+Index: RE/Core/World/Components/AudioSourceComponent.cs
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/RE/Core/World/Components/AudioSourceComponent.cs b/RE/Core/World/Components/AudioSourceComponent.cs
+--- a/RE/Core/World/Components/AudioSourceComponent.cs	(revision 63b83b10f84502485a8b9bf33a60a4122805a377)
++++ b/RE/Core/World/Components/AudioSourceComponent.cs	(date 1782081928942)
+@@ -59,6 +59,7 @@
+ 
+         [EditorProperty] public bool LockPositionToOwner { get; set; } = false;
+ 
++        [JsonPropertyName("Clips"), JsonInclude]
+         private Dictionary<string, AudioClip> _clips = [];
+ 
+         public override void Start()
+@@ -132,13 +133,17 @@
+         public override void Destroy() => _clips.ForEach(audio => audio.Value.Instance?.Dispose());
+ 
+         /// <inheritdoc />
+-        public override JsonNode GetSaveData()
++        public override JsonObject GetSaveData()
+         {
+-            var obj = (base.GetSaveData() as JsonObject)!;
+-
+-            var clips = new JsonArray();
++            var obj = new JsonObject
++            {
++                { nameof(PlayOnStart), PlayOnStart },
++                { nameof(Position), Position.ToJsonArray() },
++                { nameof(LockPositionToOwner), LockPositionToOwner },
++            };
++            var clips = new JsonObject();
+             foreach (var clip in _clips)
+-                clips.Add(SerializeClip(clip.Value));
++                clips.Add(clip.Key, SerializeClip(clip.Value));
+ 
+             obj.Add("Clips", clips);
+             return obj;
+Index: RE/Core/World/Components/Physics/RigidBodyComponent.cs
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/RE/Core/World/Components/Physics/RigidBodyComponent.cs b/RE/Core/World/Components/Physics/RigidBodyComponent.cs
+--- a/RE/Core/World/Components/Physics/RigidBodyComponent.cs	(revision 63b83b10f84502485a8b9bf33a60a4122805a377)
++++ b/RE/Core/World/Components/Physics/RigidBodyComponent.cs	(date 1782081928965)
+@@ -231,11 +231,11 @@
+ 
+         protected override void Enabled()
+         {
+-            RigidBody.Enable();
++            RebuildPhysics();
+             RigidBody.Activate();
+         }
+ 
+-        protected override void Disabled() => RigidBody.Disable();
++        protected override void Disabled() => RigidBody?.Disable();
+ 
+         public override void Destroy()
+         {
+diff --git a/RE/Engine/Plugins/TestPlugin.dll b/RE/Engine/Plugins/TestPlugin.dll
+index 9494acd8a0e9352fff4bb5103591a1ff7dd9db74..c3044d3e7c9a4b16d224f3a9494f5b2b8669a375
+GIT binary patch
+literal 6144
+zc%1E6eQX@n5ud$XAD44*Y$xP{Kse`v90_dCIVUzWBss@t;?}W^?~*|4%Iw{}yDVAn
+z9=m%^P83L!mKKmo+DeU3TZxaVKm`?5sTyc2HEl(yDx^{sB&s5TN>%j_iVzB@{L%FH
+zX77A!JE-}m;ve2>=grKUH#2YEypP@epF2e=5ovhOpC>v)LD@t9yBx>can<u3^z4$C
+zdd?`LFZJXPn_i;oIu+NLNfZs+cKk#^B;1;vFzv+9crG#Hl!SiirSXjo9TQoiQAMR!
+z*Z<&wrrtMbeWG1S5p{xy2E0dgfW(|*os35UzlmBkI~55~m2UeAE9nfn1od3SWej@9
+z8w38bdVxXSMzj=_e;rZ&B4RRE;9o36#z5~2(Yh~=`KX`hXpF0~<#$NMZMy5ZMQZp4
+zA9<kN^X0(aqr1X#ih-}vXV$fHk=)=yH&5t6y^p)J(WxGyx7vx6iyGwOvOJ~HW5oTt
+zD3XMy@p#l(j;dR^YS-%I3dUSCSCf|kr*0*QAw?bd8h2I!Bv%J)w|-%nHBtusw@R6N
+z!ZK@7dshH#TIpOVdCoe(t5>-vA?5xIU_FAc$Gb{uNJxP#>m$h?MwX|dbf7VYh__xU
+zasPlG&IZ}MY1QgA-bQJC6O-=WWYg6F{+`4)Grqz}%K9#un33c)5|1R?WD;+={BHQH
+zZCMvN-l*@CLR)r_+ofO(Ti6RsQ0_B>N+bGmE@%7nl%7tdd#{(AHnISpMJ{Z(8~K5t
+z`~vTWobQ@;#gh_$jmh-{-hmt?<3U<&xaq*i5b6QYPsz4H%PBO+im5tu*`vx5nXDfw
+zX_+(9I%358f=r`Jg87v0aY`wTH`0(%LN(DpB0(LcjggoZr3V>m$~koz@ifwu@{>rE
+zW+S#5rMDFcf5`B642PJXW&E2gS!1{qdg63i`#AzNtsRD*=Txcr3#@;&B3qZK??dvR
+zBsqVgbI`B_cH?vk{5U<W^@D%4s)2Jq@HjoL>A-(X5<aEsY6ra(d6`#XFb0L6PWqzO
+zuHHCDwX5yw&A?Qo_*Qz5dMHcZqKSm;@d7;p8w#Cg>fY7wsFI5HgejA$Z^vfoG^lEW
+zI!WIJb&RPOVz;RMi0|=$qDwK_2>bJNWC^{aDzGedtpSYFHGrMe%kX-J8HOVaZ)SKa
+zLxZ8o@DA4V4ZzFjA%;(~&gTFxr#k&b-ArGi3GG_C51d}W*CL(t2uaV*(ka>r&RRs{
+zEUi@cFrEecj=GaxWBqlyUAvinPb=sky$Q|~y-QhDfG@3_ZNP`1;bq`QfUj3wz_(PX
+z^EkubkhCZz|4jw;7$SX=?o)c`0s6YKnU2t7icanH6zQ~_ehRpj{tUQ*UI*MtSE4md
+z*8zT-1_1XWt91G-^K%S8Pj$c|V1_kkSaXp)It_RyeNQ>g{D&F-ieUotF0<pS^eEtz
+z`Z#7rV_q9z1T)n}+VO=uXuB#Gc&psSy{WNsnkA6XLcDt^$j9w88ZdV5cS<!&?4rpm
+zjoYJ+QKGzC&y-4(saAzu8g|?n!}mprc8=JdZ`eh#>&W!<piw-6J!04t7Fs5(TE(<S
+z>@o|Rj=e}^GOO=(T%jLwTu>F^PdBxZ7baxOm@yM@8OhZ>U(D!}HQP5q<{iWH^YyA|
+zs$@y&_n;_Ca!3?vm5Oi&UFWE06fBYR4PVe+XQpae!o5k@!Udz0@v+MlYJRha6m9Xw
+zYL+#hvq*2NDdTx!reM|crXObK4Hv^1#@$66b=)JZhFq;$bzJx`o|~`?Uq)?Vuf_bP
+zkztJDpm04zd2wTC3JmKbrS>{@*{sxDmTNUnigL~<3%@>zgz#GYAapD|DJ<g{W8Px5
+z6E0Gz=r0Z;?8)oNg&diw8g@P8LNLqB_sxQ7nSQ8s*05>|6GCr{5}8J$PK9#9H7(RZ
+z_Kuo9X4|5?@cbZ2^^#@HWn;h!6ozCt3mbYly_z`sWlN^-xcZpmn`N`ep&(?haQ%5K
+zsbSHom~&l}Em8EF+J}T!bj>Q$tv<-~;2h4_rM;Fg+#vP$8@7QgL^_s@n&pomvToI}
+zWJU+#`wY8;JZBHak0ROGMyBQ;c3jenaK7orkZDwG$Memiw=k&9)q-fwnnmF?vLEWP
+zU4WdooLSnjh3$K6HALQo+#fI8j={1QIb&ALwQ|5))Sziu1;=npd8A5<jn(V=!O&@r
+zJ8F9JvU_xd%DC0m$)Or*j|83s`E(d(lE;{!V}RFUCzM=4_Pq8Pa18JyUd3IgMisQ!
+zkoKU}<Nh;fI|>Uf&Ib=C2KLmp1mRw$;y#w%2MG(01F14(9F~`~K_#@67HGx+ynF<D
+z=j)_ZdB}Rqp9o3QvSG*w_CoqeS7sWc3S`5Yaq;dSZP=A`B_!FT!}1CCwL*L)p!Z)-
+zpWgqk%<z+McPP=?=JTW_6eXr6NNEGo)g{Re3EG&xHF`;;JJXfb64afMK(r+yN-QQ(
+z1HC#VVn$PnqO2n=u5_ESZv=fK-8aS(n$lJ4=vdlDiqd^YG@+trOzMRgSRJuvc2D2a
+z^-BDP*v4OfF!{va@9$Kj-AnNrxbJlb-Ii)Gpjs04VoKxFXq~)I<s&N(xkh!&v9rgD
+zf>%}ku-vm1$X&vx=x&A9=wsQuOkwO3*EW{-jkCQeJp~ONE9N%sA=9f`MqQpnOJtXX
+z6j`QFJhWR-9A`Bz5Ztk0qZe0fJjf1(bSAd$NEZguh2B(opl^F>Ti?KTW1w(-p`1<|
+zJ5okp@3w6NsqIF(zaKLW-G@xO1c&>j4o!L-Yaae>e3x%y63q6wb3NJf?yIEipOA<9
+zG~O5Sefi?D)=fb6z*iG(mM>CebNHi`=6}P=GMO97o%>_^ndh(gaO}(*4-f9EuWgq)
+zMsJv!6jcYnu(CErFQ!_Nm~slYPjMioY~jmDU3WAXN=QhrmI{>Hm)W*`2Q@70YFfZ3
+z4u0^Xd+&Jf?CJb(U+H~wR&RN9s`<r!fpS6*Q`msqA<NotU~Xo-A|_ezt{;^1o1kUk
+za6c*km!fc>R|kJl=J91Nr7pmiMgBXuWe;*Xbd^o2eSimX&z=U%(j>4E8mBSPBY?xf
+zUl;nN_RfD=Uz9DKyBn1J-Lc@e2o15+LF}9^^qANq1$5fj&mC^x$i4Dt4bBP+wcJx3
+zxg&FVM*Eul@P$u4q=Macv8EEsq~@MJD##en4y<DZUlVdauCk3fMr82mL~J?O#pj(2
+zD7&~{)6Nh}71@4uo_`<JKZR|x)&C$~+!aFodU2+t=3Z%U8RX@7e3rH0qZRV>LUweV
+zMivEYFNw%2`0l_hpL@y?S20%UaRq0xJkk?*huO|}gKswMH2t(M+FlUX2|krekSId-
+zV&Zy&KDDUd!sxVOvlVvIn8^W#z2KCA_u&gGMcYsh05bp!_?9l9Ese)OpA=vp<hS7&
+v041f;)Q?A&0iK%-EP8zU7vN(Z(fMdUf;sxwOCtEs^!;5Qw<DjFkE8q-fq?lI
+

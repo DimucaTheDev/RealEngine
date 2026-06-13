@@ -5,6 +5,7 @@ using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using Hexa.NET.ImGui;
 using OpenTK.Graphics.OpenGL;
+using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using RE.Core;
 using RE.Core.Assets;
@@ -20,13 +21,15 @@ using RE.Core.World.Components.Physics;
 using RE.Editor.Notification;
 using RE.Editor.Panels;
 using RE.Editor.Panels.Viewport;
+using RE.Editor.Utils;
 using RE.Rendering;
 using RE.Rendering.Texturing;
 using RE.Utils;
 using Serilog;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.PixelFormats;
 using static Hexa.NET.ImGui.ImGui;
-using Image = System.Drawing.Image;
-using PixelFormat = System.Drawing.Imaging.PixelFormat;
+using Image = SixLabors.ImageSharp.Image;
 using Vector2 = System.Numerics.Vector2;
 
 namespace RE.Editor
@@ -46,22 +49,32 @@ namespace RE.Editor
 
         public static SceneEditor Instance;
         public static bool Enabled;
-        public static bool PreviewLight, PreviewSkybox, ShowAxis = true, ShowGrid = true, PreviewParticles, ShowHud;
+
+        public static bool PreviewLight = true,
+            PreviewSkybox,
+            ShowAxis = true,
+            ShowGrid = true,
+            PreviewParticles,
+            ShowHud;
+
         public static GameObject? SelectedObject;
         public static bool ShowExitConfirmationModal;
         public static bool SimulationRunning;
 
+        internal static OutlineFramebuffer OutlineFramebuffer;
+
         private static readonly ImFontPtr _bigFont;
         private static readonly Texture LogoImage;
+        private static readonly ShaderProgram OutlineShaderProgram = new();
 
+        private static bool _isFirstTime = true;
         private static bool _isDockspaceOpen;
 
-        private Scene _scene = null!;
+        private Scene Scene => SceneManager.CurrentScene;
         private Dictionary<string, List<Type>> _componentDict = new();
         private Node _rootNode = new();
         private string _oldTitle;
-        private string _preSimulationSceneJson;
-        
+
         private readonly List<Type> _customPopups = new();
         private readonly HierarchyPanel _hierarchyPanel = new();
         private readonly HudHierarchyPanel _hudHierarchyPanel = new();
@@ -76,37 +89,41 @@ namespace RE.Editor
 
             if (ContentManager.Exists(iconPath))
             {
-                var maxSize = new Size(0, 0);
-                var mem = ContentManager.Open(iconPath);
+                using var mem = ContentManager.Open(iconPath);
+                using var image = Image.Load<Bgra32>(mem);
 
-                using var tmp = new Icon(mem, new Size(512, 512));
-                if (tmp.Width > maxSize.Width && tmp.Height > maxSize.Height)
-                    maxSize = new Size(tmp.Width, tmp.Height);
+                ImageFrame<Bgra32> bestFrame = image.Frames[0];
+                int maxArea = 0;
 
-                mem.Position = 0;
+                foreach (var frame in image.Frames)
+                {
+                    if (frame.Width <= 512 && frame.Height <= 512)
+                    {
+                        int area = frame.Width * frame.Height;
+                        if (area > maxArea)
+                        {
+                            maxArea = area;
+                            bestFrame = frame;
+                        }
+                    }
+                }
 
-                using var bestIcon = new Icon(mem, maxSize);
-                using var bmp = bestIcon.ToBitmap();
+                int width = bestFrame.Width;
+                int height = bestFrame.Height;
+                byte[] pixelData = new byte[width * height * 4];
 
-                mem.Position = 0;
+                bestFrame.CopyPixelDataTo(pixelData);
 
-                var data = bmp.LockBits(new Rectangle(0, 0, bmp.Width, bmp.Height),
-                    ImageLockMode.ReadOnly,
-                    PixelFormat.Format32bppArgb);
-
-                var bytesPerPixel = Image.GetPixelFormatSize(bmp.PixelFormat) / 8;
-                var stride = bmp.Width * bytesPerPixel;
-                var totalBytes = stride * bmp.Height;
-                var pixelData = new byte[totalBytes];
-                Marshal.Copy(data.Scan0, pixelData, 0, totalBytes);
-                bmp.UnlockBits(data);
-
-                LogoImage = new StaticTexture(pixelData, bmp.Width, bmp.Height);
+                LogoImage = new StaticTexture(pixelData, width, height);
             }
             else
             {
                 LogoImage = StaticTexture.CreateMissingTexture(6);
-            } 
+            }
+
+            OutlineShaderProgram.AttachShader("Assets/Shaders/Pass/Editor/outline.frag");
+            OutlineShaderProgram.AttachShader("Assets/Shaders/Pass/Editor/outline.vert");
+            OutlineFramebuffer = new();
         }
 
         public void Enable()
@@ -132,10 +149,12 @@ namespace RE.Editor
 
             Log.Information("Starting Scene Editor for \"{SceneName}\"...", SceneManager.CurrentScene.Name);
 
-            _scene = SceneManager.CurrentScene;
             IsVisible = true;
 
-            foreach (var type in Assembly.GetExecutingAssembly().GetTypes()
+            _customPopups.Clear();
+            foreach (var type in Assembly
+                         .GetExecutingAssembly()
+                         .GetTypes()
                          .Where(t => typeof(IEditorPopup).IsAssignableFrom(t)))
             {
                 _customPopups.Add(type);
@@ -170,6 +189,9 @@ namespace RE.Editor
 
                 currentNode.Types.AddRange(entry.Value);
             }
+
+            SceneManager.CurrentScene =
+                SceneSerializer.DeserializeScene(SceneSerializer.SerializeScene(SceneManager.CurrentScene));
         }
 
         public void Disable()
@@ -178,166 +200,219 @@ namespace RE.Editor
                 return;
 
             Enabled = false;
-            IsVisible = false;
+            IsVisible = false; 
 
             Game.Instance.Title = _oldTitle;
 
-            var reloaded = SceneManager.Reload(_scene);
-            _scene.Dispose();
-            SceneManager.LoadScene(reloaded);
+            SceneManager.Reload(Scene);
         }
 
         public override void Render(FrameEventArgs args)
         {
-            FrameProfiler.Begin("editor");
-            FrameProfiler.Begin("update");
-            foreach (var obj in _scene.GameObjects)
+            using (FrameProfiler.Scope("editor"))
             {
-                if (!obj.Components.Any())
-                    continue;
-
-                FrameProfiler.Begin(obj.Name ?? $"<{obj.Id}>");
-                foreach (var com in obj.Components)
+                using (FrameProfiler.Scope("update"))
                 {
-                    // ReSharper disable once SuspiciousTypeConversion.Global
-                    if (com is IEditorUpdate u)
+                    //if(Keyboard.CanCaptureInput)
+
+                    foreach (var obj in Scene.GameObjects)
                     {
-                        FrameProfiler.Begin(com.GetType().Name);
-                        u.EditorUpdate(args);
-                        FrameProfiler.End();
+                        if (!obj.Components.Any())
+                            continue;
+
+                        using (FrameProfiler.Scope(obj.Name ?? $"<{obj.Id}>"))
+                        {
+                            foreach (var com in obj.Components)
+                            {
+                                // ReSharper disable once SuspiciousTypeConversion.Global
+                                if (com is IEditorUpdate u)
+                                {
+                                    using (FrameProfiler.Scope(com.GetType().Name))
+                                    {
+                                        u.EditorUpdate(args);
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
 
-                FrameProfiler.End();
-            }
-
-            FrameProfiler.End();
-
-            FrameProfiler.Begin("render");
-            {
-                Game.Instance.SceneFramebuffer.Bind();
-
-                GL.Enable(EnableCap.DepthTest);
-                GL.DepthMask(true);
-                GL.Disable(EnableCap.Blend);
-
-                foreach (var s in RenderManager.RenderingComponents.Where(s =>
-                             s is { IsOpaque: true, IsEnabled: true }))
+                using (FrameProfiler.Scope("render"))
                 {
-                    if (SceneManager.SceneChanged)
+                    Game.Instance.SceneFramebuffer.Bind();
+                    GL.ClearColor(Color4.Black);
+                    GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
+                    GL.Enable(EnableCap.DepthTest);
+                    GL.DepthMask(true);
+                    GL.Disable(EnableCap.Blend);
+
+                    foreach (var s in SceneManager.CurrentScene.RenderingComponents.Where(s =>
+                                 s is { IsOpaque: true, IsEnabled: true }))
                     {
-                        SceneManager.SceneChanged = false;
-                        return;
+                        if (SceneManager.SceneChanged)
+                        {
+                            SceneManager.SceneChanged = false;
+                            return;
+                        }
+
+                        using (FrameProfiler.Scope(s.GetType().Name))
+                        {
+                            if (s is IEditorRender r)
+                            {
+                                r.EditorRender(args);
+                            }
+                        }
                     }
 
-                    FrameProfiler.Begin(s.GetType().Name);
-                    if (s is IEditorRender r)
+                    GL.BindFramebuffer(FramebufferTarget.DrawFramebuffer, Game.Instance.OitFbo);
+
+                    int width = (int)ViewportPanel.ViewportSize.X;
+                    int height = (int)ViewportPanel.ViewportSize.Y;
+
+                    GL.BlitFramebuffer(
+                        0, 0, width, height,
+                        0, 0, width, height,
+                        ClearBufferMask.DepthBufferBit,
+                        BlitFramebufferFilter.Nearest
+                    );
+
+                    GL.BindFramebuffer(FramebufferTarget.Framebuffer, Game.Instance.OitFbo);
+
+                    float[] clearZero = { 0.0f, 0.0f, 0.0f, 0.0f };
+
+                    GL.ClearBuffer(ClearBuffer.Color, 0, clearZero);
+                    GL.ClearBuffer(ClearBuffer.Color, 1, clearZero);
+
+                    GL.Enable(EnableCap.DepthTest);
+                    GL.DepthFunc(DepthFunction.Less);
+                    GL.DepthMask(false);
+
+                    GL.Enable(EnableCap.Blend);
+                    GL.BlendFunc(0, BlendingFactorSrc.One, BlendingFactorDest.One);
+                    GL.BlendFunc(1, BlendingFactorSrc.One, BlendingFactorDest.One);
+
+
+                    foreach (var s in Scene.RenderingComponents.Where(s =>
+                                 s is { IsOpaque: false, IsEnabled: true } or RigidBodyComponent))
                     {
-                        r.EditorRender(args);
+                        if (SceneManager.SceneChanged)
+                        {
+                            SceneManager.SceneChanged = false;
+                            return;
+                        }
+
+                        using (FrameProfiler.Scope(s.GetType().Name))
+                        {
+                            s.Render(args);
+                            if (s is IEditorRender r)
+                            {
+                                r.EditorRender(args);
+                            }
+                        }
                     }
 
-                    FrameProfiler.End();
+
+                    Game.Instance.SceneFramebuffer.Bind();
+
+                    GL.DepthMask(true);
+                    GL.Disable(EnableCap.DepthTest);
+
+                    GL.Enable(EnableCap.Blend);
+                    GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
+
+                    RenderManager.OitShaderProgram.Use();
+
+                    GL.Uniform1(RenderManager.OitShaderProgram.GetLocation("accumColorTex"), 0);
+                    GL.Uniform1(RenderManager.OitShaderProgram.GetLocation("accumWeightTex"), 1);
+
+                    GL.ActiveTexture(TextureUnit.Texture0);
+                    GL.BindTexture(TextureTarget.Texture2D, Game.Instance.AccumColorTex);
+
+                    GL.ActiveTexture(TextureUnit.Texture1);
+                    GL.BindTexture(TextureTarget.Texture2D, Game.Instance.AccumWeightTex);
+
+                    GL.BindVertexArray(RenderManager.FullscreenVao);
+                    GL.DrawArrays(PrimitiveType.Triangles, 0, 3);
+
+                    GL.Enable(EnableCap.DepthTest);
+
+                    GL.BindTexture(TextureTarget.Texture2D, 0);
+                    GL.ActiveTexture(TextureUnit.Texture0);
+                    GL.BindTexture(TextureTarget.Texture2D, 0);
+
+                    LineRenderer.Main.Render(args); // ?????
                 }
 
-                GL.BindFramebuffer(FramebufferTarget.DrawFramebuffer, Game.Instance.OitFbo);
 
-                int width = Game.Instance.ClientSize.X;
-                int height = Game.Instance.ClientSize.Y;
-
-                GL.BlitFramebuffer(
-                    0, 0, width, height,
-                    0, 0, width, height,
-                    ClearBufferMask.DepthBufferBit,
-                    BlitFramebufferFilter.Nearest
-                );
-
-                GL.BindFramebuffer(FramebufferTarget.Framebuffer, Game.Instance.OitFbo);
-
-                float[] clearZero = { 0.0f, 0.0f, 0.0f, 0.0f };
-
-                GL.ClearBuffer(ClearBuffer.Color, 0, clearZero);
-                GL.ClearBuffer(ClearBuffer.Color, 1, clearZero);
-
-                GL.Enable(EnableCap.DepthTest);
-                GL.DepthFunc(DepthFunction.Less);
-                GL.DepthMask(false);
-
-                GL.Enable(EnableCap.Blend);
-                GL.BlendFunc(0, BlendingFactorSrc.One, BlendingFactorDest.One);
-                GL.BlendFunc(1, BlendingFactorSrc.One, BlendingFactorDest.One);
-
-
-                foreach (var s in RenderManager.RenderingComponents.Where(s =>
-                             s is { IsOpaque: false, IsEnabled: true } or RigidBodyComponent))
+                if (SelectedObject != null)
                 {
-                    if (SceneManager.SceneChanged)
+                    using (FrameProfiler.Scope("outline"))
                     {
-                        SceneManager.SceneChanged = false;
-                        return;
-                    }
+                        OutlineFramebuffer.Bind();
 
-                    FrameProfiler.Begin(s.GetType().Name);
-                    s.Render(args);
-                    if (s is IEditorRender r)
-                    {
-                        r.EditorRender(args);
-                    }
+                        GL.Enable(EnableCap.StencilTest);
+                        GL.StencilMask(0xFF);
 
-                    FrameProfiler.End();
+                        GL.Clear(ClearBufferMask.DepthBufferBit | ClearBufferMask.StencilBufferBit);
+
+                        GL.StencilFunc(StencilFunction.Always, 1, 0xFF);
+                        GL.StencilOp(StencilOp.Replace, StencilOp.Replace, StencilOp.Replace);
+
+                        GL.ColorMask(false, false, false, false);
+
+                        foreach (var component in SelectedObject.Components.Where(s => s.IsEnabled)
+                                     .OfType<IEditorRender>())
+                        {
+                            component.EditorRender(args);
+                        }
+
+                        GL.ColorMask(true, true, true, true);
+                        GL.Disable(EnableCap.StencilTest);
+
+                        Game.Instance.SceneFramebuffer.Bind();
+
+                        OutlineShaderProgram.Use();
+                        OutlineShaderProgram.SetValue("u_StencilTexture", 0);
+
+                        GL.Enable(EnableCap.Blend);
+                        GL.Disable(EnableCap.DepthTest);
+                        GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
+
+                        GL.ActiveTexture(TextureUnit.Texture0);
+                        GL.BindTexture(TextureTarget.Texture2D, OutlineFramebuffer.DepthStencilTexture);
+
+                        GL.BindVertexArray(RenderManager.FullscreenVao);
+                        GL.DrawArrays(PrimitiveType.Triangles, 0, 3);
+
+                        GL.Enable(EnableCap.DepthTest);
+                        GL.Disable(EnableCap.Blend);
+                    }
                 }
 
+                if (ShowHud)
+                {
+                    using (FrameProfiler.Scope("hud"))
+                    {
+                        Hud.Render();
+                    }
+                }
 
-                Game.Instance.SceneFramebuffer.Bind();
+                LineRenderer.Main.Render(args);
 
-                GL.DepthMask(true);
-                GL.Disable(EnableCap.DepthTest);
+                if (SceneManager.CurrentScene == null!)
+                    return;
 
-                GL.Enable(EnableCap.Blend);
-                GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
+                SetupDockSpace();
 
-                RenderManager.OitShaderProgram.Use();
+                _hierarchyPanel.Draw();
+                _hudHierarchyPanel.Draw();
+                _inspectorPanel.Draw();
+                _assetBrowserPanel.Draw();
+                _viewportPanel.Draw();
+                _consoleWindow.Render(args);
 
-                GL.Uniform1(RenderManager.OitShaderProgram.GetLocation("accumColorTex"), 0);
-                GL.Uniform1(RenderManager.OitShaderProgram.GetLocation("accumWeightTex"), 1);
-
-                GL.ActiveTexture(TextureUnit.Texture0);
-                GL.BindTexture(TextureTarget.Texture2D, Game.Instance.AccumColorTex);
-
-                GL.ActiveTexture(TextureUnit.Texture1);
-                GL.BindTexture(TextureTarget.Texture2D, Game.Instance.AccumWeightTex);
-
-                GL.BindVertexArray(RenderManager.FullscreenVao);
-                GL.DrawArrays(PrimitiveType.Triangles, 0, 3);
-
-                GL.Enable(EnableCap.DepthTest);
-
-                GL.BindTexture(TextureTarget.Texture2D, 0);
-                GL.ActiveTexture(TextureUnit.Texture0);
-                GL.BindTexture(TextureTarget.Texture2D, 0);
+                ShowExitModalWindow();
             }
-            FrameProfiler.End();
-
-            if (ShowHud)
-            {
-                FrameProfiler.Begin("hud");
-                Hud.Render();
-                FrameProfiler.End();
-            }
-
-            if (SceneManager.CurrentScene == null!)
-                return;
-
-            SetupDockSpace();
-
-            _hierarchyPanel.Draw();
-            _hudHierarchyPanel.Draw();
-            _inspectorPanel.Draw();
-            _assetBrowserPanel.Draw();
-            _viewportPanel.Draw();
-            _consoleWindow.Render(args);
-
-            ShowExitModalWindow();
-            FrameProfiler.End();
         }
 
         private double _exitButtonWait;
@@ -361,7 +436,7 @@ namespace RE.Editor
                         _exitButtonWait = 0;
                         Disable();
                         CloseCurrentPopup();
-                        Game.Instance.Close();
+                        //Game.Instance.Close();
                     }
 
                     EndDisabled();
@@ -382,8 +457,6 @@ namespace RE.Editor
                 }
             }
         }
-
-        private bool _isFirstTime = true;
 
         private unsafe void SetupDockSpace()
         {
@@ -421,7 +494,7 @@ namespace RE.Editor
 
                     if (MenuItem("Save scene"))
                     {
-                        SceneManager.SaveSceneToFile(_scene, "assets/maps/demo");
+                        SceneManager.SaveSceneToFile(Scene, "assets/maps/demo");
                     }
 
                     if (MenuItem("Save scene as"))

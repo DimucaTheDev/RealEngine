@@ -1,5 +1,6 @@
 ﻿using OpenTK.Graphics.OpenGL4;
 using RE.Utils;
+using Serilog;
 
 namespace RE.Rendering
 {
@@ -8,20 +9,23 @@ namespace RE.Rendering
         public int Handle { get; private set; }
         public int ColorTexture { get; private set; }
         public int DepthStencilBuffer { get; private set; }
-
         public int Width { get; private set; }
         public int Height { get; private set; }
 
-        public Framebuffer() : this(Game.Instance.ClientSize.X, Game.Instance.ClientSize.Y)
+
+        public Framebuffer(string? objectName = null) : this(Game.Instance.ClientSize.X, Game.Instance.ClientSize.Y,
+            objectName)
         {
         }
 
-        public Framebuffer(int width, int height)
+        public Framebuffer(int width, int height, string? objectName = null)
         {
-            Create(width, height);
+            Create(width, height, objectName);
         }
 
-        private void Create(int width, int height)
+        public static void BindDefault() => GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
+        
+        private void Create(int width, int height, string? objectName = null)
         {
             Width = width;
             Height = height;
@@ -29,9 +33,10 @@ namespace RE.Rendering
             Handle = GL.GenFramebuffer();
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, Handle);
 
+
             ColorTexture = GL.GenTexture();
             GL.BindTexture(TextureTarget.Texture2D, ColorTexture);
-
+            
             GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba,
                 width, height, 0, PixelFormat.Rgba, PixelType.UnsignedByte, IntPtr.Zero);
 
@@ -60,6 +65,17 @@ namespace RE.Rendering
                 throw new GlException($"Framebuffer is not complete: {status}");
             }
 
+            if (!objectName.IsNullOrEmpty())
+            {
+                GL.ObjectLabel(ObjectLabelIdentifier.Framebuffer, Handle, -1, objectName);
+                
+                string ctLabel = $"{objectName} - {nameof(ColorTexture)}";
+                GL.ObjectLabel(ObjectLabelIdentifier.Texture, ColorTexture, -1, ctLabel);
+                
+                string dsbLabel = $"{objectName} - {nameof(DepthStencilBuffer)}";
+                GL.ObjectLabel(ObjectLabelIdentifier.Renderbuffer, DepthStencilBuffer, -1, dsbLabel);
+            }
+            
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
         }
 

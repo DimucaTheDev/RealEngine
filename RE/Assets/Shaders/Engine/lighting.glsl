@@ -34,7 +34,6 @@ struct SpotLight{
     float quadratic;
 };
 
-uniform vec3 viewPos;
 uniform DirLight dirLight;
 uniform SpotLight spotLight;
 

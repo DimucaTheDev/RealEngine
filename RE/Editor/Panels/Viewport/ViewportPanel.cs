@@ -110,6 +110,10 @@ namespace RE.Editor.Panels.Viewport
 
         private void SetupBullet()
         {
+            CollisionWorld?.Dispose();
+            _dispatcher?.Dispose();
+            _broadphase?.Dispose();
+            
             var defaultCollisionConfiguration = new DefaultCollisionConfiguration();
             _dispatcher = new CollisionDispatcher(defaultCollisionConfiguration);
             _broadphase = new DbvtBroadphase();
@@ -122,9 +126,9 @@ namespace RE.Editor.Panels.Viewport
         public void Draw()
         {
             _cameraSprite.Position = Camera.Main.Position;
-            _cameraSprite.Render(new(Time.DeltaTime)); 
+            _cameraSprite.Render(new(Time.DeltaTime));
 
-            UpdateBulletObjects(); 
+            UpdateBulletObjects();
             PhysicsManager.DynamicsWorld.DebugDrawWorld();
 
             SetNextWindowPos(new Vector2(318, 27), ImGuiCond.FirstUseEver);
@@ -167,6 +171,7 @@ namespace RE.Editor.Panels.Viewport
                     ViewportSize = contentSize;
                     Game.Instance.ResizeFramebuffers((int)ViewportSize.X, (int)ViewportSize.Y);
                     Game.Instance.ResizeOitFramebuffer((int)ViewportSize.X, (int)ViewportSize.Y);
+                    SceneEditor.OutlineFramebuffer.Resize((int)ViewportSize.X, (int)ViewportSize.Y);
                     Camera.Editor.RenderWidth = (int)ViewportSize.X;
                     Camera.Editor.RenderHeight = (int)ViewportSize.Y;
                 }
@@ -337,7 +342,7 @@ namespace RE.Editor.Panels.Viewport
                 {
                     //todo: for some odd reason object teleports to where it has been for 1 frame randomly, and then teleports back.
                     //    dont think this does much but we should fix this some time later.
-                    
+
                     rigidBodyComponent.IsEnabled = _objRbEnabled;
                     rigidBodyComponent.RebuildPhysics();
                     if (old != null)
@@ -346,6 +351,7 @@ namespace RE.Editor.Panels.Viewport
                         selected.SetRotation(old.Value.r);
                         selected.Transform.Scale = old.Value.s;
                     }
+
                     _wasManipulating = false;
                 }
             }
@@ -627,13 +633,25 @@ namespace RE.Editor.Panels.Viewport
             {
                 if (!SceneEditor.SimulationRunning)
                 {
-                    _sceneBeforeSimulation = SceneSerializer.SerializeScene(SceneManager.CurrentScene);
                     SceneEditor.SimulationRunning = true;
+                    PhysicsManager.RecreateWorld();
+                    SetupBullet();
+                    _sceneBeforeSimulation = SceneSerializer.SerializeScene(SceneManager.CurrentScene);
+                    SceneManager.LoadScene(SceneSerializer.DeserializeScene(_sceneBeforeSimulation));
+                    SceneEditor.SelectedObject = null;
                 }
                 else
                 {
-                    SceneManager.LoadScene(SceneSerializer.DeserializeScene(_sceneBeforeSimulation));
                     SceneEditor.SimulationRunning = false;
+                    PhysicsManager.RecreateWorld();
+                    SetupBullet();
+                    SceneManager.CurrentScene = SceneSerializer.DeserializeScene(_sceneBeforeSimulation);
+                    SceneEditor.SelectedObject = null;
+                    foreach (var rb in SceneManager.CurrentScene.GameObjects
+                                 .SelectMany(o => o.Components).OfType<RigidBodyComponent>())
+                    {
+                        //rb.RebuildPhysics();
+                    }
                 }
             }
 
@@ -742,20 +760,20 @@ namespace RE.Editor.Panels.Viewport
             var cam = Camera.Editor;
             TkVector3 inputDir = TkVector3.Zero;
 
-            if (Keyboard.IsKeyDown(Keys.W))
+            if (Keyboard.IsKeyDown(Keys.W, true))
                 inputDir += (cam.Front with { Y = 0 }).Normalized();
-            if (Keyboard.IsKeyDown(Keys.S))
+            if (Keyboard.IsKeyDown(Keys.S, true))
                 inputDir -= (cam.Front with { Y = 0 }).Normalized();
-            if (Keyboard.IsKeyDown(Keys.A))
+            if (Keyboard.IsKeyDown(Keys.A, true))
                 inputDir -= TkVector3.Normalize(TkVector3.Cross(cam.Front, cam.Up));
-            if (Keyboard.IsKeyDown(Keys.D))
+            if (Keyboard.IsKeyDown(Keys.D, true))
                 inputDir += TkVector3.Normalize(TkVector3.Cross(cam.Front, cam.Up));
 
-            if (Keyboard.IsKeyDown(Keys.Space))
+            if (Keyboard.IsKeyDown(Keys.Space, true))
                 inputDir += TkVector3.UnitY;
-            if (Keyboard.IsKeyDown(Keys.LeftShift))
+            if (Keyboard.IsKeyDown(Keys.LeftShift, true))
                 inputDir -= TkVector3.UnitY;
-            
+
             if (inputDir.LengthSquared > 0)
                 inputDir = inputDir.Normalized();
 

@@ -15,7 +15,11 @@ namespace RE.Core.Input
         public static CursorState CursorState
         {
             get => Game.Instance.CursorState;
-            set => Game.Instance.CursorState = value;
+            set
+            {
+                if (!SceneEditor.SimulationRunning)
+                    Game.Instance.CursorState = value;
+            }
         }
 
         public static bool CanCaptureInput => IsInputEnabled && !ImGui.GetIO().WantCaptureMouse;

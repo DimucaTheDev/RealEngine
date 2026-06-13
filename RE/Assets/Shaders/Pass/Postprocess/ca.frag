@@ -5,7 +5,7 @@ layout(location = 0) out vec4 f_Color;
 
 uniform sampler2D u_Texture;
 
-uniform float u_AberrationAmount = 0.01;
+uniform float u_AberrationAmount = 0.005;
 
 void main()
 {

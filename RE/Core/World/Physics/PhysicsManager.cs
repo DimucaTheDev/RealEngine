@@ -93,13 +93,7 @@ namespace RE.Core.World.Physics
             Log.Debug("Solver pool thread count set to {Threads}", MaxThreadSolver);
             _parallelSolver = new SequentialImpulseConstraintSolverMultiThreaded();
 
-            DynamicsWorld = new DiscreteDynamicsWorldMultiThreaded(_dispatcher, _broadphase, _solverPool,
-                _parallelSolver, _collisionConfiguration);
-            DynamicsWorld.SolverInfo.SolverMode = SolverModes.Simd | SolverModes.UseWarmStarting;
-            DynamicsWorld.SolverInfo.NumIterations = 10;
-            //DynamicsWorld.SolverInfo.TimeStep = FixedTimeStep;
-            DynamicsWorld.Gravity = new BulletSharp.Math.Vector3(0, -9.81f, 0);
-            DynamicsWorld.DebugDrawer = new BulletDebugDrawer();
+            RecreateWorld();
 
             Log.Debug("Physics Manager initialized");
             _init = true;
@@ -171,42 +165,53 @@ namespace RE.Core.World.Physics
 
             if (!SceneEditor.Enabled || (SceneEditor.SimulationRunning))
             {
-                FrameProfiler.Begin("bullet");
-
-                Accumulator += deltaTime;
-                while (Accumulator >= FixedTimeStep)
+                using (FrameProfiler.Scope("bullet"))
                 {
-                    FrameProfiler.Begin("step");
-                    DynamicsWorld.StepSimulation(FixedTimeStep, 0);
-                    foreach (var obj in DynamicsWorld.CollisionObjectArray)
+                    Accumulator += deltaTime;
+                    while (Accumulator >= FixedTimeStep)
                     {
-                        foreach (var c in (obj.UserObject as Component)?.Owner.Components!)
+                        using (FrameProfiler.Scope("step"))
                         {
-                            if (!c.IsEnabled) continue;
-                            c.PhysicsSync();
+                            DynamicsWorld.StepSimulation(FixedTimeStep, 0);
+                            foreach (var obj in DynamicsWorld.CollisionObjectArray)
+                            {
+                                foreach (var c in (obj.UserObject as Component)?.Owner.Components!)
+                                {
+                                    if (!c.IsEnabled) continue;
+                                    c.PhysicsSync();
+                                }
+                            }
                         }
+
+                        Accumulator -= FixedTimeStep;
                     }
 
-                    FrameProfiler.End();
+                    Alpha = Accumulator / FixedTimeStep;
 
-
-                    Accumulator -= FixedTimeStep;
+                    using (FrameProfiler.Scope("collision"))
+                    {
+                        ProcessCollisions(DynamicsWorld);
+                    }
                 }
-
-                Alpha = Accumulator / FixedTimeStep;
-
-                FrameProfiler.Begin("collision");
-                ProcessCollisions(DynamicsWorld);
-                FrameProfiler.End();
-
-                FrameProfiler.End();
             }
 
             if (BulletDebugDrawer.Mode != DebugDrawModes.None)
                 DynamicsWorld.DebugDrawWorld();
         }
 
-        public static float Alpha { get; private set; }
+        public static float Alpha { get; private set; } //todo: move
+
+        internal static void RecreateWorld()
+        {
+            DynamicsWorld?.Dispose();
+            DynamicsWorld = new DiscreteDynamicsWorldMultiThreaded(_dispatcher, _broadphase, _solverPool,
+                _parallelSolver, _collisionConfiguration);
+            DynamicsWorld.SolverInfo.SolverMode = SolverModes.Simd | SolverModes.UseWarmStarting;
+            DynamicsWorld.SolverInfo.NumIterations = 10;
+            //DynamicsWorld.SolverInfo.TimeStep = FixedTimeStep;
+            DynamicsWorld.Gravity = new BulletSharp.Math.Vector3(0, -9.81f, 0);
+            DynamicsWorld.DebugDrawer = new BulletDebugDrawer();
+        }
 
         private static void ProcessCollisions(DiscreteDynamicsWorld world)
         {

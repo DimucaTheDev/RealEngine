@@ -19,7 +19,7 @@ namespace RE.Core
     /// Component is the base class for all components that can be attached to a <see cref="GameObject"/>.
     /// </summary>
     /// <remarks>All classes that inherit this class must have parameterless constructor</remarks>
-    [UsedImplicitly(ImplicitUseTargetFlags.WithInheritors)]
+    [UsedImplicitly(ImplicitUseTargetFlags.WithInheritors | ImplicitUseTargetFlags.WithMembers)]
     public abstract class Component
     {
         /// <summary>
@@ -28,7 +28,7 @@ namespace RE.Core
         [JsonIgnore]
         public GameObject Owner { get; internal set; } = null!;
 
-        [EditorProperty]
+        [EditorProperty, JsonIgnore]
         public bool IsEnabled
         {
             get;
@@ -63,9 +63,9 @@ namespace RE.Core
         /// </summary>
         /// <remarks>This method is not called if <see cref="SaveComponent"/> is set to <see langword="false"/></remarks>
         /// <returns><see cref="JsonNode"/> that contains saved data</returns>
-        public virtual JsonNode GetSaveData() => GetDataForProperties(this);
+        public virtual JsonObject GetSaveData() => GetDataForProperties();
 
-        private JsonNode GetDataForProperties(object instance)
+        private JsonObject GetDataForProperties()
         {
             JsonObject obj = new();
             var properties

@@ -1,4 +1,5 @@
-#version 330 core
+#version 460 core
+
 #include "/Assets/Shaders/Engine/lighting.glsl"
 #include "/Assets/Shaders/Engine/oit_shared.glsl"
 
@@ -9,7 +10,6 @@ uniform vec4 outlineColor;
 uniform bool hasDirLight;
 uniform bool hasSpotLight;
 
-//uniform vec3 viewPos;
 //in vec3 FragPos;        // These are from lighting.glsl
 //in vec3 Normal;
 //in vec2 TexCoords;
@@ -44,7 +44,7 @@ void main()
     else
     {
         vec3 norm = normalize(Normal);
-        vec3 viewDir = normalize(viewPos - FragPos);
+        vec3 viewDir = normalize(u_CameraPosition - FragPos);
 
         vec3 result = vec3(0.0);
 

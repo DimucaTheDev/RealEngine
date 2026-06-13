@@ -1,4 +1,5 @@
 ﻿using OpenTK.Graphics.OpenGL;
+using OpenTK.Mathematics;
 using RE.Core.Assets;
 using RE.Utils;
 
@@ -27,7 +28,7 @@ public class PostProcessLayer
         Program.AttachShader(fragmentShader);
         Program.AttachShader(DefaultVertexShader);
 
-        _buffer = new Framebuffer();
+        _buffer = new Framebuffer("Postprocess " + Path.GetFileName(fragmentShader));
     }
 
     internal void Resize(int width, int height)
@@ -42,7 +43,7 @@ public class PostProcessLayer
         else
             _buffer.Unbind();
 
-        GL.ClearColor(Color.Black);
+        GL.ClearColor(Color4.Black);
         GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
         Program.Use();

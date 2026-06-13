@@ -54,11 +54,15 @@ public static class SceneSerializer
                 foreach (var com in obj.Components.Where(s => s.SaveComponent))
                 {
                     var saveData = com.GetSaveData();
+                    
+                    if (!com.IsEnabled)
+                        saveData.TryAdd(nameof(Component.IsEnabled), com.IsEnabled);
+
                     componentsObj.Add(com.GetType().Name, saveData);
                 }
 
                 JsonArray childArray = new JsonArray();
-                obj.Children.ForEach(child => childArray.Add(ConstructObject(child)));
+                obj.Children.Where(c => !c.DoNotSave).ForEach(child => childArray.Add(ConstructObject(child)));
                 o.Add("children", childArray);
 
                 return o;
@@ -185,7 +189,7 @@ public static class SceneSerializer
 
             return subInstance;
         }
- 
+
         if (targetType.IsGenericType && (targetType.GetGenericTypeDefinition() == typeof(Dictionary<,>) ||
                                          targetType.GetGenericTypeDefinition() == typeof(IDictionary<,>)))
         {
@@ -393,19 +397,11 @@ public static class SceneSerializer
 
             ApplyObjectModification();
 
-            foreach (var go in scene.GameObjects.ToList())
-            {
-                foreach (var c in go.Components.ToList())
-                {
-                    c.Start();
-                }
-            }
-
             return scene;
         }
         catch (Exception e)
         {
-            Log.Error(e, "Failed to deserialize scene");
+            //Log.Error(e, "Failed to deserialize scene");
             throw;
         }
         finally

@@ -5,6 +5,8 @@ using OpenTK.Windowing.Common;
 using RE.Core.Assets;
 using RE.Rendering;
 using RE.Utils;
+using RenderdocSharp;
+using Serilog;
 
 namespace RE.Core.Ui.Debug;
 
@@ -22,7 +24,7 @@ public class LineRenderer : Renderable
     private int _vao, _vbo;
     private ShaderProgram _shaderProgram;
     private Vertex[] _vertexBatch = new Vertex[MaxVertices];
- 
+
     public override bool IsVisible { get; set; } = true;
 
     public LineRenderer()
@@ -102,13 +104,18 @@ public class LineRenderer : Renderable
                 Color = line.ColorEnd
             };
 
-            GL.BufferSubData(
-                BufferTarget.ArrayBuffer,
-                nint.Zero,
-                2 * Marshal.SizeOf<Vertex>(),
-                _vertexBatch);
-
-            GL.DrawArrays(PrimitiveType.Lines, 0, 2);
+            using (FrameProfiler.Scope("LINE TEST"))
+            {
+                //GL.Disable(EnableCap.DepthTest);
+                GL.BufferSubData(
+                    BufferTarget.ArrayBuffer,
+                    nint.Zero,
+                    2 * Marshal.SizeOf<Vertex>(),
+                    _vertexBatch);
+                
+                GL.DrawArrays(PrimitiveType.Lines, 0, 2);
+                //GL.Enable(EnableCap.DepthTest);
+            }
         }
 
         GL.BindVertexArray(0);

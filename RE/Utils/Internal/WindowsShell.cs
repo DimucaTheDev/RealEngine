@@ -10,7 +10,7 @@ namespace RE.Utils
         private static readonly Dictionary<string, IntPtr> _iconCache = new();
         private static readonly List<string> ImageExtensions = [".jpg", ".jpeg", ".png", ".ico", ".bmp"];
 
-        private static IntPtr ConvertBitmapToImGuiTexture(Bitmap bitmap)
+        /*private static IntPtr ConvertBitmapToImGuiTexture(Bitmap bitmap)
         {
             int textureId = GL.GenTexture();
             GL.BindTexture(TextureTarget.Texture2D, textureId);
@@ -42,9 +42,9 @@ namespace RE.Utils
 
             GL.BindTexture(TextureTarget.Texture2D, 0);
             return textureId;
-        }
+        }*/
 
-        public static IntPtr GetFileIcon(string filePath)
+        /*public static IntPtr GetFileIcon(string filePath)
         {
             string extension = Path.GetExtension(filePath).ToLowerInvariant();
 
@@ -63,9 +63,9 @@ namespace RE.Utils
             if (!isImage)
                 return GetSystemIcon(filePath);
             return LoadImageIcon(filePath);
-        }
+        }*/
 
-        public static IntPtr LoadImageIcon(string filePath)
+        /*public static IntPtr LoadImageIcon(string filePath)
         {
             if (_iconCache.TryGetValue(filePath, out IntPtr cachedId))
             {
@@ -87,11 +87,11 @@ namespace RE.Utils
             {
                 return GetSystemIcon(filePath);
             }
-        }
+        }*/
 
         public static IntPtr GetSystemIcon(string extensionOrPath, SHGFI flags = SHGFI.LargeIcon | SHGFI.Icon)
         {
-
+            throw new NotImplementedException("Not yet implemented without System.Drawing");
             if (_iconCache.TryGetValue(extensionOrPath, out IntPtr cachedId))
             {
                 return cachedId;
@@ -100,7 +100,7 @@ namespace RE.Utils
             var iconOverride = $"Assets/Editor/ExtensionIconOverride/{Path.GetExtension(extensionOrPath).Replace(".", "")}.png";
             if (File.Exists(iconOverride))
             {
-                return LoadImageIcon(iconOverride);
+                //return LoadImageIcon(iconOverride);
             }
 
             SHFILEINFO shfi = new SHFILEINFO();
@@ -123,9 +123,9 @@ namespace RE.Utils
 
             try
             {
-                using Icon icon = Icon.FromHandle(shfi.hIcon);
-                using Bitmap bitmap = icon.ToBitmap();
-                textureId = ConvertBitmapToImGuiTexture(bitmap);
+                //using Icon icon = Icon.FromHandle(shfi.hIcon);
+                //using Bitmap bitmap = icon.ToBitmap();
+                //textureId = ConvertBitmapToImGuiTexture(bitmap);
             }
             finally
             {

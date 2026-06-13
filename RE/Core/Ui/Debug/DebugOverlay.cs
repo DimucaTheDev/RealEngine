@@ -39,20 +39,29 @@ internal class DebugOverlay : Renderable
         Test();
     }
 
-    private string? save = null;
+    private string save = "";
 
     private void Test()
     {
         Begin("load save test");
+        if (Button("reset bullet"))
+        {
+            PhysicsManager.RecreateWorld();
+        }
+
         if (Button("save"))
         {
             save = SceneSerializer.SerializeScene(SceneManager.CurrentScene);
         }
 
-        if (save != null && Button("load"))
+        if (!save.IsNullOrEmpty() && Button("load"))
         {
             var scene = SceneSerializer.DeserializeScene(save);
+            SceneManager.LoadScene(scene);
         }
+
+
+        InputTextMultiline("##label", ref save, 1024 * 16, new Vector2(-1, -1));
 
         End();
     }

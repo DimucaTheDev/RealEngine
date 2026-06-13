@@ -125,7 +125,8 @@ internal class CommonEngineCommands
         }
 
         Log.Information("Loading {Scene}... ", name);
-        SceneManager.LoadScene(SceneManager.LoadFromMapFile(name), true,
+        SceneManager.LoadScene(
+            SceneSerializer.DeserializeScene(ContentManager.GetString($"assets/maps/{name}/data.json")), true,
             () => { SoundManager.PlayOneShotEvent("event:/Flash"); });
     }
 
@@ -136,8 +137,8 @@ internal class CommonEngineCommands
         if (!SceneEditor.Enabled)
             ov.Enable();
         else
-            Log.Error("Editor can be closed only via Editor -> Exit");
-        //   ov.Disable();
+            //Log.Error("Editor can be closed only via Editor -> Exit");
+            ov.Disable();
     }
 
     [ConsoleCommand(Name = "vsync", Description = "Set VSync mode")]
@@ -152,7 +153,7 @@ internal class CommonEngineCommands
         Game.Instance.VSync = state == "enable" ? VSyncMode.On : VSyncMode.Off;
         Log.Information("V-Sync {State}", Game.Instance.VSync == VSyncMode.Off ? "OFF" : "ON");
     }
-    
+
     [ConsoleCommand(Name = "bo", Description = "Set bullet overlay")]
     static void Bo(string overlay)
     {

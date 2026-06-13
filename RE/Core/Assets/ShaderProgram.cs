@@ -38,7 +38,8 @@ namespace RE.Core.Assets
         public IReadOnlyList<Shader> Shaders => _linkedShaders.AsReadOnly();
 
         private bool _linked;
-        private List<string> _unknownLocations = new();
+        private readonly List<string> _unknownUniforms = new();
+        private readonly List<string> _declaredUniforms = new();
         private readonly List<Shader> _linkedShaders = [];
         private readonly List<FileSystemWatcher> _watchers = new();
         internal static readonly List<ShaderProgram> ShaderReloadList = new();
@@ -68,6 +69,7 @@ namespace RE.Core.Assets
             }
 
             _linkedShaders.Add(shader);
+            _declaredUniforms.AddRange(shader.DeclaredUniforms);
         }
 
         public void Reload(string path)
@@ -144,7 +146,7 @@ namespace RE.Core.Assets
         //todo: move it lower
         private void SetValue<T>(string name, T value, bool silent) where T : notnull
         {
-            if (_unknownLocations.Contains(name))
+            if (_unknownUniforms.Contains(name))
             {
                 // Skip setting value for previously unknown uniform
                 return;
@@ -154,10 +156,19 @@ namespace RE.Core.Assets
             if (location == -1)
             {
                 if (!silent)
-                    Log.Error("Unknown uniform location {Name} in: {Shaders}", name,
-                        _linkedShaders.Select(s => Path.GetFileName(s.AssetPath!)).ToArray());
-                if (!_unknownLocations.Contains(name))
-                    _unknownLocations.Add(name);
+                {
+                    if (!_declaredUniforms.Contains(name))
+                        Log.Error("Unknown uniform location {Name} in: {Shaders}", name,
+                            _linkedShaders.Select(s => Path.GetFileName(s.AssetPath!)).ToArray());
+                    else
+                    {
+                        Log.Verbose(
+                            "Uniform was declared but was not found."); //maybe uniform was not used in shader, thats ok :)
+                    }
+                }
+
+                if (!_unknownUniforms.Contains(name))
+                    _unknownUniforms.Add(name);
                 return;
             }
 
