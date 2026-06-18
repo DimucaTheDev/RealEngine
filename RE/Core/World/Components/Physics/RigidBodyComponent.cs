@@ -105,12 +105,12 @@ namespace RE.Core.World.Components.Physics
             RebuildPhysics();
             RigidBody?.Activate();
 
-            _triggerBoxRenderer = ModelRenderer.Create("assets/testing/trigger.fbx");
+            _triggerBoxRenderer = ModelRenderer.Create("assets/editor/trigger.fbx");
             _triggerBoxRenderer.IgnoreLight = true;
             _triggerBoxRenderer.Model.Material.ShaderProgram = new ShaderProgram();
-            _triggerBoxRenderer.Model.Material.ShaderProgram.AttachShader("assets/shaders/trigger.vert");
-            _triggerBoxRenderer.Model.Material.ShaderProgram.AttachShader("assets/shaders/trigger.frag");
-            _triggerBoxRenderer.Model.Material.Texture = new StaticTexture("assets/testing/trigger.png");
+            _triggerBoxRenderer.Model.Material.ShaderProgram.AttachShader("assets/Shaders/Pass/Editor/Trigger/trigger.vert");
+            _triggerBoxRenderer.Model.Material.ShaderProgram.AttachShader("assets/Shaders/Pass/Editor/Trigger/trigger.frag");
+            _triggerBoxRenderer.Model.Material.Texture = new StaticTexture("assets/editor/trigger.png");
         }
 
         public override void PhysicsSync()

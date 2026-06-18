@@ -11,8 +11,8 @@ namespace RE.Rendering.Lighting
         public Material()
         {
             ShaderProgram = new ShaderProgram();
-            ShaderProgram.AttachShader("assets/shaders/assimp.vert");
-            ShaderProgram.AttachShader("assets/shaders/assimp.frag");
+            ShaderProgram.AttachShader("assets/shaders/Pass/Assimp/assimp.vert");
+            ShaderProgram.AttachShader("assets/shaders/Pass/Assimp/assimp.frag");
         }
         
         public ShaderProgram ShaderProgram { get; set; }

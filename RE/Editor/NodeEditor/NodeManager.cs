@@ -229,6 +229,8 @@ namespace RE.Editor.NodeEditor
 
             if (node is ActionNode)
             {
+                if(!node.OutputPins.Any()) return;
+                
                 var links = node.OutputPins.First().GetLinkedPins();
                 foreach (var link in links)
                 {

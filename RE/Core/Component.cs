@@ -3,6 +3,7 @@ using System.Reflection;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using BulletSharp;
+using JetBrains.Annotations;
 using OpenTK.Windowing.Common;
 using RE.Core.Scripting.Attributes;
 using RE.Core.World;
@@ -18,6 +19,7 @@ namespace RE.Core
     /// Component is the base class for all components that can be attached to a <see cref="GameObject"/>.
     /// </summary>
     /// <remarks>All classes that inherit this class must have parameterless constructor</remarks>
+    [UsedImplicitly(ImplicitUseTargetFlags.WithInheritors)]
     public abstract class Component
     {
         /// <summary>

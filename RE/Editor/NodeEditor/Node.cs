@@ -1,5 +1,6 @@
 ﻿using Hexa.NET.ImGui;
 using Hexa.NET.ImNodes;
+using JetBrains.Annotations;
 using OpenTK.Mathematics;
 using RE.Core;
 using RE.Editor.NodeEditor.Pins;
@@ -10,6 +11,7 @@ using Vector4 = System.Numerics.Vector4;
 
 namespace RE.Editor.NodeEditor
 {
+    [MeansImplicitUse(ImplicitUseTargetFlags.WithMembers | ImplicitUseTargetFlags.WithInheritors)]
     public abstract class Node
     {
         protected Node()

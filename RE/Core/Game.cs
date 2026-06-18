@@ -45,7 +45,7 @@ internal partial class Game : GameWindow
 {
     public static ParseResult CommandParseResult = null!;
     public const int FpsLock = 165; // fixme: fpsLock above 200 may (and will) cause physics issues
-    private static bool _initialized, _closing, _closed;
+    private static bool _initialized, _closing;
 
     public static void Start(string[] args)
     {
@@ -197,9 +197,12 @@ internal partial class Game : GameWindow
 
         var w = Camera.Main.RenderWidth;
         var h = Camera.Main.RenderHeight;
+        
         GL.Viewport(0, 0, w, h);
-        SetupSceneFbo(w, h);
-        SetupOitFbo(w, h);
+        
+        ResizeFramebuffers(w, h);
+        ResizeOitFramebuffer(w, h);
+        
         base.OnResize(e);
     }
 
@@ -278,10 +281,10 @@ internal partial class Game : GameWindow
         pe();
 
         if (ToastManager.MainWindowViewport == (ImGuiViewportPtr)null)
-            ToastManager.MainWindowViewport = ImGui.GetWindowViewport();
+            ToastManager.MainWindowViewport = ImGui.GetMainViewport();
 
         if (SceneEditor.Enabled)
-            GL.BindFramebuffer(FramebufferTarget.Framebuffer, SceneFboId);
+            SceneFramebuffer.Bind();
 
         var w = Camera.GetActiveCamera().RenderWidth;
         var h = Camera.GetActiveCamera().RenderHeight;
@@ -304,7 +307,7 @@ internal partial class Game : GameWindow
         {
             if (SceneEditor.Enabled)
             {
-                GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
+                SceneFramebuffer.Unbind();
                 GL.ClearColor(Color4.Black);
                 GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
                 GL.Viewport(0, 0, ClientSize.X, ClientSize.Y);
@@ -354,17 +357,7 @@ internal partial class Game : GameWindow
         if (Keyboard.IsKeyPressed(Keys.F4, true))
             CommandHandler.ExecuteCommand("editor");
         if (Keyboard.IsKeyPressed(Keys.F5, true))
-            CommandHandler.ExecuteCommand("debug");
-        if (Keyboard.IsKeyPressed(Keys.F1, true))
-        {
-            RenderManager.RemoveCameraFrustum();
-            if (Keyboard.IsKeyDown(Keys.LeftControl))
-            {
-                return;
-            }
-
-            RenderManager.CreateCameraFrustum();
-        }
+            CommandHandler.ExecuteCommand("debug"); 
 
         if (Keyboard.IsKeyPressed(Keys.F2, true))
         {
@@ -412,13 +405,7 @@ internal partial class Game : GameWindow
     public override void Close()
     {
         _closing = true;
-    }
-
-    private void HandleClosing()
-    {
-        _closed = true;
-        ImGuiController.Destroy();
-    }
+    } 
 
     protected override void OnUnload()
     {

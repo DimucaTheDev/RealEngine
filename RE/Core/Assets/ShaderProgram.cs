@@ -1,4 +1,5 @@
 ﻿using System.Reflection;
+using System.Runtime.InteropServices;
 using OpenTK.Graphics.OpenGL4;
 using OpenTK.Mathematics;
 using RE.Rendering;
@@ -34,9 +35,11 @@ namespace RE.Core.Assets
             }
         }
 
+        public IReadOnlyList<Shader> Shaders => _linkedShaders.AsReadOnly();
+
         private bool _linked;
-        private readonly List<Shader> _linkedShaders = [];
         private List<string> _unknownLocations = new();
+        private readonly List<Shader> _linkedShaders = [];
         private readonly List<FileSystemWatcher> _watchers = new();
         internal static readonly List<ShaderProgram> ShaderReloadList = new();
 
@@ -60,10 +63,7 @@ namespace RE.Core.Assets
             {
                 var fsw = new FileSystemWatcher(Path.GetDirectoryName(shader.AssetPath)!);
                 fsw.Filter = Path.GetFileName(shader.AssetPath);
-                fsw.Changed += (s, e) =>
-                {
-                    ShaderReloadList.Add(this);
-                };
+                fsw.Changed += (s, e) => { ShaderReloadList.Add(this); };
                 _watchers.Add(fsw);
             }
 
@@ -79,6 +79,7 @@ namespace RE.Core.Assets
             {
                 throw new GlException("Unable to create shader program.");
             }
+
             foreach (var shader in _linkedShaders.ToList().Select(s => s.AssetPath))
             {
                 AttachShader(shader!);
@@ -93,12 +94,28 @@ namespace RE.Core.Assets
             {
                 GL.LinkProgram(this);
 
+                GL.GetProgram(Handle, GetProgramParameterName.LinkStatus, out var linkStatus);
+                if (linkStatus == 0)
+                {
+                    string message = GL.GetProgramInfoLog(Handle);
+                    throw new GlException(message);
+                }
+
                 _linked = true;
             }
+
             GL.UseProgram(this);
-            
-            //todo: set common uniform params like delta time or total running time
-            //  or maybe thats a bad idea and we should not set what we do not want
+
+            // Assets/Shaders/Engine/uniforms.glsl
+            SetValue("u_Time", Time.ElapsedTime, true);
+            SetValue("u_DeltaTime", Time.DeltaTime, true);
+            SetValue("u_CameraPosition", Camera.GetActiveCamera().Position, true);
+            SetValue("u_ClientSize", Game.Instance.ClientSize, true);
+            SetValue("u_MousePosition", Game.Instance.MousePosition, true);
+            SetValue("u_MouseDelta", Game.Instance.MouseState.Delta, true);
+            SetValue("u_RandomF", Random.Shared.NextSingle(), true);
+            SetValue("u_RandomV3",
+                new Vector3(Random.Shared.NextSingle(), Random.Shared.NextSingle(), Random.Shared.NextSingle()), true);
         }
 
         /// <inheritdoc cref="GL.DeleteProgram(int)"/>>
@@ -122,19 +139,23 @@ namespace RE.Core.Assets
         /// <param name="value">The value to assign to the uniform variable. Must be of a supported type such as <see langword="int"/>, <see langword="uint"/>, <see langword="float"/>, <see langword="double"/>,
         /// <see langword="bool"/>, <see cref="Vector2"/>, <see cref="Vector3"/>, <see cref="Vector4"/>, <see cref="Color4"/>, <see cref="Matrix2"/>, <see cref="Matrix3"/>, or <see cref="Matrix4"/>.</param>
         /// <exception cref="NotSupportedException">Thrown if the type of <typeparamref name="T"/> is not supported as a uniform variable.</exception>
-        public void SetValue<T>(string name, T value) where T : notnull
+        public void SetValue<T>(string name, T value) where T : notnull => SetValue(name, value, false);
+
+        //todo: move it lower
+        private void SetValue<T>(string name, T value, bool silent) where T : notnull
         {
             if (_unknownLocations.Contains(name))
             {
                 // Skip setting value for previously unknown uniform
-                //todo: update docs
                 return;
             }
 
             int location = GL.GetUniformLocation(this, name);
             if (location == -1)
             {
-                Log.Error("Unknown uniform location {Name} in: {Shaders}", name, _linkedShaders.Select(s => Path.GetFileName(s.AssetPath!).Replace("\\\\", "\\")).ToArray());
+                if (!silent)
+                    Log.Error("Unknown uniform location {Name} in: {Shaders}", name,
+                        _linkedShaders.Select(s => Path.GetFileName(s.AssetPath!)).ToArray());
                 if (!_unknownLocations.Contains(name))
                     _unknownLocations.Add(name);
                 return;
@@ -152,13 +173,16 @@ namespace RE.Core.Assets
                     GL.Uniform1(location, f);
                     break;
                 case double d:
-                    GL.Uniform1(location, (float)d);
+                    GL.Uniform1(location, d);
                     break;
                 case bool b:
                     GL.Uniform1(location, b ? 1 : 0);
                     break;
 
                 case Vector2 v2:
+                    GL.Uniform2(location, v2);
+                    break;
+                case Vector2i v2:
                     GL.Uniform2(location, v2);
                     break;
                 case Vector3 v3:
@@ -228,6 +252,7 @@ namespace RE.Core.Assets
                 }
             }
         }
+
         //todo: needs investigation. do we really need nameless vars?
         private void SetStructArray<T>(IEnumerable<T> values)
         {
@@ -235,6 +260,7 @@ namespace RE.Core.Assets
             var structName = structNameAttr?.StructureName ?? typeof(T).Name;
             SetStructArray(structName, values);
         }
+
         /// <summary>
         /// Sets the values of all public properties of a struct as individual uniforms, using the specified variable
         /// name as the struct prefix.
@@ -249,7 +275,7 @@ namespace RE.Core.Assets
         public void SetStruct<T>(string varName, T value) where T : struct
         {
             //var structNameAttr = typeof(T).GetCustomAttribute<GlStructNameAttribute>();
-            string structName = varName;//structNameAttr?.StructureName ?? typeof(T).Name;
+            string structName = varName; //structNameAttr?.StructureName ?? typeof(T).Name;
 
             foreach (var prop in typeof(T).GetProperties())
             {

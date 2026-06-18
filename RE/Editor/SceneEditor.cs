@@ -215,7 +215,7 @@ namespace RE.Editor
 
             FrameProfiler.Begin("render");
             {
-                GL.BindFramebuffer(FramebufferTarget.Framebuffer, Game.Instance.SceneFboId);
+                Game.Instance.SceneFramebuffer.Bind();
 
                 GL.Enable(EnableCap.DepthTest);
                 GL.DepthMask(true);
@@ -287,7 +287,7 @@ namespace RE.Editor
                 }
 
 
-                GL.BindFramebuffer(FramebufferTarget.Framebuffer, Game.Instance.SceneFboId);
+                Game.Instance.SceneFramebuffer.Bind();
 
                 GL.DepthMask(true);
                 GL.Disable(EnableCap.DepthTest);

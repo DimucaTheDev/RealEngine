@@ -30,6 +30,9 @@ namespace RE.BuildTask
             {
                 string archivePath = Path.Combine(buildFolder, pack.Key);
 
+                if (File.Exists(archivePath))
+                    File.Delete(archivePath);
+                
                 using var zip = ZipFile.Open(archivePath, ZipArchiveMode.Create);
                 Log.LogMessage(MessageImportance.High, $"Creating pak: {archivePath}");
 
@@ -49,6 +52,8 @@ namespace RE.BuildTask
             string defaultArchivePath = Path.Combine(buildFolder, config.Default);
 
             Log.LogMessage(MessageImportance.High, $"Creating pak: {defaultArchivePath}");
+            if (File.Exists(defaultArchivePath))
+                File.Delete(defaultArchivePath);
             using (var zip = ZipFile.Open(defaultArchivePath, ZipArchiveMode.Create))
             {
                 foreach (string path in Directory.GetFileSystemEntries(rootFolder))

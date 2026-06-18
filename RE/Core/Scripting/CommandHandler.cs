@@ -43,9 +43,9 @@ namespace RE.Core.Scripting
 
                 list.Add(command);
 
-                Log.Debug("Registered command {Command}. Method: {Method}",
+                Log.Debug("Registered command {Command}. Method: {Namespace}.{Class}.{Method}",
                     name,
-                    $"{method.DeclaringType!.Namespace}.{method.Name}");
+                    method.DeclaringType!.Namespace, method.DeclaringType.Name, method.Name);
             }
         }
 
@@ -391,9 +391,9 @@ namespace RE.Core.Scripting
             if (type == typeof(bool))
                 return bool.Parse(value);
 
-            if(type == typeof(object))
+            if (type == typeof(object))
                 return value;
-                
+
             throw new NotSupportedException($"Converting to {type} from string is not supported");
         }
 

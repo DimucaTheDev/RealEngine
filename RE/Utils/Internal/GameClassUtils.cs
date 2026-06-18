@@ -68,9 +68,7 @@ namespace RE.Utils
 
         private static bool Wireframe { get; set; }
 
-        public int SceneFboId;
-        public int SceneTextureId;
-        public int SceneRboId;
+        public Framebuffer SceneFramebuffer, PrePostProcessFramebuffer;
         public int AccumColorTex;
         public int AccumWeightTex;
         public int OitFbo;
@@ -83,7 +81,7 @@ namespace RE.Utils
         /// The screenshot will be saved in a subfolder named <see cref="ProductName"/> with a filename <c>re_yyyy-MM-dd_HH-mm-ss.png</c>.
         /// </remarks>
         /// <returns>Absolute path to saved screenshot</returns>
-        public static string TakeScreenshot() => TakeScreenshot(Path.Combine(
+        public static string? TakeScreenshot() => TakeScreenshot(Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.MyPictures), ProductName,
             $"re_{DateTime.Now:yyyy-MM-dd_HH-mm-ss}.png"));
 
@@ -93,33 +91,49 @@ namespace RE.Utils
         /// </summary>
         /// <param name="fileName">Path that screenshot will be saved to</param>
         /// <returns>Absolute path to saved screenshot</returns>
-        public static unsafe string TakeScreenshot(string fileName)
+        public static unsafe string? TakeScreenshot(string fileName)
         {
             try
             {
                 var a = new byte[Instance.ClientSize.X * Instance.ClientSize.Y * 3];
+
                 fixed (byte* ptr = a)
-                    GL.ReadPixels(0, 0, Instance.ClientSize.X, Instance.ClientSize.Y,
-                        OpenTK.Graphics.OpenGL.PixelFormat.Rgb, PixelType.UnsignedByte, (IntPtr)ptr);
-                Image<Rgb24> image =
-                    SixLabors.ImageSharp.Image.LoadPixelData<Rgb24>(a, Instance.ClientSize.X, Instance.ClientSize.Y);
+                {
+                    GL.ReadPixels(
+                        0, 0,
+                        Instance.ClientSize.X, Instance.ClientSize.Y,
+                        OpenTK.Graphics.OpenGL.PixelFormat.Rgb,
+                        PixelType.UnsignedByte,
+                        (IntPtr)ptr);
+                }
+
+                var image = SixLabors.ImageSharp.Image.LoadPixelData<Rgb24>(a, Instance.ClientSize.X, Instance.ClientSize.Y);
+
                 image.Mutate(s => s.Flip(FlipMode.Vertical));
 
-                Directory.CreateDirectory(Path.GetDirectoryName(fileName)!);
-
-                image.SaveAsPng(fileName);
-                image.Dispose();
                 var full = Path.GetFullPath(fileName);
-                ToastManager.InsertNotification(new Toast(ToastType.Success, "Screenshot saved.", 2));
+
+                Task.Run(() =>
+                {
+                    Directory.CreateDirectory(Path.GetDirectoryName(fileName)!);
+
+                    image.SaveAsPng(fileName);
+                    image.Dispose();
+
+                    ToastManager.InsertNotification(
+                        new Toast(ToastType.Success, "Screenshot saved.", 2));
+                });
+
                 return full;
             }
             catch (Exception e)
             {
                 Log.Error(e, "Unable to save screenshot to {FileName}", fileName);
-                ToastManager.InsertNotification(new Toast(ToastType.Error, $"Unable to save screenshot:\n.{e}"));
+                ToastManager.InsertNotification(
+                    new Toast(ToastType.Error, $"Unable to save screenshot:\n{e}"));
             }
 
-            return null!;
+            return null;
         }
 
         internal static void SetupLogger()
@@ -332,7 +346,7 @@ namespace RE.Utils
             }
         }
 
-        public void SetupOitFbo(int width, int height)
+        public void ResizeOitFramebuffer(int width, int height)
         {
             if (width <= 0 || height <= 0) return;
 
@@ -343,7 +357,7 @@ namespace RE.Utils
                 GL.DeleteTexture(AccumWeightTex);
                 GL.DeleteTexture(OitDepthTexture);
             }
-            
+
             GL.GenFramebuffers(1, out OitFbo);
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, OitFbo);
 
@@ -396,43 +410,15 @@ namespace RE.Utils
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
         }
 
-        public void SetupSceneFbo(int width, int height)
+        public void ResizeFramebuffers(int width, int height)
         {
-            if (width <= 0 || height <= 0) return;
-
-            if (SceneFboId != 0)
+            // ReSharper disable  NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract
+            (SceneFramebuffer ??= new(width, height)).Resize(width, height);
+            (PrePostProcessFramebuffer ??= new(width, height)).Resize(width, height);
+            foreach (var layer in RenderManager.PostProcessLayers)
             {
-                GL.DeleteFramebuffer(SceneFboId);
-                GL.DeleteTexture(SceneTextureId);
-                GL.DeleteRenderbuffer(SceneRboId);
+                layer.Resize(width, height);
             }
-
-            GL.GenFramebuffers(1, out SceneFboId);
-            GL.BindFramebuffer(FramebufferTarget.Framebuffer, SceneFboId);
-
-            GL.GenTextures(1, out SceneTextureId);
-            GL.BindTexture(TextureTarget.Texture2D, SceneTextureId);
-            GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba, width, height, 0,
-                OpenTK.Graphics.OpenGL.PixelFormat.Rgba, PixelType.UnsignedByte, IntPtr.Zero);
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter,
-                (int)TextureMinFilter.Linear);
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter,
-                (int)TextureMagFilter.Linear);
-            GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0,
-                TextureTarget.Texture2D, SceneTextureId, 0);
-
-            GL.GenRenderbuffers(1, out SceneRboId);
-            GL.BindRenderbuffer(RenderbufferTarget.Renderbuffer, SceneRboId);
-            GL.RenderbufferStorage(RenderbufferTarget.Renderbuffer, RenderbufferStorage.Depth24Stencil8, width, height);
-            GL.FramebufferRenderbuffer(FramebufferTarget.Framebuffer, FramebufferAttachment.DepthStencilAttachment,
-                RenderbufferTarget.Renderbuffer, SceneRboId);
-
-            if (GL.CheckFramebufferStatus(FramebufferTarget.Framebuffer) != FramebufferErrorCode.FramebufferComplete)
-            {
-                Log.Error("GL Framebuffer is not complete");
-            }
-
-            GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
         }
 
         internal static void ParseArguments(string[] args)
@@ -571,6 +557,12 @@ namespace RE.Utils
                 DefaultValueFactory = _ => 2
             };
 
+            Option<bool> dumpShaders = new Option<bool>("--dump-shaders")
+            {
+                Description = "Dump shader sources.",
+                DefaultValueFactory = _ => false
+            };
+            
             RootCommand rootCommand = new($"{ProductName} command line options")
             {
                 widthOption,
@@ -585,7 +577,8 @@ namespace RE.Utils
                 attachDebugger,
                 consoleOption,
                 editorOption,
-                msaaOption
+                msaaOption,
+                dumpShaders
             };
             rootCommand.TreatUnmatchedTokensAsErrors = true;
 

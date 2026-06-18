@@ -248,8 +248,8 @@ namespace RE.Core.World.Physics
 
                 if (state.isInside)
                 {
-                    compA.Owner.Components.ForEach(c => c.OnCollide(compB.Owner));
-                    compB.Owner.Components.ForEach(c => c.OnCollide(compA.Owner));
+                    compA.Owner.Components.Where(c => c.IsEnabled).ForEach(c => c.OnCollide(compB.Owner));
+                    compB.Owner.Components.Where(c => c.IsEnabled).ForEach(c => c.OnCollide(compA.Owner));
                 }
                 else
                 {
@@ -260,8 +260,8 @@ namespace RE.Core.World.Physics
                         state.isInside = true;
                         state.Counter = 0;
 
-                        compA.Owner.Components.ForEach(c => c.OnCollisionEnter(compB.Owner));
-                        compB.Owner.Components.ForEach(c => c.OnCollisionEnter(compA.Owner));
+                        compA.Owner.Components.Where(c => c.IsEnabled).ForEach(c => c.OnCollisionEnter(compB.Owner));
+                        compB.Owner.Components.Where(c => c.IsEnabled).ForEach(c => c.OnCollisionEnter(compA.Owner));
                     }
                 }
             }
@@ -290,8 +290,8 @@ namespace RE.Core.World.Physics
                     var compB = b.UserObject as Component
                                 ?? throw new InvalidOperationException($"Collision object {b} is not a Component");
 
-                    compA.Owner.Components.ForEach(c => c.OnCollisionExit(compB.Owner));
-                    compB.Owner.Components.ForEach(c => c.OnCollisionExit(compA.Owner));
+                    compA.Owner.Components.Where(c => c.IsEnabled).ForEach(c => c.OnCollisionExit(compB.Owner));
+                    compB.Owner.Components.Where(c => c.IsEnabled).ForEach(c => c.OnCollisionExit(compA.Owner));
 
                     state.isInside = false;
                     state.Counter = 0;
@@ -302,7 +302,7 @@ namespace RE.Core.World.Physics
 
             foreach (var kv in _states)
             {
-                if (!kv.Value.isInside && kv.Value.Counter == 0)
+                if (kv.Value is { isInside: false, Counter: 0 })
                     toRemove.Add(kv.Key);
             }
 

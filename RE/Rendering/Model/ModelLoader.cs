@@ -294,7 +294,7 @@ public static class ModelLoader
         {
             texId = AssetCache.Get(texPath, StaticTexture.DefaultCacheFactory);
         }
-        else if (mat?.HasTextureDiffuse ?? false)
+        else if ((mat?.HasTextureDiffuse ?? false) && importFile.Textures.Any())
         {
             var t = ImageResult.FromMemory(importFile.Textures.First().CompressedData,
                 ColorComponents.RedGreenBlueAlpha);

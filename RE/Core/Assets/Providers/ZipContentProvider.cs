@@ -1,4 +1,5 @@
 ﻿using System.IO.Compression;
+using System.Text;
 using RE.Utils;
 using Serilog;
 
@@ -40,14 +41,13 @@ namespace RE.Core.Assets.Providers
                     _zips[pakPath] = zip;
 
                     RegisterEntries(zip, pakPath);
+                    Log.Information("Mounted PAK {Path}", Path.GetRelativePath(".", pakPath));
                 }
                 catch (Exception ex)
                 {
-                    Log.Error(ex, "Failed to load PAK: {PakPath}", pakPath);
+                    Log.Error(ex, "Failed to mount PAK: {PakPath}", pakPath);
                 }
             }
-
-            Log.Information("Loaded PAKs: {@Paks}", _zips.Keys.Select(pack => Path.GetRelativePath(".", pack)));
         }
 
         private void RegisterEntries(ZipArchive zip, string pakPath)
@@ -65,7 +65,8 @@ namespace RE.Core.Assets.Providers
 
                 if (!_fastFileMap.TryAdd(normalized, entry))
                 {
-                    Log.Warning("Duplicate file {FileName} in PAKs. Existing: {OldPak}", normalized, _fileMap.GetValueOrDefault(normalized));
+                    Log.Warning("Duplicate file {FileName} in PAKs. Existing: {OldPak}", normalized,
+                        _fileMap.GetValueOrDefault(normalized));
                 }
                 else
                 {
@@ -100,6 +101,7 @@ namespace RE.Core.Assets.Providers
             using var stream = entry.Open();
             using var ms = new MemoryStream();
             stream.CopyTo(ms);
+
             return ms.ToArray();
         }
 
@@ -120,11 +122,12 @@ namespace RE.Core.Assets.Providers
 
             return buffer;
         }
-
+  
         public bool Exists(string path)
         {
             return GetFileEntry(path) != null;
         }
+
         private ZipArchiveEntry? GetFileEntry(string path)
         {
             var normalized = NormalizePath(path);
@@ -162,13 +165,16 @@ namespace RE.Core.Assets.Providers
             path = path.Replace('\\', '/').TrimEnd('/');
 
             path = path.StartsWith(Prefix, StringComparison.OrdinalIgnoreCase)
-                ? path[Prefix.Length..] : path;
+                ? path[Prefix.Length..]
+                : path;
 
             path = path.StartsWith("Assets/", StringComparison.OrdinalIgnoreCase)
-                ? path["Assets/".Length..] : path;
-             
+                ? path["Assets/".Length..]
+                : path;
+
             return path;
         }
+
         public Stream Open(string path)
         {
             var entry = GetFileEntry(path);
@@ -177,6 +183,7 @@ namespace RE.Core.Assets.Providers
 
             return entry.Open().AsMemoryStream();
         }
+
         public string[] GetFiles(string path, bool recursive = false)
         {
             string normalizedPath = NormalizePath(path);

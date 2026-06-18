@@ -7,7 +7,7 @@ using Microsoft.Build.Utilities;
 
 namespace RE.BuildTask
 {
-    // ReSharper disable once UnusedMember.Global
+    // ReSharper disable once UnusedType.Global
     public class EngineBuildTask : Task
     {
         [Required] public string AssetsFolder { get; set; } = null!;

@@ -19,12 +19,9 @@ namespace RE.Core.Ui.Debug;
 
 internal class DebugOverlay : Renderable
 {
-
     private DebugOverlay()
     {
-#if DEBUG
         RenderManager.AddRenderable(this);
-#endif
     }
 
     public static DebugOverlay? Instance { get; private set; }
@@ -38,8 +35,26 @@ internal class DebugOverlay : Renderable
 
     public override void Render(FrameEventArgs args)
     {
-        //RenderProfilersWindow(args);
         RenderTimingsWindowWhatTheHellIsThisHelpMe();
+        Test();
+    }
+
+    private string? save = null;
+
+    private void Test()
+    {
+        Begin("load save test");
+        if (Button("save"))
+        {
+            save = SceneSerializer.SerializeScene(SceneManager.CurrentScene);
+        }
+
+        if (save != null && Button("load"))
+        {
+            var scene = SceneSerializer.DeserializeScene(save);
+        }
+
+        End();
     }
 
     private void RenderTimingsWindowWhatTheHellIsThisHelpMe()
@@ -54,7 +69,8 @@ internal class DebugOverlay : Renderable
         }
 
         SetNextItemWidth(200);
-        if (SliderInt("Update info every N frames", ref _updFrames, 1, Math.Max(1, 2 * (int)Game.Instance.UpdateFrequency)))
+        if (SliderInt("Update info every N frames", ref _updFrames, 1,
+                Math.Max(1, 2 * (int)Game.Instance.UpdateFrequency)))
             FrameProfiler.UpdateDelay = Math.Max(1, _updFrames);
         SetNextItemWidth(200);
         SliderInt("Do not show nodes with ns below", ref _timeTreshold, 0, 100);
@@ -123,6 +139,7 @@ internal class DebugOverlay : Renderable
 
                 return new Vector3(r, g, b);
             }
+
             Vector3 rgb = HsvToRgb(hue, sat, light);
             return ColorConvertFloat4ToU32(new Vector4(rgb, 1f));
         }
@@ -198,9 +215,11 @@ internal class DebugOverlay : Renderable
                     TextNodeInfo(child, id + "_" + childIndex);
                     childIndex++;
                 }
+
                 TreePop();
             }
         }
+
         BeginChild("##nodes", new Vector2(0, 300), ImGuiWindowFlags.None);
 
         TextNodeInfo(root);
@@ -237,8 +256,10 @@ internal class DebugOverlay : Renderable
                     NodeHistory[kv.Key] = buffer;
                     NodeEnabled[kv.Key] = false;
                 }
+
                 buffer.Add(kv.Value);
             }
+
             NodeFrameSum.Clear();
         }
 
@@ -254,6 +275,7 @@ internal class DebugOverlay : Renderable
                 if (Checkbox(key, ref val))
                     NodeEnabled[key] = val;
             }
+
             EndChild();
 
             ImPlot.SetNextAxesLimits(0, NodeHistory.Values.First().Length, 0, NodeHistory.Values.Max(b => b.Last()));
@@ -267,14 +289,18 @@ internal class DebugOverlay : Renderable
                     var data = kv.Value.ToArrayOrdered();
                     ImPlot.PlotLine(kv.Key, ref data[0], data.Length);
                 }
+
                 ImPlot.EndPlot();
             }
         }
+
         End();
     }
+
     private static readonly Dictionary<string, RingBuffer<double>> NodeHistory = new();
     private static readonly Dictionary<string, bool> NodeEnabled = new();
     private static readonly Dictionary<string, double> NodeFrameSum = new();
+
     private static int GetDepth(FrameProfiler.ProfilerNode n)
     {
         int d = 1;
@@ -292,67 +318,6 @@ internal class DebugOverlay : Renderable
 
     private static List<Type> Types = [];
     private static string _searchText = "";
-    private static unsafe void RenderProfilersWindow(FrameEventArgs args)
-    {
-        UpdateUsageData();
-
-        Fps.Add((int)(1 / args.Time));
-
-        Begin("Stats");
-
-        if (Button("crash"))
-        {
-            throw new Exception("Test exception for crash reporting");
-        }
-
-        var yMaxLimit = Game.FpsLock + Game.FpsLock * 0.1;
-        var s = 150;
-        var fps = Fps.ToArrayOrdered().Skip(Fps.Length - s).Select(s => (float)s).ToArray();
-        fps[0] = 0;
-        fps[^1] = 200;
-        PlotLines("FPS", ref fps[0], s, $"FPS: {fps[^2]}", new Vector2(s, 100));
-
-        var r = PrivateBytes.ToArrayOrdered().Skip(Fps.Length - s).Select(s => (float)s).ToArray();
-        r[0] = 0;
-        r[^1] = 500;
-        PlotLines("RAM",
-            ref r[0],
-            s, $"RAM: {r[^2]:F1}Mb",
-            new Vector2(s, 100));
-
-        ImPlot.SetNextAxesLimits(0, Fps.Length + 1, 0, yMaxLimit);
-        if (ImPlot.BeginPlot("#fps", ImPlotFlags.NoTitle | ImPlotFlags.NoLegend))
-        {
-            var xFlags = ImPlotAxisFlags.Invert | ImPlotAxisFlags.LockMin | ImPlotAxisFlags.LockMax;
-            var yFlags = ImPlotAxisFlags.Opposite | ImPlotAxisFlags.LockMin | ImPlotAxisFlags.LockMax;
-
-            ImPlot.SetupAxes($"Frames ago({((double)Fps.Length / Game.FpsLock):F1}s)", "Frames per second (1/dT)", xFlags, yFlags);
-
-            fixed (int* a = Fps.ToArrayOrdered().Reverse().ToArray())
-                ImPlot.PlotLine("#fps", a, Fps.Length);
-
-            ImPlot.EndPlot();
-        }
-        Text("Mem: " + PrivateBytes.Last());
-        yMaxLimit = (PrivateBytes.Last()) * 1.1;
-        ImPlot.SetNextAxesLimits(0, ManagedHeap.Length + 1, 0, (PrivateBytes.Last()) * 1.1);
-        if (ImPlot.BeginPlot("#mem", ImPlotFlags.NoTitle))
-        {
-            var xFlags = ImPlotAxisFlags.Invert | ImPlotAxisFlags.LockMin | ImPlotAxisFlags.LockMax;
-            var yFlags = ImPlotAxisFlags.Opposite | ImPlotAxisFlags.LockMin | ImPlotAxisFlags.LockMax;
-
-            ImPlot.SetupAxes($"Frames ago({((double)Fps.Length / Game.FpsLock):F1}s)", "MBytes", xFlags, yFlags);
-
-            fixed (double* a = ManagedHeap.ToArrayOrdered().Reverse().ToArray())
-                ImPlot.PlotLine("Managed Heap", a, ManagedHeap.Length);
-            fixed (double* b = PrivateBytes.ToArrayOrdered().Reverse().ToArray())
-                ImPlot.PlotLine("Working Set", b, PrivateBytes.Length);
-
-            ImPlot.EndPlot();
-        }
-
-        End();
-    }
 
     static void NodeTest()
     {
@@ -380,8 +345,11 @@ internal class DebugOverlay : Renderable
                     if (GetItemRectMax().X < GetWindowPos().X + GetContentRegionAvail().X - 100)
                         SameLine();
                 }
+
                 NewLine();
             }
+
+            End();
         }
 
         ImNodes.BeginNodeEditor();
@@ -389,14 +357,14 @@ internal class DebugOverlay : Renderable
         NodeManager.RenderNodeLinks();
         ImNodes.EndNodeEditor();
         NodeManager.ResolveInput();
-        End();
     }
 
     static void UpdateUsageData()
     {
         var managedHeap = GC.GetTotalMemory(false) / (1024.0 * 1024.0);
 
-        WinApi.GetProcessMemoryInfo(Process.GetCurrentProcess().Handle, out var counters, (uint)Marshal.SizeOf<PROCESS_MEMORY_COUNTERS>());
+        WinApi.GetProcessMemoryInfo(Process.GetCurrentProcess().Handle, out var counters,
+            (uint)Marshal.SizeOf<PROCESS_MEMORY_COUNTERS>());
         var workingSet = counters.WorkingSetSize / (1024.0 * 1024.0);
 
         ManagedHeap.Add(managedHeap);

@@ -46,8 +46,8 @@ public class FloatingText : Renderable
         _characters = font.CharacterMap.ToDictionary();
 
         _shaderProgram = new ShaderProgram();
-        _shaderProgram.AttachShader("Assets/shaders/ui/text_3d.vert");
-        _shaderProgram.AttachShader("Assets/shaders/ui/text_3d.frag");
+        _shaderProgram.AttachShader("Assets/Shaders/Pass/Ui/text_3d.vert");
+        _shaderProgram.AttachShader("Assets/Shaders/Pass/Ui/text_3d.frag");
 
 
         float[] vertices =

@@ -1,4 +1,5 @@
 ﻿using RE.Editor.NodeEditor.Pins;
+using Serilog;
 using Serilog.Events;
 
 namespace RE.Editor.NodeEditor.Nodes
@@ -12,15 +13,14 @@ namespace RE.Editor.NodeEditor.Nodes
 
         public LogNode()
         {
-            //_level = new DataNodePin<LogEventLevel>("Level", this);
-            //_message = new DataNodePin<string>("Message", this);
+            _level = new DataNodePin<LogEventLevel>("Level");
+            _message = new DataNodePin<string>("Message");
             InputPins.Add(_message);
             InputPins.Add(_level);
-        }
-
-       // public override void Execute()
-        //{
-       //     Log.Write(_level.Value, _message.Value!);
-       // }
+            ExecuteAction = _ =>
+            {
+                Log.Write(_level.Value, _message.Value!);
+            };
+        } 
     }
 }

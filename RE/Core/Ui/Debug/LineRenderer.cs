@@ -119,8 +119,8 @@ public class LineRenderer : Renderable
     public void Init()
     {
         _shaderProgram = new ShaderProgram();
-        _shaderProgram.AttachShader("Assets/shaders/line.vert");
-        _shaderProgram.AttachShader("Assets/shaders/line.frag");
+        _shaderProgram.AttachShader("Assets/Shaders/Pass/Editor/Debug/Line/line.vert");
+        _shaderProgram.AttachShader("Assets/Shaders/Pass/Editor/Debug/Line/line.frag");
 
         _vao = GL.GenVertexArray();
         _vbo = GL.GenBuffer();

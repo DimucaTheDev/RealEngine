@@ -122,8 +122,7 @@ namespace RE.Editor.Panels.Viewport
         public void Draw()
         {
             _cameraSprite.Position = Camera.Main.Position;
-            _cameraSprite.Render(new(Time.DeltaTime));
-            RenderManager.DrawCameraFrustum();
+            _cameraSprite.Render(new(Time.DeltaTime)); 
 
             UpdateBulletObjects(); 
             PhysicsManager.DynamicsWorld.DebugDrawWorld();
@@ -166,15 +165,15 @@ namespace RE.Editor.Panels.Viewport
                     (ViewportSize.X != contentSize.X || ViewportSize.Y != contentSize.Y))
                 {
                     ViewportSize = contentSize;
-                    Game.Instance.SetupSceneFbo((int)ViewportSize.X, (int)ViewportSize.Y);
-                    Game.Instance.SetupOitFbo((int)ViewportSize.X, (int)ViewportSize.Y);
+                    Game.Instance.ResizeFramebuffers((int)ViewportSize.X, (int)ViewportSize.Y);
+                    Game.Instance.ResizeOitFramebuffer((int)ViewportSize.X, (int)ViewportSize.Y);
                     Camera.Editor.RenderWidth = (int)ViewportSize.X;
                     Camera.Editor.RenderHeight = (int)ViewportSize.Y;
                 }
 
                 var size = _viewportRect = SetImGuizmoRect();
 
-                Image(new ImTextureRef { TexID = Game.Instance.SceneTextureId }, ViewportSize,
+                Image(new ImTextureRef { TexID = Game.Instance.SceneFramebuffer.ColorTexture }, ViewportSize,
                     new Vector2(0, 1),
                     new Vector2(1, 0));
                 _isOverViewport = IsItemHovered();

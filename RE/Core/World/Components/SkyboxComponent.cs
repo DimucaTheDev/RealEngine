@@ -67,8 +67,8 @@ namespace RE.Core.World.Components
         {
             _program = new ShaderProgram();
 
-            _program.AttachShader("Assets/shaders/skybox.vert");
-            _program.AttachShader("Assets/shaders/skybox.frag");
+            _program.AttachShader("Assets/shaders/Pass/Skybox/skybox.vert");
+            _program.AttachShader("Assets/shaders/Pass/Skybox/skybox.frag");
 
             _vao = GL.GenVertexArray();
             _vbo = GL.GenBuffer();

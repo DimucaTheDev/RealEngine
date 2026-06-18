@@ -147,7 +147,7 @@ namespace RE.Core.Ui.Debug
                             }
                             catch (CommandNotFoundException)
                             {
-                                Log.Error("Unknown found");
+                                Log.Error("Unknown command");
                             }
                             catch (Exception e)
                             {

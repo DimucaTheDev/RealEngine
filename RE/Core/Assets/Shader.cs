@@ -3,41 +3,18 @@ using System.Text;
 using System.Text.RegularExpressions;
 using OpenTK.Graphics.OpenGL4;
 using RE.Rendering;
+using RE.Utils;
 using Log = Serilog.Log;
 
 namespace RE.Core.Assets
 {
-    /// <summary>
-    /// Represents an OpenGL shader asset.
-    /// </summary>
-    /// <remarks>The Shader class provides functionality for loading and compiling vertex, fragment, and
-    /// geometry shaders from file paths. It avoids recompiling shaders that have already been loaded by reusing
-    /// existing compiled shader handles.</remarks>
     public partial class Shader : DynamicAsset
     {
         private static readonly List<Shader> CompiledShaders = [];
-        private static HashSet<string> _seenDecl = new(); // this hash set stores var's names to prevent variable dupe
-         
-        /// <summary>
-        /// Initializes a new instance of the Shader class using the specified file path.
-        /// </summary>
-        /// <remarks>
-        /// This constructor calls <see cref="OnLoad"/> method, which loads and compiles the shader from the provided file path.
-        /// </remarks>
-        /// <param name="path">The file system path to the shader source file. Cannot be null or empty.</param>
-        public Shader(string path) : base(path)
-        {
-            OnLoad();
-        }
+        private const string CommonShaderPath = "Assets/Shaders/Core/Common.glsl";
 
-        /// <summary>
-        /// OpenGL handle for the compiled shader.
-        /// </summary>
         public int Handle { get; private set; }
 
-        /// <summary>
-        /// Gets the type of the shader (Vertex, Fragment, Geometry) based on OpenGL handle.
-        /// </summary>
         public ShaderType ShaderType
         {
             get
@@ -47,43 +24,19 @@ namespace RE.Core.Assets
             }
         }
 
-        /// <summary>
-        /// Gets the source code of the shader as a string based on OpenGL handle.
-        /// </summary>
-        public string SourceCode
+        public Shader(string path) : base(path)
         {
-            get
-            {
-                GL.GetShader(Handle, ShaderParameter.ShaderSourceLength, out int length);
-                GL.GetShaderSource(Handle, length, out _, out string source);
-                return source;
-            }
+            OnLoad();
         }
 
-        /// <summary>
-        /// Loads a shader from given path, preprocesses it, compiles, and sets the OpenGL handle.
-        /// </summary>
-        /// <remarks>
-        /// <para>
-        /// If a shader with the same <see cref="AssetPath"/> has already been compiled, this method reuses the existing OpenGL handle.
-        /// </para>
-        /// <para>
-        /// Supported shader file extensions are: <c>.vert</c> for vertex shaders, <c>.frag</c> for fragment shaders,
-        /// <c>.geom</c> for geometry shaders, <c>.tesc</c> for tesselation control shader, <c>.tese</c> for tesselation evaluation shader.
-        /// </para>
-        /// <para>
-        /// Before compilation, the shader source is preprocessed to handle custom directives such as <c>#include "file"</c> (see <see cref="PreprocessShader"/>).
-        /// </para>
-        /// </remarks>
-        /// <exception cref="NotSupportedException">Specified shader file extension is not supported or invalid</exception>
         public sealed override void OnLoad()
         {
             if (CompiledShaders.Any(s => s.AssetPath == AssetPath))
             {
                 Handle = CompiledShaders.First(s => s.AssetPath == AssetPath).Handle;
-                //do not recompile shader again, get cached handle
                 return;
             }
+
             Handle = GL.CreateShader(Path.GetExtension(AssetPath!).ToLower() switch
             {
                 ".vert" => ShaderType.VertexShader,
@@ -93,103 +46,147 @@ namespace RE.Core.Assets
                 ".tese" => ShaderType.TessEvaluationShader,
                 _ => throw new NotSupportedException("Unknown shader type!")
             });
+
             if (!ContentManager.Exists(AssetPath))
             {
                 GL.DeleteShader(Handle);
                 throw new FileNotFoundException("Shader does not exist!", AssetPath);
             }
-            var content = ContentManager.GetString(AssetPath!);
 
-            _seenDecl = new HashSet<string>();
-            content = PreprocessShader(content, AssetPath);
+            var source = ContentManager.GetString(AssetPath!);
+            
+            
+            var context = new ShaderCompileContext();
+            source = PreprocessShader(source, AssetPath, context);
 
-            GL.ShaderSource(Handle, content);
+            DebugDumpIfNeeded(source);
+
+            GL.ShaderSource(Handle, source);
             GL.CompileShader(Handle);
+
             GL.GetShader(Handle, ShaderParameter.CompileStatus, out var status);
 
             if (status != (int)All.True)
             {
-                var shaderInfoLog = GL.GetShaderInfoLog(Handle);
-                throw new GlException($"Cant compile shader({Handle}) {AssetPath}. {shaderInfoLog}");
+                var log = GL.GetShaderInfoLog(Handle);
+                throw new GlException($"Can't compile shader({Handle}) {AssetPath}. {log}");
             }
 
-            Log.Debug("Compiled shader({Handle}) {AssetPath}", Handle, AssetPath); 
+            Log.Debug("Compiled shader {Handle},{AssetPath}", Handle, AssetPath);
+
+
             CompiledShaders.Add(this);
         }
 
-        /// <summary>
-        /// Preprocesses a GLSL shader: handles custom directives (e.g., <c>#include</c>),
-        /// removes duplicate <c>#version</c> headers, and generates the final shader source.
-        /// </summary>
-        /// <param name="content">The GLSL shader source code to preprocess.</param>
-        /// <param name="shaderPath">The file path of the shader, used to resolve included files.</param>
-        /// <param name="excludeVersionHeader">
-        /// If <see langword="true"/>, lines starting with <c>#version</c> are ignored
-        /// (required when processing included files).
-        /// </param>
-        /// <returns>The processed shader source code, ready for compilation.</returns>
-        /// <exception cref="FileNotFoundException">
-        /// Thrown if a file specified in an <c>#include</c> directive cannot be found.
-        /// </exception>
-        public string PreprocessShader(string content, string shaderPath, bool excludeVersionHeader = false)
+        private class ShaderCompileContext
+        {
+            public HashSet<string> IncludeStack = new();
+        }
+
+        private string PreprocessShader(string content, string shaderPath, ShaderCompileContext context)
         {
             var regex = DirectiveRegex();
-            StringBuilder finalShader = new();
-            foreach (var line in content.Split(["\r\n", "\n", "\r"], StringSplitOptions.None)) //todo: check for different line endings
+            var sb = new StringBuilder();
+
+            string? versionLine = null;
+            bool commonInjected = false;
+
+            foreach (var line in content.Split('\n'))
             {
-                if (regex.IsMatch(line)) // #directive "value"
+                var trimmed = line.TrimEnd('\r');
+
+                var match = regex.Match(trimmed);
+                if (match.Success)
                 {
-                    var match = regex.Match(line);
                     var directive = match.Groups[1].Value;
+
                     switch (directive)
                     {
                         case "include":
-                            var includePath = Path.Combine(Path.GetDirectoryName(shaderPath)!, match.Groups[2].Value);
-                            if (!ContentManager.Exists(includePath))
-                                throw new FileNotFoundException($"INCLUDE shader not found: '{includePath}'");
-                            var src = ContentManager.GetString(includePath);
-                            //todo: add check for stackoverflow
-                            string includeShader = PreprocessShader(src, includePath, true);
-                            finalShader.AppendLine($"\n/* begin include {includePath} */\n{includeShader}\n/* end include {includePath} */\n");
-                            break;
-                        default:
-                            Log.Error("Unknown directive '{Directive}' in shader '{Path}'", directive, shaderPath);
-                            break;
-                    }
-                }
-                else
-                {
-                    if (excludeVersionHeader && line.StartsWith("#version"))
-                        continue;
-                    if (line.StartsWith("in ") || line.StartsWith("out ") || line.StartsWith("uniform "))
-                    {
-                        if (!_seenDecl.Add(line.Trim()))
                         {
-                            Log.Debug("Duplicate shader declaration skipped: {Line}", line.Trim());
-                            continue;
+                            var includeRel = match.Groups[2].Value;
+                            var includePath = includeRel.StartsWith('/') ? includeRel : Path.Combine(Path.GetDirectoryName(shaderPath)!, includeRel);
+                            if (includePath.Contains(".."))
+                                Log.Warning("Path contains '..', errors may occur in path resolving.");
+                            IncludeShader(includePath, context, sb);
+                            break;
                         }
+
+                        default:
+                            Log.Error("Unknown shader directive '{Directive}' in {Path}", directive, shaderPath);
+                            break;
                     }
-                    finalShader.AppendLine(line);
+
+                    continue;
                 }
+
+                if (trimmed.StartsWith("#version"))
+                {
+                    versionLine = trimmed;
+                    continue;
+                }
+
+                if (!commonInjected && !context.IncludeStack.Any())
+                {
+                    IncludeShader(CommonShaderPath, context, sb);
+                    commonInjected = true;
+                }
+
+                sb.AppendLine(trimmed);
             }
 
-            if (Debugger.IsAttached)
+            if (versionLine != null)
             {
-                Directory.CreateDirectory("Debug");
-                GL.GetShader(Handle, ShaderParameter.ShaderType, out var type);
-                var path = $"Debug/shader_{(ShaderType)type}_{Handle}__{new string(shaderPath.Select(c => Path.GetInvalidFileNameChars().Contains(c) ? '_' : c).ToArray())}.txt";
-                Log.Verbose("New processed shader: {Path}", path);
-                File.WriteAllText(path, finalShader.ToString());
+                return versionLine + "\n" + sb.ToString();
             }
-            return finalShader.ToString();
+
+            return sb.ToString();
         }
 
-        /// <summary>
-        /// Deletes the shader from OpenGL, and sets the <see cref="Handle"/> to 0.
-        /// </summary>
+        private void IncludeShader(string includePath, ShaderCompileContext context, StringBuilder sb)
+        {
+            if (!context.IncludeStack.Add(includePath))
+                throw new Exception($"Include cycle detected: {includePath}");
+
+            includePath = ContentManager.NormalizePath(includePath);
+            
+            if (!ContentManager.Exists(includePath))
+                throw new FileNotFoundException($"Include not found: {includePath}");
+
+            var src = ContentManager.GetString(includePath);
+            var processed = PreprocessShader(src, includePath, context);
+
+            context.IncludeStack.Remove(includePath);
+
+            sb.AppendLine($"// BEGIN INCLUDE: {includePath}");
+            sb.AppendLine(processed);
+            sb.AppendLine($"// END INCLUDE: {includePath}");
+        }
+
+        private void DebugDumpIfNeeded(string source)
+        {
+            if (!Debugger.IsAttached && !Game.CommandParseResult.GetValue<bool>("--dump-shaders"))
+                return;
+
+            Directory.CreateDirectory("Debug");
+
+            GL.GetShader(Handle, ShaderParameter.ShaderType, out var type);
+
+            var safePath = new string(AssetPath!
+                .Select(c => Path.GetInvalidFileNameChars().Contains(c) ? '_' : c)
+                .ToArray());
+
+            var path = $"Debug/shader_{(ShaderType)type}_{Handle}__{safePath}.txt";
+
+            File.WriteAllText(path, source);
+
+            Log.Verbose("Shader dump: {Path}", path);
+        }
+
         public override void OnUnload()
         {
             base.OnUnload();
+
             if (Handle != 0)
             {
                 GL.DeleteShader(Handle);
@@ -198,13 +195,9 @@ namespace RE.Core.Assets
             }
         }
 
-        /// <summary>
-        /// Returns the OpenGL handle of the shader.
-        /// </summary>
-        /// <param name="s"></param>
         public static implicit operator int(Shader s) => s.Handle;
 
-        [GeneratedRegex(@"#([A-Za-z0-9]{2,})(?![~!@#$%^&*()=+_`\-\|\/'\[\]\{\}]|[?.,]*\w)\s+""([^""]+)""", RegexOptions.IgnoreCase)]
+        [GeneratedRegex(@"#([A-Za-z0-9_]{2,})\s+""([^""]+)""")]
         private static partial Regex DirectiveRegex();
     }
 }
