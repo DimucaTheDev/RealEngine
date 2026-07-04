@@ -29,12 +29,12 @@ namespace RE.Core.World.Components
 
         public override bool IsOpaque => false;
 
-        public override void Update(FrameEventArgs args)
+        public override void Update(double args)
         {
             _text.Position = Owner.Transform.Position + PositionOffset;
         }
 
-        public override void Render(FrameEventArgs args)
+        public override void Render(double args)
         {
             _text.Render(args);
         }
@@ -55,9 +55,9 @@ namespace RE.Core.World.Components
         }
 
         /// <inheritdoc />
-        public void EditorUpdate(FrameEventArgs args) => Update(args);
+        public void EditorUpdate(double delta) => Update(delta);
 
         /// <inheritdoc />
-        public void EditorRender(FrameEventArgs args) => Render(args);
+        public void EditorRender(double delta) => Render(delta);
     }
 }

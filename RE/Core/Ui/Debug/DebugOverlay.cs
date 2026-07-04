@@ -22,6 +22,8 @@ internal class DebugOverlay : Renderable
     private DebugOverlay()
     {
         RenderManager.AddRenderable(this);
+
+        _camera.LookAt(OpenTK.Mathematics.Vector3.Zero);
     }
 
     public static DebugOverlay? Instance { get; private set; }
@@ -32,8 +34,9 @@ internal class DebugOverlay : Renderable
     private static readonly RingBuffer<double> PrivateBytes = new(1000);
     private static int _updFrames = 1;
     private static int _timeTreshold;
+    private static Camera _camera = new((5, 5, 5)) { Name = "Test" };
 
-    public override void Render(FrameEventArgs args)
+    public override void Render(double args)
     {
         RenderTimingsWindowWhatTheHellIsThisHelpMe();
         Test();

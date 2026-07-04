@@ -62,6 +62,7 @@ namespace RE.Editor
         public static bool SimulationRunning;
 
         internal static OutlineFramebuffer OutlineFramebuffer;
+        internal static bool GamePanelActive;
 
         private static readonly ImFontPtr _bigFont;
         private static readonly Texture LogoImage;
@@ -71,6 +72,7 @@ namespace RE.Editor
         private static bool _isDockspaceOpen;
 
         private Scene Scene => SceneManager.CurrentScene;
+
         private Dictionary<string, List<Type>> _componentDict = new();
         private Node _rootNode = new();
         private string _oldTitle;
@@ -81,6 +83,7 @@ namespace RE.Editor
         private readonly InspectorPanel _inspectorPanel = new();
         private readonly AssetBrowserPanel _assetBrowserPanel = new();
         private readonly ViewportPanel _viewportPanel = new();
+        private readonly GamePanel _gamePanel = new();
         private readonly ConsoleWindow _consoleWindow = new() { Id = "Editor" };
 
         static SceneEditor()
@@ -114,7 +117,7 @@ namespace RE.Editor
 
                 bestFrame.CopyPixelDataTo(pixelData);
 
-                LogoImage = new StaticTexture(pixelData, width, height);
+                LogoImage = new StaticTexture(new ImageData(pixelData, width, height));
             }
             else
             {
@@ -207,8 +210,10 @@ namespace RE.Editor
             SceneManager.Reload(Scene);
         }
 
-        public override void Render(FrameEventArgs args)
+        public override void Render(double delta)
         {
+            Camera._activeCamera = Camera.ViewportCamera;
+
             using (FrameProfiler.Scope("editor"))
             {
                 using (FrameProfiler.Scope("update"))
@@ -229,7 +234,7 @@ namespace RE.Editor
                                 {
                                     using (FrameProfiler.Scope(com.GetType().Name))
                                     {
-                                        u.EditorUpdate(args);
+                                        u.EditorUpdate(delta);
                                     }
                                 }
                             }
@@ -259,7 +264,7 @@ namespace RE.Editor
                         {
                             if (s is IEditorRender r)
                             {
-                                r.EditorRender(args);
+                                r.EditorRender(delta);
                             }
                         }
                     }
@@ -303,10 +308,10 @@ namespace RE.Editor
 
                         using (FrameProfiler.Scope(s.GetType().Name))
                         {
-                            s.Render(args);
+                            s.Render(delta);
                             if (s is IEditorRender r)
                             {
-                                r.EditorRender(args);
+                                r.EditorRender(delta);
                             }
                         }
                     }
@@ -340,7 +345,7 @@ namespace RE.Editor
                     GL.ActiveTexture(TextureUnit.Texture0);
                     GL.BindTexture(TextureTarget.Texture2D, 0);
 
-                    LineRenderer.Main.Render(args); // ?????
+                    LineRenderer.Main.Render(delta); // ?????
                 }
 
 
@@ -363,7 +368,7 @@ namespace RE.Editor
                         foreach (var component in SelectedObject.Components.Where(s => s.IsEnabled)
                                      .OfType<IEditorRender>())
                         {
-                            component.EditorRender(args);
+                            component.EditorRender(delta);
                         }
 
                         GL.ColorMask(true, true, true, true);
@@ -397,7 +402,7 @@ namespace RE.Editor
                     }
                 }
 
-                LineRenderer.Main.Render(args);
+                LineRenderer.Main.Render(delta);
 
                 if (SceneManager.CurrentScene == null!)
                     return;
@@ -409,7 +414,8 @@ namespace RE.Editor
                 _inspectorPanel.Draw();
                 _assetBrowserPanel.Draw();
                 _viewportPanel.Draw();
-                _consoleWindow.Render(args);
+                _gamePanel.Draw();
+                _consoleWindow.Render(delta);
 
                 ShowExitModalWindow();
             }

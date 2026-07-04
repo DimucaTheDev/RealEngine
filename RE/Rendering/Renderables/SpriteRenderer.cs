@@ -76,7 +76,7 @@ namespace RE.Rendering.Renderables
             _texture = LoadTexture(spritePath);
         }
 
-        public override void Render(FrameEventArgs args)
+        public override void Render(double args)
         {
             _shaderProgram.Use();
 
@@ -89,7 +89,7 @@ namespace RE.Rendering.Renderables
 
             Matrix4 translateToCenter = Matrix4.CreateTranslation(-0.5f, -0.5f, 0f);
             float finalScale = _constantSize ? scale * Scale : size * Scale;
-            Matrix4 billboard = Camera.GetActiveCamera().GetBillboard(Position);
+            Matrix4 billboard = Camera.GetActiveCamera().GetBillboard();
 
             // lock axes
             if (LockRotationX || LockRotationY || LockRotationZ)

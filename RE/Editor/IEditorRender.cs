@@ -7,6 +7,6 @@ namespace RE.Editor
     /// </summary>
     public interface IEditorRender
     {
-        void EditorRender(FrameEventArgs args);
+        void EditorRender(double delta);
     }
 }

@@ -1,7 +1,6 @@
-﻿using RE.Core.Initializing;
+﻿using JetBrains.Annotations;
 using RE.Core.PluginSystem;
 using Serilog;
-using Serilog.Core;
 
 namespace TestPlugin
 {
@@ -9,7 +8,8 @@ namespace TestPlugin
     {
         public TestPlugin() => Instance = this;
         public static TestPlugin Instance { get; set; }
-        public override PluginInfo PluginInformation { get; } = new PluginInfo
+
+        public override PluginInfo PluginInformation { get; } = new()
         {
             Name = "Test Plugin",
             Version = new Version(1, 2, 3),
@@ -20,7 +20,7 @@ namespace TestPlugin
 
         public override void OnLoad()
         {
-            Log.Information("Loading testing plugin omg!");
+            Log.Information("Loading testing plugin!");
         }
     }
 }

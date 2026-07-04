@@ -1,4 +1,5 @@
 ﻿using OpenTK.Graphics.OpenGL4;
+using OpenTK.Mathematics;
 using RE.Utils;
 using Serilog;
 
@@ -12,7 +13,8 @@ namespace RE.Rendering
         public int Width { get; private set; }
         public int Height { get; private set; }
 
-
+        private Vector2 _oldSize;
+        
         public Framebuffer(string? objectName = null) : this(Game.Instance.ClientSize.X, Game.Instance.ClientSize.Y,
             objectName)
         {
@@ -81,6 +83,12 @@ namespace RE.Rendering
 
         public void Bind()
         {
+            if (_oldSize != Game.Instance.ClientSize)
+            {
+                Resize(Game.Instance.ClientSize.X, Game.Instance.ClientSize.Y);
+                _oldSize = Game.Instance.ClientSize;
+            }
+
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, Handle);
             GL.Viewport(0, 0, Width, Height);
         }

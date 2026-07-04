@@ -54,7 +54,7 @@ public static class SceneSerializer
                 foreach (var com in obj.Components.Where(s => s.SaveComponent))
                 {
                     var saveData = com.GetSaveData();
-                    
+
                     if (!com.IsEnabled)
                         saveData.TryAdd(nameof(Component.IsEnabled), com.IsEnabled);
 
@@ -322,7 +322,7 @@ public static class SceneSerializer
                             if (type == null)
                                 continue;
 
-                            foreach (var requiredType in GetRequiredComponents(type, gameObject))
+                            foreach (var requiredType in GetRequiredComponents(type, gameObject, componentList))
                             {
                                 var normalizedName = requiredType.Name
                                     .ToLower()
@@ -410,7 +410,7 @@ public static class SceneSerializer
         }
     }
 
-    private static IEnumerable<Type> GetRequiredComponents(Type type, GameObject o)
+    private static IEnumerable<Type> GetRequiredComponents(Type type, GameObject o, List<JsonProperty> components)
     {
         HashSet<Type> result = [];
 
@@ -422,7 +422,8 @@ public static class SceneSerializer
 
             foreach (var attr in attrs)
             {
-                if (result.Add(attr))
+                if (components.Select(s => s.Name.ToLower().Replace("component", "")).Contains(attr.Name) &&
+                    result.Add(attr))
                 {
                     Log.Warning(
                         "Added component {RequiredComponentName} because {ComponentName} on {ObjectName}({ObjectId}) requires it",

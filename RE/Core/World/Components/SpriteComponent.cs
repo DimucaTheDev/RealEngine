@@ -20,12 +20,12 @@ namespace RE.Core.World.Components
 
         [EditorProperty] public float Scale { get => Sprite.Scale; set => Sprite.Scale = value; }
 
-        public override void Update(FrameEventArgs args)
+        public override void Update(double delta)
         {
             Sprite.Position = Owner.Transform.Position;
         }
 
-        public override void Render(FrameEventArgs args)
+        public override void Render(double args)
         {
             Sprite.Render(args);
         }
@@ -46,9 +46,9 @@ namespace RE.Core.World.Components
         public override CollisionShape GetObjectSelectionShape() => new BoxShape(0.3f);
 
         /// <inheritdoc />
-        public void EditorUpdate(FrameEventArgs args) => Update(args);
+        public void EditorUpdate(double delta) => Update(delta);
 
         /// <inheritdoc />
-        public void EditorRender(FrameEventArgs args) => Render(args);
+        public void EditorRender(double delta) => Render(delta);
     }
 }

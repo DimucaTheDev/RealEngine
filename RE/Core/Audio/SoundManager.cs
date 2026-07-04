@@ -4,6 +4,7 @@ using System.Runtime.InteropServices;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using RE.Core.Assets;
+using RE.Editor;
 using RE.Fmod;
 using RE.Rendering;
 using RE.Utils;
@@ -84,12 +85,12 @@ namespace RE.Core.Audio
         /// Updates listener position
         /// </summary>
         /// <param name="args">Time passed from previous <see cref="Game.OnUpdateFrame"/> call.</param>
-        public static void Update(FrameEventArgs args)
+        public static void Update(double args)
         {
             if (!_studioSystem.isValid())
                 return;
 
-            var cam = Camera.GetActiveCamera();
+            var cam = SceneEditor.SimulationRunning ? Camera.Main : Camera.GetActiveCamera();
             var pos = cam.Position.ToFmodVector3();
             var forward = cam.Front.Normalized().ToFmodVector3();
             var right = (-(Vector3.Cross(forward.ToOpenTkVector3(), cam.Up).Normalized())).ToFmodVector3();

@@ -46,7 +46,7 @@ namespace RE.Rendering.Renderables
                 _texture.Delete();
             _texture = tex;
         }
-        public override void Render(FrameEventArgs args)
+        public override void Render(double args)
         {
             if (SceneEditor.Enabled)
                 this.StopRender();

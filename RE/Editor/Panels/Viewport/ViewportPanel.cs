@@ -66,14 +66,14 @@ namespace RE.Editor.Panels.Viewport
         private bool _isOverViewport;
         private bool _rotating;
         private string _sceneBeforeSimulation;
-        private CollisionDispatcher _dispatcher;
-        private DbvtBroadphase _broadphase;
-        private SpriteRenderer _cameraSprite;
         private Vector2 _lastClickPosition;
         private Vector2 _lockedGlobalPos;
         private TkVector3 _cameraVelocity = TkVector3.Zero;
         private Vector4 _viewportRect;
+        private DbvtBroadphase _broadphase;
+        private SpriteRenderer _cameraSprite;
         private List<GameObject> _lastHitObjects = new();
+        private CollisionDispatcher _dispatcher;
 
         public static bool CameraRotate;
 
@@ -113,7 +113,7 @@ namespace RE.Editor.Panels.Viewport
             CollisionWorld?.Dispose();
             _dispatcher?.Dispose();
             _broadphase?.Dispose();
-            
+
             var defaultCollisionConfiguration = new DefaultCollisionConfiguration();
             _dispatcher = new CollisionDispatcher(defaultCollisionConfiguration);
             _broadphase = new DbvtBroadphase();
@@ -126,7 +126,7 @@ namespace RE.Editor.Panels.Viewport
         public void Draw()
         {
             _cameraSprite.Position = Camera.Main.Position;
-            _cameraSprite.Render(new(Time.DeltaTime));
+            _cameraSprite.Render(Time.DeltaTime);
 
             UpdateBulletObjects();
             PhysicsManager.DynamicsWorld.DebugDrawWorld();
@@ -172,8 +172,8 @@ namespace RE.Editor.Panels.Viewport
                     Game.Instance.ResizeFramebuffers((int)ViewportSize.X, (int)ViewportSize.Y);
                     Game.Instance.ResizeOitFramebuffer((int)ViewportSize.X, (int)ViewportSize.Y);
                     SceneEditor.OutlineFramebuffer.Resize((int)ViewportSize.X, (int)ViewportSize.Y);
-                    Camera.Editor.RenderWidth = (int)ViewportSize.X;
-                    Camera.Editor.RenderHeight = (int)ViewportSize.Y;
+                    Camera.ViewportCamera.RenderWidth = (int)ViewportSize.X;
+                    Camera.ViewportCamera.RenderHeight = (int)ViewportSize.Y;
                 }
 
                 var size = _viewportRect = SetImGuizmoRect();
@@ -232,7 +232,7 @@ namespace RE.Editor.Panels.Viewport
 
         private void CameraControl()
         {
-            Camera cam = Camera.Editor;
+            Camera cam = Camera.ViewportCamera;
 
             bool rmbDown = IsMouseDown(ImGuiMouseButton.Right);
             bool rmbClicked = IsMouseClicked(ImGuiMouseButton.Right);
@@ -289,14 +289,15 @@ namespace RE.Editor.Panels.Viewport
 
         private bool _wasManipulating, _objRbEnabled, _objTrigger;
         (TkVector3 p, OpenTK.Mathematics.Quaternion r, TkVector3 s)? old = null;
+        private bool paused; 
 
         private void DrawGizmos()
         {
             var selected = SceneEditor.SelectedObject;
             if (selected != null)
             {
-                var v = Camera.Editor.GetViewMatrix().ToBulletMatrix();
-                var p = Camera.Editor.GetProjectionMatrix().ToBulletMatrix();
+                var v = Camera.ViewportCamera.GetViewMatrix().ToBulletMatrix();
+                var p = Camera.ViewportCamera.GetProjectionMatrix().ToBulletMatrix();
                 var transform = selected.Transform;
                 var pos = transform.Position;
                 var rot = transform.Rotation;
@@ -379,7 +380,7 @@ namespace RE.Editor.Panels.Viewport
                 var screenNear = new TkVector3(vx, vy, 0.0f);
                 var screenFar = new TkVector3(vx, vy, 1.0f);
 
-                var currentCamera = Camera.Editor;
+                var currentCamera = Camera.ViewportCamera;
 
                 var mView = currentCamera.GetViewMatrix();
                 var mProj = currentCamera.GetProjectionMatrix();
@@ -516,7 +517,7 @@ namespace RE.Editor.Panels.Viewport
 
             offset += -up * -mouseDelta.Y * panSpeed;
 
-            Camera.Editor.Position += offset;
+            Camera.ViewportCamera.Position += offset;
         }
 
         private void DrawGrid()
@@ -524,7 +525,7 @@ namespace RE.Editor.Panels.Viewport
             //var color = new OpenTK.Mathematics.Vector4(0.25f, 0.25f, 0.25f, 0.1f);
             var color = new OpenTK.Mathematics.Vector4(0.75f, 0.75f, 0.75f, 0.3f);
             var size = 50;
-            var camPos = (Vector3i)Camera.Editor.Position;
+            var camPos = (Vector3i)Camera.ViewportCamera.Position;
 
             if (SceneEditor.ShowGrid)
             {
@@ -559,10 +560,10 @@ namespace RE.Editor.Panels.Viewport
             string[] data =
             [
                 $"Viewport size: {ViewportSize.X}x{ViewportSize.Y}",
-                $"Fov: {Camera.Editor.Fov}°",
+                $"Fov: {Camera.ViewportCamera.Fov}°",
                 $"Scene: {SceneManager.CurrentScene.Name}",
                 $"FPS: {1 / Time.DeltaTime:F0}",
-                $"Camera pos: {Camera.Editor.Position.X:F2} | {Camera.Editor.Position.Y:F2} | {Camera.Editor.Position.Z:F2}",
+                $"Camera pos: {Camera.ViewportCamera.Position.X:F2} | {Camera.ViewportCamera.Position.Y:F2} | {Camera.ViewportCamera.Position.Z:F2}",
                 $"Selected Obj: {(SceneEditor.SelectedObject == null ? "<None>" : $"{SceneEditor.SelectedObject.Name ?? "<unnamed>"} ({SceneEditor.SelectedObject.Id})")}"
             ];
             foreach (var line in data.Index())
@@ -628,11 +629,13 @@ namespace RE.Editor.Panels.Viewport
 
             SameLine(350);
 
-            if (ImageButton("##simulation", !SceneEditor.SimulationRunning ? _startSimulation : _stopSimulation,
+            if (ImageButton("##simulation",
+                    (!SceneEditor.SimulationRunning && !paused) ? _startSimulation : _stopSimulation,
                     new Vector2(size, size)))
             {
                 if (!SceneEditor.SimulationRunning)
                 {
+                    paused = false;
                     SceneEditor.SimulationRunning = true;
                     PhysicsManager.RecreateWorld();
                     SetupBullet();
@@ -642,6 +645,7 @@ namespace RE.Editor.Panels.Viewport
                 }
                 else
                 {
+                    paused = false;
                     SceneEditor.SimulationRunning = false;
                     PhysicsManager.RecreateWorld();
                     SetupBullet();
@@ -658,7 +662,17 @@ namespace RE.Editor.Panels.Viewport
             TextTooltip(
                 $"{(!SceneEditor.SimulationRunning ? "Start" : "Stop")} world simulation.\nScene will return to its original state after simulation stops.");
 
-            SameLine(400);
+            if (SceneEditor.SimulationRunning || paused)
+            {
+                SameLine();
+                if (Button("pause"))
+                {
+                    paused = !(SceneEditor.SimulationRunning = !SceneEditor.SimulationRunning);
+                } 
+                //todo: one step button
+            }
+
+            SameLine(600);
 
             if (ImageButton("##light", SceneEditor.PreviewLight ? _lightOnIcon : _lightOffIcon,
                     new Vector2(size, size)))
@@ -757,7 +771,7 @@ namespace RE.Editor.Panels.Viewport
             const float targetSpeed = 14f;
             const float lerpFactor = 10f;
 
-            var cam = Camera.Editor;
+            var cam = Camera.ViewportCamera;
             TkVector3 inputDir = TkVector3.Zero;
 
             if (Keyboard.IsKeyDown(Keys.W, true))
@@ -790,14 +804,14 @@ namespace RE.Editor.Panels.Viewport
 
         private TkVector3 GetRightVector()
         {
-            var right = TkVector3.Cross(WorldUp, Camera.Editor.Front);
+            var right = TkVector3.Cross(WorldUp, Camera.ViewportCamera.Front);
             return TkVector3.Normalize(right);
         }
 
         private TkVector3 GetUpVector()
         {
             var right = GetRightVector();
-            var up = TkVector3.Cross(Camera.Editor.Front, right);
+            var up = TkVector3.Cross(Camera.ViewportCamera.Front, right);
             return TkVector3.Normalize(up);
         }
     }

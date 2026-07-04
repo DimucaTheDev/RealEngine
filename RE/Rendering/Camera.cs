@@ -10,8 +10,10 @@ namespace RE.Rendering;
 
 public class Camera(Vector3 position, Vector3 up, int width, int height)
 {
-    public static Camera Main { get; private set; }
-    public static Camera Editor { get; private set; }
+    public static Camera Main { get; set; }
+    public static Camera ViewportCamera { get; set; }
+
+    internal static Camera _activeCamera;
 
     public float Pitch
     {
@@ -52,26 +54,39 @@ public class Camera(Vector3 position, Vector3 up, int width, int height)
             UpdateVectors();
         }
     } = 80;
+    
+    
+    public StaticTexture? RenderTexture { get; set; }
 
-    public StaticTextureSource? RenderTexture { get; set; }
+    public readonly List<PostProcessLayer> PostProcessLayers =
+    [
+        new("Assets/Shaders/Pass/Postprocess/ca.frag")
+    ];
+    
+    public required string Name { get; set; }
 
     public Vector3 Position = position;
-    
+
     public Vector3 Up = up;
     public Vector3 Front = Vector3.UnitX;
-    
-    // Автоматически пересчитывается при вызове на основе актуальных Front и Up
     public Vector3 Right => Vector3.Normalize(Vector3.Cross(Front, Up));
-    
+
     public int RenderWidth = width;
     public int RenderHeight = height;
     public float AspectRatio => (float)RenderWidth / RenderHeight;
 
-    public static void Init()
+    static Camera()
     {
-        Main = new Camera(Vector3.Zero, Vector3.UnitY, Game.Instance.ClientSize.X, Game.Instance.ClientSize.Y);
-        Editor = new Camera(new(10, 10, 10), Vector3.UnitY, Game.Instance.ClientSize.X, Game.Instance.ClientSize.Y);
-        Editor.LookAt((0, 0, 0));
+        _activeCamera = Main = new Camera(Vector3.Zero, Vector3.UnitY, Game.Instance.ClientSize.X,
+            Game.Instance.ClientSize.Y)
+        {
+            Name = "Main Camera"
+        };
+        ViewportCamera = new Camera(new(10, 10, 10), Vector3.UnitY, Game.Instance.ClientSize.X, Game.Instance.ClientSize.Y)
+        {
+            Name = "Editor Camera"
+        };
+        ViewportCamera.LookAt((0, 0, 0));
         Variables.VariableChanged += (s, e) =>
         {
             if (s == "fov")
@@ -81,7 +96,16 @@ public class Camera(Vector3 position, Vector3 up, int width, int height)
         };
     }
 
-    public static Camera GetActiveCamera() => SceneEditor.Enabled ? Editor : Main;
+    public Camera() : this(Vector3.Zero)
+    {
+    }
+
+    public Camera(Vector3 position) : this(position, Vector3.UnitY, Game.Instance.ClientSize.X,
+        Game.Instance.ClientSize.Y)
+    {
+    }
+
+    public static Camera GetActiveCamera() => _activeCamera;
 
     public void LookAt(Vector3 target)
     {
@@ -117,7 +141,7 @@ public class Camera(Vector3 position, Vector3 up, int width, int height)
 
         if (lockY)
         {
-        } 
+        }
 
         billboard.Column0 = new Vector4(right, billboard.Column0.W);
         billboard.Column1 = new Vector4(up, billboard.Column1.W);

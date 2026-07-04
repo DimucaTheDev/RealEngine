@@ -82,10 +82,10 @@ public static class Time
             Log.Warning("Tried to remove a task that was not scheduled: {MethodName}", task.Action.Method.Name);
     }
 
-    public static void Update(FrameEventArgs args)
+    public static void Update(double args)
     {
         LastUpdate = DateTime.Now;
-        DeltaTime = (float)args.Time;
+        DeltaTime = (float)args;
         ElapsedFrames++;
         for (var i = _scheduled.Count - 1; i >= 0; i--)
         {

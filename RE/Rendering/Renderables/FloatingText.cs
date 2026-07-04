@@ -87,10 +87,10 @@ public class FloatingText : Renderable
 
         _instance.Text = text;
         _instance.Position = pos;
-        _instance.Render(new FrameEventArgs(Time.DeltaTime));
+        _instance.Render(Time.DeltaTime);
     }
 
-    public override void Render(FrameEventArgs args)
+    public override void Render(double args)
     {
         if (string.IsNullOrEmpty(Text))
             return;
@@ -138,7 +138,7 @@ public class FloatingText : Renderable
 
         var modelBg = Matrix4.CreateScale(bgWidth, bgHeight, 1f)
                       * Matrix4.CreateTranslation(bgOffset)
-                      * Camera.GetActiveCamera().GetBillboard(bgPos)
+                      * Camera.GetActiveCamera().GetBillboard()
                       * Matrix4.CreateTranslation(bgPos)
                       * Matrix4.CreateTranslation(0, _bottomToTop ? bgHeight / 2 : 0, 0);
 
@@ -178,7 +178,7 @@ public class FloatingText : Renderable
 
                 var modelCh = Matrix4.CreateScale(w, h, 1f)
                               * Matrix4.CreateTranslation(xrel, yoff, 0f)
-                              * Camera.GetActiveCamera().GetBillboard(Position)
+                              * Camera.GetActiveCamera().GetBillboard()
                               * Matrix4.CreateTranslation(Position)
                               * Matrix4.CreateTranslation(0, _bottomToTop ? bgHeight / 2 : 0, 0);
 

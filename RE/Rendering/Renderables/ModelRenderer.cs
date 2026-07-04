@@ -40,7 +40,7 @@ namespace RE.Rendering.Renderables
             };
 
 
-        public override void Render(FrameEventArgs args)
+        public override void Render(double args)
         {
             var viewPos = Camera.GetActiveCamera().Position;
             float distance = (viewPos - Position).Length;

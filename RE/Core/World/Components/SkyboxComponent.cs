@@ -143,7 +143,7 @@ namespace RE.Core.World.Components
             
         }
 
-        public override void Render(FrameEventArgs args)
+        public override void Render(double args)
         {
             GL.DepthMask(false);
 
@@ -220,12 +220,12 @@ namespace RE.Core.World.Components
 
         public override CollisionShape GetObjectSelectionShape() => new BoxShape(0.3f);
 
-        public void EditorRender(FrameEventArgs args)
+        public void EditorRender(double delta)
         {
             _sprite.Position = Owner.Transform.Position;
-            _sprite.Render(args);
+            _sprite.Render(delta);
             if (SceneEditor.PreviewSkybox)
-                Render(args);
+                Render(delta);
         }
     }
 }

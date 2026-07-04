@@ -110,18 +110,17 @@ namespace RE.Core
         /// <summary>
         /// Called every frame, before <see cref="Render(FrameEventArgs)"/>.
         /// </summary>
-        /// <param name="args">The event data for the frame being rendered, containing timing and state information relevant to the
-        /// rendering process.</param>
-        public virtual void Update(FrameEventArgs args)
+        /// <param name="delta"></param>
+        public virtual void Update(double delta)
         {
         }
 
         /// <summary>
         /// Renders the current frame using the specified frame event arguments.
         /// </summary>
-        /// <param name="args">The event data for the frame being rendered, containing timing and state information relevant to the
+        /// <param name="delta">The event data for the frame being rendered, containing timing and state information relevant to the
         /// rendering process.</param>
-        public virtual void Render(FrameEventArgs args)
+        public virtual void Render(double delta)
         {
         }
 

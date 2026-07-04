@@ -30,7 +30,7 @@ namespace RE.Core.World.Testing
         }
 
         /// <inheritdoc />
-        public override void Update(FrameEventArgs args)
+        public override void Update(double delta)
         {
             Owner.Transform.RotationXyz +=
                 new Vector3(

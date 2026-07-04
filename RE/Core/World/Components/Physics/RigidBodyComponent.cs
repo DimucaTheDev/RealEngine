@@ -124,7 +124,7 @@ namespace RE.Core.World.Components.Physics
             _currentRotation = Quaternion.RotationMatrix(t.Basis);
         }
 
-        public override void Update(FrameEventArgs args)
+        public override void Update(double delta)
         {
             if (RigidBody == null)
                 return;
@@ -251,19 +251,19 @@ namespace RE.Core.World.Components.Physics
             base.Destroy();
         }
   
-        public void EditorRender(FrameEventArgs args)
+        public void EditorRender(double delta)
         {
             if (IsTrigger)
             {
                 GL.Enable(EnableCap.CullFace);
                 GL.CullFace(TriangleFace.Back);
-                _triggerBoxRenderer.Render(args);
+                _triggerBoxRenderer.Render(delta);
                 GL.Disable(EnableCap.CullFace);
             }
         }
 
         /// <inheritdoc />
-        public void EditorUpdate(FrameEventArgs args)
+        public void EditorUpdate(double delta)
         {
             if (IsTrigger)
             {

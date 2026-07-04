@@ -152,8 +152,7 @@ internal partial class Game : GameWindow
         if (TryLoadIcon(out var icon))
             Icon = icon;
 
-        RenderManager.Init();
-        Camera.Init();
+        RenderManager.Init(); 
         ImGuiController.Init();
         DebugOverlay.Init();
         LineRenderer.Main!.StartRender();
@@ -194,11 +193,11 @@ internal partial class Game : GameWindow
     }
 
     protected override void OnUpdateFrame(FrameEventArgs args)
-    { 
+    {
         FrameProfiler.BeginFrame();
 
-        Time.Update(args);
-        SoundManager.Update(args);
+        Time.Update(args.Time);
+        SoundManager.Update(args.Time);
 
         if (_initialized && (!SceneEditor.Enabled || (SceneEditor.Enabled && SceneEditor.SimulationRunning)) &&
             SceneManager.CurrentScene != null!)
@@ -215,7 +214,7 @@ internal partial class Game : GameWindow
                     {
                         foreach (var c in scene.Components.Where(s => s.IsEnabled))
                         {
-                            c.Update(args);
+                            c.Update(args.Time);
                         }
                     }
 
@@ -226,12 +225,11 @@ internal partial class Game : GameWindow
 
                 using (FrameProfiler.Scope("ui"))
                 {
-                    Hud.Update(args);
+                    Hud.Update(args.Time);
                 }
             }
         }
-    }
-
+    } 
 
     protected override void OnRenderFrame(FrameEventArgs args)
     {
@@ -287,7 +285,7 @@ internal partial class Game : GameWindow
             GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
             GL.PolygonMode(TriangleFace.FrontAndBack, Wireframe ? PolygonMode.Line : PolygonMode.Fill);
 
-            RenderManager.RenderAll(args);
+            RenderManager.RenderAll(args.Time);
             SceneSerializer.ApplyObjectModification();
 
             using (FrameProfiler.Scope("imgui_render"))
@@ -310,7 +308,7 @@ internal partial class Game : GameWindow
         }
 
         FrameProfiler.EndFrame();
-        
+
         #region Keybinds
 
         if (Keyboard.IsKeyPressed(Keys.F7, true))
@@ -344,10 +342,9 @@ internal partial class Game : GameWindow
         if (Keyboard.IsKeyPressed(Keys.F11, true))
             Instance.ToggleFullscreen();
         if (Keyboard.IsKeyPressed(Keys.F4, true))
-            CommandHandler.ExecuteCommand("editor");
-        if (Keyboard.IsKeyPressed(Keys.F5, true))
-            CommandHandler.ExecuteCommand("debug");
-
+            CommandHandler.ExecuteCommand("editor"); // READ!: Dont you EVER think moving this line somewhere
+        // else or everything will break apart!            
+        
         if (Keyboard.IsKeyPressed(Keys.F2, true))
         {
             var p = TakeScreenshot();
@@ -371,7 +368,7 @@ internal partial class Game : GameWindow
 
         #endregion
     }
-
+    
     protected override void OnClosing(CancelEventArgs e)
     {
         if (SceneEditor.Enabled)

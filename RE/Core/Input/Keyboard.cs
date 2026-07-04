@@ -10,25 +10,42 @@ namespace RE.Core.Input
     {
         public static bool IsInputEnabled { get; set; } = true;
 
-        public static bool CanCaptureInput => IsInputEnabled ;//&& !ImGui.GetIO().WantCaptureKeyboard;
-        public static bool Shift => ImGui.GetIO().KeyShift || TkState.IsKeyDown(TkKeys.LeftShift) || TkState.IsKeyDown(TkKeys.RightShift);
-        public static bool Ctrl => ImGui.GetIO().KeyCtrl || TkState.IsKeyDown(TkKeys.LeftControl) || TkState.IsKeyDown(TkKeys.RightControl);
-        public static bool Alt => ImGui.GetIO().KeyAlt || TkState.IsKeyDown(TkKeys.LeftAlt) || TkState.IsKeyDown(TkKeys.RightAlt);
+        public static bool CanCaptureInput => IsInputEnabled; //&& !ImGui.GetIO().WantCaptureKeyboard;
+
+        public static bool Shift => ImGui.GetIO().KeyShift || TkState.IsKeyDown(TkKeys.LeftShift) ||
+                                    TkState.IsKeyDown(TkKeys.RightShift);
+
+        public static bool Ctrl => ImGui.GetIO().KeyCtrl || TkState.IsKeyDown(TkKeys.LeftControl) ||
+                                   TkState.IsKeyDown(TkKeys.RightControl);
+
+        public static bool Alt => ImGui.GetIO().KeyAlt || TkState.IsKeyDown(TkKeys.LeftAlt) ||
+                                  TkState.IsKeyDown(TkKeys.RightAlt);
 
         //opentk keyboard state
         private static KeyboardState TkState => Game.Instance.KeyboardState;
 
         public static bool IsKeyDown(TkKeys key, bool force = false)
         {
-            return (CanCaptureInput || force) && ((!SceneEditor.Enabled && TkState.IsKeyDown(key)) || (SceneEditor.Enabled && ImGui.IsKeyDown(GetImGuiKey(key))));
+            return (CanCaptureInput || (force || SceneEditor.GamePanelActive)) &&
+                   ((!SceneEditor.Enabled && TkState.IsKeyDown(key)) ||
+                    (SceneEditor.Enabled &&
+                     ImGui.IsKeyDown(GetImGuiKey(key))));
         }
+
         public static bool IsKeyPressed(TkKeys key, bool force = false)
         {
-            return (CanCaptureInput || force) && ((!SceneEditor.Enabled && TkState.IsKeyPressed(key)) || (SceneEditor.Enabled && ImGui.IsKeyPressed(GetImGuiKey(key), false)));
+            return (CanCaptureInput || (force || SceneEditor.GamePanelActive)) &&
+                   ((!SceneEditor.Enabled && TkState.IsKeyPressed(key)) ||
+                    (SceneEditor.Enabled &&
+                     ImGui.IsKeyPressed(GetImGuiKey(key), false)));
         }
+
         public static bool IsKeyReleased(TkKeys key, bool force = false)
         {
-            return (CanCaptureInput || force) && ((!SceneEditor.Enabled && TkState.IsKeyReleased(key)) || (SceneEditor.Enabled && ImGui.IsKeyReleased(GetImGuiKey(key))));
+            return (CanCaptureInput || (force || SceneEditor.GamePanelActive)) &&
+                   ((!SceneEditor.Enabled && TkState.IsKeyReleased(key)) ||
+                    (SceneEditor.Enabled &&
+                     ImGui.IsKeyReleased(GetImGuiKey(key))));
         }
 
         private static ImGuiKey GetImGuiKey(TkKeys key)

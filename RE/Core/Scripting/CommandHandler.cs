@@ -43,8 +43,7 @@ namespace RE.Core.Scripting
 
                 list.Add(command);
 
-                Log.Debug("Registered command {Command}. Method: {Namespace}.{Class}.{Method}",
-                    name,
+                Log.Debug("Registered command {Command}, method: {Namespace}.{Class}.{Method}", name,
                     method.DeclaringType!.Namespace, method.DeclaringType.Name, method.Name);
             }
         }

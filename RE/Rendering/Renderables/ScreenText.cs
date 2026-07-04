@@ -54,7 +54,7 @@ internal class ScreenText : Renderable
 
     private static ShaderProgram _shaderProgram = null!;
 
-    public override void Render(FrameEventArgs args)
+    public override void Render(double args)
     {
         if (!IsVisible)
             return;

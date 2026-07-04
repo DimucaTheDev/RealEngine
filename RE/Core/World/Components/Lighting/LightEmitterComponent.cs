@@ -172,7 +172,7 @@ namespace RE.Core.World.Components.Lighting
             Owner.Scene.LightSources.Add(_lightSource);
         }
 
-        public override void Update(FrameEventArgs args)
+        public override void Update(double delta)
         {
             UpdateLight();
         }
@@ -182,11 +182,11 @@ namespace RE.Core.World.Components.Lighting
             Owner.Scene.LightSources.Remove(_lightSource);
         }
  
-        public void EditorRender(FrameEventArgs args)
+        public void EditorRender(double delta)
         {
             UpdateLight();
             _bulbSprite.Position = Owner.Transform.Position;
-            _bulbSprite.Render(args);
+            _bulbSprite.Render(delta);
             switch (LightType)
             {
                 case LightType.Spot:

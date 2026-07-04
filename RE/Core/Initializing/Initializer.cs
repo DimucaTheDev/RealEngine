@@ -93,8 +93,8 @@ namespace RE.Core.Initializing
                 Game.Instance.ClientSize.X / 2f - (400 * 1.75f) / 2f,
                 baseImageY + offsetY);
 
-            _image.Render(new FrameEventArgs());
-            _text.Render(new FrameEventArgs());
+            _image.Render(0);
+            _text.Render(0);
 
             Game.Instance.SwapBuffers();
         }

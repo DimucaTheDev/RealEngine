@@ -6,7 +6,7 @@ namespace RE.Rendering
     { 
         public abstract bool IsVisible { get; set; }
 
-        public abstract void Render(FrameEventArgs args); 
+        public abstract void Render(double delta); 
 
         public virtual void Dispose() { }
     }

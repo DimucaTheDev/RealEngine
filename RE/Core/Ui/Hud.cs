@@ -7,7 +7,7 @@ namespace RE.Core.Ui
     {
         public static CanvasControl Root { get; } = new() { Name = "Canvas" };
 
-        internal static void Update(FrameEventArgs e)
+        internal static void Update(double e)
         {
             // input
 
@@ -20,9 +20,9 @@ namespace RE.Core.Ui
             RenderControl(Root);
         }
 
-        private static void UpdateControl(UiControl control, FrameEventArgs e)
+        private static void UpdateControl(UiControl control, double e)
         {
-            control.Update((float)e.Time);
+            control.Update((float)e);
             foreach (var child in control.Children)
                 UpdateControl(child, e);
         }

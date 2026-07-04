@@ -272,7 +272,7 @@ public static class ModelLoader
 
             var readAllBytes = ContentManager.GetBytes(path + ".png");
             var t = ImageResult.FromMemory(readAllBytes, ColorComponents.RedGreenBlueAlpha);
-            var lt = new StaticTexture(t.Data, t.Width, t.Height);
+            var lt = new StaticTexture(new ImageData(t.Data, t.Width, t.Height));
 
             return lt;
         }
@@ -299,7 +299,7 @@ public static class ModelLoader
             var t = ImageResult.FromMemory(importFile.Textures.First().CompressedData,
                 ColorComponents.RedGreenBlueAlpha);
             //cache?
-            texId = new StaticTexture(t.Data, t.Width, t.Height);
+            texId = new StaticTexture(new ImageData(t.Data, t.Width, t.Height));
         }
         else
         {

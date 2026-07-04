@@ -411,10 +411,6 @@ namespace RE.Utils
             // ReSharper disable  NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract
             (SceneFramebuffer ??= new(width, height, "SceneEditor Framebuffer")).Resize(width, height);
             (PrePostProcessFramebuffer ??= new(width, height, "Pre-postprocessing Framebuffer")).Resize(width, height);
-            foreach (var layer in RenderManager.PostProcessLayers)
-            {
-                layer.Resize(width, height);
-            }
         }
 
         internal static void ParseArguments(string[] args)

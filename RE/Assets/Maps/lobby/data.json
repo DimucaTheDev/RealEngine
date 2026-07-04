@@ -9,11 +9,6 @@
           3,
           0
         ],
-        "rotation": [
-          0,
-          0,
-          0
-        ],
         "scale": [
           0.5,
           0.5,
@@ -22,7 +17,7 @@
       },
       "components": {
         "MeshComponent": {
-          "Path": "assets/models/button.fbx"
+          "Path": "file:assets/models/button.fbx"
         },
         "AnimatedTextureTestComponent": {},
         "BillboardTextComponent": {

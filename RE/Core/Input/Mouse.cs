@@ -17,7 +17,7 @@ namespace RE.Core.Input
             get => Game.Instance.CursorState;
             set
             {
-                if (!SceneEditor.SimulationRunning)
+                if (!SceneEditor.SimulationRunning || SceneEditor.GamePanelActive || value == CursorState.Normal)
                     Game.Instance.CursorState = value;
             }
         }
@@ -32,22 +32,25 @@ namespace RE.Core.Input
 
         public static bool IsButtonDown(TkMouseButton button, bool force = false)
         {
-            return (CanCaptureInput || force) && ((!SceneEditor.Enabled && TkState.IsButtonDown(button)) ||
-                                                  (SceneEditor.Enabled && ImGui.IsMouseDown((ImGuiMouseButton)button)));
+            return (CanCaptureInput || (force || SceneEditor.GamePanelActive)) &&
+                   ((!SceneEditor.Enabled && TkState.IsButtonDown(button)) ||
+                    (SceneEditor.Enabled && ImGui.IsMouseDown((ImGuiMouseButton)button)));
         }
 
         public static bool IsButtonPressed(TkMouseButton button, bool force = false)
         {
-            return (CanCaptureInput || force) && ((!SceneEditor.Enabled && TkState.IsButtonPressed(button)) ||
-                                                  (SceneEditor.Enabled &&
-                                                   ImGui.IsMouseClicked((ImGuiMouseButton)button)));
+            return (CanCaptureInput || (force || SceneEditor.GamePanelActive)) &&
+                   ((!SceneEditor.Enabled && TkState.IsButtonPressed(button)) ||
+                    (SceneEditor.Enabled &&
+                     ImGui.IsMouseClicked((ImGuiMouseButton)button)));
         }
 
         public static bool IsButtonReleased(TkMouseButton button, bool force = false)
         {
-            return (CanCaptureInput || force) && ((!SceneEditor.Enabled && TkState.IsButtonReleased(button)) ||
-                                                  (SceneEditor.Enabled &&
-                                                   ImGui.IsMouseReleased((ImGuiMouseButton)button)));
+            return (CanCaptureInput || (force || SceneEditor.GamePanelActive)) &&
+                   ((!SceneEditor.Enabled && TkState.IsButtonReleased(button)) ||
+                    (SceneEditor.Enabled &&
+                     ImGui.IsMouseReleased((ImGuiMouseButton)button)));
         }
 
         public static unsafe void SetLocalPosition(System.Numerics.Vector2 pos)

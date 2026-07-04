@@ -1,4 +1,5 @@
-﻿using Serilog.Core;
+﻿using JetBrains.Annotations;
+using Serilog.Core;
 
 namespace RE.Core.PluginSystem
 {
@@ -9,6 +10,7 @@ namespace RE.Core.PluginSystem
     /// cref="OnUnload"/> methods to define initialization and cleanup logic for your plugin. Use the <see
     /// cref="Logger"/> property to write log messages within the plugin context. The <see cref="PluginInformation"/>
     /// property should provide metadata about the plugin, such as its name and version.</remarks>
+    [UsedImplicitly(ImplicitUseTargetFlags.WithInheritors)]
     public abstract class Plugin
     {
         /// <summary>

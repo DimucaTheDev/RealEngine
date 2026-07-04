@@ -10,6 +10,7 @@ using RE.Core.Ui.Debug;
 using RE.Core.World;
 using RE.Editor;
 using RE.Editor.Notification;
+using RE.Rendering.Texturing;
 using RE.Utils;
 using Serilog;
 
@@ -18,12 +19,7 @@ namespace RE.Rendering
     public static class RenderManager
     {
         private static string resLoc = "";
-
-        public static readonly List<PostProcessLayer> PostProcessLayers =
-        [
-            new("Assets/Shaders/Pass/Postprocess/ca.frag")
-        ];
-
+        
         internal static ShaderProgram OitShaderProgram;
         internal static int FullscreenVao;
         internal static readonly List<Renderable> Renderables = new();
@@ -41,9 +37,32 @@ namespace RE.Rendering
 
         public static void RemoveRenderable(Renderable renderable) => Renderables.Remove(renderable);
 
-        public static void RenderAll(FrameEventArgs args)
+        public static void RenderAll(double args)
         {
             if (!SceneEditor.Enabled && SceneManager.CurrentScene != null!)
+            {
+                RenderTo(args, Camera.Main);
+                PostProcessLayer.Default.Draw((int)Camera.Main.RenderTexture!.AsOpenGl());
+            }
+
+            foreach (var renderable in Renderables.Where(renderable => renderable.IsVisible))
+            {
+                if (SceneManager.SceneChanged)
+                {
+                    SceneManager.SceneChanged = false;
+                    return;
+                }
+
+                renderable.Render(args);
+            }
+        }
+
+        public static void RenderTo(double deltaTime, Camera camera)
+        {
+            var active = Camera._activeCamera;
+            Camera._activeCamera = camera;
+
+            using (FrameProfiler.Scope(camera.Name))
             {
                 var ppBuffer = Game.Instance.PrePostProcessFramebuffer;
 
@@ -66,7 +85,7 @@ namespace RE.Rendering
 
                         using (FrameProfiler.Scope(s.GetType().Name))
                         {
-                            s.Render(args);
+                            s.Render(deltaTime);
                         }
                     }
 
@@ -111,7 +130,7 @@ namespace RE.Rendering
 
                         using (FrameProfiler.Scope(s.GetType().Name))
                         {
-                            s.Render(args);
+                            s.Render(deltaTime);
                         }
                     }
 
@@ -147,14 +166,14 @@ namespace RE.Rendering
 
                 using (FrameProfiler.Scope("post process"))
                 {
-                    ImGui.Begin("Post Processing pipeline");
+                    ImGui.Begin($"Post Processing pipeline ({camera.Name})");
                     ImGui.InputText("Resource location", ref resLoc, 256);
                     ImGui.SameLine();
                     if (ImGui.Button("Add"))
                     {
                         if (ContentManager.Exists(resLoc))
                         {
-                            PostProcessLayers.Add(new(resLoc));
+                            camera.PostProcessLayers.Add(new(resLoc));
                             resLoc = "";
                             ToastManager.InsertNotification(new(ToastType.Success));
                         }
@@ -169,12 +188,12 @@ namespace RE.Rendering
                         {
                             TexID = new ImTextureID(ppBuffer.ColorTexture)
                         },
-                        Game.Instance.ClientSize.ToVector2().ToSystemVector2() / 4, new(0, 1), new(1, 0));
+                        Game.Instance.ClientSize.ToVector2().ToSystemVector2() / 5, new(0, 1), new(1, 0));
 
                     var previousFb = ppBuffer;
 
                     PostProcessLayer r = null!;
-                    foreach (var layer in PostProcessLayers)
+                    foreach (var layer in camera.PostProcessLayers)
                     {
                         using (FrameProfiler.Scope(Path.GetFileName(layer.FragmentShader.AssetPath!)))
                         {
@@ -190,13 +209,15 @@ namespace RE.Rendering
                         }
 
                         ImGui.Image(new ImTextureRef { TexID = new ImTextureID(previousFb.ColorTexture) },
-                            Game.Instance.ClientSize.ToVector2().ToSystemVector2() / 4, new(0, 1), new(1, 0));
+                            Game.Instance.ClientSize.ToVector2().ToSystemVector2() / 5, new(0, 1), new(1, 0));
                     }
 
                     if (r != null!)
-                        PostProcessLayers.Remove(r);
+                        camera.PostProcessLayers.Remove(r);
 
-                    PostProcessLayer.Default.Draw(previousFb);
+                    camera.RenderTexture =
+                        StaticTexture.FromGlHandle((uint)previousFb.ColorTexture,
+                            previousFb.Width, previousFb.Height);
                     ImGui.End();
                 }
 
@@ -205,20 +226,9 @@ namespace RE.Rendering
                 {
                     Hud.Render();
                 }
-
-                //LineRenderer.Main.Render(args);
             }
 
-            foreach (var renderable in Renderables.Where(renderable => renderable.IsVisible))
-            {
-                if (SceneManager.SceneChanged)
-                {
-                    SceneManager.SceneChanged = false;
-                    return;
-                }
-
-                renderable.Render(args);
-            }
+            Camera._activeCamera = active;
         }
     }
 }

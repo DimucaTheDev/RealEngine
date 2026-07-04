@@ -45,7 +45,7 @@ namespace RE.Core.World.Components
             }
         }
 
-        public override void Render(FrameEventArgs args)
+        public override void Render(double args)
         {
             ModelRenderer.Position = Owner.Transform.Position;
             ModelRenderer.Rotation = Owner.Transform.Rotation;
@@ -54,8 +54,8 @@ namespace RE.Core.World.Components
             ModelRenderer.Render(args);
         }
 
-        public void EditorUpdate(FrameEventArgs args) => Update(args);
+        public void EditorUpdate(double delta) => Update(delta);
 
-        public void EditorRender(FrameEventArgs args) => Render(args);
+        public void EditorRender(double delta) => Render(delta);
     }
 }

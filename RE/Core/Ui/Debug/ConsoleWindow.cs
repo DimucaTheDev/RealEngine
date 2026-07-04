@@ -37,7 +37,7 @@ namespace RE.Core.Ui.Debug
 
         public required string Id;
 
-        public override void Render(FrameEventArgs args)
+        public override void Render(double args)
         {
             ImGui.SetNextWindowSize(_consoleSize, ImGuiCond.FirstUseEver);
             ImGui.SetNextWindowPos(_consolePos, ImGuiCond.FirstUseEver);

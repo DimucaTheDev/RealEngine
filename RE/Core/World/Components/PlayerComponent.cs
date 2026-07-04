@@ -125,7 +125,7 @@ namespace RE.Core.World.Components
         public override bool IsOpaque => true;
 
         /// <inheritdoc />
-        public override void Render(FrameEventArgs args)
+        public override void Render(double args)
         {
         }
 
@@ -217,7 +217,7 @@ namespace RE.Core.World.Components
             return false;
         }
 
-        public override void Update(FrameEventArgs args)
+        public override void Update(double delta)
         {
             CameraControl();
 
@@ -244,7 +244,7 @@ namespace RE.Core.World.Components
             if (Keyboard.IsKeyDown(Keys.A))
                 moveDir -= camRight;
 
-            _soundCooldown += (float)args.Time;
+            _soundCooldown += (float)delta;
 
             if ((Keyboard.IsKeyDown(Keys.W) || Keyboard.IsKeyDown(Keys.S) || Keyboard.IsKeyDown(Keys.D) ||
                  Keyboard.IsKeyDown(Keys.A)) && !_isCrouching && _wasGrounded && moveDir.Length > 0.75f)
@@ -495,7 +495,7 @@ namespace RE.Core.World.Components
 
             var basePosition = PlayerGameObject.Transform.Position;
             _camera.Position = new Vector3(basePosition.X, basePosition.Y + _currentCameraYOffset, basePosition.Z)
-                               + CameraBob(currentVel, (float)args.Time, grounded);
+                               + CameraBob(currentVel, (float)delta, grounded);
 
             if (rb.LinearVelocity.Y < -5 && !_falling)
             {
@@ -696,11 +696,11 @@ namespace RE.Core.World.Components
                    CanStandUp((-offset, 0, -offset)) && CanStandUp((offset, 0, -offset));
         }
 
-        public void EditorRender(FrameEventArgs args)
+        public void EditorRender(double delta)
         {
             _spriteSpawnpoint.Position = Owner.Transform.Position;
 
-            _spriteSpawnpoint.Render(args);
+            _spriteSpawnpoint.Render(delta);
         }
 
         public override JsonObject GetSaveData()
@@ -720,7 +720,7 @@ namespace RE.Core.World.Components
             audio = GetComponent<AudioSourceComponent>()!;
         }
 
-        public override void Update(FrameEventArgs args)
+        public override void Update(double delta)
         {
             audio.Position = Owner.Transform.Position;
             if (Keyboard.IsKeyPressed(Keys.LeftAlt))

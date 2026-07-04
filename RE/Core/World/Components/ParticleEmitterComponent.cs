@@ -38,7 +38,7 @@ namespace RE.Core.World.Components
                 _emitterSpriteRenderer = new SpriteRenderer(Vector3.Zero, "assets/editor/sprites/emitter.png", scale: 0.75f);
         }
 
-        public override void Render(FrameEventArgs args)
+        public override void Render(double args)
         {
             if (SceneEditor.Enabled && !SceneEditor.PreviewParticles)
             {
@@ -56,9 +56,9 @@ namespace RE.Core.World.Components
 
         private Random _rand = Random.Shared;
 
-        public override void Update(FrameEventArgs args)
+        public override void Update(double delta)
         {
-            float dt = (float)args.Time;
+            float dt = (float)delta;
             _spawnAccumulator += _settings.Emission * dt;
 
             int spawnCount = (int)_spawnAccumulator;
@@ -462,13 +462,13 @@ namespace RE.Core.World.Components
         }
 
         /// <inheritdoc />
-        public void EditorUpdate(FrameEventArgs args)
+        public void EditorUpdate(double delta)
         {
             if (SceneEditor.PreviewParticles)
-                Update(args);
+                Update(delta);
         }
 
         /// <inheritdoc />
-        public void EditorRender(FrameEventArgs args) => Render(args);
+        public void EditorRender(double delta) => Render(delta);
     }
 }

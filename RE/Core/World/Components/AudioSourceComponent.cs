@@ -73,7 +73,7 @@ namespace RE.Core.World.Components
             }
         }
 
-        public override void Update(FrameEventArgs args)
+        public override void Update(double delta)
         {
             foreach (var (_, audioClip) in _clips)
                 audioClip.Instance?.Position =

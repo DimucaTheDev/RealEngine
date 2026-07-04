@@ -39,7 +39,7 @@ public class LineRenderer : Renderable
     public static void DrawLine2D(Vector2 start, Vector2 end, Vector4 colorStart, Vector4 colorEnd)
         => Main.RenderScreenLine(start, end, colorStart, colorEnd);
 
-    public override void Render(FrameEventArgs args)
+    public override void Render(double args)
     {
         if (_lines.Count == 0 || !IsVisible)
             return;
@@ -104,17 +104,20 @@ public class LineRenderer : Renderable
                 Color = line.ColorEnd
             };
 
-            using (FrameProfiler.Scope("LINE TEST"))
+            if (false)
             {
-                //GL.Disable(EnableCap.DepthTest);
-                GL.BufferSubData(
-                    BufferTarget.ArrayBuffer,
-                    nint.Zero,
-                    2 * Marshal.SizeOf<Vertex>(),
-                    _vertexBatch);
-                
-                GL.DrawArrays(PrimitiveType.Lines, 0, 2);
-                //GL.Enable(EnableCap.DepthTest);
+                using (FrameProfiler.Scope("LINE TEST"))
+                {
+                    //GL.Disable(EnableCap.DepthTest);
+                    GL.BufferSubData(
+                        BufferTarget.ArrayBuffer,
+                        nint.Zero,
+                        2 * Marshal.SizeOf<Vertex>(),
+                        _vertexBatch);
+
+                    GL.DrawArrays(PrimitiveType.Lines, 0, 2);
+                    //GL.Enable(EnableCap.DepthTest);
+                }
             }
         }
 

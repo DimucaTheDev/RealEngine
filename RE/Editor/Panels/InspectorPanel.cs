@@ -38,7 +38,10 @@ namespace RE.Editor.Panels
 
         private ModelRenderer? _materialPreviewModel;
         private ModelRenderer? _materialPreviewFloor;
-        private readonly Camera _materialPreviewCamera = new(new Vector3(-5, 2, 0), new Vector3(0, 1, 0), 200, 200);
+
+        private readonly Camera _materialPreviewCamera = new(new Vector3(-5, 2, 0), new Vector3(0, 1, 0), 200, 200)
+            { Name = "Material preview" };
+
         private Vector2 _materialPreviewSize;
         private int _materialPreviewFboId;
         private int _materialPreviewTextureId;
@@ -330,8 +333,9 @@ namespace RE.Editor.Panels
                     if (ImageButton(path, texture, new Vector2(24, 24)))
                     {
                         _materialPreviewModel.Model = AssetCache.Get(path, ModelLoader.DefaultModelCacheFactory);
-                        _materialPreviewModel.Model.Material = SceneEditor.SelectedObject!.GetComponent<MeshComponent>()!
-                            .ModelRenderer.Model.Material;
+                        _materialPreviewModel.Model.Material =
+                            SceneEditor.SelectedObject!.GetComponent<MeshComponent>()!
+                                .ModelRenderer.Model.Material;
                     }
                 }
 
