@@ -1,7 +1,7 @@
 <Project> 
 	<PropertyGroup>
 		<ExeName>RE-Demo-App</ExeName>
-		<Version>0.3+dev</Version>
+		<Version>0.4+dev</Version>
 		<ApplicationIcon>../RealEngine.ico</ApplicationIcon>
 		<Title>Real Engine</Title>
 		<IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>

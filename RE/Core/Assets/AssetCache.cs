@@ -4,7 +4,7 @@ public static class AssetCache
 {
     private static readonly Dictionary<string, DynamicAsset> Cache = new();
 
-    public static T Get<T>(string path, Func<string, T> factory) where T : DynamicAsset
+    public static T Get<T>(ResourceLocation path, Func<string, T> factory) where T : DynamicAsset
     {
         var normalizePath = ContentManager.NormalizePath(path);
         if (Cache.TryGetValue(normalizePath, out var result))

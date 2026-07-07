@@ -65,11 +65,7 @@ namespace RE.Utils
 
         private static bool Wireframe { get; set; }
 
-        public Framebuffer SceneFramebuffer, PrePostProcessFramebuffer;
-        public int AccumColorTex;
-        public int AccumWeightTex;
-        public int OitFbo;
-        public int OitDepthTexture;
+       
 
         /// <summary>
         /// Takes a screenshot of the current frame and saves it to the <c>My Pictures</c> folder.
@@ -341,78 +337,7 @@ namespace RE.Utils
                 WindowBorder = WindowBorder.Hidden;
             }
         }
-
-        public void ResizeOitFramebuffer(int width, int height)
-        {
-            if (width <= 0 || height <= 0) return;
-
-            if (OitFbo != 0)
-            {
-                GL.DeleteFramebuffer(OitFbo);
-                GL.DeleteTexture(AccumColorTex);
-                GL.DeleteTexture(AccumWeightTex);
-                GL.DeleteTexture(OitDepthTexture);
-            }
-
-            GL.GenFramebuffers(1, out OitFbo);
-            GL.BindFramebuffer(FramebufferTarget.Framebuffer, OitFbo);
-
-            GL.GenTextures(1, out AccumColorTex);
-            GL.BindTexture(TextureTarget.Texture2D, AccumColorTex);
-            GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba16f,
-                width, height, 0, OpenTK.Graphics.OpenGL.PixelFormat.Rgba, PixelType.Float, IntPtr.Zero);
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter,
-                (int)TextureMinFilter.Nearest);
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter,
-                (int)TextureMagFilter.Nearest);
-            GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0,
-                TextureTarget.Texture2D, AccumColorTex, 0);
-
-            GL.GenTextures(1, out AccumWeightTex);
-            GL.BindTexture(TextureTarget.Texture2D, AccumWeightTex);
-            GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.R16f,
-                width, height, 0, OpenTK.Graphics.OpenGL.PixelFormat.Red, PixelType.Float, IntPtr.Zero);
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter,
-                (int)TextureMinFilter.Nearest);
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter,
-                (int)TextureMagFilter.Nearest);
-            GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment1,
-                TextureTarget.Texture2D, AccumWeightTex, 0);
-
-            GL.GenTextures(1, out OitDepthTexture);
-            GL.BindTexture(TextureTarget.Texture2D, OitDepthTexture);
-            GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.DepthComponent24,
-                width, height, 0, OpenTK.Graphics.OpenGL.PixelFormat.DepthComponent, PixelType.Float, IntPtr.Zero);
-
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter,
-                (int)TextureMinFilter.Nearest);
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter,
-                (int)TextureMagFilter.Nearest);
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS,
-                (int)TextureWrapMode.ClampToEdge);
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT,
-                (int)TextureWrapMode.ClampToEdge);
-
-            GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.DepthAttachment,
-                TextureTarget.Texture2D, OitDepthTexture, 0);
-
-            DrawBuffersEnum[] buffers = [DrawBuffersEnum.ColorAttachment0, DrawBuffersEnum.ColorAttachment1];
-            GL.DrawBuffers(2, buffers);
-
-            var status = GL.CheckFramebufferStatus(FramebufferTarget.Framebuffer);
-            if (status != FramebufferErrorCode.FramebufferComplete)
-                throw new GlException($"OIT FBO incomplete: {status}");
-
-            GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
-        }
-
-        public void ResizeFramebuffers(int width, int height)
-        {
-            // ReSharper disable  NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract
-            (SceneFramebuffer ??= new(width, height, "SceneEditor Framebuffer")).Resize(width, height);
-            (PrePostProcessFramebuffer ??= new(width, height, "Pre-postprocessing Framebuffer")).Resize(width, height);
-        }
-
+ 
         internal static void ParseArguments(string[] args)
         {
             Option<int> widthOption = new("--width", "-w")

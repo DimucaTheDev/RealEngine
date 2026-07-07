@@ -135,7 +135,7 @@ internal partial class Game : GameWindow
     {
         if (EditorLauncher.Invoked)
             return;
-
+        
         GL.Enable(EnableCap.DebugOutput);
         GL.Enable(EnableCap.DebugOutputSynchronous);
 
@@ -185,9 +185,8 @@ internal partial class Game : GameWindow
         var h = Camera.Main.RenderHeight;
 
         GL.Viewport(0, 0, w, h);
-
-        ResizeFramebuffers(w, h);
-        ResizeOitFramebuffer(w, h);
+ 
+        Camera.GetActiveCamera().ResizeFramebuffers(w, h);
 
         base.OnResize(e);
     }
@@ -270,7 +269,7 @@ internal partial class Game : GameWindow
                 ToastManager.MainWindowViewport = ImGui.GetMainViewport();
 
             if (SceneEditor.Enabled)
-                SceneFramebuffer.Bind();
+                Camera._activeCamera.SceneFramebuffer.Bind(); // test if we can delete this
 
             var w = Camera.GetActiveCamera().RenderWidth;
             var h = Camera.GetActiveCamera().RenderHeight;
@@ -292,7 +291,7 @@ internal partial class Game : GameWindow
             {
                 if (SceneEditor.Enabled)
                 {
-                    SceneFramebuffer.Unbind();
+                    Camera._activeCamera.SceneFramebuffer.Unbind();
                     GL.ClearColor(Color4.Black);
                     GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
                     GL.Viewport(0, 0, ClientSize.X, ClientSize.Y);

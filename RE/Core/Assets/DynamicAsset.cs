@@ -1,4 +1,5 @@
-﻿using RE.Utils;
+﻿using JetBrains.Annotations;
+using RE.Utils;
 using Serilog;
 
 namespace RE.Core.Assets
@@ -17,20 +18,23 @@ namespace RE.Core.Assets
         /// <remarks>
         /// This property may be null or empty for assets that are created entirely in memory and do not correspond to a file.
         /// </remarks>
-        public string? AssetPath
+        public ResourceLocation? AssetPath
         {
             get;
-            init => field = value.IsNullOrEmpty() ? value : ContentManager.NormalizePath(value);
+            init => field = ContentManager.NormalizePath(value);
         }
 
-        protected DynamicAsset() : this(null!)
+        protected DynamicAsset() : this(null)
         {
         }
 
-        protected DynamicAsset(string path)
+        protected DynamicAsset(ResourceLocation? path)
         {
-            AssetPath = path == null ? null : ContentManager.NormalizePath(path);
-            if (string.IsNullOrWhiteSpace(AssetPath))
+            AssetPath = path;
+            if (path != null && !ContentManager.Exists(AssetPath))
+                Log.Warning("Specified dynamic asset path doesnt exist: {Path}", AssetPath);
+
+            if (AssetPath != null)
                 Log.Verbose("  new dyn.asset:  {Name}<{HashCode}>", GetType().Name, GetHashCode());
             else
                 Log.Verbose("  new dyn.asset:  {Name}<{HashCode}> ///\t{Path}", GetType().Name, GetHashCode(),
@@ -43,7 +47,7 @@ namespace RE.Core.Assets
 
         public virtual void OnUnload()
         {
-            if (string.IsNullOrWhiteSpace(AssetPath))
+            if (AssetPath == null)
                 Log.Verbose("  dyn.asset unload:  {Name}<{HashCode}>", GetType().Name, GetHashCode());
             else
                 Log.Verbose("  dyn.asset unload:  {Name}<{HashCode}> ///\t{Path}", GetType().Name, GetHashCode(),

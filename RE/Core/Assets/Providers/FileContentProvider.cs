@@ -7,40 +7,53 @@ namespace RE.Core.Assets.Providers
     {
         public string Prefix => "file:";
 
-        public byte[] GetBytes(string path, int offset, int count)
+        public byte[] GetBytes(ResourceLocation path, int offset, int count)
         {
-            using var fs = File.OpenRead(path);
+            using var fs = File.OpenRead(path.CleanPath);
             byte[] buffer = [];
             fs.ReadExactly(buffer, offset, count);
             return buffer;
         }
-        public byte[] GetBytes(string path)
+
+        public byte[] GetBytes(ResourceLocation path)
         {
-            return File.ReadAllBytes(path);
+            return File.ReadAllBytes(path.CleanPath);
         }
-        public string GetString(string path)
+
+        public string GetString(ResourceLocation path)
         {
-            return File.ReadAllText(path);
+            return File.ReadAllText(path.CleanPath);
         }
-        public bool Exists(string path)
+
+        public bool Exists(ResourceLocation path)
         {
-            return File.Exists(path);
+            return File.Exists(path.CleanPath);
         }
-        public bool DirectoryExists(string path)
+
+        public bool DirectoryExists(ResourceLocation path)
         {
-            return Directory.Exists(path);
+            return Directory.Exists(path.CleanPath);
         }
-        public Stream Open(string path)
+
+        public Stream Open(ResourceLocation path)
         {
-            return File.OpenRead(path);
+            return File.OpenRead(path.CleanPath);
         }
-        public string[] GetFiles(string path, bool recursive = false)
+
+        public ResourceLocation[] GetFiles(ResourceLocation path, bool recursive = false)
         {
-            return Directory.GetFiles(path, "*", recursive ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly);
+            return Directory
+                .GetFiles(path.CleanPath, "*", recursive ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly)
+                .Select(ResourceLocation.Parse)
+                .ToArray();
         }
-        public string[] GetDirectories(string path, bool recursive = false)
+
+        public ResourceLocation[] GetDirectories(ResourceLocation path, bool recursive = false)
         {
-            return Directory.GetDirectories(path, "*", recursive ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly);
+            return Directory
+                .GetDirectories(path.CleanPath, "*", recursive ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly)
+                .Select(ResourceLocation.Parse)
+                .ToArray();
         }
     }
 }

@@ -11,10 +11,10 @@ namespace RE.Core.Assets
     public partial class Shader : DynamicAsset
     {
         internal readonly List<string> DeclaredUniforms = [];
-        
+
         private static readonly List<Shader> CompiledShaders = [];
         private const string CommonShaderPath = "Assets/Shaders/Core/Common.glsl";
-
+  
         public int Handle { get; private set; }
 
         public ShaderType ShaderType
@@ -126,7 +126,7 @@ namespace RE.Core.Assets
 
                     continue;
                 }
- 
+
 
                 var uniformMath = UniformRegex().Match(trimmed);
                 if (uniformMath.Success)
@@ -187,7 +187,7 @@ namespace RE.Core.Assets
 
             GL.GetShader(Handle, ShaderParameter.ShaderType, out var type);
 
-            var safePath = new string(AssetPath!
+            var safePath = new string(AssetPath!.ToString()
                 .Select(c => Path.GetInvalidFileNameChars().Contains(c) ? '_' : c)
                 .ToArray());
 
@@ -214,7 +214,7 @@ namespace RE.Core.Assets
 
         [GeneratedRegex(@"#([A-Za-z0-9_]{2,})\s+""([^""]+)""")]
         private static partial Regex DirectiveRegex();
-        
+
         [GeneratedRegex(@"\buniform\s+\w+\s+(?<name>\w+)\s*;")]
         private static partial Regex UniformRegex();
     }

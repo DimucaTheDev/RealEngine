@@ -28,7 +28,7 @@ namespace RE.Editor.Panels.Viewport
 {
     public class ViewportPanel
     {
-        public static Vector2 ViewportSize { get; set; } = new(1280, 720);
+        public static Vector2 ViewportSize { get; set; } = new(1,1);
         public static CollisionWorld CollisionWorld = null!;
         public static bool MouseDown;
 
@@ -169,8 +169,7 @@ namespace RE.Editor.Panels.Viewport
                     (ViewportSize.X != contentSize.X || ViewportSize.Y != contentSize.Y))
                 {
                     ViewportSize = contentSize;
-                    Game.Instance.ResizeFramebuffers((int)ViewportSize.X, (int)ViewportSize.Y);
-                    Game.Instance.ResizeOitFramebuffer((int)ViewportSize.X, (int)ViewportSize.Y);
+                    Camera.ViewportCamera.ResizeFramebuffers((int)ViewportSize.X, (int)ViewportSize.Y);
                     SceneEditor.OutlineFramebuffer.Resize((int)ViewportSize.X, (int)ViewportSize.Y);
                     Camera.ViewportCamera.RenderWidth = (int)ViewportSize.X;
                     Camera.ViewportCamera.RenderHeight = (int)ViewportSize.Y;
@@ -178,7 +177,7 @@ namespace RE.Editor.Panels.Viewport
 
                 var size = _viewportRect = SetImGuizmoRect();
 
-                Image(new ImTextureRef { TexID = Game.Instance.SceneFramebuffer.ColorTexture }, ViewportSize,
+                Image(new ImTextureRef { TexID = Camera.ViewportCamera.SceneFramebuffer.ColorTexture }, ViewportSize,
                     new Vector2(0, 1),
                     new Vector2(1, 0));
                 _isOverViewport = IsItemHovered();
@@ -289,7 +288,7 @@ namespace RE.Editor.Panels.Viewport
 
         private bool _wasManipulating, _objRbEnabled, _objTrigger;
         (TkVector3 p, OpenTK.Mathematics.Quaternion r, TkVector3 s)? old = null;
-        private bool paused; 
+        private bool paused;
 
         private void DrawGizmos()
         {
@@ -668,7 +667,7 @@ namespace RE.Editor.Panels.Viewport
                 if (Button("pause"))
                 {
                     paused = !(SceneEditor.SimulationRunning = !SceneEditor.SimulationRunning);
-                } 
+                }
                 //todo: one step button
             }
 

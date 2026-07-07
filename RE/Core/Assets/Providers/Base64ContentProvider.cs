@@ -41,19 +41,19 @@ public class Base64ContentProvider : IContentProvider
     }
 
     /// <inheritdoc />
-    public byte[] GetBytes(string path, int offset, int count)
+    public byte[] GetBytes(ResourceLocation path, int offset, int count)
     {
         return Decode(path)[offset..(offset + count)];
     }
 
     /// <inheritdoc />
-    public byte[] GetBytes(string path)
+    public byte[] GetBytes(ResourceLocation path)
     {
         return Decode(path);
     }
 
     /// <inheritdoc />
-    public bool Exists(string path)
+    public bool Exists(ResourceLocation path)
     {
         try
         {
@@ -67,25 +67,25 @@ public class Base64ContentProvider : IContentProvider
     }
 
     /// <inheritdoc />
-    public bool DirectoryExists(string path)
+    public bool DirectoryExists(ResourceLocation path)
     {
         return false;
     }
 
     /// <inheritdoc />
-    public Stream Open(string path)
+    public Stream Open(ResourceLocation path)
     {
         return new MemoryStream(Decode(path), writable: false);
     }
 
     /// <inheritdoc />
-    public string[] GetFiles(string path, bool recursive = false)
+    public ResourceLocation[] GetFiles(ResourceLocation path, bool recursive = false)
     {
         return [];
     }
 
     /// <inheritdoc />
-    public string[] GetDirectories(string path, bool recursive = false)
+    public ResourceLocation[] GetDirectories(ResourceLocation path, bool recursive = false)
     {
         return [];
     }

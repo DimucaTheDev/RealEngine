@@ -118,15 +118,16 @@ internal class CommonEngineCommands
     static void LoadScene(string name)
     {
         //SceneEditor.Instance?.Disable();
-        if (!ContentManager.Exists($"assets/maps/{name}/data.json"))
+        string path = $"assets/maps/{name}/data.json";
+        if (!ContentManager.Exists(path))
         {
-            Log.Error("File not found: {FilePath}", $"assets/maps/{name}/data.json");
+            Log.Error("File not found: {FilePath}", path);
             return;
         }
 
         Log.Information("Loading {Scene}... ", name);
         SceneManager.LoadScene(
-            SceneSerializer.DeserializeScene(ContentManager.GetString($"assets/maps/{name}/data.json")), true,
+            SceneSerializer.DeserializeScene(ContentManager.GetString(path)), true,
             () => { SoundManager.PlayOneShotEvent("event:/Flash"); });
     }
 

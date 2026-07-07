@@ -147,7 +147,7 @@ namespace RE.Rendering.Texturing
 
         private void LabelObject()
         {
-            if (!AssetPath.IsNullOrEmpty())
+            if (AssetPath != null)
             {
                 GL.ObjectLabel(
                     ObjectLabelIdentifier.Texture,
@@ -213,7 +213,7 @@ namespace RE.Rendering.Texturing
                 _handle = handle,
                 _imTexture = new ImTextureRef { TexID = handle },
                 Width = width,
-                Height = height,
+                Height = height
             };
         }
 

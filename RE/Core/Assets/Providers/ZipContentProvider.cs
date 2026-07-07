@@ -1,5 +1,8 @@
-﻿using System.IO.Compression;
-using System.Text;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.IO.Compression;
+using System.Linq;
 using RE.Utils;
 using Serilog;
 
@@ -9,11 +12,6 @@ namespace RE.Core.Assets.Providers
     /// Provides access to files and directories stored within ZIP archives located in the "paks" directory, using a
     /// virtual file system interface.
     /// </summary>
-    /// <remarks>The <see cref="ZipContentProvider"/> enables applications to retrieve, enumerate, and check the existence
-    /// of files and directories within ZIP archives as if they were part of a unified content source. All ZIP files in
-    /// the "paks" directory are loaded and indexed when <see cref="Register"/> is called. Paths are resolved relative to the "Assets"
-    /// directory and are case-insensitive. This provider is typically used to support modding or asset packaging
-    /// scenarios where content is distributed in ZIP (PAK) files.</remarks>
     public class ZipContentProvider : IContentProvider
     {
         private readonly Dictionary<string, string> _fileMap = new(StringComparer.OrdinalIgnoreCase);
@@ -22,13 +20,7 @@ namespace RE.Core.Assets.Providers
         private readonly HashSet<string> _directoryCache = new(StringComparer.OrdinalIgnoreCase);
 
         public string Prefix => "pak:";
-
-        /// <summary>
-        /// Scans the "paks" directory for archive files and registers their contents for later access.
-        /// </summary>
-        /// <remarks>This method loads all files in the "paks" directory as ZIP archives and indexes their
-        /// entries for lookup. If duplicate file names are found across different archives, a warning is logged. This
-        /// method should be called before attempting to access files managed by the archive system.</remarks>
+ 
         public void Register()
         {
             Directory.CreateDirectory("Engine/Content");
@@ -54,18 +46,20 @@ namespace RE.Core.Assets.Providers
         {
             foreach (var entry in zip.Entries)
             {
-                if (entry.FullName.EndsWith("/") || entry.FullName.EndsWith("\\"))
+                string fullName = entry.FullName.Replace('\\', '/');
+
+                if (fullName.EndsWith("/"))
                 {
-                    var dirPath = entry.FullName.Replace('\\', '/').TrimEnd('/');
+                    var dirPath = fullName.TrimEnd('/');
                     RegisterDirectoryPath(dirPath);
                     continue;
                 }
 
-                var normalized = entry.FullName.Replace('\\', '/');
+                var normalized = fullName.ToLowerInvariant();
 
                 if (!_fastFileMap.TryAdd(normalized, entry))
                 {
-                    Log.Warning("Duplicate file {FileName} in PAKs. Existing: {OldPak}", normalized,
+                    Log.Error("Duplicate file {FileName} in PAKs. Existing: {OldPak}", normalized,
                         _fileMap.GetValueOrDefault(normalized));
                 }
                 else
@@ -73,9 +67,10 @@ namespace RE.Core.Assets.Providers
                     _fileMap[normalized] = pakPath;
                 }
 
-                var directoryPath = Path.GetDirectoryName(normalized)?.Replace('\\', '/');
-                if (!string.IsNullOrEmpty(directoryPath))
+                int lastSlash = fullName.LastIndexOf('/');
+                if (lastSlash > 0)
                 {
+                    string directoryPath = fullName[..lastSlash];
                     RegisterDirectoryPath(directoryPath);
                 }
             }
@@ -92,90 +87,66 @@ namespace RE.Core.Assets.Providers
             }
         }
 
-        public byte[] GetBytes(string path)
+        public byte[] GetBytes(ResourceLocation path)
         {
             var entry = GetFileEntry(path);
             if (entry == null)
                 throw new FileNotFoundException($"File not found in any pak: {path}");
 
             using var stream = entry.Open();
-            using var ms = new MemoryStream();
+            using var ms = new MemoryStream((int)entry.Length);
             stream.CopyTo(ms);
 
             return ms.ToArray();
         }
 
-        public byte[] GetBytes(string path, int offset, int count)
+        public byte[] GetBytes(ResourceLocation path, int offset, int count)
         {
             var entry = GetFileEntry(path);
             if (entry == null)
                 throw new FileNotFoundException($"File not found in any pak: {path}");
 
             using var stream = entry.Open();
-            stream.Seek(offset, SeekOrigin.Begin);
+
+            if (offset > 0)
+            {
+                byte[] skipBuffer = new byte[Math.Min(4096, offset)];
+                int remaining = offset;
+                while (remaining > 0)
+                {
+                    int readBytes = stream.Read(skipBuffer, 0, Math.Min(skipBuffer.Length, remaining));
+                    if (readBytes <= 0) break;
+                    remaining -= readBytes;
+                }
+            }
 
             var buffer = new byte[count];
-            int read = stream.Read(buffer, 0, count);
+            int totalRead = 0;
+            while (totalRead < count)
+            {
+                int readBytes = stream.Read(buffer, totalRead, count - totalRead);
+                if (readBytes <= 0) break;
+                totalRead += readBytes;
+            }
 
-            if (read < count)
-                Array.Resize(ref buffer, read);
+            if (totalRead < count)
+                Array.Resize(ref buffer, totalRead);
 
             return buffer;
         }
-  
-        public bool Exists(string path)
+
+        public bool Exists(ResourceLocation path)
         {
             return GetFileEntry(path) != null;
         }
 
-        private ZipArchiveEntry? GetFileEntry(string path)
+        public bool DirectoryExists(ResourceLocation path)
         {
-            var normalized = NormalizePath(path);
-            return _fastFileMap.GetValueOrDefault(normalized);
+            string zipPath = GetZipPath(path);
+            return _directoryCache.Contains(zipPath);
         }
 
-        private bool InternalDirectoryExists(string path)
-        {
-            var normalized = NormalizePath(path);
-            return _directoryCache.Contains(normalized);
-        }
-
-        public bool DirectoryExists(string path) => InternalDirectoryExists(path);
-
-        public string[] GetDirectories(string path, bool recursive = false)
-        {
-            var normalized = NormalizePath(path);
-            var prefix = string.IsNullOrEmpty(normalized) ? "" : normalized + "/";
-
-            return _directoryCache
-                .Where(d => d.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
-                .Where(d =>
-                {
-                    if (recursive)
-                        return true;
-                    var relative = d[prefix.Length..];
-                    return !relative.Contains('/');
-                })
-                .Select(d => "Assets/" + d)
-                .ToArray();
-        }
-
-        private string NormalizePath(string path)
-        {
-            path = path.Replace('\\', '/').TrimEnd('/');
-
-            path = path.StartsWith(Prefix, StringComparison.OrdinalIgnoreCase)
-                ? path[Prefix.Length..]
-                : path;
-
-            path = path.StartsWith("Assets/", StringComparison.OrdinalIgnoreCase)
-                ? path["Assets/".Length..]
-                : path;
-
-            return path;
-        }
-
-        public Stream Open(string path)
+        public Stream Open(ResourceLocation path)
         {
             var entry = GetFileEntry(path);
             if (entry == null)
@@ -184,34 +155,83 @@ namespace RE.Core.Assets.Providers
             return entry.Open().AsMemoryStream();
         }
 
-        public string[] GetFiles(string path, bool recursive = false)
+        public ResourceLocation[] GetFiles(ResourceLocation path, bool recursive = false)
         {
-            string normalizedPath = NormalizePath(path);
-            if (!string.IsNullOrEmpty(normalizedPath) && !normalizedPath.EndsWith("/"))
+            string zipPath = GetZipPath(path);
+            if (!string.IsNullOrEmpty(zipPath) && !zipPath.EndsWith("/"))
             {
-                normalizedPath += "/";
+                zipPath += "/";
             }
 
             var entries = _zips.Values.SelectMany(zip => zip.Entries);
+            var result = new List<ResourceLocation>();
 
-            return entries
-                .Where(entry =>
+            foreach (var entry in entries)
+            {
+                string fullName = entry.FullName.Replace('\\', '/');
+                if (fullName.EndsWith("/")) continue;
+
+                if (!fullName.StartsWith(zipPath, StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                if (!recursive)
                 {
-                    string fullName = entry.FullName.Replace('\\', '/');
+                    string relativePath = fullName[zipPath.Length..];
+                    if (relativePath.Contains('/'))
+                        continue;
+                }
 
-                    if (!fullName.StartsWith(normalizedPath, StringComparison.OrdinalIgnoreCase))
-                        return false;
+                string virtualPath = $"{Prefix}Assets/{fullName}";
+                result.Add(virtualPath);
+            }
 
-                    if (!recursive)
-                    {
-                        string relativePath = fullName.Substring(normalizedPath.Length);
-                        return !relativePath.Contains('/');
-                    }
+            return result.ToArray();
+        }
 
-                    return true;
-                })
-                .Select(s => Prefix + "Assets/" + s.FullName)
-                .ToArray();
+        public ResourceLocation[] GetDirectories(ResourceLocation path, bool recursive = false)
+        {
+            string zipPath = GetZipPath(path);
+            string prefix = string.IsNullOrEmpty(zipPath) ? "" : zipPath + "/";
+            var result = new List<ResourceLocation>();
+
+            foreach (var d in _directoryCache)
+            {
+                if (!d.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                if (!recursive)
+                {
+                    string relative = d[prefix.Length..];
+                    if (relative.Contains('/'))
+                        continue;
+                }
+
+                string virtualPath = $"{Prefix}Assets/{d}";
+                result.Add(virtualPath);
+            }
+
+            return result.ToArray();
+        }
+
+        private ZipArchiveEntry? GetFileEntry(ResourceLocation path)
+        {
+            string key = GetZipKey(path);
+            return _fastFileMap.GetValueOrDefault(key);
+        }
+ 
+        private string GetZipPath(ResourceLocation location)
+        {
+            string clean = location.CleanPath;
+            if (clean.StartsWith("Assets/", StringComparison.OrdinalIgnoreCase))
+            {
+                return clean["Assets/".Length..];
+            }
+            return clean;
+        }
+
+        private string GetZipKey(ResourceLocation location)
+        {
+            return GetZipPath(location).ToLowerInvariant();
         }
     }
 }

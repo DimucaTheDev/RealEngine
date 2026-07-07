@@ -13,13 +13,14 @@ using RE.Editor.Notification;
 using RE.Rendering.Texturing;
 using RE.Utils;
 using Serilog;
+using Vector2 = System.Numerics.Vector2;
 
 namespace RE.Rendering
 {
     public static class RenderManager
     {
         private static string resLoc = "";
-        
+
         internal static ShaderProgram OitShaderProgram;
         internal static int FullscreenVao;
         internal static readonly List<Renderable> Renderables = new();
@@ -64,7 +65,7 @@ namespace RE.Rendering
 
             using (FrameProfiler.Scope(camera.Name))
             {
-                var ppBuffer = Game.Instance.PrePostProcessFramebuffer;
+                var ppBuffer = camera.PrePostProcessFramebuffer;
 
                 using (FrameProfiler.Scope("components"))
                 {
@@ -90,7 +91,7 @@ namespace RE.Rendering
                     }
 
                     GL.BindFramebuffer(FramebufferTarget.ReadFramebuffer, ppBuffer.Handle);
-                    GL.BindFramebuffer(FramebufferTarget.DrawFramebuffer, Game.Instance.OitFbo);
+                    GL.BindFramebuffer(FramebufferTarget.DrawFramebuffer, camera.OitFbo);
 
 
                     int width = Game.Instance.ClientSize.X;
@@ -103,7 +104,7 @@ namespace RE.Rendering
                         BlitFramebufferFilter.Nearest
                     );
 
-                    GL.BindFramebuffer(FramebufferTarget.Framebuffer, Game.Instance.OitFbo);
+                    GL.BindFramebuffer(FramebufferTarget.Framebuffer, camera.OitFbo);
 
                     float[] clearZero = [0.0f, 0.0f, 0.0f, 0.0f];
 
@@ -147,10 +148,10 @@ namespace RE.Rendering
                     OitShaderProgram.SetValue("accumWeightTex", 1);
 
                     GL.ActiveTexture(TextureUnit.Texture0);
-                    GL.BindTexture(TextureTarget.Texture2D, Game.Instance.AccumColorTex);
+                    GL.BindTexture(TextureTarget.Texture2D, camera.AccumColorTex);
 
                     GL.ActiveTexture(TextureUnit.Texture1);
-                    GL.BindTexture(TextureTarget.Texture2D, Game.Instance.AccumWeightTex);
+                    GL.BindTexture(TextureTarget.Texture2D, camera.AccumWeightTex);
 
                     GL.BindVertexArray(FullscreenVao);
                     GL.DrawArrays(PrimitiveType.Triangles, 0, 3);
@@ -188,7 +189,7 @@ namespace RE.Rendering
                         {
                             TexID = new ImTextureID(ppBuffer.ColorTexture)
                         },
-                        Game.Instance.ClientSize.ToVector2().ToSystemVector2() / 5, new(0, 1), new(1, 0));
+                        new Vector2(ppBuffer.Width, ppBuffer.Height) / 5, new(0, 1), new(1, 0));
 
                     var previousFb = ppBuffer;
 
@@ -209,7 +210,7 @@ namespace RE.Rendering
                         }
 
                         ImGui.Image(new ImTextureRef { TexID = new ImTextureID(previousFb.ColorTexture) },
-                            Game.Instance.ClientSize.ToVector2().ToSystemVector2() / 5, new(0, 1), new(1, 0));
+                            new Vector2(previousFb.Width, previousFb.Height) / 5, new(0, 1), new(1, 0));
                     }
 
                     if (r != null!)

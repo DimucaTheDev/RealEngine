@@ -147,6 +147,7 @@ namespace RE.Editor
             ToastManager.RemoveAllNotifications();
             Mouse.CursorState = CursorState.Normal;
 
+
             _oldTitle = Game.Instance.Title;
             //Game.Instance.Title = $"{Game.ProductName} Scene Editor {Game.Version} [{Game.CommitHash[..7]}, {Game.BuildDate:g}] | Scene \"{SceneManager.CurrentScene.Name ?? "<Unnamed>"}\"";
 
@@ -203,7 +204,7 @@ namespace RE.Editor
                 return;
 
             Enabled = false;
-            IsVisible = false; 
+            IsVisible = false;
 
             Game.Instance.Title = _oldTitle;
 
@@ -244,7 +245,7 @@ namespace RE.Editor
 
                 using (FrameProfiler.Scope("render"))
                 {
-                    Game.Instance.SceneFramebuffer.Bind();
+                    Camera.ViewportCamera.SceneFramebuffer.Bind();
                     GL.ClearColor(Color4.Black);
                     GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
                     GL.Enable(EnableCap.DepthTest);
@@ -269,7 +270,7 @@ namespace RE.Editor
                         }
                     }
 
-                    GL.BindFramebuffer(FramebufferTarget.DrawFramebuffer, Game.Instance.OitFbo);
+                    GL.BindFramebuffer(FramebufferTarget.DrawFramebuffer, Camera.ViewportCamera.OitFbo);
 
                     int width = (int)ViewportPanel.ViewportSize.X;
                     int height = (int)ViewportPanel.ViewportSize.Y;
@@ -281,7 +282,7 @@ namespace RE.Editor
                         BlitFramebufferFilter.Nearest
                     );
 
-                    GL.BindFramebuffer(FramebufferTarget.Framebuffer, Game.Instance.OitFbo);
+                    GL.BindFramebuffer(FramebufferTarget.Framebuffer, Camera.ViewportCamera.OitFbo);
 
                     float[] clearZero = { 0.0f, 0.0f, 0.0f, 0.0f };
 
@@ -317,7 +318,7 @@ namespace RE.Editor
                     }
 
 
-                    Game.Instance.SceneFramebuffer.Bind();
+                    Camera.ViewportCamera.SceneFramebuffer.Bind();
 
                     GL.DepthMask(true);
                     GL.Disable(EnableCap.DepthTest);
@@ -331,10 +332,10 @@ namespace RE.Editor
                     GL.Uniform1(RenderManager.OitShaderProgram.GetLocation("accumWeightTex"), 1);
 
                     GL.ActiveTexture(TextureUnit.Texture0);
-                    GL.BindTexture(TextureTarget.Texture2D, Game.Instance.AccumColorTex);
+                    GL.BindTexture(TextureTarget.Texture2D, Camera.ViewportCamera.AccumColorTex);
 
                     GL.ActiveTexture(TextureUnit.Texture1);
-                    GL.BindTexture(TextureTarget.Texture2D, Game.Instance.AccumWeightTex);
+                    GL.BindTexture(TextureTarget.Texture2D, Camera.ViewportCamera.AccumWeightTex);
 
                     GL.BindVertexArray(RenderManager.FullscreenVao);
                     GL.DrawArrays(PrimitiveType.Triangles, 0, 3);
@@ -374,7 +375,7 @@ namespace RE.Editor
                         GL.ColorMask(true, true, true, true);
                         GL.Disable(EnableCap.StencilTest);
 
-                        Game.Instance.SceneFramebuffer.Bind();
+                        Camera.ViewportCamera.SceneFramebuffer.Bind();
 
                         OutlineShaderProgram.Use();
                         OutlineShaderProgram.SetValue("u_StencilTexture", 0);
@@ -628,8 +629,12 @@ namespace RE.Editor
                 ImGuiP.DockBuilderSplitNode(nodeLeft, ImGuiDir.Up, 0.68f, &nodeTop, &nodeBottom);
 
                 uint nodeHierarchy;
+                uint nodeViewportParent;
+                ImGuiP.DockBuilderSplitNode(nodeTop, ImGuiDir.Left, 0.20f, &nodeHierarchy, &nodeViewportParent);
+
                 uint nodeViewport;
-                ImGuiP.DockBuilderSplitNode(nodeTop, ImGuiDir.Left, 0.20f, &nodeHierarchy, &nodeViewport);
+                uint nodeGamePanel;
+                ImGuiP.DockBuilderSplitNode(nodeViewportParent, ImGuiDir.Right, 0.50f, &nodeGamePanel, &nodeViewport);
 
                 uint nodeAssetBrowser;
                 uint nodeConsole;
@@ -638,6 +643,7 @@ namespace RE.Editor
                 ImGuiP.DockBuilderDockWindow("Scene Hierarchy", nodeHierarchy);
                 ImGuiP.DockBuilderDockWindow("UI Hierarchy", nodeHierarchy);
                 ImGuiP.DockBuilderDockWindow("Viewport", nodeViewport);
+                ImGuiP.DockBuilderDockWindow("###game_panel", nodeGamePanel);
                 ImGuiP.DockBuilderDockWindow("Inspector", nodeInspector);
                 ImGuiP.DockBuilderDockWindow("Asset browser", nodeAssetBrowser);
                 ImGuiP.DockBuilderDockWindow("Console ##Editor", nodeConsole);

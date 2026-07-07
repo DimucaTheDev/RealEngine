@@ -105,7 +105,7 @@ namespace RE.Core.Audio
             Assert(_fmodSystem.update());
         }
 
-        private static FmodBank LoadBank(string resourcePath)
+        private static FmodBank LoadBank(ResourceLocation resourcePath)
         {
             var buffer = ContentManager.GetBytes(resourcePath);
 
@@ -162,8 +162,8 @@ namespace RE.Core.Audio
             }));
             Assert(instance.start());
             Assert(instance.release());
-        } 
-        
+        }
+
         public static void StopAll(bool immediate = true)
         {
             Assert(_studioSystem.getBus("bus:/", out var bus));
@@ -173,12 +173,14 @@ namespace RE.Core.Audio
         private static void LoadAllBanks()
         {
             var files = ContentManager.GetFiles("Assets/Audio");
-            foreach (var file in files.Where(s => s.EndsWith(".strings.bank")))
+            foreach (var file in
+                     files.Where(s => s.CleanPath.EndsWith(".strings.bank")))
             {
                 LoadBank(file);
             }
 
-            foreach (var file in files.Where(s => s.EndsWith(".bank") && !s.EndsWith(".strings.bank")))
+            foreach (var file in
+                     files.Where(s => s.CleanPath.EndsWith(".bank") && !s.CleanPath.EndsWith(".strings.bank")))
             {
                 LoadBank(file);
             }

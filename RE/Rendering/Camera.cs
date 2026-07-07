@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using JetBrains.Annotations;
+using OpenTK.Graphics.OpenGL;
 using OpenTK.Mathematics;
 using RE.Core.Scripting;
 using RE.Rendering.Texturing;
@@ -54,22 +55,29 @@ public class Camera(Vector3 position, Vector3 up, int width, int height)
             UpdateVectors();
         }
     } = 80;
-    
-    
+
+
+    public Framebuffer SceneFramebuffer { get; set; } = new();
+    public Framebuffer PrePostProcessFramebuffer { get; set; } = new();
+
     public StaticTexture? RenderTexture { get; set; }
 
     public readonly List<PostProcessLayer> PostProcessLayers =
     [
         new("Assets/Shaders/Pass/Postprocess/ca.frag")
     ];
-    
+
     public required string Name { get; set; }
 
     public Vector3 Position = position;
-
     public Vector3 Up = up;
     public Vector3 Front = Vector3.UnitX;
     public Vector3 Right => Vector3.Normalize(Vector3.Cross(Front, Up));
+
+    public int AccumColorTex;
+    public int AccumWeightTex;
+    public int OitFbo;
+    public int OitDepthTexture;
 
     public int RenderWidth = width;
     public int RenderHeight = height;
@@ -82,7 +90,8 @@ public class Camera(Vector3 position, Vector3 up, int width, int height)
         {
             Name = "Main Camera"
         };
-        ViewportCamera = new Camera(new(10, 10, 10), Vector3.UnitY, Game.Instance.ClientSize.X, Game.Instance.ClientSize.Y)
+        ViewportCamera = new Camera(new(10, 10, 10), Vector3.UnitY, Game.Instance.ClientSize.X,
+            Game.Instance.ClientSize.Y)
         {
             Name = "Editor Camera"
         };
@@ -176,5 +185,76 @@ public class Camera(Vector3 position, Vector3 up, int width, int height)
         float sinRoll = MathF.Sin(rollRad);
 
         Up = Vector3.Normalize(baseUp * cosRoll - baseRight * sinRoll);
+    }
+
+    public void ResizeFramebuffers(int x, int y)
+    {
+        SceneFramebuffer.Resize(x, y);
+        PrePostProcessFramebuffer.Resize(x, y);
+        ResizeOitFramebuffer(x, y);
+    }
+
+    private void ResizeOitFramebuffer(int width, int height)
+    {
+        if (width <= 0 || height <= 0) return;
+
+        if (OitFbo != 0)
+        {
+            GL.DeleteFramebuffer(OitFbo);
+            GL.DeleteTexture(AccumColorTex);
+            GL.DeleteTexture(AccumWeightTex);
+            GL.DeleteTexture(OitDepthTexture);
+        }
+
+        GL.GenFramebuffers(1, out OitFbo);
+        GL.BindFramebuffer(FramebufferTarget.Framebuffer, OitFbo);
+
+        GL.GenTextures(1, out AccumColorTex);
+        GL.BindTexture(TextureTarget.Texture2D, AccumColorTex);
+        GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba16f,
+            width, height, 0, OpenTK.Graphics.OpenGL.PixelFormat.Rgba, PixelType.Float, IntPtr.Zero);
+        GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter,
+            (int)TextureMinFilter.Nearest);
+        GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter,
+            (int)TextureMagFilter.Nearest);
+        GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0,
+            TextureTarget.Texture2D, AccumColorTex, 0);
+
+        GL.GenTextures(1, out AccumWeightTex);
+        GL.BindTexture(TextureTarget.Texture2D, AccumWeightTex);
+        GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.R16f,
+            width, height, 0, OpenTK.Graphics.OpenGL.PixelFormat.Red, PixelType.Float, IntPtr.Zero);
+        GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter,
+            (int)TextureMinFilter.Nearest);
+        GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter,
+            (int)TextureMagFilter.Nearest);
+        GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment1,
+            TextureTarget.Texture2D, AccumWeightTex, 0);
+
+        GL.GenTextures(1, out OitDepthTexture);
+        GL.BindTexture(TextureTarget.Texture2D, OitDepthTexture);
+        GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.DepthComponent24,
+            width, height, 0, OpenTK.Graphics.OpenGL.PixelFormat.DepthComponent, PixelType.Float, IntPtr.Zero);
+
+        GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter,
+            (int)TextureMinFilter.Nearest);
+        GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter,
+            (int)TextureMagFilter.Nearest);
+        GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS,
+            (int)TextureWrapMode.ClampToEdge);
+        GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT,
+            (int)TextureWrapMode.ClampToEdge);
+
+        GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.DepthAttachment,
+            TextureTarget.Texture2D, OitDepthTexture, 0);
+
+        DrawBuffersEnum[] buffers = [DrawBuffersEnum.ColorAttachment0, DrawBuffersEnum.ColorAttachment1];
+        GL.DrawBuffers(2, buffers);
+
+        var status = GL.CheckFramebufferStatus(FramebufferTarget.Framebuffer);
+        if (status != FramebufferErrorCode.FramebufferComplete)
+            throw new GlException($"OIT FBO incomplete: {status}");
+
+        GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
     }
 }

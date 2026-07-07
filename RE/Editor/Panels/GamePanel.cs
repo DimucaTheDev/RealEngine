@@ -21,41 +21,19 @@ public class GamePanel
     public Vector2 ViewportSize { get; set; }
 
     private ImFontPtr font;
-
-    public unsafe GamePanel()
-    {
-        byte[] fontBytes = ContentManager.GetBytes("Assets/Fonts/arial.ttf");
-        float fontSize = 32.0f;
-
-        var io = GetIO();
-
-        GCHandle pinnedArray = GCHandle.Alloc(fontBytes, GCHandleType.Pinned);
-        IntPtr pointer = pinnedArray.AddrOfPinnedObject();
-
-        font = io.Fonts.AddFontFromMemoryTTF((void*)pointer, fontBytes.Length, fontSize);
-    }
-
     private bool wasOnTitleBar = false;
 
     public void Draw()
     {
         RenderManager.RenderTo(Time.DeltaTime, Camera.Main);
 
-        
-        Begin($"Game Window ({ViewportSize.X}x{ViewportSize.Y}) ###game_panel",
-            (SceneEditor.GamePanelActive || !wasOnTitleBar)
-                ? ImGuiWindowFlags.NoMove
-                : ImGuiWindowFlags.None);
+        Begin($"Game Window {(SceneEditor.SimulationRunning ? "" : "(Paused)")} ###game_panel",
+            (SceneEditor.GamePanelActive || !wasOnTitleBar) ? ImGuiWindowFlags.NoMove : ImGuiWindowFlags.None);
         var contentSize = GetContentRegionAvail();
 
         if (wasOnTitleBar = IsInTitleBar())
         {
             Image(Camera.Main.RenderTexture!, contentSize, new(0, 1), new(1, 0));
-            SetCursorPos(new(75, 75));
-            PushFont(font, 36);
-            if (!SceneEditor.SimulationRunning)
-                Text("Paused");
-            PopFont();
             End();
             return;
         }
@@ -64,8 +42,7 @@ public class GamePanel
             (ViewportSize.X != contentSize.X || ViewportSize.Y != contentSize.Y))
         {
             ViewportSize = contentSize;
-            Game.Instance.ResizeFramebuffers((int)ViewportSize.X, (int)ViewportSize.Y);
-            Game.Instance.ResizeOitFramebuffer((int)ViewportSize.X, (int)ViewportSize.Y);
+            Camera.Main.ResizeFramebuffers((int)ViewportSize.X, (int)ViewportSize.Y);
             Camera.Main.RenderWidth = (int)ViewportSize.X;
             Camera.Main.RenderHeight = (int)ViewportSize.Y;
         }
@@ -92,14 +69,6 @@ public class GamePanel
             CursorLocker.Unlock();
         }
 
-        SetCursorPos(new(75, 75));
-
-        var size = 36;
-        PushFont(font, size);
-        if (!SceneEditor.SimulationRunning)
-            Text("Paused");
-        PopFont();
-
         End();
     }
 
@@ -109,10 +78,9 @@ public class GamePanel
         Vector2 windowPos = ImGui.GetWindowPos();
         Vector2 windowSize = ImGui.GetWindowSize();
 
-        // Получаем высоту заголовка из текущего стиля ImGui
         float titleBarHeight = ImGui.GetFontSize() + ImGui.GetStyle().FramePadding.Y * 2.0f;
 
-        // Проверяем, попадает ли курсор в координаты заголовка
+
         var r = (mousePos.X >= windowPos.X && mousePos.X <= windowPos.X + windowSize.X &&
                  mousePos.Y >= windowPos.Y && mousePos.Y <= windowPos.Y + titleBarHeight);
         return r;
@@ -186,20 +154,22 @@ public static class CursorLocker
         int centerX = (int)(wPos.X + wSize.X / 2);
         int centerY = (int)(wPos.Y + wSize.Y / 2);
 
-        // Получаем точные системные координаты мыши
         if (GetCursorPos(out POINT currentPos))
         {
-            // Считаем смещение относительно центра окна
             int deltaX = currentPos.X - centerX;
             int deltaY = currentPos.Y - centerY;
 
             if (deltaX != 0 || deltaY != 0)
             {
-                SetCursorPos(centerX, centerY);
-                ImGui.GetIO().MouseDelta = new Vector2(deltaX, deltaY);
+                if (GetWindowViewport() != GetMainViewport())
+                {
+                    SetCursorPos(centerX, centerY);
+                    GetIO().MouseDelta = new Vector2(deltaX, deltaY);
+                }
+
                 GetIO().MouseDrawCursor = false;
-                // Скрываем курсор
-                ImGui.SetMouseCursor(ImGuiMouseCursor.None);
+                SetMouseCursor(ImGuiMouseCursor.None);
+
                 while (ShowCursor(false) >= 0)
                 {
                 }
