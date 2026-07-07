@@ -1,0 +1,1189 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Class Camera | Real Engine </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Class Camera | Real Engine ">
+      
+      
+      <link rel="icon" href="../favicon.ico">
+      <link rel="stylesheet" href="../public/docfx.min.css">
+      <link rel="stylesheet" href="../public/main.css">
+      <meta name="docfx:navrel" content="../toc.html">
+      <meta name="docfx:tocrel" content="toc.html">
+      
+      <meta name="docfx:rel" content="../">
+      
+      
+      
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="ManagedReference">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../index.html">
+            <img id="logo" class="svg" src="../logo.svg" alt="Real Engine">
+            Real Engine
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+      <div class="toc-offcanvas">
+        <div class="offcanvas-md offcanvas-start" tabindex="-1" id="tocOffcanvas" aria-labelledby="tocOffcanvasLabel">
+          <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="tocOffcanvasLabel">Table of Contents</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#tocOffcanvas" aria-label="Close"></button>
+          </div>
+          <div class="offcanvas-body">
+            <nav class="toc" id="toc"></nav>
+          </div>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="actionbar">
+          <button class="btn btn-lg border-0 d-md-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#tocOffcanvas" aria-controls="tocOffcanvas" aria-expanded="false" aria-label="Show table of contents">
+            <i class="bi bi-list"></i>
+          </button>
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="RE.Rendering.Camera">
+
+
+
+  <h1 id="RE_Rendering_Camera" data-uid="RE.Rendering.Camera" class="text-break">
+Class Camera  <a class="header-action link-secondary" title="View source" href="https://github.com/DimucaTheDev/RealEngine/blob/master/RE/Rendering/Camera.cs"><i class="bi bi-code-slash"></i></a>
+  </h1>
+
+  <div class="facts text-secondary">
+    <dl><dt>Namespace</dt><dd><a class="xref" href="RE.html">RE</a>.<a class="xref" href="RE.Rendering.html">Rendering</a></dd></dl>
+  <dl><dt>Assembly</dt><dd>RE.dll</dd></dl>
+  </div>
+
+  <div class="markdown summary"></div>
+  <div class="markdown conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public class Camera</code></pre>
+  </div>
+
+
+
+
+  <dl class="typelist inheritance">
+    <dt>Inheritance</dt>
+    <dd>
+      <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object">object</a></div>
+      <div><span class="xref">Camera</span></div>
+    </dd>
+  </dl>
+
+
+
+  <dl class="typelist inheritedMembers">
+    <dt>Inherited Members</dt>
+    <dd>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.gettype">object.GetType()</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.memberwiseclone">object.MemberwiseClone()</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.tostring">object.ToString()</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)">object.Equals(object)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)">object.Equals(object, object)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.referenceequals">object.ReferenceEquals(object, object)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.gethashcode">object.GetHashCode()</a>
+    </div>
+  </dd></dl>
+
+
+
+
+
+
+  <h2 class="section" id="constructors">Constructors
+</h2>
+
+
+  <a id="RE_Rendering_Camera__ctor_" data-uid="RE.Rendering.Camera.#ctor*"></a>
+
+  <h3 id="RE_Rendering_Camera__ctor" data-uid="RE.Rendering.Camera.#ctor">
+  Camera()
+  <a class="header-action link-secondary" title="View source" href="https://github.com/DimucaTheDev/RealEngine/blob/master/RE/Rendering/Camera.cs"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public Camera()</code></pre>
+  </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="RE_Rendering_Camera__ctor_" data-uid="RE.Rendering.Camera.#ctor*"></a>
+
+  <h3 id="RE_Rendering_Camera__ctor_OpenTK_Mathematics_Vector3_" data-uid="RE.Rendering.Camera.#ctor(OpenTK.Mathematics.Vector3)">
+  Camera(Vector3)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/DimucaTheDev/RealEngine/blob/master/RE/Rendering/Camera.cs"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public Camera(Vector3 position)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>position</code> <span class="xref">Vector3</span></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="RE_Rendering_Camera__ctor_" data-uid="RE.Rendering.Camera.#ctor*"></a>
+
+  <h3 id="RE_Rendering_Camera__ctor_OpenTK_Mathematics_Vector3_OpenTK_Mathematics_Vector3_System_Int32_System_Int32_" data-uid="RE.Rendering.Camera.#ctor(OpenTK.Mathematics.Vector3,OpenTK.Mathematics.Vector3,System.Int32,System.Int32)">
+  Camera(Vector3, Vector3, int, int)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/DimucaTheDev/RealEngine/blob/master/RE/Rendering/Camera.cs"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public Camera(Vector3 position, Vector3 up, int width, int height)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>position</code> <span class="xref">Vector3</span></dt>
+    <dd></dd>
+    <dt><code>up</code> <span class="xref">Vector3</span></dt>
+    <dd></dd>
+    <dt><code>width</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd></dd>
+    <dt><code>height</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <h2 class="section" id="fields">Fields
+</h2>
+
+
+
+  <h3 id="RE_Rendering_Camera_AccumColorTex" data-uid="RE.Rendering.Camera.AccumColorTex">
+  AccumColorTex
+  <a class="header-action link-secondary" title="View source" href="https://github.com/DimucaTheDev/RealEngine/blob/master/RE/Rendering/Camera.cs"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public int AccumColorTex</code></pre>
+  </div>
+
+
+
+
+  <h4 class="section">Field Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <h3 id="RE_Rendering_Camera_AccumWeightTex" data-uid="RE.Rendering.Camera.AccumWeightTex">
+  AccumWeightTex
+  <a class="header-action link-secondary" title="View source" href="https://github.com/DimucaTheDev/RealEngine/blob/master/RE/Rendering/Camera.cs"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public int AccumWeightTex</code></pre>
+  </div>
+
+
+
+
+  <h4 class="section">Field Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <h3 id="RE_Rendering_Camera_Front" data-uid="RE.Rendering.Camera.Front">
+  Front
+  <a class="header-action link-secondary" title="View source" href="https://github.com/DimucaTheDev/RealEngine/blob/master/RE/Rendering/Camera.cs"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public Vector3 Front</code></pre>
+  </div>
+
+
+
+
+  <h4 class="section">Field Value</h4>
+  <dl class="parameters">
+    <dt><span class="xref">Vector3</span></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <h3 id="RE_Rendering_Camera_OitDepthTexture" data-uid="RE.Rendering.Camera.OitDepthTexture">
+  OitDepthTexture
+  <a class="header-action link-secondary" title="View source" href="https://github.com/DimucaTheDev/RealEngine/blob/master/RE/Rendering/Camera.cs"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public int OitDepthTexture</code></pre>
+  </div>
+
+
+
+
+  <h4 class="section">Field Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <h3 id="RE_Rendering_Camera_OitFbo" data-uid="RE.Rendering.Camera.OitFbo">
+  OitFbo
+  <a class="header-action link-secondary" title="View source" href="https://github.com/DimucaTheDev/RealEngine/blob/master/RE/Rendering/Camera.cs"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public int OitFbo</code></pre>
+  </div>
+
+
+
+
+  <h4 class="section">Field Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <h3 id="RE_Rendering_Camera_Position" data-uid="RE.Rendering.Camera.Position">
+  Position
+  <a class="header-action link-secondary" title="View source" href="https://github.com/DimucaTheDev/RealEngine/blob/master/RE/Rendering/Camera.cs"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public Vector3 Position</code></pre>
+  </div>
+
+
+
+
+  <h4 class="section">Field Value</h4>
+  <dl class="parameters">
+    <dt><span class="xref">Vector3</span></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <h3 id="RE_Rendering_Camera_PostProcessLayers" data-uid="RE.Rendering.Camera.PostProcessLayers">
+  PostProcessLayers
+  <a class="header-action link-secondary" title="View source" href="https://github.com/DimucaTheDev/RealEngine/blob/master/RE/Rendering/Camera.cs"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public readonly List&lt;PostProcessLayer&gt; PostProcessLayers</code></pre>
+  </div>
+
+
+
+
+  <h4 class="section">Field Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.list-1">List</a>&lt;<a class="xref" href="RE.Rendering.PostProcessLayer.html">PostProcessLayer</a>&gt;</dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <h3 id="RE_Rendering_Camera_RenderHeight" data-uid="RE.Rendering.Camera.RenderHeight">
+  RenderHeight
+  <a class="header-action link-secondary" title="View source" href="https://github.com/DimucaTheDev/RealEngine/blob/master/RE/Rendering/Camera.cs"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public int RenderHeight</code></pre>
+  </div>
+
+
+
+
+  <h4 class="section">Field Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <h3 id="RE_Rendering_Camera_RenderWidth" data-uid="RE.Rendering.Camera.RenderWidth">
+  RenderWidth
+  <a class="header-action link-secondary" title="View source" href="https://github.com/DimucaTheDev/RealEngine/blob/master/RE/Rendering/Camera.cs"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public int RenderWidth</code></pre>
+  </div>
+
+
+
+
+  <h4 class="section">Field Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <h3 id="RE_Rendering_Camera_Up" data-uid="RE.Rendering.Camera.Up">
+  Up
+  <a class="header-action link-secondary" title="View source" href="https://github.com/DimucaTheDev/RealEngine/blob/master/RE/Rendering/Camera.cs"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public Vector3 Up</code></pre>
+  </div>
+
+
+
+
+  <h4 class="section">Field Value</h4>
+  <dl class="parameters">
+    <dt><span class="xref">Vector3</span></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+  <h2 class="section" id="properties">Properties
+</h2>
+
+
+  <a id="RE_Rendering_Camera_AspectRatio_" data-uid="RE.Rendering.Camera.AspectRatio*"></a>
+
+  <h3 id="RE_Rendering_Camera_AspectRatio" data-uid="RE.Rendering.Camera.AspectRatio">
+  AspectRatio
+  <a class="header-action link-secondary" title="View source" href="https://github.com/DimucaTheDev/RealEngine/blob/master/RE/Rendering/Camera.cs"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public float AspectRatio { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.single">float</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="RE_Rendering_Camera_Fov_" data-uid="RE.Rendering.Camera.Fov*"></a>
+
+  <h3 id="RE_Rendering_Camera_Fov" data-uid="RE.Rendering.Camera.Fov">
+  Fov
+  <a class="header-action link-secondary" title="View source" href="https://github.com/DimucaTheDev/RealEngine/blob/master/RE/Rendering/Camera.cs"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public float Fov { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.single">float</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="RE_Rendering_Camera_Main_" data-uid="RE.Rendering.Camera.Main*"></a>
+
+  <h3 id="RE_Rendering_Camera_Main" data-uid="RE.Rendering.Camera.Main">
+  Main
+  <a class="header-action link-secondary" title="View source" href="https://github.com/DimucaTheDev/RealEngine/blob/master/RE/Rendering/Camera.cs"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static Camera Main { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="RE.Rendering.Camera.html">Camera</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="RE_Rendering_Camera_Name_" data-uid="RE.Rendering.Camera.Name*"></a>
+
+  <h3 id="RE_Rendering_Camera_Name" data-uid="RE.Rendering.Camera.Name">
+  Name
+  <a class="header-action link-secondary" title="View source" href="https://github.com/DimucaTheDev/RealEngine/blob/master/RE/Rendering/Camera.cs"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public required string Name { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="RE_Rendering_Camera_Pitch_" data-uid="RE.Rendering.Camera.Pitch*"></a>
+
+  <h3 id="RE_Rendering_Camera_Pitch" data-uid="RE.Rendering.Camera.Pitch">
+  Pitch
+  <a class="header-action link-secondary" title="View source" href="https://github.com/DimucaTheDev/RealEngine/blob/master/RE/Rendering/Camera.cs"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public float Pitch { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.single">float</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="RE_Rendering_Camera_PrePostProcessFramebuffer_" data-uid="RE.Rendering.Camera.PrePostProcessFramebuffer*"></a>
+
+  <h3 id="RE_Rendering_Camera_PrePostProcessFramebuffer" data-uid="RE.Rendering.Camera.PrePostProcessFramebuffer">
+  PrePostProcessFramebuffer
+  <a class="header-action link-secondary" title="View source" href="https://github.com/DimucaTheDev/RealEngine/blob/master/RE/Rendering/Camera.cs"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public Framebuffer PrePostProcessFramebuffer { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="RE.Rendering.Framebuffer.html">Framebuffer</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="RE_Rendering_Camera_RenderTexture_" data-uid="RE.Rendering.Camera.RenderTexture*"></a>
+
+  <h3 id="RE_Rendering_Camera_RenderTexture" data-uid="RE.Rendering.Camera.RenderTexture">
+  RenderTexture
+  <a class="header-action link-secondary" title="View source" href="https://github.com/DimucaTheDev/RealEngine/blob/master/RE/Rendering/Camera.cs"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public StaticTexture? RenderTexture { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="RE.Rendering.Texturing.StaticTexture.html">StaticTexture</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="RE_Rendering_Camera_Right_" data-uid="RE.Rendering.Camera.Right*"></a>
+
+  <h3 id="RE_Rendering_Camera_Right" data-uid="RE.Rendering.Camera.Right">
+  Right
+  <a class="header-action link-secondary" title="View source" href="https://github.com/DimucaTheDev/RealEngine/blob/master/RE/Rendering/Camera.cs"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public Vector3 Right { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><span class="xref">Vector3</span></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="RE_Rendering_Camera_Roll_" data-uid="RE.Rendering.Camera.Roll*"></a>
+
+  <h3 id="RE_Rendering_Camera_Roll" data-uid="RE.Rendering.Camera.Roll">
+  Roll
+  <a class="header-action link-secondary" title="View source" href="https://github.com/DimucaTheDev/RealEngine/blob/master/RE/Rendering/Camera.cs"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public float Roll { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.single">float</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="RE_Rendering_Camera_SceneFramebuffer_" data-uid="RE.Rendering.Camera.SceneFramebuffer*"></a>
+
+  <h3 id="RE_Rendering_Camera_SceneFramebuffer" data-uid="RE.Rendering.Camera.SceneFramebuffer">
+  SceneFramebuffer
+  <a class="header-action link-secondary" title="View source" href="https://github.com/DimucaTheDev/RealEngine/blob/master/RE/Rendering/Camera.cs"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public Framebuffer SceneFramebuffer { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="RE.Rendering.Framebuffer.html">Framebuffer</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="RE_Rendering_Camera_ViewportCamera_" data-uid="RE.Rendering.Camera.ViewportCamera*"></a>
+
+  <h3 id="RE_Rendering_Camera_ViewportCamera" data-uid="RE.Rendering.Camera.ViewportCamera">
+  ViewportCamera
+  <a class="header-action link-secondary" title="View source" href="https://github.com/DimucaTheDev/RealEngine/blob/master/RE/Rendering/Camera.cs"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static Camera ViewportCamera { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="RE.Rendering.Camera.html">Camera</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="RE_Rendering_Camera_Yaw_" data-uid="RE.Rendering.Camera.Yaw*"></a>
+
+  <h3 id="RE_Rendering_Camera_Yaw" data-uid="RE.Rendering.Camera.Yaw">
+  Yaw
+  <a class="header-action link-secondary" title="View source" href="https://github.com/DimucaTheDev/RealEngine/blob/master/RE/Rendering/Camera.cs"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public float Yaw { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.single">float</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <h2 class="section" id="methods">Methods
+</h2>
+
+
+  <a id="RE_Rendering_Camera_GetActiveCamera_" data-uid="RE.Rendering.Camera.GetActiveCamera*"></a>
+
+  <h3 id="RE_Rendering_Camera_GetActiveCamera" data-uid="RE.Rendering.Camera.GetActiveCamera">
+  GetActiveCamera()
+  <a class="header-action link-secondary" title="View source" href="https://github.com/DimucaTheDev/RealEngine/blob/master/RE/Rendering/Camera.cs"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static Camera GetActiveCamera()</code></pre>
+  </div>
+
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="RE.Rendering.Camera.html">Camera</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="RE_Rendering_Camera_GetBillboard_" data-uid="RE.Rendering.Camera.GetBillboard*"></a>
+
+  <h3 id="RE_Rendering_Camera_GetBillboard_System_Boolean_System_Boolean_" data-uid="RE.Rendering.Camera.GetBillboard(System.Boolean,System.Boolean)">
+  GetBillboard(bool, bool)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/DimucaTheDev/RealEngine/blob/master/RE/Rendering/Camera.cs"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public Matrix4 GetBillboard(bool lockX = false, bool lockY = false)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>lockX</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd></dd>
+    <dt><code>lockY</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd></dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><span class="xref">Matrix4</span></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="RE_Rendering_Camera_GetProjectionMatrix_" data-uid="RE.Rendering.Camera.GetProjectionMatrix*"></a>
+
+  <h3 id="RE_Rendering_Camera_GetProjectionMatrix" data-uid="RE.Rendering.Camera.GetProjectionMatrix">
+  GetProjectionMatrix()
+  <a class="header-action link-secondary" title="View source" href="https://github.com/DimucaTheDev/RealEngine/blob/master/RE/Rendering/Camera.cs"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public Matrix4 GetProjectionMatrix()</code></pre>
+  </div>
+
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><span class="xref">Matrix4</span></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="RE_Rendering_Camera_GetProjectionMatrix_" data-uid="RE.Rendering.Camera.GetProjectionMatrix*"></a>
+
+  <h3 id="RE_Rendering_Camera_GetProjectionMatrix_System_Single_" data-uid="RE.Rendering.Camera.GetProjectionMatrix(System.Single)">
+  GetProjectionMatrix(float)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/DimucaTheDev/RealEngine/blob/master/RE/Rendering/Camera.cs"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public Matrix4 GetProjectionMatrix(float fov)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>fov</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.single">float</a></dt>
+    <dd></dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><span class="xref">Matrix4</span></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="RE_Rendering_Camera_GetViewMatrix_" data-uid="RE.Rendering.Camera.GetViewMatrix*"></a>
+
+  <h3 id="RE_Rendering_Camera_GetViewMatrix" data-uid="RE.Rendering.Camera.GetViewMatrix">
+  GetViewMatrix()
+  <a class="header-action link-secondary" title="View source" href="https://github.com/DimucaTheDev/RealEngine/blob/master/RE/Rendering/Camera.cs"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public Matrix4 GetViewMatrix()</code></pre>
+  </div>
+
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><span class="xref">Matrix4</span></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="RE_Rendering_Camera_LookAt_" data-uid="RE.Rendering.Camera.LookAt*"></a>
+
+  <h3 id="RE_Rendering_Camera_LookAt_OpenTK_Mathematics_Vector3_" data-uid="RE.Rendering.Camera.LookAt(OpenTK.Mathematics.Vector3)">
+  LookAt(Vector3)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/DimucaTheDev/RealEngine/blob/master/RE/Rendering/Camera.cs"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void LookAt(Vector3 target)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>target</code> <span class="xref">Vector3</span></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="RE_Rendering_Camera_ResizeFramebuffers_" data-uid="RE.Rendering.Camera.ResizeFramebuffers*"></a>
+
+  <h3 id="RE_Rendering_Camera_ResizeFramebuffers_System_Int32_System_Int32_" data-uid="RE.Rendering.Camera.ResizeFramebuffers(System.Int32,System.Int32)">
+  ResizeFramebuffers(int, int)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/DimucaTheDev/RealEngine/blob/master/RE/Rendering/Camera.cs"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void ResizeFramebuffers(int x, int y)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>x</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd></dd>
+    <dt><code>y</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+</article>
+
+        <div class="contribution d-print-none">
+          <a href="https://github.com/DimucaTheDev/RealEngine/blob/master/RE/Rendering/Camera.cs" class="edit-link">Edit this page</a>
+        </div>
+
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          <span>Made with <a href="https://dotnet.github.io/docfx">docfx</a></span>
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

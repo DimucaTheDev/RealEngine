@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Class Component | Real Engine </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Class Component | Real Engine ">
+      
+      <meta name="description" content="Component is the base class for all components that can be attached to a .">
+      <link rel="icon" href="../favicon.ico">
+      <link rel="stylesheet" href="../public/docfx.min.css">
+      <link rel="stylesheet" href="../public/main.css">
+      <meta name="docfx:navrel" content="../toc.html">
+      <meta name="docfx:tocrel" content="toc.html">
+      
+      <meta name="docfx:rel" content="../">
+      
+      
+      
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="ManagedReference">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../index.html">
+            <img id="logo" class="svg" src="../logo.svg" alt="Real Engine">
+            Real Engine
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+      <div class="toc-offcanvas">
+        <div class="offcanvas-md offcanvas-start" tabindex="-1" id="tocOffcanvas" aria-labelledby="tocOffcanvasLabel">
+          <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="tocOffcanvasLabel">Table of Contents</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#tocOffcanvas" aria-label="Close"></button>
+          </div>
+          <div class="offcanvas-body">
+            <nav class="toc" id="toc"></nav>
+          </div>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="actionbar">
+          <button class="btn btn-lg border-0 d-md-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#tocOffcanvas" aria-controls="tocOffcanvas" aria-expanded="false" aria-label="Show table of contents">
+            <i class="bi bi-list"></i>
+          </button>
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="RE.Core.Component">
+
+
+
+  <h1 id="RE_Core_Component" data-uid="RE.Core.Component" class="text-break">
+Class Component  <a class="header-action link-secondary" title="View source" href="https://github.com/DimucaTheDev/RealEngine/blob/master/RE/Core/Component.cs"><i class="bi bi-code-slash"></i></a>
+  </h1>
+
+  <div class="facts text-secondary">
+    <dl><dt>Namespace</dt><dd><a class="xref" href="RE.html">RE</a>.<a class="xref" href="RE.Core.html">Core</a></dd></dl>
+  <dl><dt>Assembly</dt><dd>RE.dll</dd></dl>
+  </div>
+
+  <div class="markdown summary"><p>Component is the base class for all components that can be attached to a <a class="xref" href="RE.Core.World.GameObject.html">GameObject</a>.</p>
+</div>
+  <div class="markdown conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public abstract class Component</code></pre>
+  </div>
+
+
+
+
+  <dl class="typelist inheritance">
+    <dt>Inheritance</dt>
+    <dd>
+      <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object">object</a></div>
+      <div><span class="xref">Component</span></div>
+    </dd>
+  </dl>
+
+
+  <dl class="typelist derived">
+    <dt>Derived</dt>
+    <dd>
+      <div><a class="xref" href="RE.Core.World.Components.AudioSourceComponent.html">AudioSourceComponent</a></div>
+      <div><a class="xref" href="RE.Core.World.Components.BillboardTextComponent.html">BillboardTextComponent</a></div>
+      <div><a class="xref" href="RE.Core.World.Components.Lighting.LightEmitterComponent.html">LightEmitterComponent</a></div>
+      <div><a class="xref" href="RE.Core.World.Components.MeshComponent.html">MeshComponent</a></div>
+      <div><a class="xref" href="RE.Core.World.Components.Physics.RigidBodyComponent.html">RigidBodyComponent</a></div>
+      <div><a class="xref" href="RE.Core.World.Testing.TriggerTestComponent.html">TriggerTestComponent</a></div>
+    </dd>
+  </dl>
+
+  <dl class="typelist inheritedMembers">
+    <dt>Inherited Members</dt>
+    <dd>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.gettype">object.GetType()</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.memberwiseclone">object.MemberwiseClone()</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.tostring">object.ToString()</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)">object.Equals(object)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)">object.Equals(object, object)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.referenceequals">object.ReferenceEquals(object, object)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.gethashcode">object.GetHashCode()</a>
+    </div>
+  </dd></dl>
+
+
+
+
+  <h2 id="RE_Core_Component_remarks">Remarks</h2>
+  <div class="markdown level0 remarks"><p>All classes that inherit this class must have parameterless constructor</p>
+</div>
+
+
+  <h2 class="section" id="constructors">Constructors
+</h2>
+
+
+  <a id="RE_Core_Component__ctor_" data-uid="RE.Core.Component.#ctor*"></a>
+
+  <h3 id="RE_Core_Component__ctor" data-uid="RE.Core.Component.#ctor">
+  Component()
+  <a class="header-action link-secondary" title="View source" href="https://github.com/DimucaTheDev/RealEngine/blob/master/RE/Core/Component.cs"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">protected Component()</code></pre>
+  </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <h2 class="section" id="properties">Properties
+</h2>
+
+
+  <a id="RE_Core_Component_IsEnabled_" data-uid="RE.Core.Component.IsEnabled*"></a>
+
+  <h3 id="RE_Core_Component_IsEnabled" data-uid="RE.Core.Component.IsEnabled">
+  IsEnabled
+  <a class="header-action link-secondary" title="View source" href="https://github.com/DimucaTheDev/RealEngine/blob/master/RE/Core/Component.cs"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">[EditorProperty(null, false)]
+[JsonIgnore]
+public bool IsEnabled { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="RE_Core_Component_IsOpaque_" data-uid="RE.Core.Component.IsOpaque*"></a>
+
+  <h3 id="RE_Core_Component_IsOpaque" data-uid="RE.Core.Component.IsOpaque">
+  IsOpaque
+  <a class="header-action link-secondary" title="View source" href="https://github.com/DimucaTheDev/RealEngine/blob/master/RE/Core/Component.cs"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public virtual bool IsOpaque { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="RE_Core_Component_Owner_" data-uid="RE.Core.Component.Owner*"></a>
+
+  <h3 id="RE_Core_Component_Owner" data-uid="RE.Core.Component.Owner">
+  Owner
+  <a class="header-action link-secondary" title="View source" href="https://github.com/DimucaTheDev/RealEngine/blob/master/RE/Core/Component.cs"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p><a class="xref" href="RE.Core.World.GameObject.html">GameObject</a> that this component is attached to.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">[JsonIgnore]
+public GameObject Owner { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="RE.Core.World.GameObject.html">GameObject</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="RE_Core_Component_SaveComponent_" data-uid="RE.Core.Component.SaveComponent*"></a>
+
+  <h3 id="RE_Core_Component_SaveComponent" data-uid="RE.Core.Component.SaveComponent">
+  SaveComponent
+  <a class="header-action link-secondary" title="View source" href="https://github.com/DimucaTheDev/RealEngine/blob/master/RE/Core/Component.cs"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Whether this component should be stored when the scene is being saved (see <a class="xref" href="RE.Core.World.SceneManager.html#RE_Core_World_SceneManager_SaveSceneToFile_RE_Core_World_Scene_System_String_">SaveSceneToFile(Scene, string)</a>).</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">[JsonIgnore]
+public bool SaveComponent { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <h2 class="section" id="methods">Methods
+</h2>
+
+
+  <a id="RE_Core_Component_Destroy_" data-uid="RE.Core.Component.Destroy*"></a>
+
+  <h3 id="RE_Core_Component_Destroy" data-uid="RE.Core.Component.Destroy">
+  Destroy()
+  <a class="header-action link-secondary" title="View source" href="https://github.com/DimucaTheDev/RealEngine/blob/master/RE/Core/Component.cs"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Performs cleanup operations when the object is being destroyed. Override this method to release resources or
+unsubscribe from events as needed.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public virtual void Destroy()</code></pre>
+  </div>
+
+
+
+
+
+
+
+
+
+  <h4 class="section" id="RE_Core_Component_Destroy_remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>This method is intended to be overridden in derived classes to implement custom
+destruction logic. The base implementation does not perform any actions.</p>
+</div>
+
+
+
+
+  <a id="RE_Core_Component_Disabled_" data-uid="RE.Core.Component.Disabled*"></a>
+
+  <h3 id="RE_Core_Component_Disabled" data-uid="RE.Core.Component.Disabled">
+  Disabled()
+  <a class="header-action link-secondary" title="View source" href="https://github.com/DimucaTheDev/RealEngine/blob/master/RE/Core/Component.cs"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">protected virtual void Disabled()</code></pre>
+  </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="RE_Core_Component_Enabled_" data-uid="RE.Core.Component.Enabled*"></a>
+
+  <h3 id="RE_Core_Component_Enabled" data-uid="RE.Core.Component.Enabled">
+  Enabled()
+  <a class="header-action link-secondary" title="View source" href="https://github.com/DimucaTheDev/RealEngine/blob/master/RE/Core/Component.cs"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">protected virtual void Enabled()</code></pre>
+  </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="RE_Core_Component_GetComponent_" data-uid="RE.Core.Component.GetComponent*"></a>
+
+  <h3 id="RE_Core_Component_GetComponent__1" data-uid="RE.Core.Component.GetComponent``1">
+  GetComponent&lt;T&gt;()
+  <a class="header-action link-secondary" title="View source" href="https://github.com/DimucaTheDev/RealEngine/blob/master/RE/Core/Component.cs"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public T? GetComponent&lt;T&gt;() where T : Component</code></pre>
+  </div>
+
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><span class="xref">T</span></dt>
+    <dd><p>Returns the first component of type T that is attached to the same <a class="xref" href="RE.Core.World.GameObject.html">GameObject</a> as this component, or null if no such component exists.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Type Parameters</h4>
+  <dl class="parameters">
+    <dt><code>T</code></dt>
+    <dd><p>Component type</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <a id="RE_Core_Component_GetObjectSelectionShape_" data-uid="RE.Core.Component.GetObjectSelectionShape*"></a>
+
+  <h3 id="RE_Core_Component_GetObjectSelectionShape" data-uid="RE.Core.Component.GetObjectSelectionShape">
+  GetObjectSelectionShape()
+  <a class="header-action link-secondary" title="View source" href="https://github.com/DimucaTheDev/RealEngine/blob/master/RE/Core/Component.cs"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public virtual CollisionShape GetObjectSelectionShape()</code></pre>
+  </div>
+
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><span class="xref">CollisionShape</span></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="RE_Core_Component_GetSaveData_" data-uid="RE.Core.Component.GetSaveData*"></a>
+
+  <h3 id="RE_Core_Component_GetSaveData" data-uid="RE.Core.Component.GetSaveData">
+  GetSaveData()
+  <a class="header-action link-secondary" title="View source" href="https://github.com/DimucaTheDev/RealEngine/blob/master/RE/Core/Component.cs"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Get the data to be saved for this component.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public virtual JsonObject GetSaveData()</code></pre>
+  </div>
+
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.text.json.nodes.jsonobject">JsonObject</a></dt>
+    <dd><p><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.text.json.nodes.jsonnode">JsonNode</a> that contains saved data</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+  <h4 class="section" id="RE_Core_Component_GetSaveData_remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>This method is not called if <a class="xref" href="RE.Core.Component.html#RE_Core_Component_SaveComponent">SaveComponent</a> is set to <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a></p>
+</div>
+
+
+
+
+  <a id="RE_Core_Component_OnCollide_" data-uid="RE.Core.Component.OnCollide*"></a>
+
+  <h3 id="RE_Core_Component_OnCollide_RE_Core_World_GameObject_" data-uid="RE.Core.Component.OnCollide(RE.Core.World.GameObject)">
+  OnCollide(GameObject)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/DimucaTheDev/RealEngine/blob/master/RE/Core/Component.cs"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Called when an object is being collided with another object in scene</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public virtual void OnCollide(GameObject collide)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>collide</code> <a class="xref" href="RE.Core.World.GameObject.html">GameObject</a></dt>
+    <dd><p>Another object that this object collides with</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <h4 class="section" id="RE_Core_Component_OnCollide_RE_Core_World_GameObject__remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>Method is only called if <a class="xref" href="RE.Core.Component.html#RE_Core_Component_Owner">Owner</a> has any <span class="xref">RE.Core.World.Components.Physics.ColliderComponent</span></p>
+</div>
+
+
+
+
+  <a id="RE_Core_Component_OnCollisionEnter_" data-uid="RE.Core.Component.OnCollisionEnter*"></a>
+
+  <h3 id="RE_Core_Component_OnCollisionEnter_RE_Core_World_GameObject_" data-uid="RE.Core.Component.OnCollisionEnter(RE.Core.World.GameObject)">
+  OnCollisionEnter(GameObject)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/DimucaTheDev/RealEngine/blob/master/RE/Core/Component.cs"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Called when an object collided with another object</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public virtual void OnCollisionEnter(GameObject collide)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>collide</code> <a class="xref" href="RE.Core.World.GameObject.html">GameObject</a></dt>
+    <dd><p>Another object that this object collides with</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <h4 class="section" id="RE_Core_Component_OnCollisionEnter_RE_Core_World_GameObject__remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>Method is only called if <a class="xref" href="RE.Core.Component.html#RE_Core_Component_Owner">Owner</a> has any <span class="xref">RE.Core.World.Components.Physics.ColliderComponent</span></p>
+</div>
+
+
+
+
+  <a id="RE_Core_Component_OnCollisionExit_" data-uid="RE.Core.Component.OnCollisionExit*"></a>
+
+  <h3 id="RE_Core_Component_OnCollisionExit_RE_Core_World_GameObject_" data-uid="RE.Core.Component.OnCollisionExit(RE.Core.World.GameObject)">
+  OnCollisionExit(GameObject)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/DimucaTheDev/RealEngine/blob/master/RE/Core/Component.cs"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Called when an object stops colliding with another object</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public virtual void OnCollisionExit(GameObject collide)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>collide</code> <a class="xref" href="RE.Core.World.GameObject.html">GameObject</a></dt>
+    <dd><p>Another object that this object stopped collided with</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <h4 class="section" id="RE_Core_Component_OnCollisionExit_RE_Core_World_GameObject__remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>Method is only called if <a class="xref" href="RE.Core.Component.html#RE_Core_Component_Owner">Owner</a> has any <span class="xref">RE.Core.World.Components.Physics.ColliderComponent</span></p>
+</div>
+
+
+
+
+  <a id="RE_Core_Component_PhysicsSync_" data-uid="RE.Core.Component.PhysicsSync*"></a>
+
+  <h3 id="RE_Core_Component_PhysicsSync" data-uid="RE.Core.Component.PhysicsSync">
+  PhysicsSync()
+  <a class="header-action link-secondary" title="View source" href="https://github.com/DimucaTheDev/RealEngine/blob/master/RE/Core/Component.cs"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public virtual void PhysicsSync()</code></pre>
+  </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="RE_Core_Component_Render_" data-uid="RE.Core.Component.Render*"></a>
+
+  <h3 id="RE_Core_Component_Render_System_Double_" data-uid="RE.Core.Component.Render(System.Double)">
+  Render(double)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/DimucaTheDev/RealEngine/blob/master/RE/Core/Component.cs"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Renders the current frame using the specified frame event arguments.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public virtual void Render(double delta)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>delta</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.double">double</a></dt>
+    <dd><p>The event data for the frame being rendered, containing timing and state information relevant to the
+rendering process.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="RE_Core_Component_Start_" data-uid="RE.Core.Component.Start*"></a>
+
+  <h3 id="RE_Core_Component_Start" data-uid="RE.Core.Component.Start">
+  Start()
+  <a class="header-action link-secondary" title="View source" href="https://github.com/DimucaTheDev/RealEngine/blob/master/RE/Core/Component.cs"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Called when component is added to a game object.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public virtual void Start()</code></pre>
+  </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="RE_Core_Component_Update_" data-uid="RE.Core.Component.Update*"></a>
+
+  <h3 id="RE_Core_Component_Update_System_Double_" data-uid="RE.Core.Component.Update(System.Double)">
+  Update(double)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/DimucaTheDev/RealEngine/blob/master/RE/Core/Component.cs"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Called every frame, before Render(FrameEventArgs).</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public virtual void Update(double delta)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>delta</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.double">double</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+</article>
+
+        <div class="contribution d-print-none">
+          <a href="https://github.com/DimucaTheDev/RealEngine/blob/master/RE/Core/Component.cs" class="edit-link">Edit this page</a>
+        </div>
+
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          <span>Made with <a href="https://dotnet.github.io/docfx">docfx</a></span>
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

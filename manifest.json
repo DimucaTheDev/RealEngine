@@ -1,0 +1,2198 @@
+{
+  "source_base_path": "D:/a/RealEngine/RealEngine/DocFX",
+  "xrefmap": "xrefmap.yml",
+  "files": [
+    {
+      "type": "Resource",
+      "output": {
+        "resource": {
+          "relative_path": "index.json"
+        }
+      }
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Core.Assets.AssetCache.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Core.Assets.AssetCache.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Core.Assets.AssetCache",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Core.Assets.ContentManager.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Core.Assets.ContentManager.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Core.Assets.ContentManager",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Core.Assets.DynamicAsset.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Core.Assets.DynamicAsset.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Core.Assets.DynamicAsset",
+      "Summary": "<p sourcefile=\"api/RE.Core.Assets.DynamicAsset.yml\" sourcestartlinenumber=\"1\">Represents a dynamically managed asset that can be loaded, created and unloaded at runtime.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Core.Assets.Providers.Base64ContentProvider.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Core.Assets.Providers.Base64ContentProvider.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Core.Assets.Providers.Base64ContentProvider",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Core.Assets.Providers.FileContentProvider.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Core.Assets.Providers.FileContentProvider.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Core.Assets.Providers.FileContentProvider",
+      "Summary": "<p sourcefile=\"api/RE.Core.Assets.Providers.FileContentProvider.yml\" sourcestartlinenumber=\"1\"><xref href=\"RE.Core.Assets.Providers.IContentProvider\" data-throw-if-not-resolved=\"false\"></xref> implementation that uses <xref href=\"System.IO.File\" data-throw-if-not-resolved=\"false\"></xref> class for retrieving data.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Core.Assets.Providers.IContentProvider.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Core.Assets.Providers.IContentProvider.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Core.Assets.Providers.IContentProvider",
+      "Summary": "<p sourcefile=\"api/RE.Core.Assets.Providers.IContentProvider.yml\" sourcestartlinenumber=\"1\">Represents methods to access different game assets and other data.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Core.Assets.Providers.ZipContentProvider.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Core.Assets.Providers.ZipContentProvider.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Core.Assets.Providers.ZipContentProvider",
+      "Summary": "<p sourcefile=\"api/RE.Core.Assets.Providers.ZipContentProvider.yml\" sourcestartlinenumber=\"1\">Provides access to files and directories stored within ZIP archives located in the &quot;paks&quot; directory, using a\nvirtual file system interface.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Core.Assets.Providers.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Core.Assets.Providers.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Core.Assets.Providers",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Core.Assets.ResourceLocation.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Core.Assets.ResourceLocation.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Core.Assets.ResourceLocation",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Core.Assets.Shader.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Core.Assets.Shader.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Core.Assets.Shader",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Core.Assets.ShaderProgram.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Core.Assets.ShaderProgram.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Core.Assets.ShaderProgram",
+      "Summary": "<p sourcefile=\"api/RE.Core.Assets.ShaderProgram.yml\" sourcestartlinenumber=\"1\">Represents an OpenGL shader program that manages the attachment, linking, and usage of shader objects for\nrendering operations.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Core.Assets.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Core.Assets.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Core.Assets",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Core.Audio.Sound.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Core.Audio.Sound.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Core.Audio.Sound",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Core.Audio.SoundManager.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Core.Audio.SoundManager.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Core.Audio.SoundManager",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Core.Audio.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Core.Audio.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Core.Audio",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Core.Component.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Core.Component.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Core.Component",
+      "Summary": "<p sourcefile=\"api/RE.Core.Component.yml\" sourcestartlinenumber=\"1\">Component is the base class for all components that can be attached to a <xref href=\"RE.Core.World.GameObject\" data-throw-if-not-resolved=\"false\"></xref>.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Core.Initializing.Initializer.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Core.Initializing.Initializer.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Core.Initializing.Initializer",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Core.Initializing.InitializingTask.TaskType.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Core.Initializing.InitializingTask.TaskType.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Core.Initializing.InitializingTask.TaskType",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Core.Initializing.InitializingTask.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Core.Initializing.InitializingTask.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Core.Initializing.InitializingTask",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Core.Initializing.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Core.Initializing.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Core.Initializing",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Core.Input.Keyboard.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Core.Input.Keyboard.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Core.Input.Keyboard",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Core.Input.Mouse.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Core.Input.Mouse.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Core.Input.Mouse",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Core.Input.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Core.Input.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Core.Input",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Core.Logging.GameLogger.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Core.Logging.GameLogger.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Core.Logging.GameLogger",
+      "Summary": "<p sourcefile=\"api/RE.Core.Logging.GameLogger.yml\" sourcestartlinenumber=\"1\">This class is used to log game events to a string (<xref href=\"RE.Core.Logging.GameLogger.Log\" data-throw-if-not-resolved=\"false\"></xref>).</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Core.Logging.LogEntry.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Core.Logging.LogEntry.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Core.Logging.LogEntry",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Core.Logging.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Core.Logging.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Core.Logging",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Core.PluginSystem.Plugin.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Core.PluginSystem.Plugin.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Core.PluginSystem.Plugin",
+      "Summary": "<p sourcefile=\"api/RE.Core.PluginSystem.Plugin.yml\" sourcestartlinenumber=\"1\">Provides a base class for implementing plugins that can be loaded and unloaded by the host application.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Core.PluginSystem.PluginInfo.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Core.PluginSystem.PluginInfo.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Core.PluginSystem.PluginInfo",
+      "Summary": "<p sourcefile=\"api/RE.Core.PluginSystem.PluginInfo.yml\" sourcestartlinenumber=\"1\">Represents metadata information about a plugin, including its name, version, author, and related assembly.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Core.PluginSystem.PluginManager.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Core.PluginSystem.PluginManager.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Core.PluginSystem.PluginManager",
+      "Summary": "<p sourcefile=\"api/RE.Core.PluginSystem.PluginManager.yml\" sourcestartlinenumber=\"1\">Provides static methods and properties for managing the lifecycle of plugins within the application, including\nloading, resolving, and unloading plugins.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Core.PluginSystem.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Core.PluginSystem.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Core.PluginSystem",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Core.Scripting.Attributes.ComponentInfoAttribute.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Core.Scripting.Attributes.ComponentInfoAttribute.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Core.Scripting.Attributes.ComponentInfoAttribute",
+      "Summary": "<p sourcefile=\"api/RE.Core.Scripting.Attributes.ComponentInfoAttribute.yml\" sourcestartlinenumber=\"1\">Specifies metadata for a component class, including its group and an optional description.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Core.Scripting.Attributes.ConsoleCommandAttribute.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Core.Scripting.Attributes.ConsoleCommandAttribute.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Core.Scripting.Attributes.ConsoleCommandAttribute",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Core.Scripting.Attributes.EditorButtonAttribute.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Core.Scripting.Attributes.EditorButtonAttribute.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Core.Scripting.Attributes.EditorButtonAttribute",
+      "Summary": "<p sourcefile=\"api/RE.Core.Scripting.Attributes.EditorButtonAttribute.yml\" sourcestartlinenumber=\"1\">Adds buttons to the editor for invoking methods.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Core.Scripting.Attributes.EditorPopupAttribute.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Core.Scripting.Attributes.EditorPopupAttribute.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Core.Scripting.Attributes.EditorPopupAttribute",
+      "Summary": "<p sourcefile=\"api/RE.Core.Scripting.Attributes.EditorPopupAttribute.yml\" sourcestartlinenumber=\"1\">Specifies that a method should be exposed as a popup dialog in the editor.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Core.Scripting.Attributes.EditorPropertyAttribute.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Core.Scripting.Attributes.EditorPropertyAttribute.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Core.Scripting.Attributes.EditorPropertyAttribute",
+      "Summary": "<p sourcefile=\"api/RE.Core.Scripting.Attributes.EditorPropertyAttribute.yml\" sourcestartlinenumber=\"1\">Specifies metadata for a property to control how it is displayed and edited in an editor environment.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Core.Scripting.Attributes.IfAttribute.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Core.Scripting.Attributes.IfAttribute.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Core.Scripting.Attributes.IfAttribute",
+      "Summary": "<p sourcefile=\"api/RE.Core.Scripting.Attributes.IfAttribute.yml\" sourcestartlinenumber=\"1\">Specifies a conditional requirement for a property based on the value of another property. Apply this attribute\nto a property to indicate that it is relevant only when a specified property has a particular value.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Core.Scripting.Attributes.IfNotAttribute.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Core.Scripting.Attributes.IfNotAttribute.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Core.Scripting.Attributes.IfNotAttribute",
+      "Summary": "<p sourcefile=\"api/RE.Core.Scripting.Attributes.IfNotAttribute.yml\" sourcestartlinenumber=\"1\">Specifies a conditional requirement for a property based on the value of another property. When applied, the\ntarget property is considered relevant only if the specified property does not have the given value.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Core.Scripting.Attributes.ValueLimitAttribute.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Core.Scripting.Attributes.ValueLimitAttribute.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Core.Scripting.Attributes.ValueLimitAttribute",
+      "Summary": "<p sourcefile=\"api/RE.Core.Scripting.Attributes.ValueLimitAttribute.yml\" sourcestartlinenumber=\"1\">Specifies minimum and maximum allowed values for a property in editor.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Core.Scripting.Attributes.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Core.Scripting.Attributes.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Core.Scripting.Attributes",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Core.Scripting.CommandHandler.ConsoleCommand.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Core.Scripting.CommandHandler.ConsoleCommand.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Core.Scripting.CommandHandler.ConsoleCommand",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Core.Scripting.CommandHandler.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Core.Scripting.CommandHandler.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Core.Scripting.CommandHandler",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Core.Scripting.CommandNotFoundException.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Core.Scripting.CommandNotFoundException.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Core.Scripting.CommandNotFoundException",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Core.Scripting.IEditorPopup.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Core.Scripting.IEditorPopup.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Core.Scripting.IEditorPopup",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Core.Scripting.PopupSettings.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Core.Scripting.PopupSettings.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Core.Scripting.PopupSettings",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Core.Scripting.Variables.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Core.Scripting.Variables.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Core.Scripting.Variables",
+      "Summary": "<p sourcefile=\"api/RE.Core.Scripting.Variables.yml\" sourcestartlinenumber=\"1\">Provides a global key-value store for application-wide variables and notifies subscribers when variables change.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Core.Scripting.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Core.Scripting.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Core.Scripting",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Core.Time.ScheduledTask.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Core.Time.ScheduledTask.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Core.Time.ScheduledTask",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Core.Time.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Core.Time.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Core.Time",
+      "Summary": "<p sourcefile=\"api/RE.Core.Time.yml\" sourcestartlinenumber=\"1\">Time is a static class that provides time-related functionality, such as scheduling tasks to be executed after a certain time span.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Core.Ui.Debug.ConsoleWindow.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Core.Ui.Debug.ConsoleWindow.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Core.Ui.Debug.ConsoleWindow",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Core.Ui.Debug.FrameProfiler.ProfileScope.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Core.Ui.Debug.FrameProfiler.ProfileScope.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Core.Ui.Debug.FrameProfiler.ProfileScope",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Core.Ui.Debug.FrameProfiler.ProfilerNode.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Core.Ui.Debug.FrameProfiler.ProfilerNode.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Core.Ui.Debug.FrameProfiler.ProfilerNode",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Core.Ui.Debug.FrameProfiler.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Core.Ui.Debug.FrameProfiler.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Core.Ui.Debug.FrameProfiler",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Core.Ui.Debug.LineRenderer.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Core.Ui.Debug.LineRenderer.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Core.Ui.Debug.LineRenderer",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Core.Ui.Debug.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Core.Ui.Debug.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Core.Ui.Debug",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Core.World.Components.AudioSourceComponent.AudioClip.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Core.World.Components.AudioSourceComponent.AudioClip.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Core.World.Components.AudioSourceComponent.AudioClip",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Core.World.Components.AudioSourceComponent.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Core.World.Components.AudioSourceComponent.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Core.World.Components.AudioSourceComponent",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Core.World.Components.BillboardTextComponent.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Core.World.Components.BillboardTextComponent.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Core.World.Components.BillboardTextComponent",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Core.World.Components.ComponentList.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Core.World.Components.ComponentList.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Core.World.Components.ComponentList",
+      "Summary": "<p sourcefile=\"api/RE.Core.World.Components.ComponentList.yml\" sourcestartlinenumber=\"1\">Represents a collection of components associated with a specific game object. Provides methods to add, remove,\nand enumerate components attached to the owner object.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Core.World.Components.Lighting.LightEmitterComponent.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Core.World.Components.Lighting.LightEmitterComponent.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Core.World.Components.Lighting.LightEmitterComponent",
+      "Summary": "<p sourcefile=\"api/RE.Core.World.Components.Lighting.LightEmitterComponent.yml\" sourcestartlinenumber=\"1\">wip</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Core.World.Components.Lighting.LightType.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Core.World.Components.Lighting.LightType.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Core.World.Components.Lighting.LightType",
+      "Summary": "<p sourcefile=\"api/RE.Core.World.Components.Lighting.LightType.yml\" sourcestartlinenumber=\"1\">wip</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Core.World.Components.Lighting.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Core.World.Components.Lighting.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Core.World.Components.Lighting",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Core.World.Components.MeshComponent.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Core.World.Components.MeshComponent.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Core.World.Components.MeshComponent",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Core.World.Components.Physics.BulletDebugDrawer.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Core.World.Components.Physics.BulletDebugDrawer.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Core.World.Components.Physics.BulletDebugDrawer",
+      "Summary": "<p sourcefile=\"api/RE.Core.World.Components.Physics.BulletDebugDrawer.yml\" sourcestartlinenumber=\"1\">Provides an OpenTK-based implementation of the BulletSharp.DebugDraw interface for visualizing physics debug\ninformation in a 3D scene.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Core.World.Components.Physics.RigidBodyComponent.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Core.World.Components.Physics.RigidBodyComponent.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Core.World.Components.Physics.RigidBodyComponent",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Core.World.Components.Physics.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Core.World.Components.Physics.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Core.World.Components.Physics",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Core.World.Components.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Core.World.Components.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Core.World.Components",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Core.World.GameObject.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Core.World.GameObject.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Core.World.GameObject",
+      "Summary": "<p sourcefile=\"api/RE.Core.World.GameObject.yml\" sourcestartlinenumber=\"1\">Represents an object in the game world with components, transform, and hierarchy.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Core.World.GameObjectList.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Core.World.GameObjectList.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Core.World.GameObjectList",
+      "Summary": "<p sourcefile=\"api/RE.Core.World.GameObjectList.yml\" sourcestartlinenumber=\"1\">Represents a collection of <xref href=\"RE.Core.World.GameObject\" data-throw-if-not-resolved=\"false\"></xref> within a <xref href=\"RE.Core.World.Scene\" data-throw-if-not-resolved=\"false\"></xref>.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Core.World.Physics.PhysicsManager.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Core.World.Physics.PhysicsManager.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Core.World.Physics.PhysicsManager",
+      "Summary": "<p sourcefile=\"api/RE.Core.World.Physics.PhysicsManager.yml\" sourcestartlinenumber=\"1\">Manages the initialization, configuration, and simulation of the physics engine, including world creation,\nscheduling, and global physics operations.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Core.World.Physics.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Core.World.Physics.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Core.World.Physics",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Core.World.Scene.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Core.World.Scene.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Core.World.Scene",
+      "Summary": "<p sourcefile=\"api/RE.Core.World.Scene.yml\" sourcestartlinenumber=\"1\">Represents a scene containing game objects and managing their lifecycle.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Core.World.SceneManager.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Core.World.SceneManager.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Core.World.SceneManager",
+      "Summary": "<p sourcefile=\"api/RE.Core.World.SceneManager.yml\" sourcestartlinenumber=\"1\">Static class that manages loading, saving, and transitioning between scenes.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Core.World.SceneSerializer.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Core.World.SceneSerializer.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Core.World.SceneSerializer",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Core.World.SerializerCallsConstructorAttribute.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Core.World.SerializerCallsConstructorAttribute.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Core.World.SerializerCallsConstructorAttribute",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Core.World.Testing.PleaseRenameThisExceptionToSomethingElse.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Core.World.Testing.PleaseRenameThisExceptionToSomethingElse.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Core.World.Testing.PleaseRenameThisExceptionToSomethingElse",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Core.World.Testing.TriggerTestComponent.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Core.World.Testing.TriggerTestComponent.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Core.World.Testing.TriggerTestComponent",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Core.World.Testing.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Core.World.Testing.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Core.World.Testing",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Core.World.Transform.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Core.World.Transform.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Core.World.Transform",
+      "Summary": "<p sourcefile=\"api/RE.Core.World.Transform.yml\" sourcestartlinenumber=\"1\">Represents the position, rotation, and scale of a <xref href=\"RE.Core.World.GameObject\" data-throw-if-not-resolved=\"false\"></xref>.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Core.World.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Core.World.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Core.World",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Core.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Core.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Core",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Editor.IEditorRender.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Editor.IEditorRender.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Editor.IEditorRender",
+      "Summary": "<p sourcefile=\"api/RE.Editor.IEditorRender.yml\" sourcestartlinenumber=\"1\">Components can use this interface to render in the scene editor.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Editor.IEditorStart.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Editor.IEditorStart.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Editor.IEditorStart",
+      "Summary": "<p sourcefile=\"api/RE.Editor.IEditorStart.yml\" sourcestartlinenumber=\"1\">Components can use this interface to initialize its state in the scene editor.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Editor.IEditorUpdate.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Editor.IEditorUpdate.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Editor.IEditorUpdate",
+      "Summary": "<p sourcefile=\"api/RE.Editor.IEditorUpdate.yml\" sourcestartlinenumber=\"1\">Components can use this interface to update its state in the scene editor.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Editor.NodeEditor.DataNode.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Editor.NodeEditor.DataNode.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Editor.NodeEditor.DataNode",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Editor.NodeEditor.Node.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Editor.NodeEditor.Node.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Editor.NodeEditor.Node",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Editor.NodeEditor.Nodes.BinaryMathNode.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Editor.NodeEditor.Nodes.BinaryMathNode.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Editor.NodeEditor.Nodes.BinaryMathNode",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Editor.NodeEditor.Nodes.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Editor.NodeEditor.Nodes.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Editor.NodeEditor.Nodes",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Editor.NodeEditor.Pins.DataNodePin-1.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Editor.NodeEditor.Pins.DataNodePin-1.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Editor.NodeEditor.Pins.DataNodePin<T>",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Editor.NodeEditor.Pins.NodePin.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Editor.NodeEditor.Pins.NodePin.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Editor.NodeEditor.Pins.NodePin",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Editor.NodeEditor.Pins.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Editor.NodeEditor.Pins.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Editor.NodeEditor.Pins",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Editor.NodeEditor.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Editor.NodeEditor.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Editor.NodeEditor",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Editor.Notification.Toast.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Editor.Notification.Toast.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Editor.Notification.Toast",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Editor.Notification.ToastManager.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Editor.Notification.ToastManager.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Editor.Notification.ToastManager",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Editor.Notification.ToastManagerConfig.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Editor.Notification.ToastManagerConfig.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Editor.Notification.ToastManagerConfig",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Editor.Notification.ToastPhase.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Editor.Notification.ToastPhase.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Editor.Notification.ToastPhase",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Editor.Notification.ToastType.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Editor.Notification.ToastType.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Editor.Notification.ToastType",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Editor.Notification.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Editor.Notification.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Editor.Notification",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Editor.Panels.CursorLocker.POINT.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Editor.Panels.CursorLocker.POINT.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Editor.Panels.CursorLocker.POINT",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Editor.Panels.CursorLocker.RECT.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Editor.Panels.CursorLocker.RECT.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Editor.Panels.CursorLocker.RECT",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Editor.Panels.CursorLocker.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Editor.Panels.CursorLocker.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Editor.Panels.CursorLocker",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Editor.Panels.GamePanel.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Editor.Panels.GamePanel.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Editor.Panels.GamePanel",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Editor.Panels.Viewport.ViewportPanel.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Editor.Panels.Viewport.ViewportPanel.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Editor.Panels.Viewport.ViewportPanel",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Editor.Panels.Viewport.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Editor.Panels.Viewport.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Editor.Panels.Viewport",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Editor.Panels.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Editor.Panels.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Editor.Panels",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Editor.SceneEditor.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Editor.SceneEditor.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Editor.SceneEditor",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Editor.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Editor.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Editor",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Launchers.EditorLauncher.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Launchers.EditorLauncher.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Launchers.EditorLauncher",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Launchers.GameLauncher.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Launchers.GameLauncher.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Launchers.GameLauncher",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Launchers.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Launchers.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Launchers",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Rendering.Camera.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Rendering.Camera.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Rendering.Camera",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Rendering.Framebuffer.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Rendering.Framebuffer.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Rendering.Framebuffer",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Rendering.GlException.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Rendering.GlException.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Rendering.GlException",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Rendering.Lighting.DirectionalLight.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Rendering.Lighting.DirectionalLight.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Rendering.Lighting.DirectionalLight",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Rendering.Lighting.ILightSource.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Rendering.Lighting.ILightSource.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Rendering.Lighting.ILightSource",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Rendering.Lighting.Material.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Rendering.Lighting.Material.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Rendering.Lighting.Material",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Rendering.Lighting.MaterialData.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Rendering.Lighting.MaterialData.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Rendering.Lighting.MaterialData",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Rendering.Lighting.PointLight.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Rendering.Lighting.PointLight.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Rendering.Lighting.PointLight",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Rendering.Lighting.SpotLight.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Rendering.Lighting.SpotLight.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Rendering.Lighting.SpotLight",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Rendering.Lighting.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Rendering.Lighting.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Rendering.Lighting",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Rendering.Model.ModelData.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Rendering.Model.ModelData.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Rendering.Model.ModelData",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Rendering.Model.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Rendering.Model.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Rendering.Model",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Rendering.ModelMesh.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Rendering.ModelMesh.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Rendering.ModelMesh",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Rendering.PostProcessLayer.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Rendering.PostProcessLayer.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Rendering.PostProcessLayer",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Rendering.RenderManager.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Rendering.RenderManager.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Rendering.RenderManager",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Rendering.Renderable.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Rendering.Renderable.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Rendering.Renderable",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Rendering.Renderables.FloatingText.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Rendering.Renderables.FloatingText.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Rendering.Renderables.FloatingText",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Rendering.Renderables.ImageRenderer.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Rendering.Renderables.ImageRenderer.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Rendering.Renderables.ImageRenderer",
+      "Summary": "<p sourcefile=\"api/RE.Rendering.Renderables.ImageRenderer.yml\" sourcestartlinenumber=\"1\">This class is used to render images in UI</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Rendering.Renderables.ModelFormat.StaticModelData.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Rendering.Renderables.ModelFormat.StaticModelData.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Rendering.Renderables.ModelFormat.StaticModelData",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Rendering.Renderables.ModelFormat.StaticModelParser.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Rendering.Renderables.ModelFormat.StaticModelParser.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Rendering.Renderables.ModelFormat.StaticModelParser",
+      "Summary": "<p sourcefile=\"api/RE.Rendering.Renderables.ModelFormat.StaticModelParser.yml\" sourcestartlinenumber=\"1\">This class is responsible for loading static 3D models from a custom binary format <code>SMDL</code>.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Rendering.Renderables.ModelFormat.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Rendering.Renderables.ModelFormat.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Rendering.Renderables.ModelFormat",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Rendering.Renderables.ModelRenderer.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Rendering.Renderables.ModelRenderer.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Rendering.Renderables.ModelRenderer",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Rendering.Renderables.SpriteRenderer.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Rendering.Renderables.SpriteRenderer.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Rendering.Renderables.SpriteRenderer",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Rendering.Renderables.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Rendering.Renderables.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Rendering.Renderables",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Rendering.Text.Character.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Rendering.Text.Character.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Rendering.Text.Character",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Rendering.Text.FreeTypeFont.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Rendering.Text.FreeTypeFont.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Rendering.Text.FreeTypeFont",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Rendering.Text.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Rendering.Text.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Rendering.Text",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Rendering.Texturing.AnimatedTexture.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Rendering.Texturing.AnimatedTexture.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Rendering.Texturing.AnimatedTexture",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Rendering.Texturing.ImageData.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Rendering.Texturing.ImageData.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Rendering.Texturing.ImageData",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Rendering.Texturing.StaticTexture.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Rendering.Texturing.StaticTexture.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Rendering.Texturing.StaticTexture",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Rendering.Texturing.Texture.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Rendering.Texturing.Texture.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Rendering.Texturing.Texture",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Rendering.Texturing.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Rendering.Texturing.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Rendering.Texturing",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Rendering.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Rendering.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Rendering",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Utils.BuildDateAttribute.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Utils.BuildDateAttribute.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Utils.BuildDateAttribute",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Utils.Extensions.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Utils.Extensions.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Utils.Extensions",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Utils.FLASHWINFO.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Utils.FLASHWINFO.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Utils.FLASHWINFO",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Utils.GlPropertyNameAttribute.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Utils.GlPropertyNameAttribute.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Utils.GlPropertyNameAttribute",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Utils.GlStructNameAttribute.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Utils.GlStructNameAttribute.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Utils.GlStructNameAttribute",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Utils.ModelLoader.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Utils.ModelLoader.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Utils.ModelLoader",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Utils.PROCESS_MEMORY_COUNTERS.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Utils.PROCESS_MEMORY_COUNTERS.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Utils.PROCESS_MEMORY_COUNTERS",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/RE.Utils.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/RE.Utils.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "RE.Utils",
+      "Summary": null
+    },
+    {
+      "type": "Toc",
+      "source_relative_path": "api/toc.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/toc.html"
+        },
+        ".json": {
+          "relative_path": "api/toc.json"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "Conceptual",
+      "source_relative_path": "docs/editor/about.md",
+      "output": {
+        ".html": {
+          "relative_path": "docs/editor/about.html"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "Conceptual",
+      "source_relative_path": "docs/getting-started.md",
+      "output": {
+        ".html": {
+          "relative_path": "docs/getting-started.html"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "Conceptual",
+      "source_relative_path": "docs/introduction.md",
+      "output": {
+        ".html": {
+          "relative_path": "docs/introduction.html"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "Toc",
+      "source_relative_path": "docs/toc.yml",
+      "output": {
+        ".html": {
+          "relative_path": "docs/toc.html"
+        },
+        ".json": {
+          "relative_path": "docs/toc.json"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "Conceptual",
+      "source_relative_path": "index.md",
+      "output": {
+        ".html": {
+          "relative_path": "index.html"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "Toc",
+      "source_relative_path": "toc.yml",
+      "output": {
+        ".html": {
+          "relative_path": "toc.html"
+        },
+        ".json": {
+          "relative_path": "toc.json"
+        }
+      },
+      "version": ""
+    }
+  ],
+  "groups": [
+    {
+      "xrefmap": "xrefmap.yml"
+    }
+  ]
+}

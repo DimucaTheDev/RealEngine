@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Class BulletDebugDrawer | Real Engine </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Class BulletDebugDrawer | Real Engine ">
+      
+      <meta name="description" content="Provides an OpenTK-based implementation of the BulletSharp.DebugDraw interface for visualizing physics debug information in a 3D scene.">
+      <link rel="icon" href="../favicon.ico">
+      <link rel="stylesheet" href="../public/docfx.min.css">
+      <link rel="stylesheet" href="../public/main.css">
+      <meta name="docfx:navrel" content="../toc.html">
+      <meta name="docfx:tocrel" content="toc.html">
+      
+      <meta name="docfx:rel" content="../">
+      
+      
+      
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="ManagedReference">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../index.html">
+            <img id="logo" class="svg" src="../logo.svg" alt="Real Engine">
+            Real Engine
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+      <div class="toc-offcanvas">
+        <div class="offcanvas-md offcanvas-start" tabindex="-1" id="tocOffcanvas" aria-labelledby="tocOffcanvasLabel">
+          <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="tocOffcanvasLabel">Table of Contents</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#tocOffcanvas" aria-label="Close"></button>
+          </div>
+          <div class="offcanvas-body">
+            <nav class="toc" id="toc"></nav>
+          </div>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="actionbar">
+          <button class="btn btn-lg border-0 d-md-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#tocOffcanvas" aria-controls="tocOffcanvas" aria-expanded="false" aria-label="Show table of contents">
+            <i class="bi bi-list"></i>
+          </button>
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="RE.Core.World.Components.Physics.BulletDebugDrawer">
+
+
+
+  <h1 id="RE_Core_World_Components_Physics_BulletDebugDrawer" data-uid="RE.Core.World.Components.Physics.BulletDebugDrawer" class="text-break">
+Class BulletDebugDrawer  <a class="header-action link-secondary" title="View source" href="https://github.com/DimucaTheDev/RealEngine/blob/master/RE/Core/World/Components/Physics/BulletDebugDrawer.cs"><i class="bi bi-code-slash"></i></a>
+  </h1>
+
+  <div class="facts text-secondary">
+    <dl><dt>Namespace</dt><dd><a class="xref" href="RE.html">RE</a>.<a class="xref" href="RE.Core.html">Core</a>.<a class="xref" href="RE.Core.World.html">World</a>.<a class="xref" href="RE.Core.World.Components.html">Components</a>.<a class="xref" href="RE.Core.World.Components.Physics.html">Physics</a></dd></dl>
+  <dl><dt>Assembly</dt><dd>RE.dll</dd></dl>
+  </div>
+
+  <div class="markdown summary"><p>Provides an OpenTK-based implementation of the BulletSharp.DebugDraw interface for visualizing physics debug
+information in a 3D scene.</p>
+</div>
+  <div class="markdown conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public class BulletDebugDrawer : DebugDraw, IDisposable</code></pre>
+  </div>
+
+
+
+
+  <dl class="typelist inheritance">
+    <dt>Inheritance</dt>
+    <dd>
+      <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object">object</a></div>
+      <div><span class="xref">DebugDraw</span></div>
+      <div><span class="xref">BulletDebugDrawer</span></div>
+    </dd>
+  </dl>
+
+  <dl class="typelist implements">
+    <dt>Implements</dt>
+    <dd>
+      <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.idisposable">IDisposable</a></div>
+    </dd>
+  </dl>
+
+
+  <dl class="typelist inheritedMembers">
+    <dt>Inherited Members</dt>
+    <dd>
+    <div>
+      <span class="xref">DebugDraw.DrawLine(Vector3, Vector3, Vector3)</span>
+    </div>
+    <div>
+      <span class="xref">DebugDraw.DrawLine(ref Vector3, ref Vector3, ref Vector3, ref Vector3)</span>
+    </div>
+    <div>
+      <span class="xref">DebugDraw.DrawAabb(ref Vector3, ref Vector3, ref Vector3)</span>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.single">DebugDraw.DrawArc(ref Vector3, ref Vector3, ref Vector3, float, float, float, float, ref Vector3, bool, float)</a>
+    </div>
+    <div>
+      <span class="xref">DebugDraw.DrawBox(ref Vector3, ref Vector3, ref Vector3)</span>
+    </div>
+    <div>
+      <span class="xref">DebugDraw.DrawBox(ref Vector3, ref Vector3, ref Matrix, ref Vector3)</span>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.single">DebugDraw.DrawCapsule(float, float, int, ref Matrix, ref Vector3)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.single">DebugDraw.DrawCone(float, float, int, ref Matrix, ref Vector3)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.single">DebugDraw.DrawContactPoint(ref Vector3, ref Vector3, float, int, ref Vector3)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.single">DebugDraw.DrawCylinder(float, float, int, ref Matrix, ref Vector3)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.single">DebugDraw.DrawPlane(ref Vector3, float, ref Matrix, ref Vector3)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.single">DebugDraw.DrawSphere(float, ref Matrix, ref Vector3)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.single">DebugDraw.DrawSphere(ref Vector3, float, ref Vector3)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.single">DebugDraw.DrawSpherePatch(ref Vector3, ref Vector3, ref Vector3, float, float, float, float, float, ref Vector3)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.single">DebugDraw.DrawSpherePatch(ref Vector3, ref Vector3, ref Vector3, float, float, float, float, float, ref Vector3, float)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.single">DebugDraw.DrawTriangle(ref Vector3, ref Vector3, ref Vector3, ref Vector3, ref Vector3, ref Vector3, ref Vector3, float)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.single">DebugDraw.DrawTriangle(ref Vector3, ref Vector3, ref Vector3, ref Vector3, float)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.single">DebugDraw.DrawTransform(ref Matrix, float)</a>
+    </div>
+    <div>
+      <span class="xref">DebugDraw.PlaneSpace1(ref Vector3, out Vector3, out Vector3)</span>
+    </div>
+    <div>
+      <span class="xref">DebugDraw.Dispose()</span>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">DebugDraw.Dispose(bool)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.gettype">object.GetType()</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.memberwiseclone">object.MemberwiseClone()</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.tostring">object.ToString()</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)">object.Equals(object)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)">object.Equals(object, object)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.referenceequals">object.ReferenceEquals(object, object)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.gethashcode">object.GetHashCode()</a>
+    </div>
+  </dd></dl>
+
+
+
+
+  <h2 id="RE_Core_World_Components_Physics_BulletDebugDrawer_remarks">Remarks</h2>
+  <div class="markdown level0 remarks"><p>Use this class to render debug lines and shapes generated by the Bullet physics engine during
+simulation. The debug output can be customized using the static Mode and Xray properties. This class is
+typically used for development and debugging purposes to visualize collision shapes, contact points, and other
+physics-related data.</p>
+</div>
+
+
+  <h2 class="section" id="constructors">Constructors
+</h2>
+
+
+  <a id="RE_Core_World_Components_Physics_BulletDebugDrawer__ctor_" data-uid="RE.Core.World.Components.Physics.BulletDebugDrawer.#ctor*"></a>
+
+  <h3 id="RE_Core_World_Components_Physics_BulletDebugDrawer__ctor" data-uid="RE.Core.World.Components.Physics.BulletDebugDrawer.#ctor">
+  BulletDebugDrawer()
+  <a class="header-action link-secondary" title="View source" href="https://github.com/DimucaTheDev/RealEngine/blob/master/RE/Core/World/Components/Physics/BulletDebugDrawer.cs"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public BulletDebugDrawer()</code></pre>
+  </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <h2 class="section" id="fields">Fields
+</h2>
+
+
+
+  <h3 id="RE_Core_World_Components_Physics_BulletDebugDrawer_Mode" data-uid="RE.Core.World.Components.Physics.BulletDebugDrawer.Mode">
+  Mode
+  <a class="header-action link-secondary" title="View source" href="https://github.com/DimucaTheDev/RealEngine/blob/master/RE/Core/World/Components/Physics/BulletDebugDrawer.cs"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static DebugDrawModes Mode</code></pre>
+  </div>
+
+
+
+
+  <h4 class="section">Field Value</h4>
+  <dl class="parameters">
+    <dt><span class="xref">DebugDrawModes</span></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+  <h2 class="section" id="properties">Properties
+</h2>
+
+
+  <a id="RE_Core_World_Components_Physics_BulletDebugDrawer_DebugMode_" data-uid="RE.Core.World.Components.Physics.BulletDebugDrawer.DebugMode*"></a>
+
+  <h3 id="RE_Core_World_Components_Physics_BulletDebugDrawer_DebugMode" data-uid="RE.Core.World.Components.Physics.BulletDebugDrawer.DebugMode">
+  DebugMode
+  <a class="header-action link-secondary" title="View source" href="https://github.com/DimucaTheDev/RealEngine/blob/master/RE/Core/World/Components/Physics/BulletDebugDrawer.cs"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public override DebugDrawModes DebugMode { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><span class="xref">DebugDrawModes</span></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="RE_Core_World_Components_Physics_BulletDebugDrawer_Xray_" data-uid="RE.Core.World.Components.Physics.BulletDebugDrawer.Xray*"></a>
+
+  <h3 id="RE_Core_World_Components_Physics_BulletDebugDrawer_Xray" data-uid="RE.Core.World.Components.Physics.BulletDebugDrawer.Xray">
+  Xray
+  <a class="header-action link-secondary" title="View source" href="https://github.com/DimucaTheDev/RealEngine/blob/master/RE/Core/World/Components/Physics/BulletDebugDrawer.cs"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static bool Xray { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <h2 class="section" id="methods">Methods
+</h2>
+
+
+  <a id="RE_Core_World_Components_Physics_BulletDebugDrawer_Draw3DText_" data-uid="RE.Core.World.Components.Physics.BulletDebugDrawer.Draw3DText*"></a>
+
+  <h3 id="RE_Core_World_Components_Physics_BulletDebugDrawer_Draw3DText_BulletSharp_Math_Vector3__System_String_" data-uid="RE.Core.World.Components.Physics.BulletDebugDrawer.Draw3DText(BulletSharp.Math.Vector3@,System.String)">
+  Draw3DText(ref Vector3, string)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/DimucaTheDev/RealEngine/blob/master/RE/Core/World/Components/Physics/BulletDebugDrawer.cs"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public override void Draw3DText(ref Vector3 location, string textString)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>location</code> <span class="xref">Vector3</span></dt>
+    <dd></dd>
+    <dt><code>textString</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="RE_Core_World_Components_Physics_BulletDebugDrawer_DrawLine_" data-uid="RE.Core.World.Components.Physics.BulletDebugDrawer.DrawLine*"></a>
+
+  <h3 id="RE_Core_World_Components_Physics_BulletDebugDrawer_DrawLine_BulletSharp_Math_Vector3__BulletSharp_Math_Vector3__BulletSharp_Math_Vector3__" data-uid="RE.Core.World.Components.Physics.BulletDebugDrawer.DrawLine(BulletSharp.Math.Vector3@,BulletSharp.Math.Vector3@,BulletSharp.Math.Vector3@)">
+  DrawLine(ref Vector3, ref Vector3, ref Vector3)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/DimucaTheDev/RealEngine/blob/master/RE/Core/World/Components/Physics/BulletDebugDrawer.cs"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public override void DrawLine(ref Vector3 from, ref Vector3 to, ref Vector3 color)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>from</code> <span class="xref">Vector3</span></dt>
+    <dd></dd>
+    <dt><code>to</code> <span class="xref">Vector3</span></dt>
+    <dd></dd>
+    <dt><code>color</code> <span class="xref">Vector3</span></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="RE_Core_World_Components_Physics_BulletDebugDrawer_ReportErrorWarning_" data-uid="RE.Core.World.Components.Physics.BulletDebugDrawer.ReportErrorWarning*"></a>
+
+  <h3 id="RE_Core_World_Components_Physics_BulletDebugDrawer_ReportErrorWarning_System_String_" data-uid="RE.Core.World.Components.Physics.BulletDebugDrawer.ReportErrorWarning(System.String)">
+  ReportErrorWarning(string)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/DimucaTheDev/RealEngine/blob/master/RE/Core/World/Components/Physics/BulletDebugDrawer.cs"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public override void ReportErrorWarning(string warningString)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>warningString</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+</article>
+
+        <div class="contribution d-print-none">
+          <a href="https://github.com/DimucaTheDev/RealEngine/blob/master/RE/Core/World/Components/Physics/BulletDebugDrawer.cs" class="edit-link">Edit this page</a>
+        </div>
+
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          <span>Made with <a href="https://dotnet.github.io/docfx">docfx</a></span>
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

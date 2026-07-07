@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Class StaticTexture | Real Engine </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Class StaticTexture | Real Engine ">
+      
+      
+      <link rel="icon" href="../favicon.ico">
+      <link rel="stylesheet" href="../public/docfx.min.css">
+      <link rel="stylesheet" href="../public/main.css">
+      <meta name="docfx:navrel" content="../toc.html">
+      <meta name="docfx:tocrel" content="toc.html">
+      
+      <meta name="docfx:rel" content="../">
+      
+      
+      
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="ManagedReference">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../index.html">
+            <img id="logo" class="svg" src="../logo.svg" alt="Real Engine">
+            Real Engine
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+      <div class="toc-offcanvas">
+        <div class="offcanvas-md offcanvas-start" tabindex="-1" id="tocOffcanvas" aria-labelledby="tocOffcanvasLabel">
+          <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="tocOffcanvasLabel">Table of Contents</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#tocOffcanvas" aria-label="Close"></button>
+          </div>
+          <div class="offcanvas-body">
+            <nav class="toc" id="toc"></nav>
+          </div>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="actionbar">
+          <button class="btn btn-lg border-0 d-md-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#tocOffcanvas" aria-controls="tocOffcanvas" aria-expanded="false" aria-label="Show table of contents">
+            <i class="bi bi-list"></i>
+          </button>
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="RE.Rendering.Texturing.StaticTexture">
+
+
+
+  <h1 id="RE_Rendering_Texturing_StaticTexture" data-uid="RE.Rendering.Texturing.StaticTexture" class="text-break">
+Class StaticTexture  <a class="header-action link-secondary" title="View source" href="https://github.com/DimucaTheDev/RealEngine/blob/master/RE/Rendering/Texturing/StaticTexture.cs"><i class="bi bi-code-slash"></i></a>
+  </h1>
+
+  <div class="facts text-secondary">
+    <dl><dt>Namespace</dt><dd><a class="xref" href="RE.html">RE</a>.<a class="xref" href="RE.Rendering.html">Rendering</a>.<a class="xref" href="RE.Rendering.Texturing.html">Texturing</a></dd></dl>
+  <dl><dt>Assembly</dt><dd>RE.dll</dd></dl>
+  </div>
+
+  <div class="markdown summary"></div>
+  <div class="markdown conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public class StaticTexture : Texture</code></pre>
+  </div>
+
+
+
+
+  <dl class="typelist inheritance">
+    <dt>Inheritance</dt>
+    <dd>
+      <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object">object</a></div>
+      <div><a class="xref" href="RE.Core.Assets.DynamicAsset.html">DynamicAsset</a></div>
+      <div><a class="xref" href="RE.Rendering.Texturing.Texture.html">Texture</a></div>
+      <div><span class="xref">StaticTexture</span></div>
+    </dd>
+  </dl>
+
+
+
+  <dl class="typelist inheritedMembers">
+    <dt>Inherited Members</dt>
+    <dd>
+    <div>
+      <a class="xref" href="RE.Core.Assets.DynamicAsset.html#RE_Core_Assets_DynamicAsset_OnLoad">DynamicAsset.OnLoad()</a>
+    </div>
+    <div>
+      <a class="xref" href="RE.Core.Assets.DynamicAsset.html#RE_Core_Assets_DynamicAsset_OnUnload">DynamicAsset.OnUnload()</a>
+    </div>
+    <div>
+      <a class="xref" href="RE.Core.Assets.DynamicAsset.html#RE_Core_Assets_DynamicAsset_AssetPath">DynamicAsset.AssetPath</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.gettype">object.GetType()</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.memberwiseclone">object.MemberwiseClone()</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.tostring">object.ToString()</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)">object.Equals(object)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)">object.Equals(object, object)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.referenceequals">object.ReferenceEquals(object, object)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.gethashcode">object.GetHashCode()</a>
+    </div>
+  </dd></dl>
+
+
+
+
+
+
+  <h2 class="section" id="constructors">Constructors
+</h2>
+
+
+  <a id="RE_Rendering_Texturing_StaticTexture__ctor_" data-uid="RE.Rendering.Texturing.StaticTexture.#ctor*"></a>
+
+  <h3 id="RE_Rendering_Texturing_StaticTexture__ctor" data-uid="RE.Rendering.Texturing.StaticTexture.#ctor">
+  StaticTexture()
+  <a class="header-action link-secondary" title="View source" href="https://github.com/DimucaTheDev/RealEngine/blob/master/RE/Rendering/Texturing/StaticTexture.cs"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">protected StaticTexture()</code></pre>
+  </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="RE_Rendering_Texturing_StaticTexture__ctor_" data-uid="RE.Rendering.Texturing.StaticTexture.#ctor*"></a>
+
+  <h3 id="RE_Rendering_Texturing_StaticTexture__ctor_RE_Rendering_Texturing_ImageData_" data-uid="RE.Rendering.Texturing.StaticTexture.#ctor(RE.Rendering.Texturing.ImageData)">
+  StaticTexture(ImageData)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/DimucaTheDev/RealEngine/blob/master/RE/Rendering/Texturing/StaticTexture.cs"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public StaticTexture(ImageData data)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>data</code> <a class="xref" href="RE.Rendering.Texturing.ImageData.html">ImageData</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="RE_Rendering_Texturing_StaticTexture__ctor_" data-uid="RE.Rendering.Texturing.StaticTexture.#ctor*"></a>
+
+  <h3 id="RE_Rendering_Texturing_StaticTexture__ctor_System_Int32_System_Int32_OpenTK_Graphics_OpenGL4_PixelInternalFormat_" data-uid="RE.Rendering.Texturing.StaticTexture.#ctor(System.Int32,System.Int32,OpenTK.Graphics.OpenGL4.PixelInternalFormat)">
+  StaticTexture(int, int, PixelInternalFormat)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/DimucaTheDev/RealEngine/blob/master/RE/Rendering/Texturing/StaticTexture.cs"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public StaticTexture(int width, int height, PixelInternalFormat format = PixelInternalFormat.Rgba8)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>width</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd></dd>
+    <dt><code>height</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd></dd>
+    <dt><code>format</code> <span class="xref">PixelInternalFormat</span></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="RE_Rendering_Texturing_StaticTexture__ctor_" data-uid="RE.Rendering.Texturing.StaticTexture.#ctor*"></a>
+
+  <h3 id="RE_Rendering_Texturing_StaticTexture__ctor_System_String_" data-uid="RE.Rendering.Texturing.StaticTexture.#ctor(System.String)">
+  StaticTexture(string)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/DimucaTheDev/RealEngine/blob/master/RE/Rendering/Texturing/StaticTexture.cs"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public StaticTexture(string resourceLocation)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>resourceLocation</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <h2 class="section" id="fields">Fields
+</h2>
+
+
+
+  <h3 id="RE_Rendering_Texturing_StaticTexture_DefaultCacheFactory" data-uid="RE.Rendering.Texturing.StaticTexture.DefaultCacheFactory">
+  DefaultCacheFactory
+  <a class="header-action link-secondary" title="View source" href="https://github.com/DimucaTheDev/RealEngine/blob/master/RE/Rendering/Texturing/StaticTexture.cs"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static readonly Func&lt;string, StaticTexture&gt; DefaultCacheFactory</code></pre>
+  </div>
+
+
+
+
+  <h4 class="section">Field Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.func-2">Func</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a>, <a class="xref" href="RE.Rendering.Texturing.StaticTexture.html">StaticTexture</a>&gt;</dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+  <h2 class="section" id="properties">Properties
+</h2>
+
+
+  <a id="RE_Rendering_Texturing_StaticTexture_Height_" data-uid="RE.Rendering.Texturing.StaticTexture.Height*"></a>
+
+  <h3 id="RE_Rendering_Texturing_StaticTexture_Height" data-uid="RE.Rendering.Texturing.StaticTexture.Height">
+  Height
+  <a class="header-action link-secondary" title="View source" href="https://github.com/DimucaTheDev/RealEngine/blob/master/RE/Rendering/Texturing/StaticTexture.cs"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public int Height { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="RE_Rendering_Texturing_StaticTexture_InternalFormat_" data-uid="RE.Rendering.Texturing.StaticTexture.InternalFormat*"></a>
+
+  <h3 id="RE_Rendering_Texturing_StaticTexture_InternalFormat" data-uid="RE.Rendering.Texturing.StaticTexture.InternalFormat">
+  InternalFormat
+  <a class="header-action link-secondary" title="View source" href="https://github.com/DimucaTheDev/RealEngine/blob/master/RE/Rendering/Texturing/StaticTexture.cs"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public PixelInternalFormat InternalFormat { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><span class="xref">PixelInternalFormat</span></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="RE_Rendering_Texturing_StaticTexture_Width_" data-uid="RE.Rendering.Texturing.StaticTexture.Width*"></a>
+
+  <h3 id="RE_Rendering_Texturing_StaticTexture_Width" data-uid="RE.Rendering.Texturing.StaticTexture.Width">
+  Width
+  <a class="header-action link-secondary" title="View source" href="https://github.com/DimucaTheDev/RealEngine/blob/master/RE/Rendering/Texturing/StaticTexture.cs"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public int Width { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <h2 class="section" id="methods">Methods
+</h2>
+
+
+  <a id="RE_Rendering_Texturing_StaticTexture_AsImGui_" data-uid="RE.Rendering.Texturing.StaticTexture.AsImGui*"></a>
+
+  <h3 id="RE_Rendering_Texturing_StaticTexture_AsImGui" data-uid="RE.Rendering.Texturing.StaticTexture.AsImGui">
+  AsImGui()
+  <a class="header-action link-secondary" title="View source" href="https://github.com/DimucaTheDev/RealEngine/blob/master/RE/Rendering/Texturing/StaticTexture.cs"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public override ImTextureRef AsImGui()</code></pre>
+  </div>
+
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><span class="xref">ImTextureRef</span></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="RE_Rendering_Texturing_StaticTexture_AsOpenGl_" data-uid="RE.Rendering.Texturing.StaticTexture.AsOpenGl*"></a>
+
+  <h3 id="RE_Rendering_Texturing_StaticTexture_AsOpenGl" data-uid="RE.Rendering.Texturing.StaticTexture.AsOpenGl">
+  AsOpenGl()
+  <a class="header-action link-secondary" title="View source" href="https://github.com/DimucaTheDev/RealEngine/blob/master/RE/Rendering/Texturing/StaticTexture.cs"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public override uint AsOpenGl()</code></pre>
+  </div>
+
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.uint32">uint</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="RE_Rendering_Texturing_StaticTexture_Bind_" data-uid="RE.Rendering.Texturing.StaticTexture.Bind*"></a>
+
+  <h3 id="RE_Rendering_Texturing_StaticTexture_Bind_OpenTK_Graphics_OpenGL4_TextureUnit_" data-uid="RE.Rendering.Texturing.StaticTexture.Bind(OpenTK.Graphics.OpenGL4.TextureUnit)">
+  Bind(TextureUnit)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/DimucaTheDev/RealEngine/blob/master/RE/Rendering/Texturing/StaticTexture.cs"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void Bind(TextureUnit unit = TextureUnit.Texture0)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>unit</code> <span class="xref">TextureUnit</span></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="RE_Rendering_Texturing_StaticTexture_CreateMissingTexture_" data-uid="RE.Rendering.Texturing.StaticTexture.CreateMissingTexture*"></a>
+
+  <h3 id="RE_Rendering_Texturing_StaticTexture_CreateMissingTexture_System_Int32_System_Byte___System_Byte___" data-uid="RE.Rendering.Texturing.StaticTexture.CreateMissingTexture(System.Int32,System.Byte[],System.Byte[])">
+  CreateMissingTexture(int, byte[]?, byte[]?)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/DimucaTheDev/RealEngine/blob/master/RE/Rendering/Texturing/StaticTexture.cs"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static StaticTexture CreateMissingTexture(int size = 64, byte[]? color1 = null, byte[]? color2 = null)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>size</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd></dd>
+    <dt><code>color1</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.byte">byte</a>[]</dt>
+    <dd></dd>
+    <dt><code>color2</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.byte">byte</a>[]</dt>
+    <dd></dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="RE.Rendering.Texturing.StaticTexture.html">StaticTexture</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="RE_Rendering_Texturing_StaticTexture_CreateMonoColorTexture_" data-uid="RE.Rendering.Texturing.StaticTexture.CreateMonoColorTexture*"></a>
+
+  <h3 id="RE_Rendering_Texturing_StaticTexture_CreateMonoColorTexture_OpenTK_Mathematics_Vector3_" data-uid="RE.Rendering.Texturing.StaticTexture.CreateMonoColorTexture(OpenTK.Mathematics.Vector3)">
+  CreateMonoColorTexture(Vector3)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/DimucaTheDev/RealEngine/blob/master/RE/Rendering/Texturing/StaticTexture.cs"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static StaticTexture CreateMonoColorTexture(Vector3 color)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>color</code> <span class="xref">Vector3</span></dt>
+    <dd></dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="RE.Rendering.Texturing.StaticTexture.html">StaticTexture</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="RE_Rendering_Texturing_StaticTexture_CreateMonoColorTexture_" data-uid="RE.Rendering.Texturing.StaticTexture.CreateMonoColorTexture*"></a>
+
+  <h3 id="RE_Rendering_Texturing_StaticTexture_CreateMonoColorTexture_OpenTK_Mathematics_Vector4_" data-uid="RE.Rendering.Texturing.StaticTexture.CreateMonoColorTexture(OpenTK.Mathematics.Vector4)">
+  CreateMonoColorTexture(Vector4)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/DimucaTheDev/RealEngine/blob/master/RE/Rendering/Texturing/StaticTexture.cs"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static StaticTexture CreateMonoColorTexture(Vector4 color)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>color</code> <span class="xref">Vector4</span></dt>
+    <dd></dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="RE.Rendering.Texturing.StaticTexture.html">StaticTexture</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="RE_Rendering_Texturing_StaticTexture_Delete_" data-uid="RE.Rendering.Texturing.StaticTexture.Delete*"></a>
+
+  <h3 id="RE_Rendering_Texturing_StaticTexture_Delete" data-uid="RE.Rendering.Texturing.StaticTexture.Delete">
+  Delete()
+  <a class="header-action link-secondary" title="View source" href="https://github.com/DimucaTheDev/RealEngine/blob/master/RE/Rendering/Texturing/StaticTexture.cs"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public override void Delete()</code></pre>
+  </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="RE_Rendering_Texturing_StaticTexture_FromGlHandle_" data-uid="RE.Rendering.Texturing.StaticTexture.FromGlHandle*"></a>
+
+  <h3 id="RE_Rendering_Texturing_StaticTexture_FromGlHandle_System_UInt32_System_Int32_System_Int32_OpenTK_Graphics_OpenGL4_PixelInternalFormat_" data-uid="RE.Rendering.Texturing.StaticTexture.FromGlHandle(System.UInt32,System.Int32,System.Int32,OpenTK.Graphics.OpenGL4.PixelInternalFormat)">
+  FromGlHandle(uint, int, int, PixelInternalFormat)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/DimucaTheDev/RealEngine/blob/master/RE/Rendering/Texturing/StaticTexture.cs"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static StaticTexture FromGlHandle(uint handle, int width, int height, PixelInternalFormat format = PixelInternalFormat.Rgba8)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>handle</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.uint32">uint</a></dt>
+    <dd></dd>
+    <dt><code>width</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd></dd>
+    <dt><code>height</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd></dd>
+    <dt><code>format</code> <span class="xref">PixelInternalFormat</span></dt>
+    <dd></dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="RE.Rendering.Texturing.StaticTexture.html">StaticTexture</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="RE_Rendering_Texturing_StaticTexture_Resize_" data-uid="RE.Rendering.Texturing.StaticTexture.Resize*"></a>
+
+  <h3 id="RE_Rendering_Texturing_StaticTexture_Resize_System_Int32_System_Int32_" data-uid="RE.Rendering.Texturing.StaticTexture.Resize(System.Int32,System.Int32)">
+  Resize(int, int)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/DimucaTheDev/RealEngine/blob/master/RE/Rendering/Texturing/StaticTexture.cs"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void Resize(int width, int height)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>width</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd></dd>
+    <dt><code>height</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="RE_Rendering_Texturing_StaticTexture_SetData_" data-uid="RE.Rendering.Texturing.StaticTexture.SetData*"></a>
+
+  <h3 id="RE_Rendering_Texturing_StaticTexture_SetData_RE_Rendering_Texturing_ImageData_" data-uid="RE.Rendering.Texturing.StaticTexture.SetData(RE.Rendering.Texturing.ImageData)">
+  SetData(ImageData)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/DimucaTheDev/RealEngine/blob/master/RE/Rendering/Texturing/StaticTexture.cs"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void SetData(ImageData image)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>image</code> <a class="xref" href="RE.Rendering.Texturing.ImageData.html">ImageData</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <h2 class="section" id="operators">Operators
+</h2>
+
+
+  <a id="RE_Rendering_Texturing_StaticTexture_op_Implicit_" data-uid="RE.Rendering.Texturing.StaticTexture.op_Implicit*"></a>
+
+  <h3 id="RE_Rendering_Texturing_StaticTexture_op_Implicit_RE_Rendering_Texturing_StaticTexture__Hexa_NET_ImGui_ImTextureRef" data-uid="RE.Rendering.Texturing.StaticTexture.op_Implicit(RE.Rendering.Texturing.StaticTexture)~Hexa.NET.ImGui.ImTextureRef">
+  implicit operator ImTextureRef(StaticTexture)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/DimucaTheDev/RealEngine/blob/master/RE/Rendering/Texturing/StaticTexture.cs"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static implicit operator ImTextureRef(StaticTexture texture)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>texture</code> <a class="xref" href="RE.Rendering.Texturing.StaticTexture.html">StaticTexture</a></dt>
+    <dd></dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><span class="xref">ImTextureRef</span></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+</article>
+
+        <div class="contribution d-print-none">
+          <a href="https://github.com/DimucaTheDev/RealEngine/blob/master/RE/Rendering/Texturing/StaticTexture.cs" class="edit-link">Edit this page</a>
+        </div>
+
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          <span>Made with <a href="https://dotnet.github.io/docfx">docfx</a></span>
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>
